@@ -934,6 +934,47 @@ function cn_destination_number(destination_number)
     return dnumber
 end
 
+function regex_cmd(destination_number,pattern,replace)
+    Logger.notice("[regex_pattern] FUNCTION")
+    local rgx_pattern = pattern
+    local regex_number = destination_number:gsub("%s+", "")
+    local api = freeswitch.API();
+	if (rgx_pattern == nil) then
+		rgx_pattern = "unknown"
+	end
+    if (replace == nil) then
+		rgx_replace = ""
+	else
+	    rgx_replace = "|$"..replace
+	end
+
+    if (rgx_pattern == "num_pattern_0") then
+    regex_pattern = "^0([1-9][1-9])(\\d{7,20})$"
+    elseif (rgx_pattern == "num_pattern_cn") then
+    regex_pattern = "^([1-9][1-9])(\\d{7,8})$"
+    elseif (rgx_pattern == "unknown") then
+    regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+    elseif (rgx_pattern == "num_regex_pattern") then
+    regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
+    elseif (rgx_pattern == "num_pattern_local") then
+    regex_pattern = "^([2-9]\\d{3})(\\d{4})$"
+    else
+    regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+    end
+    
+    if api:execute("regex", ""..regex_number.."|"..regex_pattern) == "true" then
+    cmd = ""..regex_number.."|"..regex_pattern..""..rgx_replace
+	local result = trim(api:execute("regex", cmd));
+	Logger.notice("[regex_pattern] regex "..cmd);
+	Logger.notice("[regex_pattern] result: "..result);
+	regex_number = result;
+    else
+	regex_number = "false";
+
+end
+return regex_number
+end
+
 function get_parentid(userinfoid)
     local parentid = 0;
     local query  = "SELECT reseller_id FROM "..TBL_USERS.." WHERE id = "..userinfoid;    
