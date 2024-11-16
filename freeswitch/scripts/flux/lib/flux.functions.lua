@@ -827,8 +827,8 @@ function get_carrier_out(userinfo,cn_dest_number,carrier_dest_number)
 	return carrier_info
 end
 
-
-function get_carrier_in(userinfo,cn_dest_number,carrier_dest_number)
+-- Get carrier rn1 routes in
+function get_carrier_in(didinfo,cn_dest_number,carrier_dest_number)
     Logger.warning("[FUNCTION - get_carrier_in]")
     carrier_destination = number_loop(carrier_dest_number,"pattern")
     Logger.warning("[GET_CARRIER_IN] carrier_destination :" .. carrier_destination)
@@ -837,7 +837,7 @@ function get_carrier_in(userinfo,cn_dest_number,carrier_dest_number)
 	local carrier_info
 
         
-    	local query  = "SELECT * FROM "..TBL_CARRIER_RATES..", "..TBL_CARRIER_ROUTES.." WHERE "..TBL_CARRIER_RATES..".rn1 = "..TBL_CARRIER_ROUTES..".carrier_rn1 AND "..TBL_CARRIER_RATES..".nomePrestadora = "..TBL_CARRIER_ROUTES..".carrier_name AND cn = "..cn_dest_number.." AND " ..carrier_destination.." ORDER BY cn_prefix LIMIT 1";
+    	local query  = "SELECT view_carriers.idCadup,view_carriers.nomePrestadora,carrier_routing.carrier_name,carrier_routing.carrier_id,carrier_routing.carrier_rn1,view_carriers.rn1,view_carriers.carrier_route_id,carrier_routing.reseller_id,carrier_routing.accountid,carrier_routing.call_count,carrier_routing.`status`,view_carriers.tipo,view_carriers.cn,view_carriers.prefixo,view_carriers.cn_prefix,view_carriers.pattern,view_carriers.route_pattern,view_carriers.nomeLocalidade,view_carriers.areaLocal,view_carriers.codArea,view_carriers.uf FROM "..TBL_CARRIER_RATES..", "..TBL_CARRIER_ROUTES.." WHERE "..TBL_CARRIER_RATES..".rn1 = "..TBL_CARRIER_ROUTES..".carrier_rn1 AND "..TBL_CARRIER_RATES..".nomePrestadora = "..TBL_CARRIER_ROUTES..".carrier_name AND cn = "..cn_dest_number.." AND " ..carrier_destination.." GROUP BY carrier_id ORDER BY cn_prefix LIMIT 1";
     	Logger.warning("[GET_CARRIER_IN] Query :" .. query)
 		assert (dbh:query(query, function(u)
     		carrier_info = u
@@ -847,7 +847,7 @@ function get_carrier_in(userinfo,cn_dest_number,carrier_dest_number)
 end
 
 
--- Get carrier rn1 routes in
+-- Get carrier rn1 routes in2
 function get_carrier_in2(userinfo,cn_dest_number,carrier_dest_number)
     Logger.warning("[FUNCTION - get_cadup_in]")
     cadup_destination = number_loop(cadup_dest_number,"pattern")
