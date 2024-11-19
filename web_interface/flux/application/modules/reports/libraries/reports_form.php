@@ -2132,16 +2132,16 @@ class Reports_form extends common
                 "center"
             ),
             array(
-                   gettext("Carrier"),
-                   "200",
-                   "call_id_cadup",
-                   "",
-                   "",
-                   "",
-                   "",
-                   "true",
-                   "center"
-               ),
+                gettext("Carrier"),
+                "200",
+                "call_id_cadup",
+                "nomePrestadora,rn1",
+                "view_carriers",
+                "build_concat_carrier",
+                "",
+                "false",
+                "center"
+            ),
             array(
                 gettext("Duration"),
                 "110",
