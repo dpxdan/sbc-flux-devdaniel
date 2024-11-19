@@ -31,7 +31,7 @@ function freeswitch_xml_header(xml,destination_number,accountcode,maxlength,call
 	table.insert(xml, [[<extension name="]]..destination_number..[[">]]); 
 	table.insert(xml, [[<condition field="destination_number" expression="]]..plus_destination_number(params:getHeader("Caller-Destination-Number"))..[[">]]);
 	table.insert(xml, [[<action application="set" data="effective_destination_number=]]..plus_destination_number(original_destination_number)..[["/>]]);
-	Logger.info("maxlength::::::::: "..maxlength);
+	Logger.debug("maxlength::::::::: "..maxlength);
 	table.insert(xml, [[<action application="set" data="bridge_pre_execute_bleg_app=sched_hangup"/>]]);
 	table.insert(xml, [[<action application="set" data="bridge_pre_execute_bleg_data=+]]..((maxlength) * 60)..[[ normal_clearing"/>]]);
      
@@ -278,7 +278,7 @@ function freeswitch_xml_outbound(xml,destination_number,outbound_info,callerid_a
 
 	-- Check if is there any gateway configuration params available for it.
 	if (outbound_info['dialplan_variable'] ~= '') then 
-		Logger.info(" ".. outbound_info['dialplan_variable']);
+		Logger.debug(" ".. outbound_info['dialplan_variable']);
 		local dialplan_variable = split(outbound_info['dialplan_variable'],",")      
 		for dialplan_variable_key,dialplan_variable_value in pairs(dialplan_variable) do
 			local dialplan_variable_data = split(dialplan_variable_value,"=")  
@@ -312,7 +312,7 @@ function freeswitch_xml_outbound(xml,destination_number,outbound_info,callerid_a
 	if(params:getHeader('variable_sip_from_user') and params:getHeader('variable_sip_from_user') ~= "")then
 		local sip_codec = get_sip_codec(params:getHeader('variable_sip_from_user'))
 		if(sip_codec and sip_codec ~= "")then
-			Logger.warning("[XML] sip_codec : "..sip_codec)
+			Logger.debug("[XML] sip_codec : "..sip_codec)
 			chan_var = chan_var..",absolute_codec_string=".."^^:"..sip_codec:gsub("%,", ":")
 		end
 	end
@@ -358,51 +358,53 @@ function freeswitch_xml_inbound(xml,didinfo,userinfo,config,xml_did_rates,caller
 	    table.insert(xml, [[<action application="limit" data="db ]]..destination_number..[[ did_]]..destination_number..[[ ]]..didinfo['maxchannels']..[[ !SWITCH_CONGESTION"/>]]);        
 	end
 	if callerid_lookup_dialplan then callerid_lookup_dialplan(xml,didinfo) end
+	if (didinfo ~= nil and tonumber(didinfo['rn1']) ~=nil and tonumber(didinfo['rn1']) > 0) then
+	idCadup = didinfo['idCadup']
+	carrier_id = didinfo['carrier_id']
+	nomeLocalidade = didinfo['nomeLocalidade']
+	nomePrestadora = didinfo['nomePrestadora']
+	areaLocal = didinfo['areaLocal']
+	tipo = didinfo['tipo']
+	prefixo = didinfo['prefixo']
+	codArea = didinfo['codArea']
+	uf = didinfo['uf']
+	rn1 = didinfo['rn1']
 	
-	
-	
-	if (didinfo['idCadup'] ~= nil and didinfo['idCadup'] ~= '0') then
-	       idCadup = didinfo['idCadup']
-	       nomeLocalidade = didinfo['nomeLocalidade']
-	       nomePrestadora = didinfo['nomePrestadora']
-	       areaLocal = didinfo['areaLocal']
-	       tipo = didinfo['tipo']
-	       prefixo = didinfo['prefixo']
-	       codArea = didinfo['codArea']
-	       uf = didinfo['uf']
-	       rn1 = didinfo['rn1']
-	       Logger.debug("idCadup : "..idCadup)
-	       Logger.debug("nomeLocalidade : "..nomeLocalidade)
-	       Logger.debug("nomePrestadora : "..nomePrestadora)
-	       Logger.debug("areaLocal : "..areaLocal)
-	       Logger.debug("tipo : "..tipo)
-	       Logger.debug("prefixo : "..prefixo)
-	       Logger.debug("codArea : "..codArea)
-	       Logger.debug("uf : "..uf)
-	       Logger.debug("rn1 : "..rn1)
-	       table.insert(xml, [[<action application="export" data="idCadup=]]..idCadup..[["/>]]);
-	       table.insert(xml, [[<action application="export" data="nomeLocalidade=]]..nomeLocalidade..[["/>]]);
-	       table.insert(xml, [[<action application="export" data="nomePrestadora=]]..nomePrestadora..[["/>]]);
-	       table.insert(xml, [[<action application="export" data="areaLocal=]]..areaLocal..[["/>]]);
-	       table.insert(xml, [[<action application="export" data="tipo=]]..tipo..[["/>]])    
-	   	table.insert(xml, [[<action application="export" data="prefixo=]]..prefixo..[["/>]]);
-	   	table.insert(xml, [[<action application="export" data="codArea=]]..codArea..[["/>]]);
-	   	table.insert(xml, [[<action application="export" data="uf=]]..uf..[["/>]]);
-	   	table.insert(xml, [[<action application="export" data="rn1=]]..rn1..[["/>]])
-	   
-	   end
-	
-	
-	if (config['check_cadup'] ~= nil and config['check_cadup'] == '0' and didinfo['cadupCN'] ~= nil) then
-		check_cadup = config['check_cadup'];
-		table.insert(xml, [[<action application="export" data="cadupCN=]]..didinfo['cadupCN']..[["/>]])
-		table.insert(xml, [[<action application="export" data="cadupAreaNum=]]..didinfo['cadupAreaNum']..[["/>]])
-		table.insert(xml, [[<action application="export" data="cadupPrefix=]]..didinfo['cadupPrefix']..[["/>]])
-		table.insert(xml, [[<action application="export" data="cadupFaixaFim=]]..didinfo['cadupFaixaFim']..[["/>]])
-		
---		table.insert(xml, [[<action application="set" data="check_cadup=true"/>]]);
+	carrier_rn1 = didinfo['carrier_rn1']
+	call_count = didinfo['call_count']
+	carrier_name = didinfo['carrier_name']
+	carrier_route_id = didinfo['carrier_route_id']
+					
+
+	Logger.debug("idCadup : "..idCadup)
+	Logger.debug("carrier_id : "..carrier_id)
+	Logger.debug("nomeLocalidade : "..nomeLocalidade)
+	Logger.debug("nomePrestadora : "..nomePrestadora)
+	Logger.debug("areaLocal : "..areaLocal)
+	Logger.debug("tipo : "..tipo)
+	Logger.debug("prefixo : "..prefixo)
+	Logger.debug("carrier_rn1 : "..carrier_rn1)
+	Logger.debug("carrier_name : "..carrier_name)
+	Logger.debug("carrier_route_id : "..carrier_route_id)
+	Logger.debug("call_count : "..call_count)
+	Logger.debug("codArea : "..codArea)
+	Logger.debug("uf : "..uf)
+	Logger.debug("rn1 : "..rn1)
+	table.insert(xml, [[<action application="export" data="idCadup=]]..idCadup..[["/>]]);
+	table.insert(xml, [[<action application="export" data="carrier_id=]]..carrier_id..[["/>]]);
+	table.insert(xml, [[<action application="export" data="nomeLocalidade=]]..nomeLocalidade..[["/>]]);
+	table.insert(xml, [[<action application="export" data="nomePrestadora=]]..nomePrestadora..[["/>]]);
+	table.insert(xml, [[<action application="export" data="areaLocal=]]..areaLocal..[["/>]]);
+	table.insert(xml, [[<action application="export" data="tipo=]]..tipo..[["/>]])    
+	table.insert(xml, [[<action application="export" data="prefixo=]]..prefixo..[["/>]]);
+	table.insert(xml, [[<action application="export" data="codArea=]]..codArea..[["/>]]);
+	table.insert(xml, [[<action application="export" data="uf=]]..uf..[["/>]]);
+	table.insert(xml, [[<action application="export" data="rn1=]]..carrier_rn1..[["/>]]);
+	table.insert(xml, [[<action application="export" data="carrier_route_id=]]..carrier_route_id..[["/>]]);
+	table.insert(xml, [[<action application="export" data="carrier_rn1=]]..carrier_rn1..[["/>]]);
+	table.insert(xml, [[<action application="export" data="did_reverse_rate=]]..didinfo['reverse_rate']..[["/>]]);
+	table.insert(xml, [[<action application="export" data="did_rate=]]..didinfo['rate_group']..[["/>]]);
 	end
-	
 	
 	table.insert(xml, [[<action application="export" data="presence_data=]]..livecall_data..[[||||||DID"/>]])
 	table.insert(xml, [[<action application="export" data="call_type=]]..didinfo['call_type']..[["/>]])
@@ -427,7 +429,7 @@ function custom_inbound_0(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 			local sip_codec = get_sip_codec(destination_str[i])
 			local did_local_chan = ""
 			if(sip_codec and sip_codec ~= "")then
-				Logger.warning("[XML]  did_local_sip_codec : "..sip_codec)
+				Logger.debug("[XML]  did_local_sip_codec : "..sip_codec)
 				did_local_chan = ",absolute_codec_string=".."^^:"..sip_codec:gsub("%,", ":")
 			end
 
@@ -449,7 +451,7 @@ function custom_inbound_1(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 	if(params:getHeader('variable_sip_from_user') and params:getHeader('variable_sip_from_user') ~= "")then
 		local sip_codec = get_sip_codec(params:getHeader('variable_sip_from_user'))
 		if(sip_codec and sip_codec ~= "")then
-			Logger.warning("[XML] sip_codec : "..sip_codec) 
+			Logger.debug("[XML] sip_codec : "..sip_codec) 
 			did_local_chan = ",absolute_codec_string=".."^^:"..sip_codec:gsub("%,", ":")
 		end
 	end
@@ -462,7 +464,7 @@ function custom_inbound_2(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 	if(params:getHeader('variable_sip_from_user') and params:getHeader('variable_sip_from_user') ~= "")then
 		local sip_codec = get_sip_codec(params:getHeader('variable_sip_from_user'))
 		if(sip_codec and sip_codec ~= "")then
-			Logger.warning("[XML] sip_codec : "..sip_codec)
+			Logger.debug("[XML] sip_codec : "..sip_codec)
 			did_local_chan = ",absolute_codec_string=".."^^:"..sip_codec:gsub("%,", ":")
 		end
 	end
@@ -501,7 +503,7 @@ function custom_inbound_5(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 			local sip_codec = get_sip_codec(destination_str[i])
 			local did_local_chan = ""
 			if(sip_codec and sip_codec ~= "")then
-				Logger.warning("[XML]  did_local_sip_codec : "..sip_codec)
+				Logger.debug("[XML]  did_local_sip_codec : "..sip_codec)
 				did_local_chan = ",absolute_codec_string=".."^^:"..sip_codec:gsub("%,", ":")
 			end		
 			bridge_str = bridge_str.."[leg_timeout="..didinfo['leg_timeout']..did_local_chan.."]sofia/${sofia_profile_name}/"..destination_number.."${regex(${sofia_contact("..destination_str[i].."@${domain_name})}|^[^@]+(.*)|%1)}"
@@ -612,7 +614,7 @@ function error_xml_without_cdr(destination_number,error_code,calltype,playback_a
 
      local xml = {};
 
-	--Logger.warning("[ERROR]  call_direction:" .. call_direction)
+	--Logger.debug("[ERROR]  call_direction:" .. call_direction)
 	local log_type
 	local log_message
 	local hangup_cause 

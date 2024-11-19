@@ -1,7 +1,7 @@
 function sip_routing_info(sip_id)  
 	local rotuting_arr;
 	local query = "SELECT * from sip_device_routing WHERE sip_device_id = "..sip_id.." limit 1";
-	Logger.debug("[PBX_SIP_ROUTING] [GET_ROUTING_INFO] Query :" .. query)
+	Logger.warning("[PBX_SIP_ROUTING] [GET_ROUTING_INFO] Query :" .. query)
 	assert (dbh:query(query, function(u)
 		rotuting_arr = u
 	end))  
@@ -12,7 +12,7 @@ function get_record_info(customer_userinfo)
 	local record = {}
     if(didinfo ~= nil)then
     local query  = "SELECT sip_device_routing.is_recording FROM sip_devices AS sip_devices, accounts AS accounts ,sip_device_routing AS sip_device_routing  WHERE sip_devices.accountid = accounts.id AND sip_devices.id = sip_device_routing.sip_device_id AND sip_devices.username = \"" ..didinfo['extensions'] .."\" AND accounts.status = 0 ";    
-		Logger.debug("[GET get_record_info] Query :" .. query)	
+		Logger.warning("[GET get_record_info] Query :" .. query)	
 		assert (dbh:query(query, function(u)
 			record = u
 		end))
@@ -27,20 +27,20 @@ function check_local_call_adv(destination_number)
      local query = "SELECT sip_devices.id as sip_id,sip_devices.username as username,accounts.number as accountcode,sip_devices.accountid as accountid,accounts.did_cid_translation as did_cid_translation,sip_devices.codec as sip_codec FROM "..TBL_SIP_DEVICES.." as sip_devices,"..TBL_USERS.." as  accounts WHERE accounts.status=0 AND accounts.deleted=0 AND accounts.id=sip_devices.accountid AND sip_devices.username=\"" ..destination_number .."\"  limit 1";
 	--local query = "SELECT sip_devices.id as sip_id,sip_devices.username as username,accounts.number as accountcode,sip_devices.accountid as accountid,accounts.did_cid_translation as did_cid_translation,sip_devices.codec as sip_codec FROM "..TBL_SIP_DEVICES.." as sip_devices,"..TBL_USERS.." as  accounts WHERE accounts.status=0 AND accounts.deleted=0 AND accounts.id=sip_devices.accountid AND sip_devices.username=\"" ..destination_number .."\" limit 1";
    
-    Logger.debug("[CHECK_LOCAL_CALL_ADV] Query :" .. query)
+    Logger.warning("[CHECK_LOCAL_CALL_ADV] Query :" .. query)
     assert (dbh:query(query, function(u)
         sip2sipinfo = u;
     end))
-	Logger.debug("[CHECK_LOCAL_CALL_ADV] sip2sipinfo")
+	Logger.warning("[CHECK_LOCAL_CALL_ADV] sip2sipinfo")
 	for k, v in pairs(sip2sipinfo) do
-		Logger.debug("[CHECK_LOCAL_CALL_ADV] " .. k .. " : " .. tostring(v))
+		Logger.warning("[CHECK_LOCAL_CALL_ADV] " .. k .. " : " .. tostring(v))
 	end
-	Logger.debug("[CHECK_LOCAL_CALL_ADV] sip_id "..sip2sipinfo['sip_id'])
+	Logger.warning("[CHECK_LOCAL_CALL_ADV] sip_id "..sip2sipinfo['sip_id'])
     return sip2sipinfo;
 end
 
 function sip_device_fail_over(didinfo,xml,destination_number)
-	Logger.debug("[SIP_DEVICE_FAIL_OVER]")
+	Logger.warning("[SIP_DEVICE_FAIL_OVER]")
 	SipDestinationInfo = check_local_call_adv(didinfo['extensions'],didinfo['accountid']) 
 	if(SipDestinationInfo and SipDestinationInfo ~= '')then
 		local sip_routing_arr = sip_routing_info(SipDestinationInfo['sip_id'])
@@ -52,7 +52,6 @@ function sip_device_fail_over(didinfo,xml,destination_number)
 			table.insert(xml, [[<action application="set" data="not_register_flag=]]..sip_routing_arr['not_register_flag']..[["/>]]);
 			table.insert(xml, [[<action application="set" data="not_register_destination=]]..sip_routing_arr['not_register_destination']..[["/>]]);
 			table.insert(xml, [[<action application="set" data="variable_sip_to_host=]]..params:getHeader("variable_sip_to_host")..[["/>]]);
---			table.insert(xml, [[<action application="set" data="variable_sip_to_port=]]..params:getHeader("variable_sip_to_port")..[["/>]]);
 		end 
 		table.insert(xml, [[<action application="set" data="leg_timeout=]]..config['leg_timeout']..[["/>]]);
 		table.insert(xml, [[<action application="set" data="userinfo_id=]]..SipDestinationInfo['accountid']..[["/>]]);
@@ -63,19 +62,17 @@ function sip_device_fail_over(didinfo,xml,destination_number)
 	end
 end
 
-
-
 function sip_device_routing(xml,destination_number,destinationinfo,callerid_array) 
-	Logger.info("[PBX_SIP_ROUTING] SIP ID : "..destinationinfo['sip_id'])
+	Logger.warning("[PBX_SIP_ROUTING] SIP ID : "..destinationinfo['sip_id'])
 	local sip_routing_arr = sip_routing_info(destinationinfo['sip_id'])
 
 		local sip_destination_number = destination_number
 	if sip_routing_arr then
-		Logger.info("[PBX_SIP_ROUTING] Call Forwarding Flag : "..sip_routing_arr['call_forwarding_flag'])
+		Logger.warning("[PBX_SIP_ROUTING] Call Forwarding Flag : "..sip_routing_arr['call_forwarding_flag'])
 		if(tonumber(sip_routing_arr['call_forwarding_flag']) == 0 and sip_routing_arr['call_forwarding_destination'] ~= nil and sip_routing_arr['call_forwarding_destination'] ~= '' and sip_routing_arr['call_forwarding_destination'] ~= '0') then
 			sip_destination_number = sip_routing_arr['call_forwarding_destination']
 			routing_voicemail_number = sip_routing_arr['call_forwarding_destination']
-			Logger.info("[PBX_SIP_ROUTING] SIP Call Forwarding Enable")
+			Logger.warning("[PBX_SIP_ROUTING] SIP Call Forwarding Enable")
 			table.insert(xml, [[<action application="set" data="sip_h_X-call-type=did"/>]]);
 			table.insert(xml, [[<action application="set" data="sip_h_X-did-call-type=LOCAL"/>]]);
 			bridge = "{sip_invite_params=user=LOCAL,sip_from_uri="..sip_routing_arr['call_forwarding_destination'].."@${domain_name}}[leg_timeout="..config['leg_timeout'].."]user/"..sip_routing_arr['call_forwarding_destination'].."@"..params:getHeader("variable_sip_to_host")..""
@@ -83,7 +80,7 @@ function sip_device_routing(xml,destination_number,destinationinfo,callerid_arra
 		else
 			sip_destination_number = destination_number
 			routing_voicemail_number = destination_number
-			Logger.info("[PBX_SIP_ROUTING] SIP Call Forwarding Disable")
+			Logger.warning("[PBX_SIP_ROUTING] SIP Call Forwarding Disable")
 			local sip_call_string = '';
 			sip_call_string = "user/"..destination_number.."@"..params:getHeader("variable_sip_to_host")..""
 			table.insert(xml, [[<action application="set" data="hangup_after_bridge=true"/>]]);
@@ -106,7 +103,7 @@ function sip_device_routing(xml,destination_number,destinationinfo,callerid_arra
 	else
 		sip_destination_number = destination_number
 		routing_voicemail_number = destination_number
-		Logger.info("[PBX_SIP_ROUTING] SIP Call Forwarding Disable")
+		Logger.warning("[PBX_SIP_ROUTING] SIP Call Forwarding Disable")
 		local sip_call_string = '';
 		sip_call_string = "user/"..destination_number.."@"..params:getHeader("variable_sip_to_host")..""
 		table.insert(xml, [[<action application="set" data="hangup_after_bridge=true"/>]]);
@@ -117,7 +114,7 @@ end
 function freeswitch_xml_local(xml,destination_number,destinationinfo,callerid_array)
     local sip_routing_info = sip_routing_info(destinationinfo['sip_id'])
 
-    Logger.info("DESTINATION : "..destination_number)
+    Logger.warning("DESTINATION : "..destination_number)
 
     if(tonumber(sip_routing_info['call_waiting']) == 1) then 
         table.insert(xml, [[<action application="limit" data="hash inbound ]]..destination_number..[[ ]]..sip_routing_info['call_waiting']..[[ !USER_BUSY" />]]);
@@ -154,16 +151,20 @@ function freeswitch_xml_local(xml,destination_number,destinationinfo,callerid_ar
 end
 
 function custom_inbound_0(xml,didinfo,userinfo,config,xml_did_rates,callerid_array,livecall_data)
-	Logger.info("[PBX_SIP_ROUTING] CUSTOM INBOUND 0");
+	Logger.warning("[PBX_SIP_ROUTING] CUSTOM INBOUND 0");
 	config['leg_timeout'] = didinfo['leg_timeout'];
+	did_reverse_rate = didinfo['reverse_rate'];
 	is_local_extension = "1"
 	local bridge_str = ""
 	local destination_str = {}
 	local deli_str = {}
 	string.gsub(didinfo['extensions'], "([,|]+)", function(value) deli_str[#deli_str + 1] =     value;  end);
 	string.gsub(didinfo['extensions'], "([^,|]+)", function(value) destination_str[#destination_str + 1] =     value;  end);
+	if(did_reverse_rate ~= nil and didinfo['reverse_rate'] ~= nil and tonumber(didinfo['reverse_rate']) ~= 1)then
+	table.insert(xml, [[<action application="set" data="calltype=DID-REVERSE"/>]]); 	
+	else		
 	table.insert(xml, [[<action application="set" data="calltype=DID-LOCAL"/>]]); 
-
+    end
 	common_chan_var = "{sip_invite_params=user=LOCAL,sip_from_uri="..didinfo['extensions'].."@${domain_name}}"
 		for i = 1, #destination_str do
 			if notify then notify(xml,destination_str[i]) end
@@ -172,8 +173,8 @@ function custom_inbound_0(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 				bridge_str = bridge_str..deli_str[i]
 			end
 		end
-		-- SipDestinationInfo = check_local_call(didinfo['extensions'],didinfo['accountid'])
-		SipDestinationInfo = check_local_call_adv(didinfo['extensions'])
+		SipDestinationInfo = check_local_call(didinfo['extensions'],didinfo['accountid'])
+		--SipDestinationInfo = check_local_call_adv(didinfo['extensions'])
 		if(SipDestinationInfo and SipDestinationInfo ~= '')then
 			sip_device_routing(xml,didinfo['extensions'],SipDestinationInfo,callerid_array) 
 		else
@@ -186,13 +187,18 @@ end
 
 function custom_inbound_5(xml,didinfo,userinfo,config,xml_did_rates,callerid_array,livecall_data)
 	config['leg_timeout'] = didinfo['leg_timeout'];
+	did_reverse_rate = didinfo['reverse_rate'];
 	is_local_extension = "1"
     local bridge_str = ""
 	local destination_str = {}
 	local deli_str = {}
 	string.gsub(didinfo['extensions'], "([,|]+)", function(value) deli_str[#deli_str + 1] =     value;  end);
 	string.gsub(didinfo['extensions'], "([^,|]+)", function(value) destination_str[#destination_str + 1] =     value;  end);
+    if(did_reverse_rate ~= nil and didinfo['reverse_rate'] ~= nil and tonumber(didinfo['reverse_rate']) ~= 1)then
+	table.insert(xml, [[<action application="set" data="calltype=SIP-DID-REVERSE"/>]]); 	
+	else		
 	table.insert(xml, [[<action application="set" data="calltype=SIP-DID"/>]]); 
+    end
 	local destination_number = didinfo['extensions'];
 		common_chan_var = "{sip_invite_params=user=LOCAL,sip_from_uri="..didinfo['extensions'].."@${domain_name}}"
 		for i = 1, #destination_str do
@@ -217,7 +223,7 @@ function custom_inbound_5(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 end
 
 function recording_dialplan(customer_userinfo,xml,didinfo)
-	Logger.info("[PBX] Call Direction : "..call_direction)
+	Logger.warning("[PBX] Call Direction : "..call_direction)
 	recording_info = get_record_info(customer_userinfo['is_recording'])
 	if(recording_info ~= nil and recording_info['is_recording'] ~= nil and tonumber(recording_info['is_recording']) ~= 1)then
 		customer_userinfo['is_recording'] = recording_info['is_recording'];

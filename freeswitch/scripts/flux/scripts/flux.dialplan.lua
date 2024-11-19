@@ -32,7 +32,7 @@ Logger.info("[Dialplan] Caller number : "..callerid_number)
 
 if (params:getHeader("variable_sip_h_P-Voice_broadcast") == 'true') then
 	destination_number = params:getHeader("variable_sip_h_P-cb_destination")
-	Logger.debug("Clicktocall Destination Number " ..destination_number)
+	Logger.info("Clicktocall Destination Number " ..destination_number)
 end
 
 local cc_access_number = get_cc_access_number(destination_number)
@@ -62,12 +62,7 @@ else
     callerid_number = params:getHeader('Caller-Caller-ID-Number') or ""
     callerid_name = params:getHeader('Caller-Caller-ID-Name') or ""
 end       
-if (tonumber(config['opensips']) == 8 ) then
-    Logger.info("[Dialplan] config opensips")
-    from_ip = "200.159.177.13"
-	callerid_name = params:getHeader('variable_sip_h_P-effective_caller_id_name') or ""
-	callerid_number = params:getHeader('variable_sip_h_P-effective_caller_id_number') or ""
-end
+
 
 --To override custom callerid from addon
 if custom_callerid then custom_callerid() end     
@@ -103,10 +98,8 @@ end
 --accountcode = params:getHeader("variable_accountcode")
 account_user = params:getHeader("variable_sip_h_P-Accountcode")
 if(account_user ~= '' and account_user ~= nil) then
-Logger.info("[Dialplan] Accountcode DEBUG : ".. accountcode)
-end
-if(account_user ~= '' and account_user ~= nil) then
 Logger.info("[Dialplan] Accountcode DEBUG : ".. account_user)
+accountname = account_user
 end
 
 --To override custom calltype
@@ -121,7 +114,8 @@ end
 if accountcode then
 	accountcode_custom = accountcode
 	if(accountcode_custom ~= '' and accountcode_custom ~= nil) then
-		accountcode = accountcode_custom 
+		accountcode = accountcode_custom
+		accountname = accountcode_custom 
 	end
 end
 sipcall = params:getHeader("variable_sipcall")
@@ -129,14 +123,17 @@ call_direction = define_call_direction(destination_number,accountcode,config,cal
 
 Logger.info("[Dialplan] Call direction DEBUG : ".. call_direction)
 
-if (didinfo ~= nil) then
-	accountcode=didinfo['account_code']
-	Logger.info("[Dialplan] accountcode : ".. accountcode)
-end
+--if (didinfo ~= nil) then
+--	accountcode=didinfo['account_code']
+--	did_provider=didinfo['provider_id']
+--	Logger.info("[Dialplan] accountcode : ".. accountcode)
+--	Logger.info("[Dialplan] provider : ".. did_provider)
+--end
 
 
 
 -- If no account code found then do further authentication of call
+
 if (accountcode == nil or accountcode == '') then
 
     from_ip = ""	
@@ -169,7 +166,7 @@ end
 
 -- Still no account code that means call is not authenticated.
 if (accountcode == nil or accountcode == "") then
-  Logger.notice("[Dialplan] Call authentication fail..!!"..config['playback_audio_notification'])
+  Logger.info("[Dialplan] Call authentication fail..!!"..config['playback_audio_notification'])
   error_xml_without_cdr(destination_number,"AUTHENTICATION_FAIL",calltype,config['playback_audio_notification'],'0') 
   return
 end
@@ -180,7 +177,7 @@ Logger.info("[Accountcode : ".. accountcode .."]" );
 --Destination number string 
 number_loop_str = number_loop(destination_number,'blocked_patterns')
 number_loop_str_dest = number_loop(destination_number,'pattern')
-number_loop_str_orig = number_loop(callerid_number,'pattern')
+--number_loop_str_orig = number_loop(callerid_number,'pattern')
 
 
 -- Do authorization
@@ -231,7 +228,7 @@ if(userinfo ~= nil) then
     if(userinfo['ACCOUNT_ERROR'] == 'ACCOUNT_INACTIVE_DELETED') then
 		local accountid = 0
 		if(userinfo['id'] and tonumber(userinfo['id']) > 0)then accountid = userinfo['id'] end
-	Logger.debug("accountid : ".. accountid );
+	Logger.info("accountid : ".. accountid );
 		error_xml_without_cdr(destination_number,"ACCOUNT_INACTIVE_DELETED",calltype,config['playback_audio_notification'],accountid)
 		return 0
     end
@@ -249,7 +246,7 @@ if(userinfo ~= nil) then
 	end
 
 	if(userinfo['local_call'] == '1' and call_direction == "local") then
-        Logger.warning("[Functions] [DOAUTHORIZATION] ["..accountcode.."] LOCAL CALL IS DISABLE....!!");
+        Logger.info("[Functions] [DOAUTHORIZATION] ["..accountcode.."] LOCAL CALL IS DISABLE....!!");
 		call_direction = 'outbound'
 	end
 
@@ -276,7 +273,7 @@ if (userinfo ~= nil) then
 	Logger.info("=============== Account Information ===================")
 	Logger.info("User id : "..userinfo['id'])  
 	Logger.info("Account code : "..userinfo['number'])
-	Logger.debug("Company : "..userinfo['company_name'])
+	Logger.info("Company : "..userinfo['company_name'])
 	Logger.info("Balance : "..get_balance(userinfo,'',config))  
 	Logger.info("Type : "..userinfo['posttoexternal'].." [0:prepaid,1:postpaid]")  
 	Logger.info("Ratecard id : "..userinfo['pricelist_id'])  
@@ -306,15 +303,23 @@ if (userinfo ~= nil) then
 		-- @TODO: Implement localization for DID global translation
 		--destination_number = do_number_translation(config['did_global_translation'],destination_number)
 		destination_number = didinfo['did_number']
-		number_loop_str_orig = number_loop(callerid_number)
+		number_loop_str_orig = number_loop(callerid_number,'pattern')
+--		number_loop_str_orig = number_loop(callerid_number)
 	end     
 
   	number_loop_str = number_loop(destination_number)
+  	
+if (didinfo ~= nil) then
+	accountcode=didinfo['account_code']
+	did_provider=didinfo['provider_id']
+	Logger.info("[Dialplan] accountcode : ".. accountcode)
+	Logger.info("[Dialplan] provider : ".. did_provider)
+end
 
 	-- Fine max length of call based on origination rates.
 	origination_array = get_call_maxlength(userinfo,destination_number,call_direction,number_loop_str,config,didinfo,callerid_number)
 	    
-	if( origination_array == 'NO_SUFFICIENT_FUND' or origination_array == 'ORIGNATION_RATE_NOT_FOUND' or origination_array == 'NO_ROUTE_DESTINATION') then
+	if( origination_array == 'NO_SUFFICIENT_FUND' or origination_array == 'ORIGINATION_RATE_NOT_FOUND' or origination_array == 'NO_ROUTE_DESTINATION') then
 	    error_xml_without_cdr(destination_number,origination_array,calltype,config['playback_audio_notification'],userinfo['id']) 
 	    return
 	end
@@ -333,7 +338,8 @@ if (userinfo ~= nil) then
 
 	if (config['realtime_billing'] == "0" and call_direction == 'inbound' and didinfo['reverse_rate'] == '0') then	
 		did_reverse = didinfo['reverse_rate']
-		Logger.notice("Customer Reverse Rate : "..did_reverse)	
+		Logger.info("Customer Reverse Rate : "..did_reverse)
+		Logger.info("Customer Realtime : "..config['realtime_billing'])	
 --		nibble_id = userinfo['id']
 --		nibble_rate = user_rates['cost']
 --		nibble_connect_cost = user_rates['connectcost']
@@ -363,14 +369,14 @@ if (userinfo ~= nil) then
 	-- Set customer information in new variable
 	customer_userinfo = userinfo
 	rate_carrier_id = user_rates['trunk_id']
-	--~ Logger.notice("Rate carrier ID 555: "..rate_carrier_id)
+--    Logger.info("Rate carrier ID: "..rate_carrier_id)
 	--For live call report display
 	livecall_reseller = "x"
 	------------
     
 	while (tonumber(userinfo['reseller_id']) > 0 and tonumber(maxlength) > 0 ) do
 		number_loop_str = number_loop(destination_number,'blocked_patterns') 
-		Logger.notice("FINDING LIMIT FOR RESELLER: "..userinfo['reseller_id'])
+		Logger.info("FINDING LIMIT FOR RESELLER: "..userinfo['reseller_id'])
 
 		reseller_userinfo = doauthorization("id",userinfo['reseller_id'],call_direction,destination_number,number_loop_str,config)
 
@@ -378,7 +384,7 @@ if (userinfo ~= nil) then
         if(customer_userinfo['pricelist_id_admin'] ~="" and tonumber(customer_userinfo['pricelist_id_admin']) ~=0  and customer_userinfo['pricelist_id_admin'] ~= nil)then
 				reseller_userinfo['pricelist_id']=customer_userinfo['pricelist_id_admin'];
 			        if(tonumber(customer_userinfo['pricelist_id_admin']) ~= 0)then
-					Logger.notice("[Prefix Base Routing] Replace customer_userinfo pricelist id: "..reseller_userinfo['pricelist_id'])
+					Logger.info("[Prefix Base Routing] Replace customer_userinfo pricelist id: "..reseller_userinfo['pricelist_id'])
 				end
 		end		
         if(reseller_userinfo['ACCOUNT_ERROR'] == 'ACCOUNT_INACTIVE_DELETED') then
@@ -398,6 +404,7 @@ if (userinfo ~= nil) then
     
     	-- @TODO: Remove number translation / localization for reseller as we will apply localization to customer directly
 		number_loop_str = number_loop(destination_number)
+--		number_loop_str_orig = number_loop(callerid_number,'pattern')
 		number_loop_str_orig = number_loop(callerid_number)
 		reseller_ids[i] = reseller_userinfo
 	    
@@ -415,7 +422,7 @@ if (userinfo ~= nil) then
 		
 		origination_array_reseller=get_call_maxlength(reseller_userinfo,destination_number,call_direction,number_loop_str,config,didinfo,callerid_number)
 
-        if( origination_array_reseller == 'NO_SUFFICIENT_FUND' or origination_array_reseller == 'ORIGNATION_RATE_NOT_FOUND') then
+        if( origination_array_reseller == 'NO_SUFFICIENT_FUND' or origination_array_reseller == 'ORIGINATION_RATE_NOT_FOUND') then
             error_xml_without_cdr(destination_number,origination_array_reseller,calltype,1,customer_userinfo['id']) 
     	    return
     	end 
@@ -466,22 +473,9 @@ if (userinfo ~= nil) then
 		rate_carrier_id = reseller_rates['trunk_id']
 		userinfo = reseller_userinfo
 	end -- End while 
-		
-	if (config['realtime_billing'] == "0" and call_direction == 'inbound' and didinfo['reverse_rate'] == '0') then
---		Logger.info("NIBBLE ID "..nibble_id)
---		Logger.info("NIBBLE RATE "..nibble_rate)
---		Logger.info("NIBBLE CONNECT COST "..nibble_connect_cost)
---		Logger.info("NIBBLE INITIAL INC "..nibble_init_inc)
---		Logger.info("NIBBLE INC "..nibble_inc)
-    
---		customer_userinfo["nibble_accounts"] = nibble_id
---    	customer_userinfo["nibble_rates"] = nibble_rate
---    	customer_userinfo["nibble_connect_cost"] = nibble_connect_cost
---    	customer_userinfo["nibble_init_inc"] = nibble_init_inc
---    	customer_userinfo["nibble_inc"] = nibble_inc
-	end
+
 	
-		if (config['realtime_billing'] == "0" and call_direction == 'outbound') then
+	if (config['realtime_billing'] == "0" and call_direction == 'outbound') then
 		Logger.info("NIBBLE ID "..nibble_id)
 		Logger.info("NIBBLE RATE "..nibble_rate)
 		Logger.info("NIBBLE CONNECT COST "..nibble_connect_cost)
@@ -511,68 +505,23 @@ if (userinfo ~= nil) then
 	if (call_direction == 'inbound') then
 		-- ********* Check RECEIVER Balance and status of the Account *************
 		local dialuserinfo
-		if(didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")then
+    if(didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")then
 		config['free_inbound'] = 1
+		
 		Logger.info("[DIALPLAN] STRIPCADUP IN")
 --      Exemplos de patterns
 --		num_pattern_0 = "^0([1-9][1-9])(\\d{7,20})$"
 --		num_pattern_cn = "^([1-9][1-9])(\\d{7,8})$"
 --		num_regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
---      num_regex_unknown = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+--    num_regex_unknown = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
 --		num_pattern_local = "^([2-9]\\d{3})(\\d{4})$"
 
---      Exemplos de replace
+--    Exemplos de replace
 
 --		num_pattern_replace = "%1" - Retorna o grupo 1
---      num_pattern_replace = "%2" - Retorna o grupo 2
+--    num_pattern_replace = "%2" - Retorna o grupo 2
 
 		a = callerid_number	        
-		first_dig = string.sub(a, 1, 1)
-		
-		--numero iniciando por 0
-		if(tonumber(first_dig) == 0) then
-		Logger.info("[DIALPLAN] first_dig 0: "..first_dig)
-		cn_dest_number = string.sub(a, 2, 3)
-		area_number = string.sub(a, 1, 2)
-		prefix_dest_number = string.sub(a, 4, 8)
-		end_dest_number = string.sub(a, 8, 12)
-		carrier_dest_number = string.sub(a, 2, 12)
-		-- Chamada local 8 digitos
-		elseif( tonumber(first_dig) > 0 and string.find(a,"^[2-9]%d%d%d%d%d%d%d$")) then
-		Logger.info("[DIALPLAN] first_dig 8 digitos: "..first_dig)
-		cn_dest_number= string.sub(callerid_number, 1, 2)
-		area_number = string.sub(a, 1, 2)
-		prefix_dest_number = string.sub(a, 4, 8)
-		end_dest_number = string.sub(a, 8, 12)
-		carrier_dest_number = cn_dest_number..a
-		
-		-- Chamada local 9 digitos
-		elseif( tonumber(first_dig)  > 0 and string.find(a,"^[2-9]%d%d%d%d%d%d%d%d$")) then
-		Logger.info("[DIALPLAN] first_dig 9 digitos: "..first_dig)
-		cn_dest_number=string.sub(callerid_number, 1, 2)
-		area_number = string.sub(a, 1, 2)
-		prefix_dest_number = string.sub(a, 4, 8)
-		end_dest_number = string.sub(a, 8, 12)
-		carrier_dest_number = cn_dest_number..a
-		
-		-- Chamada LDN Fixo			
-		elseif( tonumber(first_dig)  > 0 and string.find(a,"^[1-9]%d[2-9]%d%d%d%d%d%d%d$")) then
-		Logger.info("[DIALPLAN] first_dig LDN: "..first_dig)
-		cn_dest_number=51
-		area_number = string.sub(a, 1, 2)
-		prefix_dest_number = string.sub(a, 4, 8)
-		end_dest_number = string.sub(a, 8, 12)
-		carrier_dest_number = a
-		else
-		Logger.info("[DIALPLAN] first_dig null: "..first_dig)
-		
-		cn_dest_number = string.sub(a, 1, 3)
-		area_number = string.sub(a, 1, 2)
-		prefix_dest_number = string.sub(a, 4, 8)
-		end_dest_number = string.sub(a, 8, 12)
-		carrier_dest_number = string.sub(a, 2, 12)
-		end
-		
 		
 		num_regex = callerid_number
 		rgx_number = regex_cmd(num_regex,"unknown","0")
@@ -596,11 +545,11 @@ if (userinfo ~= nil) then
 		prefix_dest_number = rgx_prefix_number
 		end_dest_number = rgx_end_number
 		carrier_dest_number = rgx_dest_number
-		Logger.notice("[DIALPLAN] FUNCTION cn_dest_number: "..cn_dest_number)
-		Logger.notice("[DIALPLAN] FUNCTION area_number: "..area_number)
-		Logger.notice("[DIALPLAN] FUNCTION carrier_dest_number: "..carrier_dest_number)
-		Logger.notice("[DIALPLAN] FUNCTION prefix_dest_number: "..prefix_dest_number)
-		Logger.notice("[DIALPLAN] FUNCTION end_dest_number: "..end_dest_number)
+		Logger.info("[DIALPLAN] FUNCTION cn_dest_number: "..cn_dest_number)
+		Logger.info("[DIALPLAN] FUNCTION area_number: "..area_number)
+		Logger.info("[DIALPLAN] FUNCTION carrier_dest_number: "..carrier_dest_number)
+		Logger.info("[DIALPLAN] FUNCTION prefix_dest_number: "..prefix_dest_number)
+		Logger.info("[DIALPLAN] FUNCTION end_dest_number: "..end_dest_number)
 		end
 		
 		
@@ -626,6 +575,11 @@ if (userinfo ~= nil) then
 		didinfo['nomeLocalidade'] = carrier_info['nomeLocalidade']
 		didinfo['areaLocal'] = carrier_info['areaLocal']
 		didinfo['tipo'] = carrier_info['tipo']
+		if(didinfo['tipo'] == 'M' ) then
+		didinfo['tipo'] = 'Movel'
+		else
+		didinfo['tipo'] = 'Fixo'
+		end	
 		didinfo['prefixo'] = carrier_info['prefixo']
 		didinfo['codArea'] = carrier_info['codArea']
 		didinfo['uf'] = carrier_info['uf']		
@@ -635,13 +589,18 @@ if (userinfo ~= nil) then
 		didinfo['carrier_route_id'] = carrier_info['carrier_route_id']
 		didinfo['rate_carrier_id'] = carrier_info['rn1']
 		didinfo['pattern'] = carrier_info['pattern']
+--		check_carrier = user_rates['check_carrier']
 		else
+		didinfo['idCadup'] = 0
+		didinfo['carrier_rn1'] = 0
 		didinfo['rn1'] = 0
 		end
-		
 		else
 		config['free_inbound'] = 0
-		end
+		didinfo['idCadup'] = 0
+		didinfo['carrier_rn1'] = 0
+		didinfo['rn1'] = 0
+		end		
 		Logger.info("[userinfo] INB_FREE:" .. INB_FREE)
 		Logger.info("[userinfo] free_inbound:" .. config['free_inbound'])
 
@@ -652,18 +611,16 @@ if (userinfo ~= nil) then
 			callerid_array['original_cid_name'] = callerid['cid_name']
 			callerid_array['original_cid_number'] = callerid['cid_number']
 		end 
-
 		dialuserinfo = doauthorization('id',didinfo['accountid'],call_direction,destination_number,number_loop,config)	
-
-
 		-- ********* Check & get Dialer Rate card information *********
 		origination_array_DID = ''
-		if(tonumber(config['free_inbound']) == 1)then
---		if(tonumber(config['free_inbound']) == 1 and didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")then
-		Logger.info("[userinfo] Actual origination_array_DID XML DEBUG:")
-			origination_array_DID = get_call_maxlength(customer_userinfo,callerid_number,"outbound",number_loop_str_orig,config,didinfo,callerid_number)
+--		if(tonumber(config['free_inbound']) == 1)then
+		if(tonumber(config['free_inbound']) == 1 and didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")then
+		number_loop_str_orig = number_loop(callerid_number,'pattern')
+		Logger.info("[userinfo] Actual free_inbound 1 origination_array_DID XML DEBUG:")
+			origination_array_DID = get_call_maxlength(customer_userinfo,callerid_number,"inbound",number_loop_str_orig,config,didinfo,callerid_number)
 		else
-		Logger.info("[userinfo] Actual destination_array_DID XML DEBUG:")
+		Logger.info("[userinfo] Actual free_inbound 0 destination_array_DID XML DEBUG:")
 		origination_array_DID = get_call_maxlength(customer_userinfo,destination_number,"inbound",number_loop,config,didinfo,callerid_number)		
 		end
 		local actual_userinfo = customer_userinfo
@@ -671,14 +628,14 @@ if (userinfo ~= nil) then
 		customer_userinfo['id'] = didinfo['accountid'];
 		Logger.info("[userinfo] Actual CustomerInfo XML DEBUG:" .. customer_userinfo['id'])
 		
-		if((origination_array_DID ~= 'ORIGNATION_RATE_NOT_FOUND' and origination_array_DID ~= 'NO_SUFFICIENT_FUND' and origination_array_DID[3] ~= nil and didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")) then 
+		if((origination_array_DID ~= 'ORIGINATION_RATE_NOT_FOUND' and origination_array_DID ~= 'NO_SUFFICIENT_FUND' and origination_array_DID[3] ~= nil and didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")) then 
 			Logger.info("[userinfo] Userinfo XML:" .. customer_userinfo['id']) 
 			xml_did_rates = origination_array_DID[3]
 			if(xml_did_rates == '' or xml_did_rates == nil)
 			then 
 			xml_did_rates = 0			
 			end
-		elseif ((origination_array_DID ~= 'ORIGNATION_RATE_NOT_FOUND' and origination_array_DID ~= 'NO_SUFFICIENT_FUND' and origination_array_DID[3] ~= nil )) then
+		elseif ((origination_array_DID ~= 'ORIGINATION_RATE_NOT_FOUND' and origination_array_DID ~= 'NO_SUFFICIENT_FUND' and origination_array_DID[3] ~= nil )) then
 		Logger.info("[userinfo] Userinfo XML:" .. customer_userinfo['id']) 
 		xml_did_rates = origination_array_DID[3]
 		if(xml_did_rates == '' or xml_did_rates == nil)
@@ -686,7 +643,7 @@ if (userinfo ~= nil) then
 		xml_did_rates = 0			
 		end		
 		else
-			error_xml_without_cdr(destination_number,"ORIGNATION_RATE_NOT_FOUND",calltype,config['playback_audio_notification'],customer_userinfo['id'])
+			error_xml_without_cdr(destination_number,"ORIGINATION_RATE_NOT_FOUND",calltype,config['playback_audio_notification'],customer_userinfo['id'])
 			return
 		end
 		-- ********* END *********
@@ -695,11 +652,11 @@ if (userinfo ~= nil) then
 			customer_userinfo = doauthorization('id',customer_userinfo['reseller_id'],call_direction,destination_number,number_loop,config)	
 			origination_array_DID = get_call_maxlength(customer_userinfo,destination_number,"inbound",number_loop_str,config,didinfo,callerid_number)
 
-			if(origination_array_DID ~= 'ORIGNATION_RATE_NOT_FOUND' and origination_array_DID ~= 'NO_SUFFICIENT_FUND' and origination_array_DID[3] ~= nil) then 
+			if(origination_array_DID ~= 'ORIGINATION_RATE_NOT_FOUND' and origination_array_DID ~= 'NO_SUFFICIENT_FUND' and origination_array_DID[3] ~= nil) then 
 				Logger.info("[userinfo] Userinfo XML:" .. customer_userinfo['id']) 
 				xml_did_rates = xml_did_rates .."||"..origination_array_DID[3]
 			else
-				error_xml_without_cdr(destination_number,"ORIGNATION_RATE_NOT_FOUND",calltype,config['playback_audio_notification'],customer_userinfo['id'])
+				error_xml_without_cdr(destination_number,"ORIGINATION_RATE_NOT_FOUND",calltype,config['playback_audio_notification'],customer_userinfo['id'])
 				return
 			end
 		end
@@ -714,7 +671,7 @@ if (userinfo ~= nil) then
 		xml = freeswitch_xml_inbound(xml,didinfo,actual_userinfo,config,xml_did_rates,callerid_array,livecall_data)
 		xml = freeswitch_xml_footer(xml)	   	    
 		XML_STRING = table.concat(xml, "\n");
-		Logger.debug("[Dialplan] Generated XML:" .. XML_STRING)  
+		Logger.info("[Dialplan] Generated XML:" .. XML_STRING)  
 	elseif (call_direction == 'local') then
 		local SipDestinationInfo;
 		SipDestinationInfo = check_local_call(destination_number,callerid_number)
@@ -724,7 +681,7 @@ if (userinfo ~= nil) then
 		xml = freeswitch_xml_local(xml,destination_number,SipDestinationInfo,callerid_array,livecall_data)
 		xml = freeswitch_xml_footer(xml)	   	    
 		XML_STRING = table.concat(xml, "\n");
-		Logger.debug("[Dialplan] Generated XML:\n" .. XML_STRING)  
+		Logger.info("[Dialplan] Generated XML:\n" .. XML_STRING)  
 
 	else		
 		 force_outbound_routes =0;
@@ -737,59 +694,59 @@ if (userinfo ~= nil) then
 			a = destination_number	        
 			first_dig = string.sub(a, 1, 1)
 			--numero iniciando por 0
-			if( tonumber(first_dig) == 0) then
-				Logger.info("[DIALPLAN] first_dig 0: "..first_dig)
-				cn_dest_number = string.sub(a, 2, 3)
-				area_number = string.sub(a, 1, 2)
-				prefix_dest_number = string.sub(a, 4, 8)
-				end_dest_number = string.sub(a, 8, 12)
-				carrier_dest_number = string.sub(a, 2, 12)
+			if( tonumber(first_dig)  == 0) then
+			Logger.info("[DIALPLAN] first_dig 0: "..first_dig)
+			cn_dest_number = string.sub(a, 2, 3)
+			area_number = string.sub(a, 1, 2)
+			prefix_dest_number = string.sub(a, 4, 8)
+			end_dest_number = string.sub(a, 8, 12)
+			carrier_dest_number = string.sub(a, 2, 12)
 			-- Chamada local 8 digitos
 			elseif( tonumber(first_dig)  > 0 and string.find(a,"^[2-9]%d%d%d%d%d%d%d$")) then
-				Logger.info("[DIALPLAN] first_dig 8 digitos: "..first_dig)
+			Logger.info("[DIALPLAN] first_dig 8 digitos: "..first_dig)
 				cn_dest_number= string.sub(callerid_number, 1, 2)
-				area_number = string.sub(a, 1, 2)
-				prefix_dest_number = string.sub(a, 4, 8)
-				end_dest_number = string.sub(a, 8, 12)
-				carrier_dest_number = cn_dest_number..a
+			area_number = string.sub(a, 1, 2)
+			prefix_dest_number = string.sub(a, 4, 8)
+			end_dest_number = string.sub(a, 8, 12)
+			carrier_dest_number = cn_dest_number..a
 			
 			-- Chamada local 9 digitos
 			elseif( tonumber(first_dig)  > 0 and string.find(a,"^[2-9]%d%d%d%d%d%d%d%d$")) then
-				Logger.info("[DIALPLAN] first_dig 9 digitos: "..first_dig)
+			Logger.info("[DIALPLAN] first_dig 9 digitos: "..first_dig)
 				cn_dest_number=string.sub(callerid_number, 1, 2)
-				area_number = string.sub(a, 1, 2)
-				prefix_dest_number = string.sub(a, 4, 8)
-				end_dest_number = string.sub(a, 8, 12)
-				carrier_dest_number = cn_dest_number..a
-				
+			area_number = string.sub(a, 1, 2)
+			prefix_dest_number = string.sub(a, 4, 8)
+			end_dest_number = string.sub(a, 8, 12)
+			carrier_dest_number = cn_dest_number..a
+			
 			-- Chamada LDN Fixo			
 			elseif( tonumber(first_dig)  > 0 and string.find(a,"^[1-9]%d[2-9]%d%d%d%d%d%d%d$")) then
-				Logger.info("[DIALPLAN] first_dig LDN: "..first_dig)
-				cn_dest_number=51
-				area_number = string.sub(a, 1, 2)
-				prefix_dest_number = string.sub(a, 4, 8)
-				end_dest_number = string.sub(a, 8, 12)
-				carrier_dest_number = cn_dest_number..a
+			Logger.info("[DIALPLAN] first_dig LDN: "..first_dig)
+			cn_dest_number=51
+			area_number = string.sub(a, 1, 2)
+			prefix_dest_number = string.sub(a, 4, 8)
+			end_dest_number = string.sub(a, 8, 12)
+			carrier_dest_number = cn_dest_number..a
 			else
-				Logger.info("[DIALPLAN] first_dig null: "..first_dig)
-				
-				cn_dest_number = string.sub(a, 1, 3)
-				area_number = string.sub(a, 1, 2)
-				prefix_dest_number = string.sub(a, 4, 8)
-				end_dest_number = string.sub(a, 8, 12)
-				carrier_dest_number = string.sub(a, 2, 12)
+			Logger.info("[DIALPLAN] first_dig null: "..first_dig)
+			
+			cn_dest_number = string.sub(a, 1, 3)
+			area_number = string.sub(a, 1, 2)
+			prefix_dest_number = string.sub(a, 4, 8)
+			end_dest_number = string.sub(a, 8, 12)
+			carrier_dest_number = string.sub(a, 2, 12)
 			end
-				Logger.info("=============== Carrier Information ===================")
-				Logger.info("cn_dest_number : "..cn_dest_number)  
-				Logger.info("area_number : "..area_number)  
-				Logger.info("prefix_dest_number : "..prefix_dest_number)  
-				Logger.info("end_dest_number : "..end_dest_number)
-				Logger.info("carrier_dest_number : "..carrier_dest_number)
-				Logger.info("destination_number : "..destination_number)
-				Logger.info("callerid_number : "..callerid_number)
-				userinfo['cn_dest_number'] = cn_dest_number
-				Logger.info("================================================================")  	    		 
-				carrier_info = get_carrier_out (userinfo,cn_dest_number,carrier_dest_number)
+			Logger.info("=============== Carrier Information ===================")
+			Logger.info("cn_dest_number : "..cn_dest_number)  
+			Logger.info("area_number : "..area_number)  
+			Logger.info("prefix_dest_number : "..prefix_dest_number)  
+			Logger.info("end_dest_number : "..end_dest_number)
+			Logger.info("carrier_dest_number : "..carrier_dest_number)
+			Logger.info("destination_number : "..destination_number)
+			Logger.info("callerid_number : "..callerid_number)
+			userinfo['cn_dest_number'] = cn_dest_number
+			Logger.info("================================================================")  	    		 
+			carrier_info = get_carrier_out (userinfo,cn_dest_number,carrier_dest_number)
 		end
 		if(carrier_info ~= nil and carrier_info['carrier_rn1'] ~= nil) then
 		-- Get termination RN1
@@ -816,10 +773,10 @@ if (userinfo ~= nil) then
 	    
 	    for termination_key,termination_value in pairs(termination_rates) do
 		--~ if ( tonumber(termination_value['cost']) > tonumber(user_rates['cost']) ) then		    
-		    	--~ Logger.notice(termination_value['path']..": "..termination_value['cost'] .." > "..user_rates['cost']..", skipping")  
+		    	--~ Logger.info(termination_value['path']..": "..termination_value['cost'] .." > "..user_rates['cost']..", skipping")  
 			    	
 		if (tonumber(termination_value['cost']) > tonumber(user_rates['cost']) ) then	
-			Logger.notice(termination_value['path']..": "..termination_value['cost'] .." > "..user_rates['cost']..", skipping for loss less routing")
+			Logger.info(termination_value['path']..": "..termination_value['cost'] .." > "..user_rates['cost']..", skipping for loss less routing")
 			Logger.info("=============== Termination Rates Information ===================")
 			Logger.info("ID : "..termination_value['outbound_route_id'])
 			Logger.info("Code : "..termination_value['pattern'])
@@ -844,52 +801,52 @@ if (userinfo ~= nil) then
 			Logger.info("Max channels : "..termination_value['maxchannels'])
 			if (carrier_info ~= nil and tonumber(carrier_info['rn1']) ~=nil and tonumber(carrier_info['rn1']) > 0) then
 	--			if(carrier_info ~= nil and carrier_info['rn1'] ~= nil and carrier_info['rn1'] ~= '0') then
-				termination_value['idCadup'] = carrier_info['idCadup']
-				termination_value['carrier_name'] = carrier_info['carrier_name']
-				termination_value['carrier_id'] = carrier_info['carrier_id']			
-				termination_value['carrier_rn1'] = carrier_info['carrier_rn1']
-				termination_value['call_count'] = carrier_info['call_count']
-				termination_value['carrier_route_id'] = carrier_info['id']						
-				termination_value['nomeLocalidade'] = carrier_info['nomeLocalidade']
-				termination_value['nomePrestadora'] = carrier_info['nomePrestadora']
-				termination_value['tipo'] = carrier_info['tipo']
-				if(termination_value['tipo'] == 'M' ) then
-					termination_value['tipo'] = 'Movel'
-				else
-					termination_value['tipo'] = 'Fixo'
-				end	
-				termination_value['prefixo'] = carrier_info['prefixo']
-				termination_value['areaLocal'] = carrier_info['areaLocal']
-				termination_value['codArea'] = carrier_info['codArea']
-				termination_value['uf'] = carrier_info['uf']
-				termination_value['carrier_id'] = carrier_info['id']
-				termination_value['rn1'] = carrier_info['rn1']						
-				if (termination_value['rn1'] ~= nil and termination_value['rn1'] ~= '0') then
-				force_outbound_routes = termination_value['rn1'];
-				Logger.info("force_outbound_routes : "..force_outbound_routes);
-				end
-				Logger.info("idCadup : "..termination_value['idCadup']) 
-				Logger.info("carrier_id : "..termination_value['carrier_id'])      		  
-				Logger.info("nomeLocalidade : "..termination_value['nomeLocalidade'])
-				Logger.info("nomePrestadora : "..termination_value['nomePrestadora'])  		  
-				Logger.info("areaLocal : "..termination_value['areaLocal'])  		      		    
-				Logger.info("tipo : "..termination_value['tipo'])      		  
-				Logger.info("prefixo : "..termination_value['prefixo'])
-				Logger.info("codArea : "..termination_value['codArea'])  		  
-				Logger.info("uf : "..termination_value['uf'])			
-				Logger.info("carrier_name : "..termination_value['carrier_name'])
-				Logger.info("carrier_id : "..termination_value['carrier_id'])
-				Logger.info("carrier_rn1 : "..termination_value['carrier_rn1'])
-				Logger.info("call_count : "..termination_value['call_count'])
-				Logger.info("carrier_route_id: "..termination_value['carrier_route_id'])						  		
-				Logger.info("rn1 : "..termination_value['rn1'])			
+			termination_value['idCadup'] = carrier_info['idCadup']
+			termination_value['carrier_name'] = carrier_info['carrier_name']
+			termination_value['carrier_id'] = carrier_info['carrier_id']			
+			termination_value['carrier_rn1'] = carrier_info['carrier_rn1']
+			termination_value['call_count'] = carrier_info['call_count']
+			termination_value['carrier_route_id'] = carrier_info['id']						
+			termination_value['nomeLocalidade'] = carrier_info['nomeLocalidade']
+			termination_value['nomePrestadora'] = carrier_info['nomePrestadora']
+			termination_value['tipo'] = carrier_info['tipo']
+			if(termination_value['tipo'] == 'M' ) then
+			termination_value['tipo'] = 'Movel'
+			else
+			termination_value['tipo'] = 'Fixo'
+			end	
+			termination_value['prefixo'] = carrier_info['prefixo']
+			termination_value['areaLocal'] = carrier_info['areaLocal']
+			termination_value['codArea'] = carrier_info['codArea']
+			termination_value['uf'] = carrier_info['uf']
+			termination_value['carrier_id'] = carrier_info['id']
+			termination_value['rn1'] = carrier_info['rn1']						
+			if (termination_value['rn1'] ~= nil and termination_value['rn1'] ~= '0') then
+            force_outbound_routes = termination_value['rn1'];
+            Logger.info("force_outbound_routes : "..force_outbound_routes);
+            end
+			Logger.info("idCadup : "..termination_value['idCadup']) 
+			Logger.info("carrier_id : "..termination_value['carrier_id'])      		  
+			Logger.info("nomeLocalidade : "..termination_value['nomeLocalidade'])
+			Logger.info("nomePrestadora : "..termination_value['nomePrestadora'])  		  
+			Logger.info("areaLocal : "..termination_value['areaLocal'])  		      		    
+			Logger.info("tipo : "..termination_value['tipo'])      		  
+			Logger.info("prefixo : "..termination_value['prefixo'])
+			Logger.info("codArea : "..termination_value['codArea'])  		  
+			Logger.info("uf : "..termination_value['uf'])			
+			Logger.info("carrier_name : "..termination_value['carrier_name'])
+			Logger.info("carrier_id : "..termination_value['carrier_id'])
+			Logger.info("carrier_rn1 : "..termination_value['carrier_rn1'])
+			Logger.info("call_count : "..termination_value['call_count'])
+			Logger.info("carrier_route_id: "..termination_value['carrier_route_id'])						  		
+			Logger.info("rn1 : "..termination_value['rn1'])			
 			end	    		
 			custom_calltype = termination_value['comment'];
 			call_typecustom = termination_value['call_type'];
 			userinfo['call_type_custom'] = call_typecustom;
 			Logger.info("Call Type : "..custom_calltype);
 			Logger.info("User Call Type : "..userinfo['call_type_custom']);
-			-- termination_value['trunk_name'] = termination_value['path'];
+--			termination_value['trunk_name'] = termination_value['path'];
 			Logger.info("Trunk Name : "..termination_value['trunk_name'])			
 			termination_value['intcall']=customer_userinfo['international_call']
 			Logger.info("========================END OF TERMINATION RATES=======================")
@@ -935,14 +892,14 @@ if (userinfo ~= nil) then
 		    xml = freeswitch_xml_footer(xml)
 		else
 			-- If no route found for outbound call then send no result dialplan for further process in fs
-			Logger.notice("[Dialplan] No termination rates found...!!!");
+			Logger.info("[Dialplan] No termination rates found...!!!");
 			error_xml_without_cdr(destination_number,"TERMINATION_RATE_NOT_FOUND",calltype,config['playback_audio_notification'],customer_userinfo['id']) 
 			return
 		end  --- IF ELSE END HERE
 		XML_STRING = table.concat(xml, "\n");
-		Logger.debug("[Dialplan] Generated XML:\n" .. XML_STRING)  
+		Logger.info("[Dialplan] Generated XML:\n" .. XML_STRING)  
 	else
-		Logger.notice("[Dialplan] No termination rates found...!!!");
+		Logger.info("[Dialplan] No termination rates found...!!!");
 		error_xml_without_cdr(destination_number,"TERMINATION_RATE_NOT_FOUND",calltype,config['playback_audio_notification'],customer_userinfo['id']);
 		return
 	end

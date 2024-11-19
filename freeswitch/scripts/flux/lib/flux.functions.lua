@@ -23,7 +23,7 @@
 -- Load configuration variables from database 
 function load_conf()
 	local query = "SELECT name,value FROM "..TBL_CONFIG.." WHERE group_title IN ('global','opensips','callingcard','calls','InternationalPrefixes')";
-	Logger.debug("[LOAD_CONF] Query :" .. query)
+	Logger.notice("[LOAD_CONF] Query :" .. query)
 	local config = {}
 	assert (dbh:query(query, function(u)
 		config[u.name] = u.value;      
@@ -34,7 +34,7 @@ end
 -- Get Calling Card Access numbers list
 function get_cc_access_number(destination_number)
         local query = "SELECT access_number FROM accessnumber WHERE access_number = '"..destination_number.."' AND status=0 limit 1";
-        Logger.debug("[get_cc_access_number] Query :" .. query)
+        Logger.notice("[get_cc_access_number] Query :" .. query)
         local cc_access_number;
         assert (dbh:query(query, function(u)
                 cc_access_number = u;
@@ -45,7 +45,7 @@ end
 -- Get Speed dial number value
 function get_speeddial_number(destination_number,accountid)  
 	local query = "SELECT A.number FROM "..TBL_SPEED_DIAL.." as A,"..TBL_USERS.." as B WHERE B.status=0 AND B.deleted=0 AND B.id=A.accountid AND A.speed_num =\"" ..destination_number .."\" AND A.accountid = '"..accountid.."' limit 1";
-	Logger.debug("[CHECK_SPEEDDIAL] Query :" .. query)
+	Logger.notice("[CHECK_SPEEDDIAL] Query :" .. query)
 	assert (dbh:query(query, function(u)
 		speeddial = u;
 	end))
@@ -55,17 +55,15 @@ function get_speeddial_number(destination_number,accountid)
 		return destination_number
 	end
 end
+
 -- Define call direction
-function define_call_direction(destination_number,accountcode,config, callerid_number)  
+function define_call_direction(destination_number,accountcode,config,callerid_number)  
 	local didinfo = check_did(destination_number,config,callerid_number);
-	local diddata = check_did_bkp(destination_number,config,callerid_number);
 	local sip2sipinfo
 	if(didinfo == nil) then
   		sip2sipinfo = check_local_call(destination_number,callerid_number);
 	end
 	if (didinfo ~= nil) then
-		call_direction = "inbound";
-	elseif (diddata ~= nil) then 
 		call_direction = "inbound";
 	elseif (sip2sipinfo ~= nil) then 
 		call_direction = "local";
@@ -92,7 +90,7 @@ function is_did(destination_number,config, callerid_number)
 	end
 	--TODO Change query for check DID avilable or not using left join.
 	local query = "SELECT * FROM "..TBL_DIDS.." WHERE number =\"" ..destination_number .."\" AND (accountid = 0 OR status = 1) LIMIT 1";
-	Logger.debug("[IS_CHECK_DID] Query :" .. query)
+	Logger.notice("[IS_CHECK_DID] Query :" .. query)
 	assert (dbh:query(query, function(u)
 		check_did_info = u;	 
 	end))
@@ -114,55 +112,9 @@ function check_did(destination_number,config,callerid_number)
 	end
 	--TODO Change query for check DID avilable or not using left join.
 	local query = "SELECT A.id as id,A.number as did_number,B.id as accountid,B.number as account_code,B.pricelist_id as pricelist,A.number as did_number,A.connectcost,A.includedseconds,A.cost,A.inc,A.extensions,A.maxchannels,A.call_type,A.hg_type,A.city,A.province,A.init_inc,A.leg_timeout,A.status,A.country_id,A.call_type_vm_flag,A.reverse_rate,A.rate_group,C.`name` as price_name,A.area_code AS area_code,A.provider_id FROM "..TBL_DIDS.." AS A,"..TBL_USERS.." AS B,"..TBL_RATE_GROUP.." AS C WHERE B.status=0 AND B.deleted=0 AND B.id=A.accountid AND A.number =\"" ..destination_number .."\" LIMIT 1";
-	Logger.debug("[CHECK_DID] Query :" .. query)
+	Logger.notice("[CHECK_DID] Query :" .. query)
 	assert (dbh:query(query, function(u)
-		didinfo = u;
-		
-        if(didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0") then
-			Logger.info("[DIALPLAN] STRIPCADUP IN")
-			a = callerid_number	        
-			first_dig = string.sub(a, 1, 2)
-			if( tonumber(first_dig)  == 0) then    
-			cn_dest_number = string.sub(a, 2, 3)
-			area_number = string.sub(a, 1, 2)
-			prefix_dest_number = string.sub(a, 4, 8)
-			end_dest_number = string.sub(a, 8, 12)
-			carrier_dest_number = string.sub(a, 2, 12)
-			elseif( tonumber(first_dig)  > 0 and string.find(a,"^[2-9]%d%d%d%d%d%d%d$")) then
-			cn_dest_number=51
-			area_number = string.sub(a, 1, 2)
-			prefix_dest_number = string.sub(a, 4, 8)
-			end_dest_number = string.sub(a, 8, 12)
-			carrier_dest_number = cn_dest_number..a
-			else
-			cn_dest_number = string.sub(a, 1, 3)
-			area_number = string.sub(a, 1, 2)
-			prefix_dest_number = string.sub(a, 4, 8)
-			end_dest_number = string.sub(a, 8, 12)
-			carrier_dest_number = string.sub(a, 2, 12)
-			end
-			Logger.info("=============== Carrier Information ===================")
-			Logger.info("cn_dest_number : "..cn_dest_number)  
-			Logger.info("area_number : "..area_number)  
-			Logger.info("prefix_dest_number : "..prefix_dest_number)  
-			Logger.info("end_dest_number : "..end_dest_number)
-			Logger.info("carrier_dest_number : "..carrier_dest_number)
-			Logger.info("callerid_number : "..callerid_number)
-			Logger.info("callerid_number : "..callerid_number)
-			userinfo['cn_dest_number'] = cn_dest_number
-			Logger.info("================================================================")  	    		 
-			carrier_info = get_carrier_in(userinfo,cn_dest_number,carrier_dest_number)
-		end
-		if(carrier_info ~= nil and carrier_info['carrier_rn1'] ~= nil) then
-		-- Get termination RN1
-		didinfo['rn1'] = carrier_info['carrier_rn1']
-		rate_carrier_id = carrier_info['rn1']
-		else
-		didinfo['rn1'] = 0
-		end
-
-
-
+		didinfo = u;		       
 		if (did_localization ~= nil) then
 			did_localization['in_caller_id_originate'] = did_localization['in_caller_id_originate']:gsub(" ", "")
 			didinfo['did_cid_translation'] = did_localization['in_caller_id_originate']
@@ -173,51 +125,22 @@ function check_did(destination_number,config,callerid_number)
 	return didinfo;
 end
 
-
-function check_did_bkp(destination_number,config,callerid_number)
-	local did_localization = nil 
-	destination_number = check_local_number(destination_number, callerid_number)
-
-	if (config['did_global_translation'] ~= nil and config['did_global_translation'] ~= '' and tonumber(config['did_global_translation']) > 0) then
-		did_localization = get_localization(config['did_global_translation'],'O')
-		-- @TODO: Apply localization logic for DID global translation
-		if (did_localization ~= nil) then
-			did_localization['number_originate'] = did_localization['number_originate']:gsub(" ", "")
-			destination_number = do_number_translation(did_localization['number_originate'],destination_number)
-		end
-	end
-	--TODO Change query for check DID avilable or not using left join.
-	local query = "SELECT A.id as id,A.number as did_number,B.id as accountid,B.number as account_code,A.number as did_number,A.connectcost,A.includedseconds,A.cost,A.inc,A.extensions,A.maxchannels,A.call_type,A.call_type as calltype,A.city,A.province,A.init_inc,A.leg_timeout,A.status,A.country_id,A.call_type_vm_flag,A.reverse_rate,A.rate_group,A.provider_id FROM "..TBL_DIDS.." AS A,"..TBL_USERS.." AS B WHERE B.status=0 AND B.deleted=0 AND B.id=A.accountid AND A.number =\"" ..destination_number .."\" LIMIT 1";
-	Logger.debug("[CHECK_DID] Query :" .. query)
-	assert (dbh:query(query, function(u)
-		diddata = u;	 
-		-- B.did_cid_translation as did_cid_translation,
-		if (did_localization ~= nil) then	
-			did_localization['in_caller_id_originate'] = did_localization['in_caller_id_originate']:gsub(" ", "")
-			diddata['did_cid_translation'] = did_localization['in_caller_id_originate']
-		else
-			diddata['did_cid_translation'] = ""
-		end
-	end))
-	return diddata;
-end
-
--- Check DID info
+-- Check Call Type
 function check_call_type(userinfo,destination_number,number_loop,call_direction,config)
 	
 	local query = "SELECT A.id as id,A.number as did_number,B.id as accountid,B.number as account_code,B.pricelist_id as pricelist,A.number as did_number,A.connectcost,A.includedseconds,A.cost,A.inc,A.extensions,A.maxchannels,A.call_type,A.hg_type,A.city,A.province,A.init_inc,A.leg_timeout,A.status,A.country_id,A.call_type_vm_flag,A.reverse_rate,A.rate_group,C.`name` as price_name,A.area_code AS area_code FROM "..TBL_DIDS.." AS A,"..TBL_USERS.." AS B,"..TBL_RATE_GROUP.." AS C WHERE B.status=0 AND B.deleted=0 AND A.rate_group = C.id AND B.id=A.accountid AND A.number =\"" ..destination_number .."\" LIMIT 1";
-	Logger.debug("[CHECK_DID] Query :" .. query)
+	Logger.notice("[CHECK_CALLTYPE] Query :" .. query)
 	assert (dbh:query(query, function(u)
 		didinfo = u;
 		if (didinfo['reverse_rate'] == "1") then
-		Logger.warning("[GET_DID_RATE] Reverse :" .. didinfo['reverse_rate'])
-		--Logger.warning("[GET_DID_CLIENT] Client :" .. didinfo['account_code'])
-		Logger.warning("[GET_DID_PRICELIST_ID] Pricelist ID:" .. didinfo['rate_group'])
-		Logger.warning("[GET_DID_PRICELIST_NAME] Pricelist Name:" .. didinfo['price_name'])
-		Logger.warning("[GET_CUSTOMER_AREA_CODE] Area Code:" .. didinfo['area_code'])
+		Logger.notice("[GET_DID_RATE] Reverse :" .. didinfo['reverse_rate'])
+		--Logger.notice("[GET_DID_CLIENT] Client :" .. didinfo['account_code'])
+		Logger.notice("[GET_DID_PRICELIST_ID] Pricelist ID:" .. didinfo['rate_group'])
+		Logger.notice("[GET_DID_PRICELIST_NAME] Pricelist Name:" .. didinfo['price_name'])
+		Logger.notice("[GET_CUSTOMER_AREA_CODE] Area Code:" .. didinfo['area_code'])
 		a = callerid_number
 		area_number = string.sub(a, 1, 2)
-		Logger.warning("[ENTRADA_AREA_CODE] Entrada Area Code:" .. area_number)
+		Logger.notice("[ENTRADA_AREA_CODE] Entrada Area Code:" .. area_number)
 
 end
 
@@ -231,7 +154,7 @@ function check_did_reseller(destination_number,userinfo,config)
 	number_translation = config['did_global_translation'];
 	destination_number = do_number_translation(number_translation,destination_number)   
 	local query = "SELECT A.id as id, A.number AS number,B.cost AS cost,B.connectcost AS connectcost,B.includedseconds AS includedseconds,B.inc AS inc,A.city AS city,A.province,A.call_type,A.hg_type,A.extensions AS extensions,A.maxchannels AS maxchannels,A.init_inc FROM "..TBL_DIDS.." AS A,"..TBL_RESELLER_PRICING.." as B WHERE A.number = \"" ..destination_number .."\"  AND B.type = '1' AND B.reseller_id = \"" ..userinfo['reseller_id'].."\" AND B.note =\"" ..destination_number .."\"";
-	Logger.debug("[CHECK_DID_RESELLER] Query :" .. query)
+	Logger.notice("[CHECK_DID_RESELLER] Query :" .. query)
 	assert (dbh:query(query, function(u)
 		didinfo = u;
 	end))
@@ -241,9 +164,9 @@ end
 -- Check local info 
 function check_local_call(destination_number,callerid_number)
 	destination_number = check_local_number(destination_number,callerid_number)
-	Logger.info("[CHECK_LOCAL_CALL] Check local call for: ".. destination_number)
+	Logger.notice("[CHECK_LOCAL_CALL] Check local call for: ".. destination_number)
 	local query = "SELECT sip_devices.id as sip_id, sip_devices.username as username,accounts.number as accountcode,sip_devices.accountid as accountid,accounts.did_cid_translation as did_cid_translation FROM "..TBL_SIP_DEVICES.." as sip_devices,"..TBL_USERS.." as  accounts WHERE accounts.status=0 AND accounts.deleted=0 AND accounts.id=sip_devices.accountid AND sip_devices.username=\"" ..destination_number .."\" limit 1";
-	Logger.debug("[CHECK_LOCAL_CALL] Query :" .. query)
+	Logger.notice("[CHECK_LOCAL_CALL] Query :" .. query)
 	assert (dbh:query(query, function(u)
 		sip2sipinfo = u;
 	end))
@@ -258,7 +181,7 @@ end
 -- Do IP base authentication 
 function ipauthentication(destination_number,from_ip)
 	local query = "SELECT "..TBL_IP_MAP..".*, (SELECT number FROM "..TBL_USERS.." where id=accountid AND status=0 AND deleted=0) AS account_code FROM "..TBL_IP_MAP.." WHERE INET_ATON(\"" .. from_ip.. "\") BETWEEN(INET_ATON(SUBSTRING_INDEX(`ip`, '/', 1)) & 0xffffffff ^((0x1 <<(32 -  SUBSTRING_INDEX(`ip`, '/', -1))) -1 )) AND(INET_ATON(SUBSTRING_INDEX(`ip`, '/', 1)) |((0x100000000 >> SUBSTRING_INDEX(`ip`,'/', -1)) -1))  AND \"" .. destination_number .. "\"  LIKE CONCAT(prefix,'%') ORDER BY LENGTH(prefix) DESC LIMIT 1"
-	Logger.debug("[IPAUTHENTICATION] Query :" .. query)
+	Logger.notice("[IPAUTHENTICATION] Query :" .. query)
 	local ipinfo;
 	assert (dbh:query(query, function(u)
 		ipinfo = u;
@@ -266,11 +189,12 @@ function ipauthentication(destination_number,from_ip)
 	end))
 	return ipinfo;
 end
+
 -- Do Account authorization
 function doauthorization(field_type,accountcode,call_direction,destination_number,number_loop_str,config)
     local callstart = os.date("!%Y-%m-%d %H:%M:%S")
     local query = "SELECT * FROM "..TBL_USERS.." WHERE "..field_type.." = \""..accountcode.."\" AND deleted = 0 limit 1";
-    Logger.debug("[DOAUTHORIZATION] Query :" .. query)
+    Logger.notice("[DOAUTHORIZATION] Query :" .. query)
     
     userinfo = nil;
     assert (dbh:query(query, function(u)
@@ -286,33 +210,33 @@ function doauthorization(field_type,accountcode,call_direction,destination_numbe
         end
 
 	if (tonumber(userinfo['status']) ~= 0 or tonumber(userinfo['deleted']) ~= 0)then
-	    	Logger.warning("[DOAUTHORIZATION] ["..accountcode.."] Account is either Deactive/Expire or deleted..!!");
+	    	Logger.notice("[DOAUTHORIZATION] ["..accountcode.."] Account is either Deactive/Expire or deleted..!!");
 		userinfo['ACCOUNT_ERROR'] = 'ACCOUNT_INACTIVE_DELETED'
 	    	return userinfo
 	end
 	if (userinfo['expiry'] < callstart)then
 		if(userinfo['expiry'] ~= '0000-00-00 00:00:00')then
-		    	Logger.warning("[DOAUTHORIZATION] ["..accountcode.."] Account is expired..!!");
+		    	Logger.notice("[DOAUTHORIZATION] ["..accountcode.."] Account is expired..!!");
 			userinfo['ACCOUNT_ERROR'] = 'ACCOUNT_EXPIRE'
 		    	return userinfo
 		end
 	end
     	balance = get_balance(userinfo,'',config);
     	if (balance < 0) then
-    	    Logger.warning("[DOAUTHORIZATION] ["..accountcode.."] Insufficent balance ("..balance..") to make calls..!!");
+    	    Logger.notice("[DOAUTHORIZATION] ["..accountcode.."] Insufficent balance ("..balance..") to make calls..!!");
 --    	    userinfo['ACCOUNT_ERROR'] = 'NO_SUFFICIENT_FUND'
     	else
     	    if (call_direction == 'outbound') then
 				number_loop_str = number_loop(destination_number,'blocked_patterns')
     		    if (check_blocked_prefix (userinfo,destination_number,number_loop_str) == "false") then
-	    	        Logger.warning("[DOAUTHORIZATION] ["..accountcode.."] You are not allowed to dial number..!!");
+	    	        Logger.notice("[DOAUTHORIZATION] ["..accountcode.."] You are not allowed to dial number..!!");
                     userinfo['ACCOUNT_ERROR'] = 'DESTINATION_BLOCKED'
 	    	        return userinfo
 	    	    end
 	        end
 	    end
     else
-    	Logger.warning("[DOAUTHORIZATION] ["..accountcode.."] Account is either Deactive/Expire or deleted..!!");
+    	Logger.notice("[DOAUTHORIZATION] ["..accountcode.."] Account is either Deactive/Expire or deleted..!!");
     	userinfo = {}
         userinfo['ACCOUNT_ERROR'] = 'ACCOUNT_INACTIVE_DELETED'
     	return userinfo
@@ -329,37 +253,17 @@ end
 
 function check_local_number(destination_number, callerid_number)
 	if string.len(destination_number) == 8  and callerid_number then
-		Logger.info("[CHECK_LOCAL_NUMBER] Local Call: "..destination_number)
+		Logger.notice("[CHECK_LOCAL_NUMBER] Local Call: "..destination_number)
 		local cn_callerid_number = string.sub(callerid_number, 1, 2)
-		Logger.info("[CHECK_LOCAL_NUMBER] CN of Caller Number: "..cn_callerid_number)
+		Logger.notice("[CHECK_LOCAL_NUMBER] CN of Caller Number: "..cn_callerid_number)
 		destination_number = cn_callerid_number .. destination_number
-		Logger.info("[CHECK_LOCAL_NUMBER] Formatted Number: "..destination_number)
+		Logger.notice("[CHECK_LOCAL_NUMBER] Formatted Number: "..destination_number)
 	end
 
 	return destination_number
 end
 
 -- Get balance from account info 
-function get_balance_old(userinfo,rates,config)
-
-	-- If call found as international call then get balance from international balance and credit field
-	local tmp_prefix=''
-	if get_international_balance_prefix then tmp_prefix = get_international_balance_prefix(userinfo) end 	
-
-    balance = tonumber(userinfo['posttoexternal']) == 1 and tonumber(userinfo[tmp_prefix..'credit_limit'])+(tonumber(userinfo[tmp_prefix..'balance'])*(-1)) or tonumber(userinfo[tmp_prefix..'balance'])
-    -- Override balance if call is DID / inbound and coming from provider to avoid provider balance checking upon DID call. 
-    if (userinfo['type'] == '3' and call_direction == 'inbound') then
-    Logger.notice("DID DEBUG")
-    --userinfo['id'] = didinfo['accountid']
-    Logger.warning("[GET_DID_CLIENT] Client :" .. didinfo['accountid'])
-    -- Logger.warning("[GET_USER_ID] User ID :" .. userinfo['id'])
-          balance = 10000
-    end
-
-    if fraud_check_balance_update then balance=fraud_check_balance_update(userinfo,balance,rates) end
-    return balance
-end
-
 -- Get balance mudanca bilhetagem
 function get_balance(userinfo,rates,config)
 
@@ -380,7 +284,7 @@ end
 function update_first_used_account(userinfo)
 	local callstart = os.date("!%Y-%m-%d %H:%M:%S")
 	local query = "update "..TBL_USERS.." SET first_used = '"..callstart .."' where id = '"..userinfo['id'].."'"
-	Logger.debug("[update_first_used_account] Query :" .. query)
+	Logger.notice("[update_first_used_account] Query :" .. query)
 	assert (dbh:query(query))
 	return true
 end
@@ -389,7 +293,7 @@ end
 function check_blocked_prefix(userinfo,destination_number,number_loop)
     local flag = "true"    
     local query = "SELECT * FROM "..TBL_BLOCK_PREFIX.." WHERE "..number_loop.." AND accountid = "..userinfo['id'].. " limit 1 ";
-    Logger.debug("[CHECK_BLOCKED_PREFIX] Query :" .. query)
+    Logger.notice("[CHECK_BLOCKED_PREFIX] Query :" .. query)
     assert (dbh:query(query, function(u)
     	flag = "false"
     end))
@@ -406,7 +310,7 @@ function get_localization (id,type)
 	elseif(type=="Trunk") then
 		query = "SELECT id,out_caller_id_terminate,number_terminate,dst_base_cid FROM "..TBL_LOCALIZATION.." WHERE id=(SELECT localization_id from trunks where id = "..id.. ") AND status=0 limit 1 ";
 	end
-    Logger.debug("[GET_LOCALIZATION] Query :" .. query)
+    Logger.notice("[GET_LOCALIZATION] Query :" .. query)
     assert (dbh:query(query, function(u)
     	localization = u
     end))
@@ -456,26 +360,26 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
     local xml_rates
 	local tmp = {}
     if( call_direction == "inbound" and didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0") then
-       Logger.warning("[DID PRICE] PRICE!!!")
+       Logger.notice("[DID PRICE] PRICE!!!")
 		userinfo['pricelist_id'] = didinfo['rate_group'];
 	end
-	Logger.warning("[get_call_maxlength] get_pricelists!!!")
-    rate_group = get_pricelists (userinfo,destination_number,number_loop,call_direction)
+	Logger.notice("[get_call_maxlength] get_pricelists!!!")
+    rate_group = get_pricelists(userinfo,destination_number,number_loop,call_direction)
     
     if (rate_group == nil) then
-		Logger.warning("[FIND_MAXLENGTH] Rate group not found or Inactive!!!")
-		return 'ORIGNATION_RATE_NOT_FOUND'
+		Logger.notice("[FIND_MAXLENGTH] Rate group not found or Inactive!!!")
+		return 'ORIGINATION_RATE_NOT_FOUND'
 	end
 	if (call_direction == "local" and config['free_inbound'] ~= nil) then
-	    Logger.warning("[call_direction] local!!!")
+	    Logger.notice("[call_direction] local!!!")
 		rates = {}
 		rates['pattern'] = '^'..destination_number..".*"
 		rates['comment'] = "Local"
 		rates['inc'] = 60
 		rates['call_type'] = 0
-		Logger.warning("[FIND_MAXLENGTH] free_inbound!!!"..config['free_inbound'])
+		Logger.notice("[FIND_MAXLENGTH] free_inbound!!!"..config['free_inbound'])
 		rates['cost'] = userinfo['charge_per_min']
-		Logger.warning("[FIND_MAXLENGTH] charge_per_min!!!"..userinfo['charge_per_min'])
+		Logger.notice("[FIND_MAXLENGTH] charge_per_min!!!"..userinfo['charge_per_min'])
 		if (userinfo['charge_per_min'] == "") then
 			rates['cost']=0
 		end		
@@ -488,22 +392,15 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
 			rates['country_id']=28
 		end
 	else
-        Logger.warning("[rates] get_rates!!!")
-        rates = get_rates (userinfo,destination_number,number_loop,call_direction,config,callerid_number)               
+        Logger.notice("[rates] get_rates!!!")
+        rates = get_rates(userinfo,destination_number,number_loop,call_direction,config,callerid_number)               
 		if (rates == nil) then
-			Logger.warning("[FIND_MAXLENGTH] Rates not found!!!")
-			return 'ORIGNATION_RATE_NOT_FOUND'
+			Logger.notice("[FIND_MAXLENGTH] Rates not found!!!")
+			return 'ORIGINATION_RATE_NOT_FOUND'
 		end
 		if( call_direction == "inbound" ) then
 		rates['calltype'] = rates['call_type']
 		rates['custom_call_type'] = rates['call_type']
-
---		didinfo['cadupCN'] = rates['cadupCN'];
---		didinfo['cadupAreaNum'] = rates['cadupAreaNum'];
---		didinfo['cadupPrefix'] = rates['cadupPrefix'];
---		didinfo['cadupFaixaFim'] = rates['cadupFaixaFim'];
---        cadup_number = number_loop(a,'pattern')
---        cadup = get_cadup (userinfo,destination_number,number_loop,call_direction,config)
 		rates['pattern'] = '^'..destination_number..".*"
 		if (rates['city'] ~= '' and rates['province'] ~= "" ) then 
 				rates['comment'] =  rates['city'] .. " " .. rates['province']
@@ -515,40 +412,40 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
         rates['custom_call_type'] = "Local";
         end
         if (tonumber(rate_group['markup']) > 0) then
-            Logger.info("Markup : "..rate_group['markup'])  
+            Logger.notice("Markup : "..rate_group['markup'])  
             rates['cost'] = rates['cost'] + ((rate_group['markup']*rates['cost'])/100)
 	    end
         if (rates['calltype'] ~= '' and rates['call_type'] ~= "" ) then
         calltype = rates['calltype']
         userinfo['calltype'] = rates['calltype']
-        Logger.info("CallType : "..rates['calltype'])
+        Logger.notice("CallType : "..rates['calltype'])
         end
         if (rates['custom_call_type'] == '' or rates['custom_call_type'] == nil ) then
         rates['custom_call_type'] = "0";
         end
-		Logger.info("=============== Rates Information get_call_maxlength ===================")
-		Logger.info("ID : "..rates['id'])  
-		Logger.info("Connectcost : "..rates['connectcost'])  
-		Logger.info("Includedseconds : "..rates['includedseconds'])  
-		Logger.info("Cost : "..rates['cost'])
-		Logger.info("Comment : "..rates['calltype'])
-		Logger.info("CallType : "..rates['call_type'])
+		Logger.notice("=============== Rates Information get_call_maxlength ===================")
+		Logger.notice("ID : "..rates['id'])  
+		Logger.notice("Connectcost : "..rates['connectcost'])  
+		Logger.notice("Includedseconds : "..rates['includedseconds'])  
+		Logger.notice("Cost : "..rates['cost'])
+		Logger.notice("Comment : "..rates['calltype'])
+		Logger.notice("CallType : "..rates['call_type'])
 		if(rate_group['check_carrier'] ~= nil)then 
-		Logger.info("check_carrier: "..rate_group['check_carrier']) 
+		Logger.notice("check_carrier: "..rate_group['check_carrier']) 
 		if(rate_group['check_carrier'] == '1') then
 		rates['check_carrier'] = rate_group['check_carrier']
 --		rates['routing_type'] = 4
 		end
 		end
 		
---		Logger.info("Custom CallType : "..rates['custom_call_type'])
+--		Logger.notice("Custom CallType : "..rates['custom_call_type'])
 
-        if(rates['custom_call_type'] ~= nil)then Logger.info("Custom CallType: "..rates['custom_call_type']) end
-		Logger.info("Country Id : "..rates['country_id'])
-		Logger.info("Accid : "..userinfo['id'])
-		if(rates['trunk_id'] ~= nil)then Logger.info("Trunk ID: "..rates['trunk_id']) end
-		if(rates['routing_type'] ~= nil)then Logger.info("Routing type: "..rates['routing_type']) end
-		Logger.info("================================================================")  
+        if(rates['custom_call_type'] ~= nil)then Logger.notice("Custom CallType: "..rates['custom_call_type']) end
+		Logger.notice("Country Id : "..rates['country_id'])
+		Logger.notice("Accid : "..userinfo['id'])
+		if(rates['trunk_id'] ~= nil)then Logger.notice("Trunk ID: "..rates['trunk_id']) end
+		if(rates['routing_type'] ~= nil)then Logger.notice("Routing type: "..rates['routing_type']) end
+		Logger.notice("================================================================")  
 	end
     --rates['routing_type'] = rate_group['routing_type']		
 	if( call_direction == "inbound" ) then
@@ -556,11 +453,20 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
 			didinfo['accountid'] = userinfo['id'];
 		end
 		if(didinfo['reverse_rate'] == '0') then
-		call_type_rate = didinfo['call_type_rate'];
+		if(didinfo['idCadup'] == nil) then
+			didinfo['idCadup'] = 0;
+		end
+		if(didinfo['carrier_rn1'] == nil) then
+			didinfo['carrier_rn1'] = 0;
+		end
+		call_type_rate = didinfo['rate_group'];
 		if (call_type_rate == nil) then
-		Logger.warning("[FIND_DID_RATE] DID Rate group not found or Inactive!!!")
-		return 'ORIGNATION_RATE_NOT_FOUND'
+		Logger.notice("[FIND_DID_RATE] DID Rate group not found or Inactive!!!")
+		return 'ORIGINATION_RATE_NOT_FOUND'
 	     end
+		if(didinfo['pattern'] == nil) then
+		   didinfo['pattern'] = callerid_number;			
+		end
 		rates['cost'] = didinfo['cost'];
 		rate_group['id'] = didinfo['rate_group'];
 		rates['connectcost'] = didinfo['connectcost']
@@ -570,11 +476,12 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
 		rates['routing_type'] = didinfo['routing_type']
 		rates['comment'] = didinfo['did_number']		
 		rates['pattern'] = didinfo['pattern']
-		xml_rates = "ID:"..rates['id'].."|CODE:"..rates['pattern'].."|DESTINATION:"..rates['comment'].."|CONNECTIONCOST:"..rates['connectcost'].."|INCLUDEDSECONDS:"..rates['includedseconds'].."|CT:"..didinfo['call_type_rate'].."|COST:"..rates['cost'].."|INC:"..rates['inc'].."|INITIALBLOCK:"..rates['init_inc'].."|RATEGROUP:"..rate_group['id'].."|MARKUP:"..rate_group['markup'].."|CI:"..rates['country_id'].."|ACCID:"..didinfo['accountid'];
-		Logger.info("[xml_rates-586] xml_rates "..xml_rates.."")
+		
+		xml_rates = "ID:"..rates['id'].."|CODE:"..rates['pattern'].."|DESTINATION:"..rates['comment'].."|CONNECTIONCOST:"..rates['connectcost'].."|INCLUDEDSECONDS:"..rates['includedseconds'].."|IDCADUP:"..didinfo['idCadup'].."|CT:"..didinfo['call_type'].."|COST:"..rates['cost'].."|INC:"..rates['inc'].."|INITIALBLOCK:"..rates['init_inc'].."|RATEGROUP:"..rate_group['id'].."|MARKUP:"..rate_group['markup'].."|CI:"..rates['country_id'].."|ACCID:"..didinfo['accountid'];
+		Logger.notice("[xml_rates-586] xml_rates "..xml_rates.."")
 		else
 		xml_rates = "ID:"..rates['id'].."|CODE:"..rates['pattern'].."|DESTINATION:"..rates['comment'].."|CONNECTIONCOST:"..rates['connectcost'].."|INCLUDEDSECONDS:"..rates['includedseconds'].."|CT:"..rates['custom_call_type'].."|COST:"..rates['cost'].."|INC:"..rates['inc'].."|INITIALBLOCK:"..rates['init_inc'].."|RATEGROUP:"..rate_group['id'].."|MARKUP:"..rate_group['markup'].."|CI:"..rates['country_id'].."|ACCID:"..didinfo['accountid'];
-		Logger.info("[xml_rates-589] xml_rates "..xml_rates.."")
+		Logger.notice("[xml_rates-589] xml_rates "..xml_rates.."")
 		end
 	else
 		if( tonumber(rates['inc'])  == 0 or rates['inc'] == "" ) then
@@ -587,19 +494,19 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
 			rates['init_inc']=0;
 		end
 		if (rates['custom_call_type'] == nil) then
-				Logger.warning("[FIND_DID_RATE] DID Rate group not found or Inactive!!!")
+				Logger.notice("[FIND_DID_RATE] DID Rate group not found or Inactive!!!")
 				rates['custom_call_type'] = rates['call_type']
 			     end
 		if (rates['country_id']==nil) then rates['country_id']=28 end		
 		xml_rates = "ID:"..rates['id'].."|CODE:"..rates['pattern'].."|DESTINATION:"..rates['comment'].."|CONNECTIONCOST:"..rates['connectcost'].."|INCLUDEDSECONDS:"..rates['includedseconds'].."|CT:"..rates['custom_call_type'].."|COST:"..rates['cost'].."|INC:"..rates['inc'].."|INITIALBLOCK:"..rates['init_inc'].."|RATEGROUP:"..rate_group['id'].."|MARKUP:"..rate_group['markup'].."|CI:"..rates['country_id'].."|ACCID:"..userinfo['id'];
-		Logger.info("[xml_rates-603] xml_rates "..xml_rates.."")
+		Logger.notice("[xml_rates-603] xml_rates "..xml_rates.."")
 
 	end
 
 	balance = get_balance(userinfo,'',config)
-	      Logger.info("[FIND_MAXLENGTH] Your"..balance.." balance Accountid "..userinfo['id'].." !!!")
+	      Logger.notice("[FIND_MAXLENGTH] Your"..balance.." balance Accountid "..userinfo['id'].." !!!")
 	if (balance < (rates['connectcost'] + rates['cost']) and tonumber(package_id) == 0) then
-	      Logger.info("[FIND_MAXLENGTH] Your balance is not sufficent to dial "..destination_number.." !!!")
+	      Logger.notice("[FIND_MAXLENGTH] Your balance is not sufficent to dial "..destination_number.." !!!")
 	      return 'NO_SUFFICIENT_FUND'
 	end
 	if (tonumber(rates['cost']) > 0 ) then
@@ -628,34 +535,34 @@ end
 function get_rates(userinfo,destination_number,number_loop,call_direction,config,callerid_number)
     
 	local rates_info
-    	Logger.debug("[GET_RATES] call_direction :" .. call_direction)
+    	Logger.notice("[GET_RATES] call_direction :" .. call_direction)
 	if call_direction == "inbound" then
-		Logger.debug("[GET_RATES] callerid_number :" .. callerid_number)
+		Logger.notice("[GET_RATES] callerid_number :" .. callerid_number)
 		rates_info = check_did(destination_number,config,callerid_number)
 	else 
 		local query  = "SELECT "..TBL_CALL_TYPE..".call_type as calltype, "..TBL_ORIGINATION_RATES..".call_type as custom_call_type, "..TBL_ORIGINATION_RATES..".* FROM "..TBL_ORIGINATION_RATES..","..TBL_CALL_TYPE.." WHERE ("..TBL_ORIGINATION_RATES..".call_type = "..TBL_CALL_TYPE..".id  OR routes.comment = calltype.call_type) AND "..number_loop.." AND "..TBL_ORIGINATION_RATES..".status = 0 AND (pricelist_id = "..userinfo['pricelist_id'].." OR accountid="..userinfo['id']..")  ORDER BY accountid DESC,LENGTH(pattern) DESC,cost DESC LIMIT 1";
     	
-		Logger.debug("[GET_RATES] Query :" .. query)
+		Logger.notice("[GET_RATES] Query :" .. query)
 		assert (dbh:query(query, function(u)
     		rates_info = u
     		calltype_custom = rates_info['custom_call_type']
     		calltype = rates_info['calltype']
     		rates_info['call_type'] = calltype
     		rates_info['call_type_custom'] = calltype_custom
-    		Logger.debug("[GET_RATES] CallType Custom :" .. calltype_custom)
-    		Logger.debug("[GET_RATES] calltype Rates:" .. calltype)
-    		Logger.debug("[GET_RATES] rates_info :" .. rates_info['call_type'])
-    		Logger.debug("[GET_RATES] rates_info_custom :" .. rates_info['call_type_custom'])
+    		Logger.notice("[GET_RATES] CallType Custom :" .. calltype_custom)
+    		Logger.notice("[GET_RATES] calltype Rates:" .. calltype)
+    		Logger.notice("[GET_RATES] rates_info :" .. rates_info['call_type'])
+    		Logger.notice("[GET_RATES] rates_info_custom :" .. rates_info['call_type_custom'])
     	end))  
 	end
 	return rates_info
 end
 
 -- get pricelist information 
-function get_pricelists (userinfo,destination_number,number_loop,call_direction) 
+function get_pricelists(userinfo,destination_number,number_loop,call_direction) 
 	local query = "select * from "..TBL_RATE_GROUP.." WHERE id = " ..userinfo['pricelist_id'].." AND status = 0";
 	local rategroup_info
-	Logger.debug("[GET_PRICELIST_INFO] Query :" .. query)
+	Logger.notice("[GET_PRICELIST_INFO] Query :" .. query)
 	assert (dbh:query(query, function(u)
 		rategroup_info = u
 	end))  
@@ -672,12 +579,12 @@ function get_pricelists (userinfo,destination_number,number_loop,call_direction)
 end
 
 -- get intial package information
-function package_calculation (destination_number,userinfo,call_direction)
+function package_calculation(destination_number,userinfo,call_direction)
 	local package_act_id =  userinfo['id']
 	if(call_direction == 'inbound')then
-		Logger.debug("[GET_PACKAGE_INFO] call_direction :" .. call_direction)
+		Logger.notice("[GET_PACKAGE_INFO] call_direction :" .. call_direction)
 		if(didinfo and didinfo['accountid'] ~= '')then
-			Logger.debug("[GET_PACKAGE_INFO] DID_ACCOUNTID :" .. didinfo['accountid'])
+			Logger.notice("[GET_PACKAGE_INFO] DID_ACCOUNTID :" .. didinfo['accountid'])
 			package_act_id =   didinfo['accountid']
 		end
 	end
@@ -688,7 +595,7 @@ function package_calculation (destination_number,userinfo,call_direction)
 	local package_info_arr = {}   
 	local i = 1  
 	local query = "SELECT *,P.id as package_id,P.product_id as product_id FROM ".. TBL_PACKAGE_CALL.." as P inner join "..TBL_PACKAGE_PATTERN.." as PKGPTR on P.product_id = PKGPTR.product_id WHERE ".. custom_destination.." AND accountid = ".. package_act_id .. " and is_terminated = 0 ORDER BY LENGTH(PKGPTR.patterns) DESC";
-	Logger.debug("[GET_PACKAGE_INFO] Query :" .. query)
+	Logger.notice("[GET_PACKAGE_INFO] Query :" .. query)
 	assert (dbh:query(query, function(u)
 		package_info_arr[i] = u
 	    	i = i+1
@@ -698,9 +605,9 @@ function package_calculation (destination_number,userinfo,call_direction)
 		for package_info_key,package_info in pairs(package_info_arr) do
 			--local counter_info = {}
 			local used_seconds = 0
-			Logger.info("Package ID : "..package_info['package_id'] );
-			Logger.info("Product ID : "..package_info['product_id'] );
-			Logger.info("Package Type : "..package_info['applicable_for'] .. " Call Direction : "..call_direction .." [0:inbound,1:outbound,2:both]");
+			Logger.notice("Package ID : "..package_info['package_id'] );
+			Logger.notice("Product ID : "..package_info['product_id'] );
+			Logger.notice("Package Type : "..package_info['applicable_for'] .. " Call Direction : "..call_direction .." [0:inbound,1:outbound,2:both]");
 			if( (package_info['applicable_for'] == "0" and call_direction == "inbound") or (package_info['applicable_for'] == "1" and call_direction == "outbound") or (package_info['applicable_for'] == "2") ) then
 				local counter_info =  get_counters(userinfo,package_info,package_act_id)
 				if(counter_info == nil or counter_info['used_seconds'] == nil) then
@@ -709,7 +616,7 @@ function package_calculation (destination_number,userinfo,call_direction)
 					used_seconds = counter_info['used_seconds']
 				end			
 				remaining_minutes = (tonumber(package_info['free_minutes']*60) - tonumber(used_seconds))/60
-				Logger.info("Remaining minutes : "..remaining_minutes)
+				Logger.notice("Remaining minutes : "..remaining_minutes)
 				if(remaining_minutes > 0) then
 					if (tonumber(balance) <= 0) then
 						userinfo['balance'] = 100
@@ -735,7 +642,7 @@ end
 function get_counters(userinfo,package_info,package_act_id)
 	local counter_info;
 	local query_counter = "SELECT used_seconds FROM ".. TBL_COUNTERS.."  WHERE  accountid = "..package_act_id.." AND package_id = ".. package_info['package_id'] .." AND status=1 LIMIT 1";
-		Logger.debug("[GET_COUNTER_INFO] Query :" .. query_counter)
+		Logger.notice("[GET_COUNTER_INFO] Query :" .. query_counter)
 		assert (dbh:query(query_counter, function(u)
 			counter_info = u
 		end))
@@ -750,42 +657,42 @@ function get_carrier_rates(destination_number,number_loop_str,ratecard_id,rate_c
 	local query
     if (check_carrier ~= '' or check_carrier ~= nil )then
 	if(check_carrier == "1") then
-		routing_type = "4"		
+	routing_type = "4"		
 	end	
 	end
 	if(routing_type == "1") then
-	Logger.debug("[GET_CARRIER_RATES_TRUNKS] routing_type 1:" .. routing_type)
+	Logger.notice("[GET_CARRIER_RATES_TRUNKS] routing_type 1:" .. routing_type)
 		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech, TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	elseif(routing_type == "4") then
-	Logger.debug("[GET_CARRIER_RATES_TRUNKS] routing_type 4:" .. routing_type)
+	Logger.notice("[GET_CARRIER_RATES_TRUNKS] routing_type 4:" .. routing_type)
 			query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech,TK.carrier_id,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	else
-	Logger.debug("[GET_CARRIER_RATES_TRUNKS] routing_type :" .. routing_type)
+	Logger.notice("[GET_CARRIER_RATES_TRUNKS] routing_type :" .. routing_type)
 		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech, TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.comment,TR.call_type,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM "..TBL_TERMINATION_RATES.." as TR,"..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	end
 	if(rate_carrier_id and rate_carrier_id ~= nil and rate_carrier_id ~= '0' and string.len(rate_carrier_id) >= 1 ) then
-		if(rate_carrier_id == "0") then
-			query = query.." AND TR.trunk_id is not null "
-		elseif(routing_type == "4") then
-			query = query.." AND TR.trunk_id is not null AND TK.tech = "..rate_carrier_id..""
+	 if(rate_carrier_id == "0") then
+		query = query.." AND TR.trunk_id is not null "
+	elseif(routing_type == "4") then
+	  query = query.." AND TR.trunk_id is not null AND TK.tech = "..rate_carrier_id..""
 		else
 			query = query.." AND TK.id IN ("..rate_carrier_id..") "
 		end
 	else
-		trunk_ids = {}
+		trunk_ids={}
 		local query_trunks  = "SELECT GROUP_CONCAT(trunk_id) as ids FROM "..TBL_ROUTING.." WHERE pricelist_id="..ratecard_id.." ORDER by id asc";   
 		
-		Logger.debug("[GET_CARRIER_RATES_TRUNKS] Query :" .. query_trunks)
+		Logger.notice("[GET_CARRIER_RATES_TRUNKS] Query :" .. query_trunks)
 		assert (dbh:query(query_trunks, function(u)
 			trunk_ids = u
 		end))
 		if (trunk_ids['ids'] == "" or trunk_ids['ids'] == nil) then
-			trunk_ids['ids'] = 0
+			trunk_ids['ids']=0
 		end
 		if(trunk_id == 0) then
-			query = query.." AND TR.trunk_id is not null"
+		query = query.." AND TR.trunk_id is not null"
 		else
-			query = query.." AND TR.trunk_id IN ("..trunk_ids['ids']..")"
+		query = query.." AND TR.trunk_id IN ("..trunk_ids['ids']..")"
 		end
 	end
 	if(routing_type == "1") then
@@ -795,7 +702,7 @@ function get_carrier_rates(destination_number,number_loop_str,ratecard_id,rate_c
 	else
 		query = query.." ORDER by LENGTH (pattern) DESC,TR.cost ASC,TR.precedence ASC, TK.precedence"
 	end
-	Logger.debug("[GET_CARRIER_RATES] Query :" .. query)
+	Logger.notice("[GET_CARRIER_RATES] Query :" .. query)
 	local i = 1
 	local carrier_ignore_duplicate = {}
 	assert (dbh:query(query, function(u)
@@ -810,16 +717,16 @@ end
 
 -- Get carrier rn1 routes out
 function get_carrier_out(userinfo,cn_dest_number,carrier_dest_number)
-    Logger.warning("[FUNCTION - get_carrier_out]")
+    Logger.notice("[FUNCTION - get_carrier_out]")
     carrier_destination = number_loop(carrier_dest_number,"pattern")
-    Logger.warning("[GET_CARRIER_OUT] carrier_destination :" .. carrier_destination)
-    Logger.warning("[GET_CARRIER_OUT] cn_dest_number :" .. cn_dest_number)
-    Logger.warning("[GET_CARRIER_OUT] carrier_dest_number :" .. carrier_dest_number)
+    Logger.notice("[GET_CARRIER_OUT] carrier_destination :" .. carrier_destination)
+    Logger.notice("[GET_CARRIER_OUT] cn_dest_number :" .. cn_dest_number)
+    Logger.notice("[GET_CARRIER_OUT] carrier_dest_number :" .. carrier_dest_number)
 	local carrier_info
 
         
     	local query  = "SELECT * FROM "..TBL_CARRIER_RATES..", "..TBL_CARRIER_ROUTES.." WHERE "..TBL_CARRIER_RATES..".rn1 = "..TBL_CARRIER_ROUTES..".carrier_rn1 AND "..TBL_CARRIER_RATES..".nomePrestadora = "..TBL_CARRIER_ROUTES..".carrier_name AND cn = "..cn_dest_number.." AND " ..carrier_destination.." ORDER BY cn_prefix LIMIT 1";
-    	Logger.warning("[GET_CARRIER_OUT] Query :" .. query)
+    	Logger.notice("[GET_CARRIER_OUT] Query :" .. query)
 		assert (dbh:query(query, function(u)
     		carrier_info = u
     	end))  
@@ -829,16 +736,16 @@ end
 
 -- Get carrier rn1 routes in
 function get_carrier_in(didinfo,cn_dest_number,carrier_dest_number)
-    Logger.warning("[FUNCTION - get_carrier_in]")
+    Logger.notice("[FUNCTION - get_carrier_in]")
     carrier_destination = number_loop(carrier_dest_number,"pattern")
-    Logger.warning("[GET_CARRIER_IN] carrier_destination :" .. carrier_destination)
-    Logger.warning("[GET_CARRIER_IN] cn_dest_number :" .. cn_dest_number)
-    Logger.warning("[GET_CARRIER_IN] carrier_dest_number :" .. carrier_dest_number)
+    Logger.notice("[GET_CARRIER_IN] carrier_destination :" .. carrier_destination)
+    Logger.notice("[GET_CARRIER_IN] cn_dest_number :" .. cn_dest_number)
+    Logger.notice("[GET_CARRIER_IN] carrier_dest_number :" .. carrier_dest_number)
 	local carrier_info
 
         
     	local query  = "SELECT view_carriers.idCadup,view_carriers.nomePrestadora,carrier_routing.carrier_name,carrier_routing.carrier_id,carrier_routing.carrier_rn1,view_carriers.rn1,view_carriers.carrier_route_id,carrier_routing.reseller_id,carrier_routing.accountid,carrier_routing.call_count,carrier_routing.`status`,view_carriers.tipo,view_carriers.cn,view_carriers.prefixo,view_carriers.cn_prefix,view_carriers.pattern,view_carriers.route_pattern,view_carriers.nomeLocalidade,view_carriers.areaLocal,view_carriers.codArea,view_carriers.uf FROM "..TBL_CARRIER_RATES..", "..TBL_CARRIER_ROUTES.." WHERE "..TBL_CARRIER_RATES..".rn1 = "..TBL_CARRIER_ROUTES..".carrier_rn1 AND "..TBL_CARRIER_RATES..".nomePrestadora = "..TBL_CARRIER_ROUTES..".carrier_name AND cn = "..cn_dest_number.." AND " ..carrier_destination.." GROUP BY carrier_id ORDER BY cn_prefix LIMIT 1";
-    	Logger.warning("[GET_CARRIER_IN] Query :" .. query)
+    	Logger.notice("[GET_CARRIER_IN] Query :" .. query)
 		assert (dbh:query(query, function(u)
     		carrier_info = u
     	end))  
@@ -846,29 +753,11 @@ function get_carrier_in(didinfo,cn_dest_number,carrier_dest_number)
 	return carrier_info
 end
 
-
--- Get carrier rn1 routes in2
-function get_carrier_in2(userinfo,cn_dest_number,carrier_dest_number)
-    Logger.warning("[FUNCTION - get_cadup_in]")
-    cadup_destination = number_loop(cadup_dest_number,"pattern")
-    Logger.warning("[GET_CADUP] cadup_destination :" .. cadup_destination)
-    Logger.warning("[GET_CADUP] cn_dest_number :" .. cn_dest_number)
-    Logger.warning("[GET_CADUP] cadup_dest_number :" .. cadup_dest_number)
-	local cadup_info
-    Logger.warning("[GET_CADUP] call_direction :" .. call_direction)
-	local query  = "SELECT * FROM "..TBL_CADUP_RATES.." WHERE cn = "..cn_dest_number.." AND " ..cadup_destination.." ORDER BY cn_prefix LIMIT 1";
-	Logger.warning("[GET_CADUP_IN] Query :" .. query)
-	assert (dbh:query(query, function(u)
-	        cadup_info = u
-	    	end))
-	return cadup_info
-end
-
 -- Get outbound callerid to override in calls
 function get_override_callerid(userinfo,callerid_name,callerid_number)
     local callerid = {}
     local query  = "SELECT callerid_name as cid_name,callerid_number as cid_number,accountid FROM "..TBL_ACCOUNTS_CALLERID.." WHERE accountid = "..userinfo['id'].." AND status=0 LIMIT 1";    
-    Logger.debug("[GET_OVERRIDE_CALLERID] Query :" .. query)
+    Logger.notice("[GET_OVERRIDE_CALLERID] Query :" .. query)
     assert (dbh:query(query, function(u)
 	    callerid = u
     end))
@@ -978,7 +867,7 @@ end
 function get_parentid(userinfoid)
     local parentid = 0;
     local query  = "SELECT reseller_id FROM "..TBL_USERS.." WHERE id = "..userinfoid;    
-    Logger.debug("[GET RESELLERID] Query :" .. query)
+    Logger.notice("[GET RESELLERID] Query :" .. query)
     assert (dbh:query(query, function(u)
 	    parent = u
 	    if (parent['reseller_id'] ~= nil and parent['reseller_id'] ~= '') then
@@ -992,7 +881,7 @@ end
 function load_addon_list()
 
     local query = "SELECT package_name FROM addons";
-    Logger.debug("[LOAD_ADDON_CONF] Query :" .. query)
+    Logger.notice("[LOAD_ADDON_CONF] Query :" .. query)
     
     local addon_list = {}
     assert (dbh:query(query, function(u)
@@ -1003,7 +892,7 @@ end
 
 function get_sip_codec(sip_user_name)
 	local query = "SELECT sip_devices.codec as sip_codec  FROM "..TBL_SIP_DEVICES.." as sip_devices,"..TBL_USERS.." as  accounts WHERE accounts.status=0 AND accounts.deleted=0 AND accounts.id=sip_devices.accountid AND sip_devices.username=\"" ..sip_user_name .."\" limit 1";
-	Logger.debug("[sip_codec_for_outbound] Query :" .. query)
+	Logger.notice("[sip_codec_for_outbound] Query :" .. query)
 
 	local sip_codec_for_outbound;
 	assert (dbh:query(query, function(u)
