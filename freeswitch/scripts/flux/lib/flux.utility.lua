@@ -39,6 +39,12 @@ function split(str, pat)
    return t
 end 
 
+function trim(s)
+		if (s) then
+			return s:gsub("^%s+", ""):gsub("%s+$", "")
+		end
+	end
+
 function explode(div,str)
     if (div=='') then return false end
     local pos,arr = 0,{}

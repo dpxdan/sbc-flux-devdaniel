@@ -123,12 +123,12 @@ call_direction = define_call_direction(destination_number,accountcode,config,cal
 
 Logger.info("[Dialplan] Call direction DEBUG : ".. call_direction)
 
---if (didinfo ~= nil) then
---	accountcode=didinfo['account_code']
---	did_provider=didinfo['provider_id']
---	Logger.info("[Dialplan] accountcode : ".. accountcode)
---	Logger.info("[Dialplan] provider : ".. did_provider)
---end
+if (didinfo ~= nil) then
+	accountcode=didinfo['account_code']
+	did_provider=didinfo['provider_id']
+	Logger.info("[Dialplan] accountcode : ".. accountcode)
+	Logger.info("[Dialplan] provider : ".. did_provider)
+end
 
 
 
@@ -308,13 +308,6 @@ if (userinfo ~= nil) then
 	end     
 
   	number_loop_str = number_loop(destination_number)
-  	
-if (didinfo ~= nil) then
-	accountcode=didinfo['account_code']
-	did_provider=didinfo['provider_id']
-	Logger.info("[Dialplan] accountcode : ".. accountcode)
-	Logger.info("[Dialplan] provider : ".. did_provider)
-end
 
 	-- Fine max length of call based on origination rates.
 	origination_array = get_call_maxlength(userinfo,destination_number,call_direction,number_loop_str,config,didinfo,callerid_number)
