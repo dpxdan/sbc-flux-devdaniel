@@ -24,14 +24,13 @@
 // Process CDR
 function process_cdr($data, $db, $logger, $decimal_points, $config) {
 	// $logger->log(print_r($data,true));//exit;
-	
 	// Initializing variables
 	$origination_rate = array ();
 	$termination_rate = array ();
 	
 	// FS CDR variables
 	$dataVariable = $data ['variables'];
-
+	$logger->log("Data::" . json_encode($dataVariable));
 	//Added condition to remove bad cdr entries	
 	if ($dataVariable ['callstart'] == ""){return;}
 	
@@ -230,10 +229,12 @@ $logger->log("*********************** Harsh_trunk in package_id: **".$dataVariab
 	$logger->log ( "*********calltype::::::**************".$dataVariable ['calltype']."*************" );	
 	$cdr_string = get_cdr_string ( $dataVariable, $accountid, $account_type, $actual_duration, $termination_rate, $origination_rate, $provider_cost, $parentid, $debit, $cost, $logger, $db );
 
-	if ($dataVariable['calltype'] != 'DID-LOCAL' || $dataVariable ['call_type_custom'] == "DID-REVERSE"){
+    $logger->log ( "*********************** CDR STRING *************" );
+	$logger->log(print_r($cdr_string,true));
+	
 	$logger->log ( "TARIFAS:::". $cdr_string);
 	$query = "INSERT INTO cdrs (uniqueid,accountid,type,callerid,callednum,billseconds,trunk_id,trunkip,callerip,disposition,callstart,debit,cost,provider_id,pricelist_id,package_id,pattern,notes,rate_cost,reseller_id,reseller_code,reseller_code_destination,reseller_cost,provider_code,provider_code_destination,provider_cost,provider_call_cost,call_direction,calltype,call_request,country_id,sip_user,call_id_cadup,ct,end_stamp)  values ($cdr_string)";
-	}
+
 	$logger->log ( $query );
 	$db->run ( $query );
 	
@@ -265,7 +266,7 @@ $logger->log("*********************** Harsh_trunk in package_id: **".$dataVariab
 			if($dataVariable ['calltype'] == 'DID')
 			//	$dataVariable ['sip_user'] = '';
 			$dataVariable ['calltype'] = "DID";
-        $dataVariable ['origination_call_type'] = $dataVariable ['call_type_rate'];
+        	$dataVariable ['origination_call_type'] = $dataVariable ['call_type_rate'];
 			// For inbound package calculation
 			if ($actual_duration > 0 && isset($dataVariable ['package_id']) && $dataVariable ['package_id'] > 0) {
 				$package_array = package_calculation ( $dataVariable ['effective_destination_number'], $dataVariable ['package_id'], $actual_duration, $dataVariable ['call_direction'], $accountid,$dataVariable, $db, $logger );
@@ -415,13 +416,21 @@ function insert_extra_receiver_entry($dataVariable, $origination_rate, $terminat
 
 // Generate CDR string for insert query for customer.
 function get_cdr_string($dataVariable, $accountid, $account_type, $actual_duration, $termination_rate, $origination_rate, $provider_cost, $parentid, $debit, $cost, $logger, $db) {
-	
+
 	$get_current_time = gmdate("Y-m-d H:i:s"); // progress_media_stamp
 	$get_current_microseconds = round(microtime(true)/1000); // progress_mediamsec
 	
 	$dataVariable ['calltype'] = ($dataVariable ['calltype'] == 'DID-LOCAL' || $dataVariable ['calltype'] == 'SIP-DID' || $dataVariable ['calltype'] == 'OTHER') ? "DID" : $dataVariable ['calltype'];
 	// $callerIdNumber = isset($dataVariable['effective_caller_id_number']) && !empty($dataVariable['effective_caller_id_number'])? $dataVariable['effective_caller_id_number'] :$dataVariable['caller_id'];
-	$callerIdNumber = ($dataVariable ['calltype'] == "DID") ? $dataVariable ['effective_caller_id_name'] . " <" . $dataVariable ['effective_caller_id_number'] . ">" : $dataVariable ['original_caller_id_name'] . " <" . $dataVariable ['original_caller_id_number'] . ">";
+
+	$effective_callerid = $dataVariable ['effective_caller_id_name'] . " <" . $dataVariable ['effective_caller_id_number'] . ">";
+	$original_callerid = $dataVariable ['original_caller_id_name'] . " <" . $dataVariable ['original_caller_id_number'] . ">";
+
+	$logger->log ( "Effective CallerID: ". $effective_callerid );
+	$logger->log ( "Original CallerID: ". $original_callerid );
+
+
+	$callerIdNumber = ($dataVariable ['calltype'] == "DID") ? ($effective_callerid != " <>" ? $effective_callerid : $original_callerid) : $original_callerid;
 
 	$dataVariable ['hangup_cause'] = get_q850code($dataVariable, $db);	
 	

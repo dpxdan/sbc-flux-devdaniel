@@ -362,6 +362,7 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
     if( call_direction == "inbound" and didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0") then
        Logger.notice("[DID PRICE] PRICE!!!")
 		userinfo['pricelist_id'] = didinfo['rate_group'];
+		userinfo['reverse_rate'] = didinfo['reverse_rate'];
 	end
 	Logger.notice("[get_call_maxlength] get_pricelists!!!")
     rate_group = get_pricelists(userinfo,destination_number,number_loop,call_direction)
@@ -370,12 +371,17 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
 		Logger.notice("[FIND_MAXLENGTH] Rate group not found or Inactive!!!")
 		return 'ORIGINATION_RATE_NOT_FOUND'
 	end
-	if (call_direction == "local" and config['free_inbound'] ~= nil) then
+	if ((call_direction == "local" and config['free_inbound'] ~= nil) or (call_direction == "inbound" and userinfo['reverse_rate'] == nil)) then
 	    Logger.notice("[call_direction] local!!!")
 		rates = {}
 		rates['pattern'] = '^'..destination_number..".*"
-		rates['comment'] = "Local"
-		rates['inc'] = 60
+		if call_direction == "local" then
+			rates['comment'] = "Local"
+		else
+			rates['comment'] = destination_number
+		end
+		rates['inc'] = 6
+		rates['init_inc'] = 30
 		rates['call_type'] = 0
 		Logger.notice("[FIND_MAXLENGTH] free_inbound!!!"..config['free_inbound'])
 		rates['cost'] = userinfo['charge_per_min']
@@ -391,6 +397,10 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
 		else
 			rates['country_id']=28
 		end
+
+		if (rates['custom_call_type'] == '' or rates['custom_call_type'] == nil ) then
+        	rates['custom_call_type'] = "0";
+        end
 	else
         Logger.notice("[rates] get_rates!!!")
         rates = get_rates(userinfo,destination_number,number_loop,call_direction,config,callerid_number)               
@@ -399,17 +409,17 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
 			return 'ORIGINATION_RATE_NOT_FOUND'
 		end
 		if( call_direction == "inbound" ) then
-		rates['calltype'] = rates['call_type']
-		rates['custom_call_type'] = rates['call_type']
-		rates['pattern'] = '^'..destination_number..".*"
-		if (rates['city'] ~= '' and rates['province'] ~= "" ) then 
-				rates['comment'] =  rates['city'] .. " " .. rates['province']
+			rates['calltype'] = rates['call_type']
+			rates['custom_call_type'] = rates['call_type']
+			-- rates['pattern'] = '^'..destination_number..".*"
+		if (rates['city'] ~= '' and rates['province'] ~= "" and rates['province'] ~= nil) then 
+			rates['comment'] =  rates['city'] .. " " .. rates['province']
 		else  
-				rates['comment'] = destination_number 
-			end
+			rates['comment'] = destination_number 
+		end
 		end
 		if(rates['custom_call_type'] == nil and call_direction == "local") then
-        rates['custom_call_type'] = "Local";
+        	rates['custom_call_type'] = "Local";
         end
         if (tonumber(rate_group['markup']) > 0) then
             Logger.notice("Markup : "..rate_group['markup'])  
@@ -421,67 +431,69 @@ function get_call_maxlength(userinfo,destination_number,call_direction,number_lo
         Logger.notice("CallType : "..rates['calltype'])
         end
         if (rates['custom_call_type'] == '' or rates['custom_call_type'] == nil ) then
-        rates['custom_call_type'] = "0";
+        	rates['custom_call_type'] = "0";
         end
 		Logger.notice("=============== Rates Information get_call_maxlength ===================")
 		Logger.notice("ID : "..rates['id'])  
 		Logger.notice("Connectcost : "..rates['connectcost'])  
 		Logger.notice("Includedseconds : "..rates['includedseconds'])  
 		Logger.notice("Cost : "..rates['cost'])
-		Logger.notice("Comment : "..rates['calltype'])
+		Logger.notice("Comment : "..rates['comment'])
 		Logger.notice("CallType : "..rates['call_type'])
+		Logger.notice("Pattern : "..rates['pattern'])
 		if(rate_group['check_carrier'] ~= nil)then 
 		Logger.notice("check_carrier: "..rate_group['check_carrier']) 
 		if(rate_group['check_carrier'] == '1') then
 		rates['check_carrier'] = rate_group['check_carrier']
---		rates['routing_type'] = 4
+		--rates['routing_type'] = 4
 		end
 		end
 		
---		Logger.notice("Custom CallType : "..rates['custom_call_type'])
+		--Logger.notice("Custom CallType : "..rates['custom_call_type'])
 
         if(rates['custom_call_type'] ~= nil)then Logger.notice("Custom CallType: "..rates['custom_call_type']) end
-		Logger.notice("Country Id : "..rates['country_id'])
-		Logger.notice("Accid : "..userinfo['id'])
+			Logger.notice("Country Id : "..rates['country_id'])
+			Logger.notice("Accid : "..userinfo['id'])
 		if(rates['trunk_id'] ~= nil)then Logger.notice("Trunk ID: "..rates['trunk_id']) end
 		if(rates['routing_type'] ~= nil)then Logger.notice("Routing type: "..rates['routing_type']) end
 		Logger.notice("================================================================")  
 	end
     --rates['routing_type'] = rate_group['routing_type']		
-	if( call_direction == "inbound" ) then
+	if( call_direction == "inbound") then
 		if(didinfo['accountid'] == nil) then
 			didinfo['accountid'] = userinfo['id'];
 		end
 		if(didinfo['reverse_rate'] == '0') then
-		if(didinfo['idCadup'] == nil) then
-			didinfo['idCadup'] = 0;
-		end
-		if(didinfo['carrier_rn1'] == nil) then
-			didinfo['carrier_rn1'] = 0;
-		end
-		call_type_rate = didinfo['rate_group'];
-		if (call_type_rate == nil) then
-		Logger.notice("[FIND_DID_RATE] DID Rate group not found or Inactive!!!")
-		return 'ORIGINATION_RATE_NOT_FOUND'
-	     end
-		if(didinfo['pattern'] == nil) then
-		   didinfo['pattern'] = callerid_number;			
-		end
-		rates['cost'] = didinfo['cost'];
-		rate_group['id'] = didinfo['rate_group'];
-		rates['connectcost'] = didinfo['connectcost']
-		rates['includedseconds'] = didinfo['includedseconds']
-		rates['inc'] = didinfo['inc']		
-		rates['country_id'] = didinfo['country_id']
-		rates['routing_type'] = didinfo['routing_type']
-		rates['comment'] = didinfo['did_number']		
-		rates['pattern'] = didinfo['pattern']
+			if(didinfo['idCadup'] == nil) then
+				didinfo['idCadup'] = 0;
+			end
+			if(didinfo['carrier_rn1'] == nil) then
+				didinfo['carrier_rn1'] = 0;
+			end
+			call_type_rate = didinfo['rate_group'];
+
+			if (call_type_rate == nil) then
+				Logger.notice("[FIND_DID_RATE] DID Rate group not found or Inactive!!!")
+				return 'ORIGINATION_RATE_NOT_FOUND'
+			end
+			if(didinfo['pattern'] == nil) then
+				didinfo['pattern'] = callerid_number;			
+			end
+			-- rates['cost'] = didinfo['cost'];
+			-- rate_group['id'] = didinfo['rate_group'];
+			-- rates['connectcost'] = didinfo['connectcost']
+			-- rates['includedseconds'] = didinfo['includedseconds']
+			-- rates['inc'] = didinfo['inc']		
+			-- rates['country_id'] = didinfo['country_id']
+			-- rates['routing_type'] = didinfo['routing_type']
+			-- rates['comment'] = didinfo['did_number']		
+			-- rates['pattern'] = didinfo['pattern']
 		
-		xml_rates = "ID:"..rates['id'].."|CODE:"..rates['pattern'].."|DESTINATION:"..rates['comment'].."|CONNECTIONCOST:"..rates['connectcost'].."|INCLUDEDSECONDS:"..rates['includedseconds'].."|IDCADUP:"..didinfo['idCadup'].."|CT:"..didinfo['call_type'].."|COST:"..rates['cost'].."|INC:"..rates['inc'].."|INITIALBLOCK:"..rates['init_inc'].."|RATEGROUP:"..rate_group['id'].."|MARKUP:"..rate_group['markup'].."|CI:"..rates['country_id'].."|ACCID:"..didinfo['accountid'];
-		Logger.notice("[xml_rates-586] xml_rates "..xml_rates.."")
+			xml_rates = "ID:"..rates['id'].."|CODE:"..rates['pattern'].."|DESTINATION:"..rates['custom_call_type'].."|CONNECTIONCOST:"..rates['connectcost'].."|INCLUDEDSECONDS:"..rates['includedseconds'].."|IDCADUP:"..didinfo['idCadup'].."|CT:"..didinfo['call_type'].."|COST:"..rates['cost'].."|INC:"..rates['inc'].."|INITIALBLOCK:"..rates['init_inc'].."|RATEGROUP:"..rate_group['id'].."|MARKUP:"..rate_group['markup'].."|CI:"..rates['country_id'].."|ACCID:"..didinfo['accountid'];
+			Logger.notice("[xml_rates-586] xml_rates "..xml_rates.."")
 		else
-		xml_rates = "ID:"..rates['id'].."|CODE:"..rates['pattern'].."|DESTINATION:"..rates['comment'].."|CONNECTIONCOST:"..rates['connectcost'].."|INCLUDEDSECONDS:"..rates['includedseconds'].."|CT:"..rates['custom_call_type'].."|COST:"..rates['cost'].."|INC:"..rates['inc'].."|INITIALBLOCK:"..rates['init_inc'].."|RATEGROUP:"..rate_group['id'].."|MARKUP:"..rate_group['markup'].."|CI:"..rates['country_id'].."|ACCID:"..didinfo['accountid'];
-		Logger.notice("[xml_rates-589] xml_rates "..xml_rates.."")
+			xml_rates = "ID:"..rates['id'].."|CODE:"..rates['pattern'].."|DESTINATION:"..rates['custom_call_type'].."|CONNECTIONCOST:"..rates['connectcost'].."|INCLUDEDSECONDS:"..rates['includedseconds'].."|CT:"..rates['custom_call_type'].."|COST:"..rates['cost'].."|INC:"..rates['inc'].."|INITIALBLOCK:"..rates['init_inc'].."|RATEGROUP:"..rate_group['id'].."|MARKUP:"..rate_group['markup'].."|CI:"..rates['country_id'].."|ACCID:"..didinfo['accountid'];
+			Logger.notice("[xml_rates-589] xml_rates "..xml_rates.."")
 		end
 	else
 		if( tonumber(rates['inc'])  == 0 or rates['inc'] == "" ) then
@@ -533,10 +545,13 @@ end
 
 -- Get origination rates 
 function get_rates(userinfo,destination_number,number_loop,call_direction,config,callerid_number)
-    
+	
+	-- for key, value in pairs(userinfo) do
+	-- 	Logger.info("[GET_RATES] USERINFO: " .. key .. " : " .. tostring(value))
+	-- end
 	local rates_info
     	Logger.notice("[GET_RATES] call_direction :" .. call_direction)
-	if call_direction == "inbound" then
+	if (call_direction == "inbound" and userinfo['reverse_rate'] ~= nil and userinfo['reverse_rate'] ~= "0")  then
 		Logger.notice("[GET_RATES] callerid_number :" .. callerid_number)
 		rates_info = check_did(destination_number,config,callerid_number)
 	else 
@@ -838,27 +853,30 @@ function regex_cmd(destination_number,pattern,replace)
 	end
 
     if (rgx_pattern == "num_pattern_0") then
-    regex_pattern = "^0([1-9][1-9])(\\d{7,20})$"
+		regex_pattern = "^0([1-9][1-9])(\\d{7,20})$"
     elseif (rgx_pattern == "num_pattern_cn") then
-    regex_pattern = "^([1-9][1-9])(\\d{7,8})$"
+    	regex_pattern = "^([1-9][1-9])(\\d{7,8})$"
     elseif (rgx_pattern == "unknown") then
-    regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+    	regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
     elseif (rgx_pattern == "num_regex_pattern") then
-    regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
+    	regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
     elseif (rgx_pattern == "num_pattern_local") then
-    regex_pattern = "^([2-9]\\d{3})(\\d{4})$"
+    	regex_pattern = "^([2-9]\\d{3})(\\d{4})$"
     else
-    regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+    	regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
     end
     
     if api:execute("regex", ""..regex_number.."|"..regex_pattern) == "true" then
-    cmd = ""..regex_number.."|"..regex_pattern..""..rgx_replace
-	local result = trim(api:execute("regex", cmd));
-	Logger.notice("[regex_pattern] regex "..cmd);
-	Logger.notice("[regex_pattern] result: "..result);
-	regex_number = result;
+    	cmd = ""..regex_number.."|"..regex_pattern..""..rgx_replace
+		Logger.notice("[regex_pattern] regex regex_number"..regex_number);
+		Logger.notice("[regex_pattern] regex regex_pattern"..regex_pattern);
+		Logger.notice("[regex_pattern] regex rgx_replace"..rgx_replace);
+		Logger.notice("[regex_pattern] regex cmd"..cmd);
+		local result = trim(api:execute("regex", cmd));
+		Logger.notice("[regex_pattern] result: "..result);
+		regex_number = result;
     else
-	regex_number = "false";
+		regex_number = "false";
 
 end
 return regex_number
