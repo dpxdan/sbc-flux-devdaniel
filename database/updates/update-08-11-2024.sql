@@ -156,6 +156,45 @@ CREATE ALGORITHM = UNDEFINED DEFINER = `fluxuser`@`127.0.0.1` SQL SECURITY DEFIN
 
 CREATE ALGORITHM = UNDEFINED DEFINER = `fluxuser`@`127.0.0.1` SQL SECURITY INVOKER VIEW `view_carrier_id` AS select `cadup_operadoras`.`nomePrestadora` AS `nomePrestadora`,`cadup_operadoras`.`rn1` AS `cad_rn1`,`rn1_operadoras`.`rn1` AS `op_rn1`,`cadup_operadoras`.`id` AS `id`,`rn1_operadoras`.`id` AS `op_id` from (`cadup_operadoras` join `rn1_operadoras`) where (`cadup_operadoras`.`rn1` = `rn1_operadoras`.`rn1`) group by `cadup_operadoras`.`nomePrestadora`,`cadup_operadoras`.`rn1`,`rn1_operadoras`.`rn1` order by `cadup_operadoras`.`nomePrestadora`;
 
-CREATE ALGORITHM = UNDEFINED DEFINER = `fluxuser`@`127.0.0.1` SQL SECURITY DEFINER VIEW `view_carriers` AS select `cadup_operadoras`.`id` AS `cadup_id`,`cadup_operadoras`.`idCadup` AS `idCadup`,`cadup_operadoras`.`nomePrestadora` AS `nomePrestadora`,`cadup_operadoras`.`tipo` AS `tipo`,`cadup_operadoras`.`cn` AS `cn`,`cadup_operadoras`.`prefixo` AS `prefixo`,`cadup_operadoras`.`faixaIni` AS `faixaIni`,`cadup_operadoras`.`faixaFin` AS `faixaFin`,concat(`cadup_operadoras`.`cn`,`cadup_operadoras`.`prefixo`) AS `cn_prefix`,concat(`cadup_operadoras`.`cn`,`cadup_operadoras`.`prefixo`,`cadup_operadoras`.`faixaIni`) AS `range_inicial`,concat(`cadup_operadoras`.`cn`,`cadup_operadoras`.`prefixo`,`cadup_operadoras`.`faixaFin`) AS `range_final`,concat('^',`cadup_operadoras`.`cn`,`cadup_operadoras`.`prefixo`,'.*') AS `pattern`,concat('^',`cadup_operadoras`.`prefixo`,'.*') AS `route_pattern`,`cadup_operadoras`.`nomeLocalidade` AS `nomeLocalidade`,`cadup_operadoras`.`areaLocal` AS `areaLocal`,`cadup_operadoras`.`codArea` AS `codArea`,`cadup_operadoras`.`uf` AS `uf`,`cadup_operadoras`.`dataAtivacao` AS `dataAtivacao`,`cadup_operadoras`.`rn1` AS `rn1` from `cadup_operadoras` where (`cadup_operadoras`.`status` = '1') order by `cadup_operadoras`.`idCadup`;
+CREATE  OR REPLACE 
+    ALGORITHM = UNDEFINED 
+    DEFINER = `fluxuser`@`127.0.0.1` 
+    SQL SECURITY DEFINER
+VIEW `view_carriers` AS
+    SELECT 
+        `cadup_operadoras`.`id` AS `cadup_id`,
+        `cadup_operadoras`.`idCadup` AS `idCadup`,
+        `cadup_operadoras`.`nomePrestadora` AS `nomePrestadora`,
+        `cadup_operadoras`.`tipo` AS `tipo`,
+        `cadup_operadoras`.`cn` AS `cn`,
+        `cadup_operadoras`.`prefixo` AS `prefixo`,
+        `cadup_operadoras`.`faixaIni` AS `faixaIni`,
+        `cadup_operadoras`.`faixaFin` AS `faixaFin`,
+        CONCAT(`cadup_operadoras`.`cn`,
+                `cadup_operadoras`.`prefixo`) AS `cn_prefix`,
+        CONCAT(`cadup_operadoras`.`cn`,
+                `cadup_operadoras`.`prefixo`,
+                `cadup_operadoras`.`faixaIni`) AS `range_inicial`,
+        CONCAT(`cadup_operadoras`.`cn`,
+                `cadup_operadoras`.`prefixo`,
+                `cadup_operadoras`.`faixaFin`) AS `range_final`,
+        CONCAT('^',
+                `cadup_operadoras`.`cn`,
+                `cadup_operadoras`.`prefixo`,
+                '.*') AS `pattern`,
+        CONCAT('^', `cadup_operadoras`.`prefixo`, '.*') AS `route_pattern`,
+        `cadup_operadoras`.`nomeLocalidade` AS `nomeLocalidade`,
+        `cadup_operadoras`.`areaLocal` AS `areaLocal`,
+        `cadup_operadoras`.`codArea` AS `codArea`,
+        `cadup_operadoras`.`uf` AS `uf`,
+        `cadup_operadoras`.`dataAtivacao` AS `dataAtivacao`,
+        `cadup_operadoras`.`rn1` AS `rn1`,
+        `cadup_operadoras`.`carrier_id` AS `carrier_id`,
+        `cadup_operadoras`.`carrier_route_id` AS `carrier_route_id`
+    FROM
+        `cadup_operadoras`
+    WHERE
+        (`cadup_operadoras`.`status` = '1')
+    ORDER BY `cadup_operadoras`.`idCadup`;
 
 SET FOREIGN_KEY_CHECKS=1;
