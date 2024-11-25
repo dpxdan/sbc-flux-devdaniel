@@ -1,7 +1,4 @@
-- label: "JIRA"
-  message: "$issuePrefix"
-  icon: "jira"
+- label: "Preview"
+  message: "PR-$prNumber"
   color: "blue"
-  url: "https://jira.company.com/browse/$issuePrefix"
-  when: "$issuePrefix"
-
+  url: "https://pr-$prNumber.company.com"
