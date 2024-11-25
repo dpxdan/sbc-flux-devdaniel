@@ -98,8 +98,8 @@ end
 --accountcode = params:getHeader("variable_accountcode")
 account_user = params:getHeader("variable_sip_h_P-Accountcode")
 if(account_user ~= '' and account_user ~= nil) then
-Logger.info("[Dialplan] Accountcode DEBUG : ".. account_user)
-accountname = account_user
+	Logger.info("[Dialplan] Accountcode DEBUG : ".. account_user)
+	accountname = account_user
 end
 
 --To override custom calltype
@@ -129,8 +129,6 @@ if (didinfo ~= nil) then
 	Logger.info("[Dialplan] accountcode : ".. accountcode)
 	Logger.info("[Dialplan] provider : ".. did_provider)
 end
-
-
 
 -- If no account code found then do further authentication of call
 
@@ -303,13 +301,20 @@ if (userinfo ~= nil) then
 		-- @TODO: Implement localization for DID global translation
 		--destination_number = do_number_translation(config['did_global_translation'],destination_number)
 		destination_number = didinfo['did_number']
-		number_loop_str_orig = number_loop(callerid_number,'pattern')
+		number_loop_str = number_loop(callerid_number,'pattern')
 --		number_loop_str_orig = number_loop(callerid_number)
 	end     
 
-  	number_loop_str = number_loop(destination_number)
+	if (didinfo ~= nil and didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == '0') then
+		number_loop_str = number_loop(callerid_number)
+		calltype = "DID-REVERSE"
+	else
+		number_loop_str = number_loop(destination_number)
+	end
 
 	-- Fine max length of call based on origination rates.
+	Logger.info("[DIALPLAN] Number loop : ".. number_loop_str)
+	
 	origination_array = get_call_maxlength(userinfo,destination_number,call_direction,number_loop_str,config,didinfo,callerid_number)
 	    
 	if( origination_array == 'NO_SUFFICIENT_FUND' or origination_array == 'ORIGINATION_RATE_NOT_FOUND' or origination_array == 'NO_ROUTE_DESTINATION') then
@@ -498,21 +503,21 @@ if (userinfo ~= nil) then
 	if (call_direction == 'inbound') then
 		-- ********* Check RECEIVER Balance and status of the Account *************
 		local dialuserinfo
-    if(didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")then
-		config['free_inbound'] = 1
+		if(didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")then
+			config['free_inbound'] = 1
 		
 		Logger.info("[DIALPLAN] STRIPCADUP IN")
---      Exemplos de patterns
---		num_pattern_0 = "^0([1-9][1-9])(\\d{7,20})$"
---		num_pattern_cn = "^([1-9][1-9])(\\d{7,8})$"
---		num_regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
---    num_regex_unknown = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
---		num_pattern_local = "^([2-9]\\d{3})(\\d{4})$"
+		--      Exemplos de patterns
+		--		num_pattern_0 = "^0([1-9][1-9])(\\d{7,20})$"
+		--		num_pattern_cn = "^([1-9][1-9])(\\d{7,8})$"
+		--		num_regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
+		--    num_regex_unknown = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+		--		num_pattern_local = "^([2-9]\\d{3})(\\d{4})$"
 
---    Exemplos de replace
+		--    Exemplos de replace
 
---		num_pattern_replace = "%1" - Retorna o grupo 1
---    num_pattern_replace = "%2" - Retorna o grupo 2
+		--		num_pattern_replace = "%1" - Retorna o grupo 1
+		--    num_pattern_replace = "%2" - Retorna o grupo 2
 
 		a = callerid_number	        
 		
@@ -524,13 +529,17 @@ if (userinfo ~= nil) then
 		
 		
 		if(rgx_cn_number ~= nil and rgx_cn_number ~= "false") then 
-		rgx_number_len = string.len(rgx_cn_number)
-		if(rgx_number_len > 2) then
-		rgx_cn_dest_number = string.sub(rgx_cn_number, 2, 3)
-		rgx_dest_number = rgx_cn_dest_number..rgx_prefix_number..rgx_end_number
+			rgx_number_len = string.len(rgx_cn_number)
+		if(rgx_number_len > 2 and string.sub(rgx_cn_number, 1, 1) == "0") then
+			rgx_cn_dest_number = string.sub(rgx_cn_number, 2, 3)
+			rgx_dest_number = rgx_cn_dest_number..rgx_prefix_number..rgx_end_number
+		elseif (rgx_number_len > 2) then
+			rgx_cn_dest_number = string.sub(rgx_cn_number, 1, 2)
+			rgx_cn_dest_number_9 = string.sub(rgx_cn_number, 1, 3)
+			rgx_dest_number = rgx_cn_dest_number_9..rgx_prefix_number..rgx_end_number
 		else
-		rgx_cn_dest_number = rgx_cn_number
-		rgx_dest_number = rgx_number
+			rgx_cn_dest_number = rgx_cn_number
+			rgx_dest_number = rgx_number
 		end
 		
 		cn_dest_number = rgx_cn_dest_number
@@ -582,7 +591,7 @@ if (userinfo ~= nil) then
 		didinfo['carrier_route_id'] = carrier_info['carrier_route_id']
 		didinfo['rate_carrier_id'] = carrier_info['rn1']
 		didinfo['pattern'] = carrier_info['pattern']
---		check_carrier = user_rates['check_carrier']
+		--		check_carrier = user_rates['check_carrier']
 		else
 		didinfo['idCadup'] = 0
 		didinfo['carrier_rn1'] = 0
@@ -607,14 +616,14 @@ if (userinfo ~= nil) then
 		dialuserinfo = doauthorization('id',didinfo['accountid'],call_direction,destination_number,number_loop,config)	
 		-- ********* Check & get Dialer Rate card information *********
 		origination_array_DID = ''
---		if(tonumber(config['free_inbound']) == 1)then
+		--		if(tonumber(config['free_inbound']) == 1)then
 		if(tonumber(config['free_inbound']) == 1 and didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")then
-		number_loop_str_orig = number_loop(callerid_number,'pattern')
-		Logger.info("[userinfo] Actual free_inbound 1 origination_array_DID XML DEBUG:")
+			number_loop_str_orig = number_loop(callerid_number,'pattern')
+			Logger.info("[userinfo] Actual free_inbound 1 origination_array_DID XML DEBUG:")
 			origination_array_DID = get_call_maxlength(customer_userinfo,callerid_number,"inbound",number_loop_str_orig,config,didinfo,callerid_number)
 		else
-		Logger.info("[userinfo] Actual free_inbound 0 destination_array_DID XML DEBUG:")
-		origination_array_DID = get_call_maxlength(customer_userinfo,destination_number,"inbound",number_loop,config,didinfo,callerid_number)		
+			Logger.info("[userinfo] Actual free_inbound 0 destination_array_DID XML DEBUG:")
+			origination_array_DID = get_call_maxlength(customer_userinfo,destination_number,"inbound",number_loop,config,didinfo,callerid_number)		
 		end
 		local actual_userinfo = customer_userinfo
 		Logger.info("[userinfo] Actual CustomerInfo XML DEBUG:" .. actual_userinfo['id'])
@@ -624,17 +633,17 @@ if (userinfo ~= nil) then
 		if((origination_array_DID ~= 'ORIGINATION_RATE_NOT_FOUND' and origination_array_DID ~= 'NO_SUFFICIENT_FUND' and origination_array_DID[3] ~= nil and didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")) then 
 			Logger.info("[userinfo] Userinfo XML:" .. customer_userinfo['id']) 
 			xml_did_rates = origination_array_DID[3]
+			Logger.info("[userinfo] xml_did_rates:" .. xml_did_rates) 
+			if(xml_did_rates == '' or xml_did_rates == nil) then 
+				xml_did_rates = 0			
+			end
+		elseif ((origination_array_DID ~= 'ORIGINATION_RATE_NOT_FOUND' and origination_array_DID ~= 'NO_SUFFICIENT_FUND' and origination_array_DID[3] ~= nil )) then
+			Logger.info("[userinfo] Userinfo XML:" .. customer_userinfo['id']) 
+			xml_did_rates = origination_array_DID[3]
 			if(xml_did_rates == '' or xml_did_rates == nil)
 			then 
 			xml_did_rates = 0			
-			end
-		elseif ((origination_array_DID ~= 'ORIGINATION_RATE_NOT_FOUND' and origination_array_DID ~= 'NO_SUFFICIENT_FUND' and origination_array_DID[3] ~= nil )) then
-		Logger.info("[userinfo] Userinfo XML:" .. customer_userinfo['id']) 
-		xml_did_rates = origination_array_DID[3]
-		if(xml_did_rates == '' or xml_did_rates == nil)
-		then 
-		xml_did_rates = 0			
-		end		
+			end		
 		else
 			error_xml_without_cdr(destination_number,"ORIGINATION_RATE_NOT_FOUND",calltype,config['playback_audio_notification'],customer_userinfo['id'])
 			return
