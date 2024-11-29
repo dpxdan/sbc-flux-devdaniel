@@ -546,9 +546,6 @@ end
 -- Get origination rates 
 function get_rates(userinfo,destination_number,number_loop,call_direction,config,callerid_number)
 	
-	-- for key, value in pairs(userinfo) do
-	-- 	Logger.info("[GET_RATES] USERINFO: " .. key .. " : " .. tostring(value))
-	-- end
 	local rates_info
     	Logger.notice("[GET_RATES] call_direction :" .. call_direction)
 	if (call_direction == "inbound" and userinfo['reverse_rate'] ~= nil and userinfo['reverse_rate'] ~= "0")  then
@@ -665,39 +662,46 @@ function get_counters(userinfo,package_info,package_act_id)
 end
 
 -- Get carrier rates 
-function get_carrier_rates(destination_number,number_loop_str,ratecard_id,rate_carrier_id,check_carrier,routing_type)
-    
+function get_carrier_rates(destination_number,number_loop_str,ratecard_id,rate_carrier_id,check_carrier,routing_type,trunk_id)
 	local carrier_rates = {}     
-	local trunk_id=0     
+	if (trunk_id == '' or trunk_id == nil )then
+	local trunk_id=0
+	end
 	local query
     if (check_carrier ~= '' or check_carrier ~= nil )then
 	if(check_carrier == "1") then
-	routing_type = "4"		
+	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] check_carrier:" .. check_carrier)
+--	routing_type = 4
 	end	
 	end
-	if(routing_type == "1") then
-	Logger.notice("[GET_CARRIER_RATES_TRUNKS] routing_type 1:" .. routing_type)
-		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech, TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
-	elseif(routing_type == "4") then
-	Logger.notice("[GET_CARRIER_RATES_TRUNKS] routing_type 4:" .. routing_type)
-			query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech,TK.carrier_id,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
+	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] rate_carrier_id:" .. rate_carrier_id)
+	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] trunk_id:" .. trunk_id)
+	if(tonumber(routing_type)<=3) then
+--	if(routing_type == "0" or routing_type == "1" or routing_type == 2 or routing_type == 3) then
+	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type default:" .. routing_type)
+		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech, TK.dialed_modify as failover_route,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
+	elseif(routing_type == 4) then
+	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type 4 Carrier:" .. routing_type)
+	query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.dialed_modify as failover_route,TK.tech,TK.carrier_id,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	else
-	Logger.notice("[GET_CARRIER_RATES_TRUNKS] routing_type :" .. routing_type)
-		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech, TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.comment,TR.call_type,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM "..TBL_TERMINATION_RATES.." as TR,"..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
+	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type :" .. routing_type)
+		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech, TK.dialed_modify as failover_route,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.comment,TR.call_type,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM "..TBL_TERMINATION_RATES.." as TR,"..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	end
-	if(rate_carrier_id and rate_carrier_id ~= nil and rate_carrier_id ~= '0' and string.len(rate_carrier_id) >= 1 ) then
-	 if(rate_carrier_id == "0") then
+	if(rate_carrier_id and rate_carrier_id ~= nil ) then
+    if(rate_carrier_id == 0 and tonumber(routing_type)<=3) then
 		query = query.." AND TR.trunk_id is not null "
-	elseif(routing_type == "4") then
-	  query = query.." AND TR.trunk_id is not null AND TK.tech = "..rate_carrier_id..""
-		else
-			query = query.." AND TK.id IN ("..rate_carrier_id..") "
+	elseif(rate_carrier_id == 0 and tonumber(routing_type) == 4) then
+	  query = query.." AND TR.trunk_id is not null AND TK.dialed_modify = 1"
+    elseif(string.len(rate_carrier_id) == 5 and tonumber(routing_type) == 4) then
+		query = query.." AND (TK.tech = "..rate_carrier_id.." OR TK.dialed_modify = 1)"
+	else
+			query = query.." AND TK.id IN ("..trunk_id..") "
 		end
 	else
 		trunk_ids={}
 		local query_trunks  = "SELECT GROUP_CONCAT(trunk_id) as ids FROM "..TBL_ROUTING.." WHERE pricelist_id="..ratecard_id.." ORDER by id asc";   
 		
-		Logger.notice("[GET_CARRIER_RATES_TRUNKS] Query :" .. query_trunks)
+		Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] Query :" .. query_trunks)
 		assert (dbh:query(query_trunks, function(u)
 			trunk_ids = u
 		end))
@@ -710,14 +714,14 @@ function get_carrier_rates(destination_number,number_loop_str,ratecard_id,rate_c
 		query = query.." AND TR.trunk_id IN ("..trunk_ids['ids']..")"
 		end
 	end
-	if(routing_type == "1") then
+	if(routing_type == 1) then
 		query = query.." ORDER by TR.cost ASC,TR.precedence ASC, TK.precedence"
-	elseif(routing_type == "4") then
-			query = query.." ORDER by LENGTH (pattern) DESC,TR.cost ASC,TR.precedence ASC, TK.precedence"
+	elseif(routing_type == 4) then
+			query = query.." ORDER by LENGTH (pattern) DESC,TK.tech ASC, TR.cost ASC,TR.precedence ASC, TK.precedence"
 	else
 		query = query.." ORDER by LENGTH (pattern) DESC,TR.cost ASC,TR.precedence ASC, TK.precedence"
 	end
-	Logger.notice("[GET_CARRIER_RATES] Query :" .. query)
+	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] Query :" .. query)
 	local i = 1
 	local carrier_ignore_duplicate = {}
 	assert (dbh:query(query, function(u)
@@ -732,16 +736,16 @@ end
 
 -- Get carrier rn1 routes out
 function get_carrier_out(userinfo,cn_dest_number,carrier_dest_number)
-    Logger.notice("[FUNCTION - get_carrier_out]")
+    Logger.notice("[FUNCTIONS] [FUNCTION - get_carrier_out]")
     carrier_destination = number_loop(carrier_dest_number,"pattern")
-    Logger.notice("[GET_CARRIER_OUT] carrier_destination :" .. carrier_destination)
-    Logger.notice("[GET_CARRIER_OUT] cn_dest_number :" .. cn_dest_number)
-    Logger.notice("[GET_CARRIER_OUT] carrier_dest_number :" .. carrier_dest_number)
+    Logger.notice("[FUNCTIONS] [GET_CARRIER_OUT] carrier_destination :" .. carrier_destination)
+    Logger.notice("[FUNCTIONS] [GET_CARRIER_OUT] cn_dest_number :" .. cn_dest_number)
+    Logger.notice("[FUNCTIONS] [GET_CARRIER_OUT] carrier_dest_number :" .. carrier_dest_number)
 	local carrier_info
 
         
-    	local query  = "SELECT * FROM "..TBL_CARRIER_RATES..", "..TBL_CARRIER_ROUTES.." WHERE "..TBL_CARRIER_RATES..".rn1 = "..TBL_CARRIER_ROUTES..".carrier_rn1 AND "..TBL_CARRIER_RATES..".nomePrestadora = "..TBL_CARRIER_ROUTES..".carrier_name AND cn = "..cn_dest_number.." AND " ..carrier_destination.." ORDER BY cn_prefix LIMIT 1";
-    	Logger.notice("[GET_CARRIER_OUT] Query :" .. query)
+    	local query  = "SELECT view_carriers.idCadup,view_carriers.nomePrestadora,view_carriers.rn1,carrier_routing.id as carrier_route_id,view_carriers.tipo,view_carriers.cn,view_carriers.prefixo,view_carriers.cn_prefix,view_carriers.pattern,view_carriers.route_pattern,view_carriers.nomeLocalidade,view_carriers.areaLocal,view_carriers.codArea,view_carriers.uf,carrier_routing.reseller_id,carrier_routing.accountid,carrier_routing.call_count,carrier_routing.status,carrier_routing.carrier_name,carrier_routing.carrier_id,carrier_routing.carrier_rn1 FROM "..TBL_CARRIER_RATES..", "..TBL_CARRIER_ROUTES.." WHERE "..TBL_CARRIER_RATES..".rn1 = "..TBL_CARRIER_ROUTES..".carrier_rn1 AND "..TBL_CARRIER_RATES..".nomePrestadora = "..TBL_CARRIER_ROUTES..".carrier_name AND cn = "..cn_dest_number.." AND " ..carrier_destination.." GROUP BY carrier_id ORDER BY cn_prefix LIMIT 1";
+    	Logger.notice("[FUNCTIONS] [GET_CARRIER_OUT] Query :" .. query)
 		assert (dbh:query(query, function(u)
     		carrier_info = u
     	end))  
@@ -751,7 +755,7 @@ end
 
 -- Get carrier rn1 routes in
 function get_carrier_in(didinfo,cn_dest_number,carrier_dest_number)
-    Logger.notice("[FUNCTION - get_carrier_in]")
+    Logger.notice("[FUNCTIONS] [FUNCTION - get_carrier_in]")
     carrier_destination = number_loop(carrier_dest_number,"pattern")
     Logger.notice("[GET_CARRIER_IN] carrier_destination :" .. carrier_destination)
     Logger.notice("[GET_CARRIER_IN] cn_dest_number :" .. cn_dest_number)
@@ -759,8 +763,8 @@ function get_carrier_in(didinfo,cn_dest_number,carrier_dest_number)
 	local carrier_info
 
         
-    	local query  = "SELECT view_carriers.idCadup,view_carriers.nomePrestadora,carrier_routing.carrier_name,carrier_routing.carrier_id,carrier_routing.carrier_rn1,view_carriers.rn1,view_carriers.carrier_route_id,carrier_routing.reseller_id,carrier_routing.accountid,carrier_routing.call_count,carrier_routing.`status`,view_carriers.tipo,view_carriers.cn,view_carriers.prefixo,view_carriers.cn_prefix,view_carriers.pattern,view_carriers.route_pattern,view_carriers.nomeLocalidade,view_carriers.areaLocal,view_carriers.codArea,view_carriers.uf FROM "..TBL_CARRIER_RATES..", "..TBL_CARRIER_ROUTES.." WHERE "..TBL_CARRIER_RATES..".rn1 = "..TBL_CARRIER_ROUTES..".carrier_rn1 AND "..TBL_CARRIER_RATES..".nomePrestadora = "..TBL_CARRIER_ROUTES..".carrier_name AND cn = "..cn_dest_number.." AND " ..carrier_destination.." GROUP BY carrier_id ORDER BY cn_prefix LIMIT 1";
-    	Logger.notice("[GET_CARRIER_IN] Query :" .. query)
+    	local query  = "SELECT view_carriers.idCadup,view_carriers.nomePrestadora,view_carriers.rn1,carrier_routing.id as carrier_route_id,view_carriers.tipo,view_carriers.cn,view_carriers.prefixo,view_carriers.cn_prefix,view_carriers.pattern,view_carriers.route_pattern,view_carriers.nomeLocalidade,view_carriers.areaLocal,view_carriers.codArea,view_carriers.uf,carrier_routing.reseller_id,carrier_routing.accountid,carrier_routing.call_count,carrier_routing.status,carrier_routing.carrier_name,carrier_routing.carrier_id,carrier_routing.carrier_rn1 FROM "..TBL_CARRIER_RATES..", "..TBL_CARRIER_ROUTES.." WHERE "..TBL_CARRIER_RATES..".rn1 = "..TBL_CARRIER_ROUTES..".carrier_rn1 AND "..TBL_CARRIER_RATES..".nomePrestadora = "..TBL_CARRIER_ROUTES..".carrier_name AND cn = "..cn_dest_number.." AND " ..carrier_destination.." GROUP BY carrier_id ORDER BY cn_prefix LIMIT 1";
+    	Logger.notice("[FUNCTIONS] [GET_CARRIER_IN] Query :" .. query)
 		assert (dbh:query(query, function(u)
     		carrier_info = u
     	end))  
@@ -772,7 +776,7 @@ end
 function get_override_callerid(userinfo,callerid_name,callerid_number)
     local callerid = {}
     local query  = "SELECT callerid_name as cid_name,callerid_number as cid_number,accountid FROM "..TBL_ACCOUNTS_CALLERID.." WHERE accountid = "..userinfo['id'].." AND status=0 LIMIT 1";    
-    Logger.notice("[GET_OVERRIDE_CALLERID] Query :" .. query)
+    Logger.notice("[FUNCTIONS] [GET_OVERRIDE_CALLERID] Query :" .. query)
     assert (dbh:query(query, function(u)
 	    callerid = u
     end))
@@ -862,21 +866,24 @@ function regex_cmd(destination_number,pattern,replace)
     	regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
     elseif (rgx_pattern == "num_pattern_local") then
     	regex_pattern = "^([2-9]\\d{3})(\\d{4})$"
+    elseif (rgx_pattern == "num_pattern_any") then
+    regex_pattern = "^(\\d+)$"
     else
     	regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
     end
     
     if api:execute("regex", ""..regex_number.."|"..regex_pattern) == "true" then
     	cmd = ""..regex_number.."|"..regex_pattern..""..rgx_replace
-		Logger.notice("[regex_pattern] regex regex_number"..regex_number);
-		Logger.notice("[regex_pattern] regex regex_pattern"..regex_pattern);
-		Logger.notice("[regex_pattern] regex rgx_replace"..rgx_replace);
-		Logger.notice("[regex_pattern] regex cmd"..cmd);
 		local result = trim(api:execute("regex", cmd));
-		Logger.notice("[regex_pattern] result: "..result);
+	Logger.notice("[FUNCTIONS] [regex_pattern] regex_number: "..regex_number);
+	Logger.notice("[FUNCTIONS] [regex_pattern] regex_pattern: "..regex_pattern);
+	Logger.notice("[FUNCTIONS] [regex_pattern] rgx_replace: "..rgx_replace);
+	Logger.notice("[FUNCTIONS] [regex_pattern] regex: "..cmd);
+	Logger.notice("[FUNCTIONS] [regex_pattern] result: "..result);
 		regex_number = result;
     else
 		regex_number = "false";
+	Logger.notice("[FUNCTIONS] [regex_pattern] regex_number: "..regex_number)
 
 end
 return regex_number
