@@ -39,13 +39,7 @@ function split(str, pat)
    return t
 end 
 
-function trim(s)
-		if (s) then
-			return s:gsub("^%s+", ""):gsub("%s+$", "")
-		end
-	end
-
-function explode(div,str)
+function explode2(div,str)
     if (div=='') then return false end
     local pos,arr = 0,{}
     for st,sp in function() return string.find(str,div,pos,true) end do
@@ -55,3 +49,21 @@ function explode(div,str)
     table.insert(arr,string.sub(str,pos))
     return arr
 end
+
+function trim(s)
+		if (s) then
+			return s:gsub("^%s+", ""):gsub("%s+$", "")
+		end
+	end
+	
+function explode ( seperator, str )
+		local pos, arr = 0, {}
+		if (seperator ~= nil and str ~= nil) then
+			for st, sp in function() return string.find( str, seperator, pos, true ) end do -- for each divider found
+				table.insert( arr, string.sub( str, pos, st-1 ) ) -- attach chars left of current divider
+				pos = sp + 1 -- jump past current divider
+			end
+			table.insert( arr, string.sub( str, pos ) ) -- attach chars right of last divider
+		end
+		return arr
+	end
