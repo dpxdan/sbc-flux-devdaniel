@@ -4,7 +4,7 @@
 //
 // Copyright (C) 2022 Flux Telecom
 // Daniel Paixao <daniel@flux.net.br>
-// Flux SBC Version 3.0 and above
+// Flux SBC Version 4.0 and above
 // License https://www.gnu.org/licenses/agpl-3.0.html
 //
 // This program is free software: you can redistribute it and/or modify
@@ -20,47 +20,31 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 // ##############################################################################
-
-// Error handling
-define ( 'ENVIRONMENT', 'production' );
-
-if (defined ( 'ENVIRONMENT' )) {
-	switch (ENVIRONMENT) {
-		case 'development' :
-			error_reporting ( E_ALL );
-			break;
-		
-		case 'testing' :
-		case 'production' :
-			error_reporting ( 0 );
-			break;
-		
-		default :
-			error_reporting ( E_ALL );
+class fslogger {
+	var $fp;
+	var $config;
+	function __construct($lib) {
+		$this->config = $lib->config;
+//HP: Remove static set value		$this->config ['debug'] = 0;
+		 //~ $this->config['log_path'] = "/backup/html/flux/";
+		if ($this->config ['debug'] == '1') {
+			// $this->fp = fopen($this->config['log_path'] . 'flux_' . date('Y-m-d') . '.txt', 'a+');
+			$this->fp = fopen ( $this->config ['log_path'] . 'fs_flux.log', 'a+' );
+			//$this->fp = fopen ( $this->config ['log_path'], 'a+' );
+		}
+	}
+	function log($log) {
+		if ($this->config ['debug'] == '1') {
+			if (is_array ( $log ))
+				fwrite ( $this->fp, "[" . date ( 'Y-m-d H:i:s' ) . "] " . print_r ( $log, TRUE ) );
+			else
+				fwrite ( $this->fp, "[" . date ( 'Y-m-d H:i:s' ) . "] " . $log . "\n" );
+		}
+	}
+	function close() {
+		if ($this->config ['debug'] == '1')
+			fclose ( $this->fp );
 	}
 }
 
-// Include file
-include ("lib/flux.xml.php");
-include ("lib/flux.db.php");
-include ("lib/flux.logger.php");
-include ("lib/flux.fslogger.php");
-include ("lib/flux.lib.php");
-
-// Define db object
-$db = new db ();
-
-// Get default configuration
-$lib = new lib ();
-
-$config = $lib->get_configurations ( $db );
-//echo "<pre>";print_r($config);exit;
-// Define logger object
-$logger = new logger ( $lib );
-$fslogger = new fslogger ( $lib );
-// Define file name
-$file = "flux." . $_REQUEST ['section'] . ".php";
-
-// Include file
-include_once ("scripts/" . $file);
 ?>

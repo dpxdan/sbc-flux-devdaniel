@@ -41,6 +41,7 @@ if (defined ( 'ENVIRONMENT' )) {
 
 include ("lib/flux.db.php");
 include ("lib/flux.logger.php");
+include ("lib/flux.fslogger.php");
 include ("lib/flux.lib.php");
 include ("lib/flux.constants.php");
 //load custom file.
@@ -59,6 +60,7 @@ $decimal_points = ($config ['decimal_points'] <= 0) ? 2 : $config ['decimal_poin
 
 // Define logger object
 $logger = new logger ( $lib );
+$fslogger = new fslogger ( $lib );
 
 if (isset ( $_SERVER ["CONTENT_TYPE"] ) && $_SERVER ["CONTENT_TYPE"] == "application/json") {
 	
@@ -69,10 +71,10 @@ if (isset ( $_SERVER ["CONTENT_TYPE"] ) && $_SERVER ["CONTENT_TYPE"] == "applica
 	$data = json_decode($data,true);
 
 	// error_log(print_r($data,true));
-	$logger->log ( print_r ( $data, true ) );
+	$fslogger->log ( print_r ( $data, true ) );
 
 	if (isset($data ['variables']['module_name'])){
-		$logger->log("Looking for custom module file to include : " . "lib/addons/flux.".$data ['variables']['module_name'].".php");
+		$fslogger->log("Looking for custom module file to include : " . "lib/addons/flux.".$data ['variables']['module_name'].".php");
 		if (file_exists("lib/addons/flux.".$data ['variables']['module_name'].".php")){
 			include_once("lib/addons/flux.".$data ['variables']['module_name'].".php");			
 		}
@@ -84,19 +86,19 @@ if (isset ( $_SERVER ["CONTENT_TYPE"] ) && $_SERVER ["CONTENT_TYPE"] == "applica
 
 	if ($data ['variables'] ['calltype'] == "CALLINGCARD") {
 		if (isset ( $data ['variables'] ['originating_leg_uuid'] )) {
-			$process_data=process_cdr ( $data, $db, $logger, $decimal_points,$config );
+			$process_data=process_cdr ( $data, $db, $fslogger, $decimal_points,$config );
 		}
 	} else {
-		$process_data=process_cdr ( $data, $db, $logger, $decimal_points,$config );
+		$process_data=process_cdr ( $data, $db, $fslogger, $decimal_points,$config );
 	}
 
 	//To run custom code.
 	if(function_exists('custom_end_hook'))
-		custom_end_hook($data, $db, $logger, $decimal_points,$config,$process_data);
+		custom_end_hook($data, $db, $fslogger, $decimal_points,$config,$process_data);
 		
 	if (file_exists("lib/addons/flux.fraud_detection.php")){
 			include_once("lib/addons/flux.fraud_detection.php");
-			if(function_exists('custom_fraud_hook')){custom_fraud_hook($data, $db, $logger, $decimal_points,$config,$process_data);}
+			if(function_exists('custom_fraud_hook')){custom_fraud_hook($data, $db, $fslogger, $decimal_points,$config,$process_data);}
 	}
 }
 ?>
