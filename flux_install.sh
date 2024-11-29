@@ -1,8 +1,8 @@
 #!/bin/bash
 ###############################################################################
-# Flux Telecom - Unindo pessoas e negócios
+# Flux Tecnologia - Unindo pessoas e negócios
 #
-# Copyright (C) 2023 Flux Telecom
+# Copyright (C) 2024 Flux Tecnologia
 # FluxSBC Version 6.3
 # License https://www.gnu.org/licenses/agpl-3.0.html
 #
@@ -507,11 +507,11 @@ normalize_flux ()
         touch /var/log/flux/flux.log
         touch /var/log/flux/flux_email.log
         chmod -Rf 755 $FLUX_SOURCE_DIR
-	chmod -Rf 777 /opt/flux/
-	chmod -Rf 777 /opt/flux/*
-	chmod -Rf 777 /opt/flux
-        chmod 777 /var/log/flux/flux.log
-        chmod 777 /var/log/flux/flux_email.log
+	# chmod -Rf 777 /opt/flux/
+	# chmod -Rf 777 /opt/flux/*
+	# chmod -Rf 777 /opt/flux
+        # chmod 777 /var/log/flux/flux.log
+        # chmod 777 /var/log/flux/flux_email.log
         sed -i "s#dbpass = <PASSSWORD>#dbpass = ${FLUXUSER_MYSQL_PASSWORD}#g" ${FLUXDIR}flux-config.conf
         sed -i "s#DB_PASSWD=\"<PASSSWORD>\"#DB_PASSWD = \"${FLUXUSER_MYSQL_PASSWORD}\"#g" ${FLUXDIR}flux.lua
         sed -i "s#base_url=https://localhost:443/#base_url=https://${FLUX_HOST_DOMAIN_NAME}/#g" ${FLUXDIR}/flux-config.conf
@@ -581,10 +581,10 @@ normalize_freeswitch ()
         rm -rf  /etc/freeswitch/sip_profiles/*
         touch /etc/freeswitch/sip_profiles/flux.xml
         chmod -Rf 755 ${FS_SOUNDSDIR}
-	chmod -Rf 777 /opt/flux/
-        chmod -Rf 777 /usr/share/freeswitch/scripts/flux/lib
-	chmod -Rf 777 /var/lib/freeswitch/recordings
-	chmod -Rf 777 /var/lib/freeswitch/recordings/*
+	# chmod -Rf 777 /opt/flux/
+        # chmod -Rf 777 /usr/share/freeswitch/scripts/flux/lib
+	# chmod -Rf 777 /var/lib/freeswitch/recordings
+	# chmod -Rf 777 /var/lib/freeswitch/recordings/*
         if [ ${DIST} = "DEBIAN" ]; then
                 cp -rf ${FLUX_SOURCE_DIR}/web_interface/nginx/deb_fs.conf /etc/nginx/conf.d/fs.conf
                 chown -Rf root.root ${WWWDIR}/fs
