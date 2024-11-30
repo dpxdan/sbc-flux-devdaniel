@@ -35,6 +35,8 @@ class Summary extends MX_Controller
         $this->load->library('flux/form', 'summary_form');
         $this->load->library("summary_form");
         $this->load->model('summary_model');
+        $this->load->library ('flux_log');
+        //$this->flux_log->write_log ( 'permission_list', json_encode($data) );
         $this->load->library('FLUX_Sms');
  
         if ($this->session->userdata('user_login') == FALSE)
@@ -74,10 +76,13 @@ class Summary extends MX_Controller
         $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
         $json_data = $paging_data["json_paging"];
         $query = $this->summary_model->get_customersummary_report_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"], $search_arr['group_by_str'], $search_arr['select_str'], $search_arr['order_str'], false);
+        
         if ($query->num_rows() > 0) {
+        
             $json_data['rows'] = $this->summary_report_grid($search_arr, $query, 'customer', 'grid');
         }
         $this->session->set_userdata('customersummary_reports_export', $search_arr);
+        $this->flux_log->write_log ( 'customer_json', json_encode($json_data) );
         echo json_encode($json_data);
     }
  

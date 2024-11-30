@@ -425,10 +425,27 @@ class rates_form extends common
                 '',
                 '',
                 '',
-                'set_routetype_origination'
+                'set_routetype_new'
             );
         } else {
-            $routing_type = null;
+            $routing_type = array(
+                gettext('Routing Type')."",
+                array(
+                    'id' => 'routing_type',
+                    'name' => 'routing_type',
+                    'class' => 'routing_type',
+                    "onchange" => "trunk_change(this.value)"
+                ),
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Select Status',
+                '',
+                '',
+                '',
+                'set_routetype_new'
+            );
         }
         $form['forms'] = array(
             base_url() . 'rates/origination_rate_save/',
@@ -574,7 +591,8 @@ class rates_form extends common
             
         );
 
-        $form[gettext('Rate Information')][] = array(
+
+        $form['Rate Information'][] = array(
             gettext('Status'),
             'status',
             'SELECT',

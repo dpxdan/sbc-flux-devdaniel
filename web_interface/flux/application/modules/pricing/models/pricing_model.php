@@ -72,7 +72,7 @@ class pricing_model extends CI_Model
     function edit_price($data, $id)
     {
         unset($data["action"]);
-        $data['routing_type'] = ($data['routing_type'] > 1)?1:$data['routing_type'];
+        $data['routing_type'] = ($data['routing_type'] > 10)?1:$data['routing_type'];
         $data['last_modified_date'] = gmdate("Y-m-d H:i:s");
         $this->db->where("id", $id);
         $this->db->update("pricelists", $data);

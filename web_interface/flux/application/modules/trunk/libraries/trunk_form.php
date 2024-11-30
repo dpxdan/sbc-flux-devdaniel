@@ -238,8 +238,37 @@ class trunk_form extends common
                 'tOOL TIP',
                 ''
             ),
-            
             array (
+				gettext ( 'Carriers' ),
+                'carrier_id',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please select carrier first',
+                'carrier_id',
+                'carrier_name,carrier_rn1',
+                'carrier_routing',
+                'build_concat_carrier_select_dropdown',
+                'where_arr',
+                array(
+                    "carrier_rn1 >" => "0"
+                )
+            ),
+              array(
+                gettext('Failover'),
+                'dialed_modify',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Select Failover',
+                '',
+                '',
+                '',
+                'set_status_failover'
+            ),
+            /*array (
 				gettext ( 'Carriers' ),
 				array (
 					'name'=>'carrier_id',
@@ -252,12 +281,12 @@ class trunk_form extends common
 				'tOOL TIP',
 				'Please Enter account number',
 				'id',
-				'id,carrier_rn1,carrier_name',
+				'carrier_name,carrier_rn1',
 				'carrier_routing',
-				'build_concat_dropdown_carriers',
+				'build_concat_select_dropdown',
 				'',
 				''
-		),
+		),*/
 
             array(
                 gettext('Status'),
@@ -517,7 +546,7 @@ class trunk_form extends common
                 "carrier_id",
                 "carrier_name,carrier_rn1",
                 "carrier_routing",
-                "build_concat_string",
+                "build_concat_carrier",
                 "",
                 "true",
                 "center"

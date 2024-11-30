@@ -162,7 +162,6 @@ class permissions_form
                 "true",
                 "center"
             ),
-     
      array (
      		gettext ( "Type" ),
      		"80",
@@ -174,7 +173,6 @@ class permissions_form
      		"true",
      		"center" 
      ),
-     
             array(
                 gettext("Created Date"),
                 "80",

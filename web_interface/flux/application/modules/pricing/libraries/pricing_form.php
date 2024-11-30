@@ -370,7 +370,7 @@ class pricing_form extends common
                     '',
                     '',
                     '',
-                    'set_routetype_origination'
+                    'set_routetype_termination'
                 ),
                 array(
                     gettext('Trunks'),
@@ -1098,7 +1098,17 @@ class pricing_form extends common
         );
         return $status_array;
     }
-
+    function set_routetype_termination($status = '')
+    {
+        $status_array = array(
+            '0' => 'LCR',
+            '1' => 'Cost',
+            '2' => 'Priority',
+            '3' => 'Percentage',
+            '4' => 'Carrier'
+        );
+        return $status_array;
+    }
     function set_routetype_reseller($status = '')
     {
         $status_array = array(
