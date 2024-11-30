@@ -193,10 +193,26 @@ class custom_rates_form extends common {
 				'',
 				'', 
 				'', 
-				'set_routetype_origination'
+				'set_routetype_new'
 			);
 		}else{
-			$routing_type=null;
+			$routing_type =array(
+				gettext('Routing Type'),
+				array(
+					'id'=>'routing_type',
+					'name'=>'routing_type',
+					'class'=>'routing_type',
+				), 
+				'SELECT',
+				'', 
+				'', 
+				'tOOL TIP',
+				'Please Select Status',
+				'',
+				'', 
+				'', 
+				'set_routetype_new'
+			);
 		}     
 		$form ['forms'] = array (
 			base_url () . 'personalized_rates/personalized_rates_save/',
@@ -393,8 +409,6 @@ class custom_rates_form extends common {
 		
 		return $form;
 	}
-
-	
 	function custom_rate_batch_update_form() {
 		$logintype = $this->CI->session->userdata ( 'userlevel_logintype' );
 		$trunk = null;
@@ -1308,17 +1322,6 @@ class custom_rates_form extends common {
 		
 		return $form;
 	}
-	
-	/*
-	 * FLUX 4.0
-	 * changes in grid size
-	 */
-	
-	
-	/*
-	 * FLUX 4.0 
-	 * changes in grid size
-	 */
 	function build_custom_rate_list_for_admin() {
 		$account_info = $accountinfo = $this->CI->session->userdata ( 'accountinfo' );
 		$currency_id  = $account_info ['currency_id'];
@@ -1689,10 +1692,6 @@ class custom_rates_form extends common {
 		}
 		return $grid_field_arr;
 	}
-	/**
-	 * *************************************************************************************
-	 */
-	
 	function build_grid_buttons_custom_rate() {
 		$buttons_json = json_encode ( array (
 			array (

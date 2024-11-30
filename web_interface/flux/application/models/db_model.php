@@ -534,6 +534,35 @@ class Db_model extends CI_Model {
 		}
 		return $drp_list;
 	}
+	function build_concat_carrier_select_dropdown($select, $table, $id_where = '', $id_value = '') {
+		$select_params = explode ( ',', $select );
+		if (isset ( $select_params [3] )) {
+			$cnt_str = " $select_params[1],' ',$select_params[2],' ','(',$select_params[3],')' ";
+		} else {
+			$cnt_str = " $select_params[1],' (',$select_params[2],')' ";
+		}
+		$select = $select_params [0] . ", concat($cnt_str) as $select_params[1] ";
+		$where = $id_value;
+		$drp_array = $this->getSelect ( $select, $table, $id_value );
+		$drp_array = $drp_array->result ();
+
+		$drp_list = array ();
+		$drp_list [0] = gettext("--Select--");
+		foreach ( $drp_array as $drp_value ) {
+			if($select_params[1] == 'carrier_name'){
+				$company_info = (array)$this->db->get_where($table,array("carrier_id"=>$drp_value->carrier_id))->first_row();
+				if (!empty($company_info['carrier_rn1'])) {
+					$drp_value->carrier_name = $company_info['carrier_name'] . '('.$company_info['carrier_rn1'].' )';
+				}else{
+					$drp_value->carrier_name = $company_info['carrier_name'] . ' ' .'('.$company_info['accountid'] .')';
+				}
+			}else{
+				$drp_value->carrier_name = $company_info['carrier_name'] . ' '  .'('.$company_info['carrier_rn1'] .')';
+			}
+			$drp_list [$drp_value->{$select_params [0]}] = $drp_value->{$select_params [1]};
+		}
+		return $drp_list;
+	}
 	function build_dropdown($select, $table, $id_where = '', $id_value = '') { 
 		$select_params = explode ( ',', $select );
 		$where = '';
@@ -1401,20 +1430,50 @@ class Db_model extends CI_Model {
 		$carrier_arr = $final_array = array();
 		$dropdown_params= array("name" => "carrier_id" ,"id" => "carrierid_search_drp", "class" => "col-md-12 form-control selectpicker form-control-lg carrierid_search_drp col-md-3");
 		$carriers_result =$this->db->get_where('carrier_routing',array("carrier_rn1 >"=>0));
-		if($carriers_result->num_rows () > 0){
+		if($carriers_result->num_rows () > 0)
+		{
 			$final_array = array();
+			$final_array[0]=gettext("--Select--");
 				
 			$carriers_result = $carriers_result -> result_array();
 			foreach ($carriers_result as $key=>$value) {
 					$carrier_arr[$value['id']] =  $value['carrier_name']."( ".$value['carrier_rn1']." )";
 			}
 			if(!empty($carrier_arr))
+			    
 				$final_array = $carrier_arr;
-				$final_array[0] = gettext("--Select--");
 		}
 		return $final_array;
 	}
+	function build_concat_carrier_dropdown($select, $table, $id_where = '', $id_value = '') {
+		$select_params = explode ( ',', $select );
+		if (isset ( $select_params [3] )) {
+			$cnt_str = " $select_params[1],' ',$select_params[2],' ','(',$select_params[3],')' ";
+		} else {
+			$cnt_str = " $select_params[1],' (',$select_params[2],')' ";
+		}
+		$select = $select_params [0] . ", concat($cnt_str) as $select_params[1] ";
+		$where = $id_value;
+		$drp_array = $this->getSelect ( $select, $table, $id_value );
+		$drp_array = $drp_array->result ();
 
+		$drp_list = array ();
+		$drp_list [0] = gettext("--Select--");
+		foreach ( $drp_array as $drp_value ) {
+			if($select_params[1] == 'carrier_name'){
+				$carrier_info = (array)$this->db->get_where($table,array("id"=>$drp_value->id))->first_row();
+				if (!empty($carrier_info['carrier_name'])) {
+					$drp_value->carrier_name = $carrier_info['carrier_name'] . '('.$carrier_info['carrier_rn1'].' )';
+				}else{
+					$drp_value->carrier_name = $carrier_info['carrier_name'] . ' ' .'('.$carrier_info['carrier_rn1'] .')';
+				}
+			}else{
+				$drp_value->carrier_name = $carrier_info['carrier_name'] . ' '  .'('.$carrier_info['carrier_rn1'] .')';
+			}
+			$drp_list [$drp_value->{$select_params [0]}] = $drp_value->{$select_params [1]};
+		}
+		return $drp_list;
+	}
 	function build_dropdown_languages($select, $table, $id_where = '', $id_value = '') {
 		$drp_array = $this->getSelect('name', 'languages', '');
 		$drp_array = $drp_array->result();

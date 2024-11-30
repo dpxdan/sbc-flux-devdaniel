@@ -160,22 +160,24 @@ class Reports_form extends common
                 ),
                 array(
                     gettext('Carrier'),
-                    'INPUT',
                     array(
-                        'name' => 'call_id_cadup[call_id_cadup]',
-                        'value' => '',
-                        'size' => '20',
-                        'class' => "text field "
+                        'name' => 'carrier_id',
+                        'id' => 'carrier_id_search_drp',
+                        'class' => 'carrier_id_search_drp'
                     ),
-                    '',
-                    'Tool tips info',
-                    '1',
-                    'call_id_cadup[call_id_cadup-string]',
+                    'SELECT',
                     '',
                     '',
-                    '',
-                    'search_string_type',
-                    ''
+                    'tOOL TIP',
+                    'Please Enter account number',
+                    'carrier_id',
+                    'carrier_name,carrier_rn1',
+                    'carrier_routing',
+                    'build_concat_carrier_select_dropdown',
+                    'where_arr',
+                    array(
+                        "status" => "0"
+                    )
                 ),
                 array(
                     gettext('Duration'),
@@ -338,7 +340,7 @@ class Reports_form extends common
                     '',
                     '',
                     '',
-                    'set_calltype_new'
+                    'set_calltype_report'
                 ),
                 array(
                     gettext('Select Year'),
@@ -1017,7 +1019,7 @@ class Reports_form extends common
                 '',
                 '',
                 '',
-                'set_calltype_new'
+                'set_calltype_report'
             ),
             array(
                 gettext('Select Year'),
@@ -1327,7 +1329,7 @@ class Reports_form extends common
                 '',
                 '',
                 '',
-                'set_calltype_new'
+                'set_calltype_report'
             ),
             array(
                 gettext('Select Year'),
@@ -1493,8 +1495,8 @@ class Reports_form extends common
                 ),
                 array(
 				   gettext("Carrier"),
-				   "200",
-				   "call_id_cadup",
+				   "100",
+				   "carrier_id",
 				   "",
 				   "",
 				   "",
@@ -1599,7 +1601,7 @@ class Reports_form extends common
                     "center"
                 ),
 
-                //$recording
+                $recording
             ));
         } else {
             $account_info = $accountinfo = $this->CI->session->userdata('accountinfo');
@@ -1750,7 +1752,7 @@ class Reports_form extends common
                     "center"
                 ),
 
-                //$recording
+                $recording
             ));
         }
 
@@ -2134,9 +2136,9 @@ class Reports_form extends common
             array(
                 gettext("Carrier"),
                 "200",
-                "call_id_cadup",
-                "nomePrestadora,rn1",
-                "view_carriers",
+			   "carrier_id",
+			   "carrier_name,carrier_rn1",
+			   "carrier_routing",
                 "build_concat_carrier",
                 "",
                 "false",

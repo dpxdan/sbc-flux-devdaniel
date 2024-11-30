@@ -32,7 +32,7 @@ class Permissions extends MX_Controller
         $this->load->library('session');
         $this->load->library("permissions_form");
         $this->load->library('FLUX_Sms');
-        $this->load->library ( 'Invoice_log' );
+        $this->load->library ( 'flux_log' );
         $this->load->model('permissions_model');
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
@@ -61,7 +61,7 @@ class Permissions extends MX_Controller
         $data["grid_buttons"] = $this->permissions_form->build_grid_buttons();
         $data['form_search'] = $this->form->build_serach_form($this->permissions_form->get_permissions_search_form());
         // print_r($data);exit;
-        $this->invoice_log->write_log ( 'permission_list', json_encode($data) );
+        $this->flux_log->write_log ( 'permission_list', json_encode($data) );
         $this->load->view('view_permissions_list', $data);
     }
 
@@ -75,7 +75,7 @@ class Permissions extends MX_Controller
         $query = $this->permissions_model->getpermissions_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
         $grid_fields = json_decode($this->permissions_form->build_permissions_list_for_admin());
         $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
-        $this->invoice_log->write_log ( 'permission_info', json_encode($query) );
+        $this->flux_log->write_log ( 'permission_info', json_encode($query) );
         echo json_encode($json_data);
     }
 
@@ -100,7 +100,7 @@ class Permissions extends MX_Controller
             $this->session->unset_userdata('add_permission_role_name');
             $this->session->unset_userdata('add_permission_description');
         }
-        $roles_and_permission_array = $this->db_model->select("*", "roles_and_permission_v6", array(
+        $roles_and_permission_array = $this->db_model->select("*", "roles_and_permission", array(
             'login_type' => $login_type,
             'status' => 0
         ), "priority", "ASC", "", "")->result_array();

@@ -27,6 +27,7 @@ class Summary_model extends CI_Model
     function __construct()
     {
         parent::__construct();
+        $this->load->library ( 'flux_log' );
     }
 
     function get_resellersummary_report_list($flag, $start = 0, $limit = 0, $group_by, $select, $order, $export = false)
@@ -69,7 +70,7 @@ class Summary_model extends CI_Model
             $this->db->_protect_identifiers = true;
         }
         if ($flag) {
-            $this->db->select($select . ",COUNT(*) AS attempts, AVG(billseconds) AS acd,MAX(billseconds) AS mcd,SUM(billseconds) AS duration,SUM(CASE WHEN calltype !='free' THEN billseconds ELSE 0 END) as billable,SUM(CASE WHEN billseconds > 0 THEN 1 ELSE 0 END) as completed,SUM(debit) AS debit,SUM(cost) AS cost", false);
+            $this->db->select($select . ",COUNT(*) AS attempts, AVG(billseconds) AS acd,MAX(billseconds) AS mcd,SUM(billseconds) AS duration,SUM(CASE WHEN calltype !='Gratuita' THEN billseconds ELSE 0 END) as billable,SUM(CASE WHEN billseconds > 0 THEN 1 ELSE 0 END) as completed,SUM(debit) AS debit,SUM(cost) AS cost", false);
             $this->db->order_by($order, "ASC");
             if (! $export && $limit > 0) {
                 $this->db->limit($limit, $start);
@@ -107,7 +108,7 @@ class Summary_model extends CI_Model
             $this->db->_protect_identifiers = true;
         }
         if ($flag) {
-            $this->db->select($select . ",COUNT(*) AS attempts, AVG(billseconds) AS acd,MAX(billseconds) AS mcd,SUM(billseconds) AS duration,SUM(CASE WHEN calltype !='free' THEN billseconds ELSE 0 END) as billable,SUM(CASE WHEN billseconds > 0 THEN 1 ELSE 0 END) as completed,SUM(cost) AS cost", false);
+            $this->db->select($select . ",COUNT(*) AS attempts, AVG(billseconds) AS acd,MAX(billseconds) AS mcd,SUM(billseconds) AS duration,SUM(CASE WHEN calltype !='Gratuita' THEN billseconds ELSE 0 END) as billable,SUM(CASE WHEN billseconds > 0 THEN 1 ELSE 0 END) as completed,SUM(cost) AS cost", false);
 
             $this->db->order_by($order, "ASC");
             if (! $export && $limit > 0) {
@@ -173,7 +174,7 @@ class Summary_model extends CI_Model
             $this->db->_protect_identifiers = true;
         }
         if ($flag) {
-            $this->db->select($select . ",COUNT(*) AS attempts, AVG(billseconds) AS acd,MAX(billseconds) AS mcd,SUM(billseconds) AS duration,SUM(CASE WHEN calltype !='free' THEN billseconds ELSE 0 END) as billable,SUM(CASE WHEN billseconds > 0 THEN 1 ELSE 0 END) as completed,SUM(debit) AS debit,SUM(cost) AS cost", false);
+            $this->db->select($select . ",COUNT(*) AS attempts, AVG(billseconds) AS acd,MAX(billseconds) AS mcd,SUM(billseconds) AS duration,SUM(CASE WHEN calltype !='Gratuita' THEN billseconds ELSE 0 END) as billable,SUM(CASE WHEN billseconds > 0 THEN 1 ELSE 0 END) as completed,SUM(debit) AS debit,SUM(cost) AS cost", false);
             $this->db->order_by($order, "ASC");
             if (! $export && $limit > 0) {
                 $this->db->limit($limit, $start);
@@ -181,6 +182,8 @@ class Summary_model extends CI_Model
 
             $this->db->from($table_name);
             $result = $this->db->get();
+            $query = $this->db->last_query();
+            $this->flux_log->write_log ( 'get_customersummary_report_list', json_encode($query) );
         } else {
 
             $result = $this->db_model->getSelect("count(*) as total_count", $table_name, '');

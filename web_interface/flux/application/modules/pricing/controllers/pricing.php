@@ -35,6 +35,7 @@ class pricing extends MX_Controller
         $this->load->library('flux/form', 'pricing_form');
         $this->load->library('flux/permission');
         $this->load->library('FLUX_Sms');
+        $this->load->library('flux_log');
         $this->load->model('pricing_model');
 
         if ($this->session->userdata('user_login') == FALSE)
@@ -75,7 +76,8 @@ class pricing extends MX_Controller
             $data['reseller_id'] = $edit_data['reseller_id'];
             if ($edit_data['reseller_id'] == 0) {
                 $edit_data['reseller_id'] = 'Admin';
-            } else {
+            } 
+            else {
                 $edit_data['reseller_id'] = $this->common->get_field_name('number', 'accounts', array(
                     'id' => $edit_data['reseller_id']
                 ));
@@ -90,6 +92,7 @@ class pricing extends MX_Controller
     function price_save()
     {
         $add_array = $this->input->post();
+        $this->flux_log->write_log ( 'price_save', json_encode($add_array) );
         $i = 1;
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($add_array as $key => $value) {
@@ -108,7 +111,8 @@ class pricing extends MX_Controller
                     $data['validation_errors'] = validation_errors();
                     echo $data['validation_errors'];
                     exit();
-                } else {
+                } 
+                else {
 
                     if (isset($add_array['routing_prefix']) && $add_array['routing_prefix'] != "") {
                         $no_of_rows = $this->pricing_model->check_unique_prefix_for_edit($add_array['routing_prefix']);
@@ -128,7 +132,7 @@ class pricing extends MX_Controller
                     );
                     $this->db->delete("routing", $where);
                     if (isset($add_array['trunk_id']) || isset($add_array['routing_type'])) {
-                        if (isset($add_array['trunk_id']) || ($add_array['routing_type'] == 2 || $add_array['routing_type'] == 3)) {
+                        if (isset($add_array['trunk_id']) || ($add_array['routing_type'] == 2 || $add_array['routing_type'] == 3 || $add_array['routing_type'] == 4)) {
                                 $this->set_force_routing($add_array['id'], $add_array['trunk_id']);
                         }
                     }
@@ -151,13 +155,15 @@ class pricing extends MX_Controller
                 }
 
                 $this->load->view('view_price_add_edit', $data);
-            } else {
+            } 
+            else {
                 $data['page_title'] = gettext('Create Price Details');
                 if ($this->form_validation->run() == FALSE) {
                     $data['validation_errors'] = validation_errors();
                     echo $data['validation_errors'];
                     exit();
-                } else {
+                } 
+                else {
 
                     if (isset($add_array['routing_prefix']) && $add_array['routing_prefix'] != "") {
                         $prefix = $this->pricing_model->check_unique_prefix($add_array['routing_prefix']);
@@ -169,7 +175,7 @@ class pricing extends MX_Controller
                         }
                     }
                     if (isset($add_array['trunk_id']) || isset($add_array['routing_type'])) {
-                        if (isset($add_array['trunk_id']) || $add_array['routing_type'] == 2 || $add_array['routing_type'] == 3) {
+                        if (isset($add_array['trunk_id']) || $add_array['routing_type'] == 2 || $add_array['routing_type'] == 3 || $add_array['routing_type'] == 4) {
                                 $trunk_id = $add_array['trunk_id'];
                         }
                     }
@@ -181,12 +187,14 @@ class pricing extends MX_Controller
                                 if (! empty($value) && $value != '')
                                     $this->set_force_routing_new($priceid, $value, $add_array['routing_type']);
                             }
-                        } else if ($add_array['routing_type'] == 3) {
+                        } 
+                        else if ($add_array['routing_type'] == 3) {
                             foreach ($trunk_id as $key => $value) {
                                 if (! empty($value) && $value != '')
                                     $this->set_force_routing_new($priceid, $value, $add_array['routing_type'], $percentage[$key]);
                             }
-                        } else {
+                        } 
+                        else {
                             $this->set_force_routing($priceid, $trunk_id);
                         }
                     }

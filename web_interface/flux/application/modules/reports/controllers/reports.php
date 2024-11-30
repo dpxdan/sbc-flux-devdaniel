@@ -78,14 +78,14 @@ class Reports extends MX_Controller
             foreach ($pricelist_res as $value) {
                 $pricelist_arr[$value['id']] = $value['name'];
             }
-      $where = "idCadup IN (" . $count_all['carrier_ids'] . ")";
+      $where = "carrier_id IN (" . $count_all['carrier_ids'] . ")";
       $this->db->where($where);
-      $this->db->select('idCadup,nomePrestadora,uf,nomeLocalidade,rn1');
-      $this->db->group_by ( "idCadup" );
-      $carrier_res = $this->db->get('view_carriers');
+      $this->db->select('carrier_id,carrier_name,carrier_rn1');
+      $this->db->group_by ( "carrier_id" );
+      $carrier_res = $this->db->get('carrier_routing');
       $carrier_res = $carrier_res->result_array();
       foreach ($carrier_res as $value) {
-        $carrier_arr[$value['idCadup']] = $value['nomePrestadora'] . ' (' . $value['rn1'] . ')';
+        $carrier_arr[$value['carrier_id']] = $value['carrier_name'] . ' (' . $value['carrier_rn1'] . ')';
       }
 
             $where = "id IN (" . $count_all['trunk_ids'] . ")";
@@ -108,7 +108,7 @@ class Reports extends MX_Controller
             foreach ($query as $value) {
                 $duration = ($show_seconds == 'minutes') ? ($value['billseconds'] > 0) ? sprintf('%02d', $value['billseconds'] / 60) . ":" . sprintf('%02d', $value['billseconds'] % 60) : "00:00" : $value['billseconds'];
                 $account = isset($account_arr[$value['accountid']]) ? $account_arr[$value['accountid']] : 'Anonymous';
-        $carrier = isset($carrier_arr[$value['call_id_cadup']]) ? $carrier_arr[$value['call_id_cadup']] : '0';
+        $carrier = isset($carrier_arr[$value['carrier_id']]) ? $carrier_arr[$value['carrier_id']] : '--';
                 $is_recording = isset($account_is_recording[$value['accountid']]) ? $account_is_recording[$value['accountid']] : '1';
                 $uid = $value['uniqueid'];
                 if ($value['call_direction'] == 'inbound') {
@@ -194,7 +194,7 @@ class Reports extends MX_Controller
                     "",
                     "",
                     "",
-
+                    "",
                     ""
                 )
             );

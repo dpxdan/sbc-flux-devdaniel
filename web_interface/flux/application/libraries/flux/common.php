@@ -847,6 +847,13 @@ class common {
 		);
 		return $status_array;
 	}
+	function set_status_failover($status = '') {
+		$status_array = array (
+				'0' => gettext ( 'No' ),
+				'1' => gettext ( 'Yes' )
+		);
+		return $status_array;
+	}
 	function get_status($select = "", $table = "", $status) {
 		if(isset($status['reseller_status'])){
 			$status['status'] = $status['reseller_status'];
@@ -1336,6 +1343,32 @@ class common {
 				$call_type_array [$result ['call_type']] = gettext($result ['call_type']);
 			}
 			return $call_type_array;
+		}
+	function set_calltype_report() {
+			$call_type_array = array (
+					"" => gettext ( "--Select--" )
+			);
+			$this->CI->db->select('calltype');
+            $this->CI->db->group_by ( "calltype" );
+			$custom_call_types_report = $this->CI->db->get ( "cdrs" )->result_array ();	
+		
+			foreach ( $custom_call_types_report as $result ) {
+				$call_type_array [$result ['calltype']] = gettext($result ['calltype']);
+			}
+			return $call_type_array;
+		}
+	function set_carrier_report() {
+			$carrier_array = array (
+					"" => gettext ( "--Select--" )
+			);
+			$this->CI->db->select('calltype');
+            $this->CI->db->group_by ( "calltype" );
+			$custom_carrier_report = $this->CI->db->get ( "cdrs" )->result_array ();	
+		
+			foreach ( $custom_carrier_report as $result ) {
+				$carrier_array [$result ['calltype']] = gettext($result ['calltype']);
+			}
+			return $carrier_array;
 		}
 	function set_search_status($select = '') {
 		$status_array = array (
@@ -2170,14 +2203,14 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			return $drp_array [0]->{$select_params [0]};
 		}
 	}
-	function build_concat_carrier($select, $table, $id_where = '') {
+	function build_concat_string_carrier($select, $table, $id_where = '') {
 		$select_params = explode ( ',', $select );
 		$where = array (
 				"1"
 		);
 		if ($id_where != '') {
 			$where = array (
-					"idCadup" => $id_where
+					"id" => $id_where
 			);
 		}
 		$select_params = explode ( ',', $select );
@@ -2193,7 +2226,45 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$select =  $select_params [3] ;
 		$drp_array = $this->CI->db_model->getSelect ( $select, $table, $where );
 		$drp_array = $drp_array->result ();
-		if(empty($drp_array[0]->nomePrestadora)){
+		$drp_array [0] = gettext("--Select--");
+		if(empty($drp_array[0]->company_name)){
+			if (isset ( $select_params [2] )) {
+				$cnt_str = " $select_params[0],' ',$select_params[1],' ','(',$select_params[2],')' ";
+			} else {
+				$cnt_str = " $select_params[0],' (',$select_params[1],')' ";
+			}
+		}
+		$select = "concat($cnt_str) as $select_params[0] ";
+		$drp_array = $this->CI->db_model->getSelect ( $select, $table, $where );
+		$drp_array = $drp_array->result ();
+		if (isset ( $drp_array [0] )) {
+			return $drp_array [0]->{$select_params [0]};
+		}
+	}
+	function build_concat_carrier($select, $table, $id_where = '') {
+		$select_params = explode ( ',', $select );
+		$where = array (
+				"1"
+		);
+		if ($id_where != '') {
+			$where = array (
+					"carrier_id" => $id_where
+			);
+		}
+		$select_params = explode ( ',', $select );
+		if (isset ( $select_params [3] ) && !empty($select_params [3]) ) {
+			$cnt_str = " $select_params[3],'(',$select_params[2],')' ";
+		}else{
+			if (isset ( $select_params [2] )) {
+				$cnt_str = " $select_params[0],' ',$select_params[1],' ','(',$select_params[2],')' ";
+			} else {
+				$cnt_str = " $select_params[0],' (',$select_params[1],')' ";
+			}
+		}
+		$select =  $select_params [3] ;
+		$drp_array = $this->CI->db_model->getSelect ( $select, $table, $where );
+		$drp_array = $drp_array->result ();
+		if(empty($drp_array[0]->carrier_name)){
 			if (isset ( $select_params [2] )) {
 				$cnt_str = " $select_params[0],' ',$select_params[1],' ','(',$select_params[2],')' ";
 			} else {
