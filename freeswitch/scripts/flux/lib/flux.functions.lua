@@ -717,7 +717,7 @@ function get_carrier_rates(destination_number,number_loop_str,ratecard_id,rate_c
 	if(routing_type == 1) then
 		query = query.." ORDER by TR.cost ASC,TR.precedence ASC, TK.precedence"
 	elseif(routing_type == 4) then
-			query = query.." ORDER by LENGTH (pattern) DESC,TK.tech ASC, TR.cost ASC,TR.precedence ASC, TK.precedence"
+			query = query.." ORDER BY CASE WHEN TK.tech = ".. rate_carrier_id .." THEN 0 ELSE 1 END, LENGTH (pattern) DESC,TK.tech DESC, TR.cost ASC,TR.precedence ASC, TK.precedence"
 	else
 		query = query.." ORDER by LENGTH (pattern) DESC,TR.cost ASC,TR.precedence ASC, TK.precedence"
 	end
@@ -844,6 +844,9 @@ end
 
 function regex_cmd(destination_number,pattern,replace)
     Logger.notice("[regex_pattern] FUNCTION")
+    Logger.notice("[regex_pattern] DESTINATION_NUMBER: ".. destination_number)
+    Logger.notice("[regex_pattern] PATTERN: ".. pattern)
+    Logger.notice("[regex_pattern] REPLACE: ".. replace)
     local rgx_pattern = pattern
     local regex_number = destination_number:gsub("%s+", "")
     local api = freeswitch.API();
@@ -857,11 +860,13 @@ function regex_cmd(destination_number,pattern,replace)
 	end
 
     if (rgx_pattern == "num_pattern_0") then
-		regex_pattern = "^0([1-9][1-9])(\\d{7,20})$"
+		regex_pattern = "^0([1-9][1-9])(\\d{7,20})$"	
     elseif (rgx_pattern == "num_pattern_cn") then
     	regex_pattern = "^([1-9][1-9])(\\d{7,8})$"
     elseif (rgx_pattern == "unknown") then
     	regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+    elseif (rgx_pattern == "num_local_regex") then
+    	regex_pattern = "^(\\d{4,5})(\\d{4})$"
     elseif (rgx_pattern == "num_regex_pattern") then
     	regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
     elseif (rgx_pattern == "num_pattern_local") then
@@ -875,11 +880,11 @@ function regex_cmd(destination_number,pattern,replace)
     if api:execute("regex", ""..regex_number.."|"..regex_pattern) == "true" then
     	cmd = ""..regex_number.."|"..regex_pattern..""..rgx_replace
 		local result = trim(api:execute("regex", cmd));
-	Logger.notice("[FUNCTIONS] [regex_pattern] regex_number: "..regex_number);
-	Logger.notice("[FUNCTIONS] [regex_pattern] regex_pattern: "..regex_pattern);
-	Logger.notice("[FUNCTIONS] [regex_pattern] rgx_replace: "..rgx_replace);
-	Logger.notice("[FUNCTIONS] [regex_pattern] regex: "..cmd);
-	Logger.notice("[FUNCTIONS] [regex_pattern] result: "..result);
+		Logger.notice("[FUNCTIONS] [regex_pattern] regex_number: "..regex_number);
+		Logger.notice("[FUNCTIONS] [regex_pattern] regex_pattern: "..regex_pattern);
+		Logger.notice("[FUNCTIONS] [regex_pattern] rgx_replace: "..rgx_replace);
+		Logger.notice("[FUNCTIONS] [regex_pattern] regex: "..cmd);
+		Logger.notice("[FUNCTIONS] [regex_pattern] result: "..result);
 		regex_number = result;
     else
 		regex_number = "false";
