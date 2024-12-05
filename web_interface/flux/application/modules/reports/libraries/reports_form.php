@@ -1410,17 +1410,17 @@ class Reports_form extends common
     function build_report_list_for_customer()
     {
         $logintype = $this->CI->session->userdata('userlevel_logintype');
-        $recording = array(
-            gettext("Recording"),
-            "127",
-            "recording",
-            "",
-            "",
-            "",
-            "",
-            "false",
-            ""
-        );
+        // $recording = array(
+        //     gettext("Recording"),
+        //     "127",
+        //     "recording",
+        //     "",
+        //     "",
+        //     "",
+        //     "",
+        //     "false",
+        //     ""
+        // );
         if ($logintype != 1) {
             $account_info = $accountinfo = $this->CI->session->userdata('accountinfo');
             $currency_id = $account_info['currency_id'];
@@ -1601,7 +1601,7 @@ class Reports_form extends common
                     "center"
                 ),
 
-                $recording
+                // $recording
             ));
         } else {
             $account_info = $accountinfo = $this->CI->session->userdata('accountinfo');
@@ -1752,7 +1752,7 @@ class Reports_form extends common
                     "center"
                 ),
 
-                $recording
+                // $recording
             ));
         }
 
