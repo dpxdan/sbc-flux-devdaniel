@@ -496,17 +496,17 @@ if (userinfo ~= nil) then
 			config['free_inbound'] = 1
 		
 		Logger.info("[DIALPLAN] STRIPCADUP IN")
---      Exemplos de patterns
---		num_pattern_0 = "^0([1-9][1-9])(\\d{7,20})$"
---		num_pattern_cn = "^([1-9][1-9])(\\d{7,8})$"
---		num_regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
---    num_regex_unknown = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
---		num_pattern_local = "^([2-9]\\d{3})(\\d{4})$"
+	--      Exemplos de patterns
+	--		num_pattern_0 = "^0([1-9][1-9])(\\d{7,20})$"
+	--		num_pattern_cn = "^([1-9][1-9])(\\d{7,8})$"
+	--		num_regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
+	--    num_regex_unknown = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+	--		num_pattern_local = "^([2-9]\\d{3})(\\d{4})$"
 
---    Exemplos de replace
+	--    Exemplos de replace
 
---		num_pattern_replace = "%1" - Retorna o grupo 1
---    num_pattern_replace = "%2" - Retorna o grupo 2
+	--		num_pattern_replace = "%1" - Retorna o grupo 1
+	--    num_pattern_replace = "%2" - Retorna o grupo 2
 
 		a = callerid_number	        
 		
@@ -518,10 +518,10 @@ if (userinfo ~= nil) then
 		
 		
 		if(rgx_cn_number ~= nil and rgx_cn_number ~= "false") then 
-		rgx_number_len = string.len(rgx_cn_number)
+			rgx_number_len = string.len(rgx_cn_number)
 		if(rgx_number_len > 2) then
-		rgx_cn_dest_number = string.sub(rgx_cn_number, 2, 3)
-		rgx_dest_number = rgx_cn_dest_number..rgx_prefix_number..rgx_end_number
+			rgx_cn_dest_number = string.sub(rgx_cn_number, 2, 3)
+			rgx_dest_number = rgx_cn_dest_number..rgx_prefix_number..rgx_end_number
 		else
 		rgx_cn_dest_number = rgx_cn_number
 		rgx_dest_number = rgx_number
@@ -688,42 +688,50 @@ if (userinfo ~= nil) then
 			Logger.info("[DIALPLAN] STRIPCADUP OUT")
 			a = destination_number
 			num_regex = destination_number
-			rgx_number = regex_cmd(num_regex,"unknown","0")
-			rgx_cn_number = regex_cmd(num_regex,"unknown","1")
-			rgx_prefix_number = regex_cmd(num_regex,"unknown","2")
-			rgx_end_number = regex_cmd(num_regex,"unknown","3")
-			if(rgx_cn_number ~= nil and rgx_cn_number ~= "false") then 
-			rgx_number_len = string.len(rgx_cn_number)
-			if(rgx_number_len > 2) then
-			rgx_cn_dest_number = string.sub(rgx_cn_number, 2, 3)
-			rgx_dest_number = rgx_cn_dest_number..rgx_prefix_number..rgx_end_number
+			if (string.len(num_regex) == 9 or string.len(num_regex) == 8) then
+				rgx_cn_number = string.sub(callerid_number, 1, 2)
+				rgx_number = rgx_cn_number..num_regex
+				rgx_prefix_number = regex_cmd(num_regex,"num_local_regex","1")
+				rgx_end_number = regex_cmd(num_regex,"num_local_regex","2")
 			else
-			rgx_cn_dest_number = rgx_cn_number
-			rgx_dest_number = rgx_number
+				rgx_number = regex_cmd(num_regex,"unknown","0")
+				rgx_cn_number = regex_cmd(num_regex,"unknown","1")
+				rgx_prefix_number = regex_cmd(num_regex,"unknown","2")
+				rgx_end_number = regex_cmd(num_regex,"unknown","3")
 			end
 
-			cn_dest_number = rgx_cn_dest_number
-			area_number = rgx_cn_dest_number
-			prefix_dest_number = rgx_prefix_number
-			end_dest_number = rgx_end_number
-			carrier_dest_number = rgx_dest_number
-			Logger.info("[DIALPLAN] FUNCTION cn_dest_number: "..cn_dest_number)
-			Logger.info("[DIALPLAN] FUNCTION area_number: "..area_number)
-			Logger.info("[DIALPLAN] FUNCTION carrier_dest_number: "..carrier_dest_number)
-			Logger.info("[DIALPLAN] FUNCTION prefix_dest_number: "..prefix_dest_number)
-			Logger.info("[DIALPLAN] FUNCTION end_dest_number: "..end_dest_number)
+			if(rgx_cn_number ~= nil and rgx_cn_number ~= "false") then 
+				rgx_number_len = string.len(rgx_cn_number)
+				if(rgx_number_len > 2) then
+					rgx_cn_dest_number = string.sub(rgx_cn_number, 2, 3)
+					rgx_dest_number = rgx_cn_dest_number..rgx_prefix_number..rgx_end_number
+				else
+					rgx_cn_dest_number = rgx_cn_number
+					rgx_dest_number = rgx_number
+				end
+
+				cn_dest_number = rgx_cn_dest_number
+				area_number = rgx_cn_dest_number
+				prefix_dest_number = rgx_prefix_number
+				end_dest_number = rgx_end_number
+				carrier_dest_number = rgx_dest_number
+				Logger.info("[DIALPLAN] FUNCTION cn_dest_number: "..cn_dest_number)
+				Logger.info("[DIALPLAN] FUNCTION area_number: "..area_number)
+				Logger.info("[DIALPLAN] FUNCTION carrier_dest_number: "..carrier_dest_number)
+				Logger.info("[DIALPLAN] FUNCTION prefix_dest_number: "..prefix_dest_number)
+				Logger.info("[DIALPLAN] FUNCTION end_dest_number: "..end_dest_number)
 			end
             if(rgx_cn_number ~= nil and rgx_cn_number ~= "false") then
-			Logger.info("[Dialplan] =============== Carrier Information ===================")
-			Logger.info("[Dialplan] cn_dest_number : "..cn_dest_number) 
-			Logger.info("[Dialplan] area_number : "..area_number)  
-			Logger.info("[Dialplan] prefix_dest_number : "..prefix_dest_number)  
-			Logger.info("[Dialplan] end_dest_number : "..end_dest_number)
-			Logger.info("[Dialplan] carrier_dest_number : "..carrier_dest_number)
-			Logger.info("[Dialplan] destination_number : "..destination_number)
-			Logger.info("[Dialplan] callerid_number : "..callerid_number)
-			Logger.info("[Dialplan] ================================================================")  	    		 
-			carrier_info = get_carrier_out(userinfo,cn_dest_number,carrier_dest_number)
+				Logger.info("[Dialplan] =============== Carrier Information ===================")
+				Logger.info("[Dialplan] cn_dest_number : "..cn_dest_number) 
+				Logger.info("[Dialplan] area_number : "..area_number)  
+				Logger.info("[Dialplan] prefix_dest_number : "..prefix_dest_number)  
+				Logger.info("[Dialplan] end_dest_number : "..end_dest_number)
+				Logger.info("[Dialplan] carrier_dest_number : "..carrier_dest_number)
+				Logger.info("[Dialplan] destination_number : "..destination_number)
+				Logger.info("[Dialplan] callerid_number : "..callerid_number)
+				Logger.info("[Dialplan] ================================================================")  	    		 
+				carrier_info = get_carrier_out(userinfo,cn_dest_number,carrier_dest_number)
 			if(carrier_info ~= nil and carrier_info['carrier_rn1'] ~= nil) then
 			user_rates['rn1'] = carrier_info['carrier_rn1']
 			user_rates['carrier_id'] = carrier_info['carrier_id']
@@ -804,7 +812,7 @@ if (userinfo ~= nil) then
 			userinfo['call_type_custom'] = call_typecustom;
 			Logger.info("[Dialplan] Call Type : "..custom_calltype);
 			Logger.info("[Dialplan] User Call Type : "..userinfo['call_type_custom']);
-            termination_value['trunk_name'] = termination_value['path'];
+            -- termination_value['trunk_name'] = termination_value['path'];
 			Logger.info("[Dialplan] Trunk Name : "..termination_value['trunk_name'])			
 			termination_value['intcall']=customer_userinfo['international_call']
 --			if (carrier_info ~= nil and tonumber(carrier_info['rn1']) ~=nil and tonumber(carrier_info['rn1']) > 0) then
