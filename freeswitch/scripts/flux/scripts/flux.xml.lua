@@ -762,6 +762,12 @@ function error_xml_without_cdr(destination_number,error_code,calltype,playback_a
 	    end	
 	    if(call_direction == 'inbound')then
 		    table.insert(xml, [[<action application="set" data="calltype=DID"/>]]);
+			Logger.debug("Calltype::" .. calltype)
+			if (calltype == nil or calltype == 'Padrao')then
+				table.insert(xml, [[<action application="set" data="calltype=DID"/>]]);
+			else
+		    	table.insert(xml, [[<action application="set" data="calltype=]]..calltype..[["/>]]);
+			end
 	    end
 	    if(call_direction == 'local')then
 		    table.insert(xml, [[<action application="set" data="calltype=LOCAL"/>]]);
