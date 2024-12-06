@@ -1443,7 +1443,7 @@ class Accounts_form extends common {
 		$accountinfo    = $this->CI->session->userdata("accountinfo");
 		$reseller_id    = $accountinfo['type'] == 1 || $accountinfo['type'] == 5?$accountinfo['id']:0;
 		$reseller       = '';
-		$role           = '';
+		// $role           = '';
 		$readable       = false;
 		$invoice_config = '';
 		$new_password   = '';
@@ -1566,7 +1566,7 @@ class Accounts_form extends common {
 				'build_dropdown',
 				'where_arr',
 				array(
-					"login_type" => "1",
+					"login_type" => "0",
 				),
 			);
 			$reseller = array(
