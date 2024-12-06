@@ -283,6 +283,9 @@ msgstr "Novas tentativas de cartão"
 msgid "Carriers"
 msgstr "Provedores"
 
+msgid "Carrier"
+msgstr "Provedor"
+
 msgid "Forwarding"
 msgstr "Encaminhamento"
 
@@ -610,11 +613,11 @@ msgstr "Data de validade"
 msgid "Export"
 msgstr "Exportar"
 
-msgid "Failover  GW Name #1"
-msgstr ""
+msgid "Failover GW Name #1"
+msgstr "Gateway de Transbordo 1"
 
 msgid "Failover GW Name #2"
-msgstr "Gateway Alternativo 2"
+msgstr "Gateway de Transbordo 2"
 
 msgid "Favicon"
 msgstr "Favicon"
@@ -1766,7 +1769,7 @@ msgid "Active DIDs"
 msgstr "DIDs ativos"
 
 msgid "Failover GW Name"
-msgstr ""
+msgstr "Gateway de Transbordo"
 
 msgid "Create Trunk"
 msgstr "Criar Gateway"
@@ -1775,7 +1778,7 @@ msgid "Import Termination Rates"
 msgstr "Importar Tarifas de Terminação"
 
 msgid "Call Timeout (Sec.)"
-msgstr "Tempo limite da chamada (seg.)"
+msgstr "Tempo limite de Ring (seg.)"
 
 msgid "Trunk List"
 msgstr "Lista de Gateways"
@@ -5072,7 +5075,7 @@ msgid "Outbound-Proxy"
 msgstr "Outbound-Proxy"
 
 msgid "Edit Trunk"
-msgstr "Editar Gateway"
+msgstr "Editar Rota"
 
 msgid "Termination Rate Added Successfully!"
 msgstr "Tarifa de Terminação adicionada com sucesso!"
@@ -6623,7 +6626,7 @@ msgid "Reg-Transport"
 msgstr "Reg-Transport"
 
 msgid "Failover"
-msgstr "Failover"
+msgstr "Transbordo"
 
 msgid "GW Name #1"
 msgstr "Nome GW # 1"
