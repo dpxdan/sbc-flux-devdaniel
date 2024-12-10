@@ -27,6 +27,8 @@ $tooltip_data = array(
 
 	"trunks_form_precedence" => "Defina a prioridade do tronco.",
 
+	"trunks_form_carrier_id" => "Defina a operadora cujo as chamadas devem ser roteadas para o tronco.",
+
 	"trunks_form_status" => "Status do tronco (Ativo/Inativo).",
 	/*End*/
 );

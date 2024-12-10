@@ -10,6 +10,8 @@ $tooltip_data = array(
 	"pricing_form_status" => "Selecione o status do grupo de tarifas (Ativo/Inativo).",
 
 	"pricing_form_pricelist_id_admin" => "Se o Prefixo de Roteamento estiver configurado, com base no grupo de tarifas do administrador selecionado, o roteamento da chamada será gerado e as tarifas serão aplicadas.",
+
+	"pricing_form_check_carrier" => "Se o módulo CADUP estiver configurado, o roteamento para os troncos será baseado na operadora configurada nestes.",
 	/*End*/
 
 	/*Create Rate Group(Billing Section)*/
