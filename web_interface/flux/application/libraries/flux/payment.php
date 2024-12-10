@@ -73,7 +73,7 @@ class payment {
 					"reseller_id"=>$account_info ['reseller_id'],
 					"amount" => isset($tax_calculation['amount_without_tax'])?$tax_calculation['amount_without_tax']:$payment_info['price'],
 					"tax"=>isset($tax_calculation['total_tax'])?$tax_calculation['total_tax']:0,
-					'payment_method' => isset($payment_info['payment_by'])?$payment_info['payment_by']:"Account Balance",
+					'payment_method' => isset($payment_info['payment_method'])?$payment_info['payment_method']:"Account Balance",
 					'actual_amount' => $payment_info['price'],
 					"payment_fee" => isset($payment_info['payment_fee'])?$payment_info['payment_fee']:0,
 					"user_currency" =>isset($currency_info['currency'])?$currency_info['currency'] : 0,

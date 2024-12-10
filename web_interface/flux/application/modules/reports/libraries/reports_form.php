@@ -3714,7 +3714,7 @@ class Reports_form extends common
                 "right"
             ),
             array(
-                gettext("Refill By"),
+                gettext("Refill Method"),
                 "230",
                 "payment_method",
                 "",
