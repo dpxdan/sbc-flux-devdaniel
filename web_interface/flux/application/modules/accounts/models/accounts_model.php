@@ -25,6 +25,7 @@ class Accounts_model extends CI_Model {
 
 	function __construct() {
 		parent::__construct();
+		$this->load->library("Invoice_log");
 	}
 
 	function add_account($accountinfo) {
@@ -213,6 +214,7 @@ class Accounts_model extends CI_Model {
 	}
 
 	function account_process_payment($data, $update_balance_flag = 'true') {
+		$this->invoice_log->write_log('account_process_payment', json_encode($data));
 		$data['accountid'] = $data['id'];
 		$accountdata       = (array) $this->db->get_where('accounts', array(
 				"id" => $data['accountid'],
@@ -230,11 +232,11 @@ class Accounts_model extends CI_Model {
 				"reseller_id"      => $accountdata['reseller_id'],
 				"product_category" => 3,
 				"price"            => $data['credit'],
-				"payment_by"       => "Manual",
+				"payment_by"       => $accountinfo['first_name'],
 				"payment_method"   => "Manual",
 				"order_item_id"    => 0,
 				"charge_type"      => $payment_type,
-				"description"      => "Account has been ".$payment_type." by ".$accountinfo['first_name']." '(' ".$accountinfo['number']." ')' ",
+				"description"      => $data['notes'] != "" ? $data['notes'] : "Account has been ".$payment_type." by ".$accountinfo['first_name']." '(' ".$accountinfo['number']." ')' ",
 				"invoice_type"     => $data['payment_mode'] == 1?"debit":"credit",
 				"is_apply_tax"     => "false",
 			);

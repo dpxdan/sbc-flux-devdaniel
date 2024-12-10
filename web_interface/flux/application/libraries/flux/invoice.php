@@ -185,6 +185,7 @@ class invoice {
 		return $invoice_id;
 	}
 	public function add_invoice_details($product_info,$account_info,$tax_calculation='',$payment_id,$currency_info=''){
+		$this->CI->invoice_log->write_log('add_invoice_details', json_encode($product_info));
 		$is_update_after_balance = "true";
 		$debit = "0.00";
 		$credit = "0.00";
@@ -193,9 +194,8 @@ class invoice {
 		$account_balance = $account_info ['posttoexternal'] == 1 ? $account_info ['credit_limit'] - ($bal) : $bal;
 		$product_info['is_update_balance'] = isset($product_info['is_update_balance']) ? $product_info['is_update_balance']:"true";
 		$total_amt=$product_info['price'];
-		if( $account_info ['posttoexternal'] == 0){
+		if( $account_info ['posttoexternal'] == 0 && $product_info['charge_type'] != "REFILL"){
 			$invoice_id = $this->generate_invoice ($account_info,$total_amt,$payment_id);
-
 		}else{
 			$invoice_id = 0;
 		}

@@ -29,6 +29,7 @@ class payment {
 		$this->CI->load->model ( 'db_model' );
 		$this->CI->load->library ( 'flux/invoice' );
 		$this->CI->load->library("Invoice_log");
+		$this->CI->load->library("flux_log");
 	}
 
 	public function add_payments_transcation($payment_info,$account_info,$currency_info){ 
@@ -65,6 +66,7 @@ class payment {
 						 
 						     );
 		$this->CI->invoice_log->write_log('add_payments_transcation', json_encode($insert_payment_arr_log));
+		$this->CI->invoice_log->write_log('add_payments_transcation - payment_info', json_encode($payment_info));
 		
 		$insert_payment_arr = array (
 					"accountid" => $account_info ['id'],
@@ -94,11 +96,11 @@ class payment {
 			$payment_info['charge_type'] = "INVPAY";
 			$payment_info['description'] = "Payment received from ".$payment_info['payment_by']." for product ".$payment_info['name'];
 			$payment_info['invoice_type'] = "credit";
-//			$payment_info['is_update_balance'] = "true";
+			//$payment_info['is_update_balance'] = "true";
 			$invoiceid = $this->CI->invoice->receive_payment($payment_info,$account_info,$tax_calculation,$last_payment_id,$currency_info,$invoiceid);
 
 		}
-		elseif(isset($payment_info['add_invoice_credit']) && $payment_info['add_invoice_credit'] == "false"){ 
+		elseif(isset($payment_info['add_invoice_credit']) && $payment_info['add_invoice_credit'] == "false" && $payment_info['charge_type'] != "REFILL"){ 
 					$invoiceid = $this->CI->invoice->generate_invoice_proccess ($account_info,$payment_info['price'],$last_payment_id);
 					$payment_info['charge_type'] = "INVPAY";
 					$payment_info['description'] = "Payment received from ".$payment_info['payment_by']." for product ".$payment_info['name'];

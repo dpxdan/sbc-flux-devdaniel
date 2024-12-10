@@ -283,6 +283,9 @@ msgstr "Novas tentativas de cartão"
 msgid "Carriers"
 msgstr "Provedores"
 
+msgid "Check Carrier"
+msgstr "Consultar Operadora (RN1)"
+
 msgid "Carrier"
 msgstr "Provedor"
 
@@ -1214,7 +1217,7 @@ msgid "Referer Page"
 msgstr "Página de referência"
 
 msgid "Refill By"
-msgstr "Recarregar por"
+msgstr "Recarregado por"
 
 msgid "Refill Coupon Length"
 msgstr "Comprimento do cupom de recarga"
@@ -2744,7 +2747,7 @@ msgid "Bulk customer generate successfully!"
 msgstr "Cliente em lote gerado com sucesso!"
 
 msgid "Recharge successfully!"
-msgstr "Recarregue com sucesso!"
+msgstr "Recarga realizada com sucesso!"
 
 msgid "Recharge"
 msgstr "Recarga"
