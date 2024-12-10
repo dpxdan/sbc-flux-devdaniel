@@ -29,6 +29,8 @@ $tooltip_data = array(
 
 	"trunks_form_carrier_id" => "Defina a operadora cujo as chamadas devem ser roteadas para o tronco.",
 
+	"trunks_form_dialed_modify" => "Defina se o tronco será utilizado como transbordo para casos onde a operadora discada não está definida em outro tronco.",
+
 	"trunks_form_status" => "Status do tronco (Ativo/Inativo).",
 	/*End*/
 );
