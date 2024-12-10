@@ -732,26 +732,36 @@ if (userinfo ~= nil) then
 				Logger.info("[Dialplan] callerid_number : "..callerid_number)
 				Logger.info("[Dialplan] ================================================================")  	    		 
 				carrier_info = get_carrier_out(userinfo,cn_dest_number,carrier_dest_number)
-			if(carrier_info ~= nil and carrier_info['carrier_rn1'] ~= nil) then
-			user_rates['rn1'] = carrier_info['carrier_rn1']
-			user_rates['carrier_id'] = carrier_info['carrier_id']
-			user_rates['carrier_route_id'] = carrier_info['carrier_route_id']
-			user_rates['carrier_route_id'] = carrier_info['carrier_route_id']
-			rate_carrier_id = carrier_info['rn1']
-			carrier_id = carrier_info['carrier_id']
-			carrier_route_id = carrier_info['carrier_route_id']
-			check_carrier = user_rates['check_carrier']
-			user_rates['routing_type'] = 4
-			else
-			user_rates['rn1'] = 0
-			user_rates['carrier_id'] = 0
-			user_rates['carrier_route_id'] = 0
-			rate_carrier_id = user_rates['trunk_id']
-			user_rates['check_carrier'] = 0
-			check_carrier = 0
-			end
+				if(carrier_info ~= nil and carrier_info['carrier_rn1'] ~= nil) then
+					user_rates['rn1'] = carrier_info['carrier_rn1']
+					user_rates['carrier_id'] = carrier_info['carrier_id']
+					user_rates['carrier_route_id'] = carrier_info['carrier_route_id']
+					user_rates['carrier_route_id'] = carrier_info['carrier_route_id']
+					rate_carrier_id = carrier_info['rn1']
+					carrier_id = carrier_info['carrier_id']
+					carrier_route_id = carrier_info['carrier_route_id']
+					check_carrier = user_rates['check_carrier']
+					user_rates['routing_type'] = 4
+				else
+					user_rates['rn1'] = 0
+					user_rates['carrier_id'] = 0
+					user_rates['carrier_route_id'] = 0
+					rate_carrier_id = user_rates['trunk_id']
+					user_rates['check_carrier'] = 0
+					check_carrier = 0
+				end
 			
 			else
+				user_rates['rn1'] = 0
+				user_rates['carrier_id'] = 0
+				user_rates['carrier_route_id'] = 0
+				rate_carrier_id = user_rates['trunk_id']
+				check_carrier = 0
+				user_rates['check_carrier'] = 0
+				user_rates['routing_type'] = 1
+			end
+
+		else
 			user_rates['rn1'] = 0
 			user_rates['carrier_id'] = 0
 			user_rates['carrier_route_id'] = 0
@@ -759,9 +769,6 @@ if (userinfo ~= nil) then
 			check_carrier = 0
 			user_rates['check_carrier'] = 0
 			user_rates['routing_type'] = 1
-			
-			end
-
 		end
 		-- Get termination rates
 		Logger.info("[DIALPLAN] User Rate RN1 : ".. user_rates['rn1'])
@@ -901,8 +908,8 @@ if (userinfo ~= nil) then
 					old_trunk_id =carrier_array[tonumber(j)-1]['trunk_id']
 				end
 				rate_group_details = get_pricelists(userinfo)				
-	xml = freeswitch_xml_outbound(xml,destination_number,carrier_arr_array,callerid_array,rate_group_id,old_trunk_id,force_outbound_routes,call_type,call_type_custom,rate_group_details['routing_type'],livecall_data)
-	--xml = freeswitch_xml_outbound(xml,destination_number,carrier_arr_array,callerid_array,rate_group_id,old_trunk_id,force_outbound_routes,rate_group_details['routing_type'],livecall_data)
+				xml = freeswitch_xml_outbound(xml,destination_number,carrier_arr_array,callerid_array,rate_group_id,old_trunk_id,force_outbound_routes,call_type,call_type_custom,rate_group_details['routing_type'],livecall_data)
+				--xml = freeswitch_xml_outbound(xml,destination_number,carrier_arr_array,callerid_array,rate_group_id,old_trunk_id,force_outbound_routes,rate_group_details['routing_type'],livecall_data)
 				j=j+1;
 			end			
 

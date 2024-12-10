@@ -671,30 +671,28 @@ function get_carrier_rates(destination_number,number_loop_str,ratecard_id,rate_c
     if (check_carrier ~= '' or check_carrier ~= nil )then
 	if(check_carrier == "1") then
 	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] check_carrier:" .. check_carrier)
---	routing_type = 4
 	end	
 	end
 	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] rate_carrier_id:" .. rate_carrier_id)
 	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] trunk_id:" .. trunk_id)
 	if(tonumber(routing_type)<=3) then
---	if(routing_type == "0" or routing_type == "1" or routing_type == 2 or routing_type == 3) then
-	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type default:" .. routing_type)
+		Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type default:" .. routing_type)
 		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech, TK.dialed_modify as failover_route,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	elseif(routing_type == 4) then
-	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type 4 Carrier:" .. routing_type)
-	query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.dialed_modify as failover_route,TK.tech,TK.carrier_id,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
+		Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type 4 Carrier:" .. routing_type)
+		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.dialed_modify as failover_route,TK.tech,TK.carrier_id,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	else
-	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type :" .. routing_type)
+		Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type :" .. routing_type)
 		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,TK.tech, TK.dialed_modify as failover_route,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.comment,TR.call_type,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM "..TBL_TERMINATION_RATES.." as TR,"..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	end
-	if(rate_carrier_id and rate_carrier_id ~= nil ) then
-    if(rate_carrier_id == 0 and tonumber(routing_type)<=3) then
-		query = query.." AND TR.trunk_id is not null "
-	elseif(rate_carrier_id == 0 and tonumber(routing_type) == 4) then
-	  query = query.." AND TR.trunk_id is not null AND TK.dialed_modify = 1"
-    elseif(string.len(rate_carrier_id) == 5 and tonumber(routing_type) == 4) then
-		query = query.." AND (TK.tech = "..rate_carrier_id.." OR TK.dialed_modify = 1)"
-	else
+	if(rate_carrier_id and rate_carrier_id ~= nil and tonumber(rate_carrier_id) ~= 0) then
+		if(tonumber(rate_carrier_id) == 0 and tonumber(routing_type) <= 3) then
+			query = query.." AND TR.trunk_id is not null "
+		elseif(tonumber(rate_carrier_id) == 0 and tonumber(routing_type) == 4) then
+			query = query.." AND TR.trunk_id is not null AND TK.dialed_modify = 1"
+		elseif(string.len(rate_carrier_id) == 5 and tonumber(routing_type) == 4) then
+			query = query.." AND (TK.tech = "..rate_carrier_id.." OR TK.dialed_modify = 1)"
+		else
 			query = query.." AND TK.id IN ("..trunk_id..") "
 		end
 	else
@@ -708,10 +706,10 @@ function get_carrier_rates(destination_number,number_loop_str,ratecard_id,rate_c
 		if (trunk_ids['ids'] == "" or trunk_ids['ids'] == nil) then
 			trunk_ids['ids']=0
 		end
-		if(trunk_id == 0) then
-		query = query.." AND TR.trunk_id is not null"
+		if(trunk_ids['ids'] == 0) then
+			query = query.." AND TR.trunk_id is not null"
 		else
-		query = query.." AND TR.trunk_id IN ("..trunk_ids['ids']..")"
+			query = query.." AND TR.trunk_id IN ("..trunk_ids['ids']..")"
 		end
 	end
 	if(routing_type == 1) then

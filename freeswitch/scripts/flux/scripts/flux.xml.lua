@@ -197,62 +197,61 @@ function freeswitch_xml_outbound(xml,destination_number,outbound_info,callerid_a
 		temp_destination_number = do_number_translation(outbound_info['strip'].."/"..outbound_info['prepend'],temp_destination_number)
 	end
     if (outbound_info ~= nil and tonumber(outbound_info['rn1']) ~=nil and tonumber(carrier_info['rn1']) > 0) then
---    if (outbound_info['idCadup'] ~= nil and outbound_info['idCadup'] ~= '0')then
-                idCadup = outbound_info['idCadup']
-                carrier_id = carrier_info['carrier_id']
-                nomeLocalidade = outbound_info['nomeLocalidade']
-                nomePrestadora = outbound_info['nomePrestadora']
-                areaLocal = outbound_info['areaLocal']
-                tipo = outbound_info['tipo']
-                prefixo = outbound_info['prefixo']
-                codArea = outbound_info['codArea']
-                uf = outbound_info['uf']
-                rn1 = outbound_info['rn1']
-                
-                carrier_rn1 = outbound_info['carrier_rn1']
-                call_count = outbound_info['call_count']
-                carrier_name = outbound_info['carrier_name']
-                carrier_route_id = carrier_info['carrier_route_id']
-                                
-            
-                Logger.debug("idCadup : "..idCadup)
-                Logger.debug("carrier_id : "..carrier_id)
-                Logger.debug("nomeLocalidade : "..nomeLocalidade)
-                Logger.debug("nomePrestadora : "..nomePrestadora)
-                Logger.debug("areaLocal : "..areaLocal)
-                Logger.debug("tipo : "..tipo)
-                Logger.debug("prefixo : "..prefixo)
-                Logger.debug("carrier_rn1 : "..carrier_rn1)
-                Logger.debug("carrier_name : "..carrier_name)
-                Logger.debug("carrier_route_id : "..carrier_route_id)
-                Logger.debug("call_count : "..call_count)
-                Logger.debug("codArea : "..codArea)
-                Logger.debug("uf : "..uf)
-                Logger.debug("rn1 : "..rn1)
-                table.insert(xml, [[<action application="export" data="idCadup=]]..idCadup..[["/>]]);
-                table.insert(xml, [[<action application="set" data="check_cadup=true"/>]]);
-                table.insert(xml, [[<action application="export" data="routing_type=4"/>]]);
-                table.insert(xml, [[<action application="export" data="rate_flag=4"/>]]);
-                table.insert(xml, [[<action application="export" data="carrier_id=]]..carrier_id..[["/>]]);
-                table.insert(xml, [[<action application="export" data="nomeLocalidade=]]..nomeLocalidade..[["/>]]);
-                table.insert(xml, [[<action application="export" data="nomePrestadora=]]..nomePrestadora..[["/>]]);
-                table.insert(xml, [[<action application="export" data="areaLocal=]]..areaLocal..[["/>]]);
-                table.insert(xml, [[<action application="export" data="tipo=]]..tipo..[["/>]])    
-            	table.insert(xml, [[<action application="export" data="prefixo=]]..prefixo..[["/>]]);
-            	table.insert(xml, [[<action application="export" data="codArea=]]..codArea..[["/>]]);
-            	table.insert(xml, [[<action application="export" data="uf=]]..uf..[["/>]]);
-            	table.insert(xml, [[<action application="export" data="rn1=]]..carrier_rn1..[["/>]]);
-            	
-            	table.insert(xml, [[<action application="export" data="carrier_route_id=]]..carrier_route_id..[["/>]]);
-            	table.insert(xml, [[<action application="export" data="carrier_rn1=]]..carrier_rn1..[["/>]]);
-            	table.insert(xml, [[<action application="export" data="carrier_name=]]..carrier_name..[["/>]]);
-            	
-            	table.insert(xml, [[<action application="export" data="provider_id=]]..outbound_info['provider_id']..[["/>]]);
-	            table.insert(xml, [[<action application="export" data="call_type_custom=]]..tipo..[["/>]]);
+		idCadup = outbound_info['idCadup']
+		carrier_id = carrier_info['carrier_id']
+		nomeLocalidade = outbound_info['nomeLocalidade']
+		nomePrestadora = outbound_info['nomePrestadora']
+		areaLocal = outbound_info['areaLocal']
+		tipo = outbound_info['tipo']
+		prefixo = outbound_info['prefixo']
+		codArea = outbound_info['codArea']
+		uf = outbound_info['uf']
+		rn1 = outbound_info['rn1']
+		
+		carrier_rn1 = outbound_info['carrier_rn1']
+		call_count = outbound_info['call_count']
+		carrier_name = outbound_info['carrier_name']
+		carrier_route_id = carrier_info['carrier_route_id']
+						
+	
+		Logger.debug("idCadup : "..idCadup)
+		Logger.debug("carrier_id : "..carrier_id)
+		Logger.debug("nomeLocalidade : "..nomeLocalidade)
+		Logger.debug("nomePrestadora : "..nomePrestadora)
+		Logger.debug("areaLocal : "..areaLocal)
+		Logger.debug("tipo : "..tipo)
+		Logger.debug("prefixo : "..prefixo)
+		Logger.debug("carrier_rn1 : "..carrier_rn1)
+		Logger.debug("carrier_name : "..carrier_name)
+		Logger.debug("carrier_route_id : "..carrier_route_id)
+		Logger.debug("call_count : "..call_count)
+		Logger.debug("codArea : "..codArea)
+		Logger.debug("uf : "..uf)
+		Logger.debug("rn1 : "..rn1)
+		table.insert(xml, [[<action application="export" data="idCadup=]]..idCadup..[["/>]]);
+		table.insert(xml, [[<action application="set" data="check_cadup=true"/>]]);
+		table.insert(xml, [[<action application="export" data="routing_type=4"/>]]);
+		table.insert(xml, [[<action application="export" data="rate_flag=4"/>]]);
+		table.insert(xml, [[<action application="export" data="carrier_id=]]..carrier_id..[["/>]]);
+		table.insert(xml, [[<action application="export" data="nomeLocalidade=]]..nomeLocalidade..[["/>]]);
+		table.insert(xml, [[<action application="export" data="nomePrestadora=]]..nomePrestadora..[["/>]]);
+		table.insert(xml, [[<action application="export" data="areaLocal=]]..areaLocal..[["/>]]);
+		table.insert(xml, [[<action application="export" data="tipo=]]..tipo..[["/>]])    
+		table.insert(xml, [[<action application="export" data="prefixo=]]..prefixo..[["/>]]);
+		table.insert(xml, [[<action application="export" data="codArea=]]..codArea..[["/>]]);
+		table.insert(xml, [[<action application="export" data="uf=]]..uf..[["/>]]);
+		table.insert(xml, [[<action application="export" data="rn1=]]..carrier_rn1..[["/>]]);
+		
+		table.insert(xml, [[<action application="export" data="carrier_route_id=]]..carrier_route_id..[["/>]]);
+		table.insert(xml, [[<action application="export" data="carrier_rn1=]]..carrier_rn1..[["/>]]);
+		table.insert(xml, [[<action application="export" data="carrier_name=]]..carrier_name..[["/>]]);
+		
+		table.insert(xml, [[<action application="export" data="provider_id=]]..outbound_info['provider_id']..[["/>]]);
+		table.insert(xml, [[<action application="export" data="call_type_custom=]]..tipo..[["/>]]);
     else 
-        --outbound_info['idCadup'] = 0;
-        --outbound_info['carrier_route_id'] = 0;
-        --outbound_info['carrier_id'] = 0;
+        outbound_info['idCadup'] = 0;
+        outbound_info['carrier_route_id'] = 0;
+        outbound_info['carrier_id'] = 0;
         carrier_rn1 = 0
         carrier_id = 0
         carrier_route_id = 0
