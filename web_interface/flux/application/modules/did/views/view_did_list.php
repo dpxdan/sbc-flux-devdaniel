@@ -93,7 +93,7 @@ if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logi
     ?>
 
 
-<!-- <div class="main-wrapper">  
+<div class="main-wrapper">  
 <div id="content" class="container-fluid">
 	<div class="row">
     	<div class="p-4 col-md-12">
@@ -142,7 +142,7 @@ if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logi
 	</div>  
     </div>
 </div>
-</div> -->
+</div>
 <?php }?>
 
 <section class="slice color-three">
@@ -164,7 +164,7 @@ if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logi
 			enctype="multipart/form-data" id="">
 				<?php
 
-if (isset($permissioninfo['did']['did_list']['buy_did']) and $permissioninfo['did']['did_list']['buy_did'] == 0 and ($permissioninfo['login_type'] == '1' or $permissioninfo['login_type'] == '2' or $permissioninfo['login_type'] == '4')) {
+if (($permissioninfo['login_type'] == '1' or $permissioninfo['login_type'] == '2' or $permissioninfo['login_type'] == '4')) {
         ?>
 				<input type="submit" class="btn btn-info mb-4" name="purchase_did"
 				value=<?php echo gettext("Buy DIDs")?> id="buy_did">    

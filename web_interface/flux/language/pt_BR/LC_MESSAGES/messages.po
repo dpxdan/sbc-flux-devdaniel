@@ -1690,6 +1690,9 @@ msgstr "Compra em lote DID"
 msgid "Provience"
 msgstr "Estado"
 
+msgid "Assign DID"
+msgstr "Atribuir DID"
+
 msgid "Assign Number"
 msgstr "Atribuir número"
 
@@ -6852,6 +6855,9 @@ msgstr "Última data de pagamento"
 
 msgid "Buy DIDs"
 msgstr "Compre DIDs"
+
+msgid "Buy"
+msgstr "Comprar DIDs"
 
 msgid "Purchased DID"
 msgstr "Comprou DID"

@@ -337,7 +337,7 @@ class common {
 				} else if ($field_name [0]->parent_id != 0) { 
 					$flag_status = "<a href='../did_list_release/" . $field_name [0]->id . "' title='Release' onClick='return get_reliase_msg();'><span class=' label label-sm label-inverse_blue arrowed_blue-in' title='release'>Release(R)</span></a>";
 				}else {
-					$flag_status = "<a href='../did_assgin_reseller/" . $field_name [0]->id . "' title='Assign Number' rel='facebox'><span class=' label label-sm label-inverse_blue arrowed_blue-in' title='release'>Assign Number</span></a>";
+					$flag_status = "<a href='../did_assgin_reseller/" . $field_name [0]->id . "' title='Assign Number' rel='facebox'><span class=' label label-sm label-inverse_blue arrowed_blue-in' title='release'>" . gettext('Assign Number') . "</span></a>";
 				}
 			} else {  
 
@@ -350,7 +350,7 @@ class common {
 				if ($field_name_re[0]->accountid !='0' ) {
 					$flag_status = "<a href='../did_list_release/" . $field_name [0]->id . "' title='Release' onClick='return get_reliase_msg();'><span class=' label label-sm label-inverse_blue arrowed_blue-in' title='release'>Release(c)</span></a>";
 				} else {
-					$flag_status = "<a href='../did_assgin_reseller/" . $field_name [0]->id . "' title='Assign Number' rel='facebox'><span class=' label label-sm label-inverse_blue arrowed_blue-in' title='release'>Assign Number</span></a>";
+					$flag_status = "<a href='../did_assgin_reseller/" . $field_name [0]->id . "' title='Assign Number' rel='facebox'><span class=' label label-sm label-inverse_blue arrowed_blue-in' title='release'>" . gettext('Assign Number') . "</span></a>";
 				}
 			}
 		} else {  
@@ -3624,7 +3624,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	}
 	function check_did_available_reseller($select='', $table='', $number) {
 		$link =  base_url () ."did/did_available_purchase/" . $number;
-		return  '<a href="'.$link.'" <span  class="label label-sm label-inverse_blue arrowed_blue-in" rel="facebox" title="release">Purchase<span></a>';
+		return  '<a href="'.$link.'" <span  class="label label-sm label-inverse_blue arrowed_blue-in" rel="facebox" title="release">' . gettext('Purchase') . '<span></a>';
 	}
 	function build_did_forward($select='', $table='', $id) {
 		$accountinfo = $this->CI->session->userdata ( 'accountinfo' );
