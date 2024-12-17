@@ -37,6 +37,7 @@ class Accounts extends MX_Controller {
 		$this->load->library('flux/order');
 		$this->load->model('accounts_model');
 		$this->load->model('Flux_common');
+		$this->load->model('did/did_model');
 		$this->load->library('FLUX_Sms');
 		$this->protected_pages = array(
 			'account_list',
@@ -3033,6 +3034,16 @@ function admin_save($add_array = false)
 				$this->db->update("dids", array(
 						"accountid" => 0,
 					));
+			}
+		}else{
+			$where_dids['where'] = $this->db->where("product_id IN (".$ids.")", NULL, false);
+
+			$dids_infos = $this->db_model->getSelect("*", "dids", '', $where_dids);
+			$this->flux_log->write_log('customer_did_delete', json_encode($dids_infos->result_array()));
+
+			foreach ($dids_infos->result_array() as $key => $did_info) {
+				$this->flux_log->write_log('customer_did_delete_product', json_encode($did_info['product_id']));
+				$this->did_model->did_number_release($did_info, $accountinfo, 'release');
 			}
 		}
 		echo 1;
