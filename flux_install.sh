@@ -625,11 +625,17 @@ install_database ()
 
 install_ptbr_language()
 {       
+        cp ${FLUX_SOURCE_DIR}web_interface/flux/addons/plugins/language_portuguese/web_interface/flux/system/language/Portuguese/* ${FLUX_SOURCE_DIR}/web_interface/flux/system/language/Portuguese/
         cd ${FLUX_SOURCE_DIR}/web_interface/flux/language/pt_BR/LC_MESSAGES
         chown www-data:www-data messages.po
         chown www-data:www-data messages.mo
-        chmod 077 ${FLUX_SOURCE_DIR}/web_interface/flux/language/pt_BR/LC_MESSAGES
+        chmod -Rf 755 ${FLUX_SOURCE_DIR}/web_interface/flux/language/pt_BR/LC_MESSAGES
+        chmod -Rf 777 ${FLUX_SOURCE_DIR}/web_interface/flux/language/pt_BR/LC_MESSAGES/messages.po
+        chmod -Rf 777 ${FLUX_SOURCE_DIR}/web_interface/flux/language/pt_BR/LC_MESSAGES/messages.mo
         msgfmt messages.po -o messages.mo
+
+        systemctl restart nginx.service
+        systemctl restart php7.3-fpm.service
 }
 
 #Install Fail2ban for security
