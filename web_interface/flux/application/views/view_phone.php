@@ -314,7 +314,7 @@ foreach ($result as &$row) {
        <button id="transfercall" class="btn btn-sm btn-secondary transfercall" type="button">Transferir</button>       
        <button id="transferCancel" class="btn btn-sm btn-danger transferCancel" data-mdb-dismiss="modal" style="display: none;" type="button">Cancelar</button>
        <button id="warm" class="btn btn-sm btn-primary warm" type="button">Discar</button>
-       <button id="tpark" class="btn btn-sm btn-info tpark">Estacionar</button>
+<!--       <button id="tpark" class="btn btn-sm btn-info tpark">Estacionar</button>-->
        <button id="complete" class="btn btn-sm btn-success complete" type="button">Completar</button>
      </div>
          </form>
@@ -330,7 +330,7 @@ foreach ($result as &$row) {
     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/sip/plugins/jquery-3.6.1.min.js"></script>
 
 
-    <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/sip/fluxPhone.js"></script>
+    <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/sip/fluxWebPhone.js"></script>
     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/sip/flux.js"></script>
     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/sip/flux-web-phone.js"></script>
     
