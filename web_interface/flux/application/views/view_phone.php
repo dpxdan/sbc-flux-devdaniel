@@ -369,7 +369,7 @@ foreach ($result as &$row) {
 	var phoneStatus = '<?php echo $extension_enabled; ?>';
 	var accountid = '<?php echo $extension_accountid; ?>';
 	var sessid = '<?php echo $_SESSION["user_session_id"]; ?>';
-	var wssport = '7442';
+	var wssport = '7443';
 	var wsserver = server+':'+wssport+'';
 	var userStatus = 'Online';
 	var agent_uuid = 'ab488492-8ebe-4961-9890-13a7eb52f676';
