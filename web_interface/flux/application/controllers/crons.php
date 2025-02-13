@@ -28,6 +28,7 @@ class Crons extends MX_Controller {
 		$this->load->model("db_model");
 //		$this->CurrentDate = "2023-04-02 23:59:59";
 		$this->CurrentDate = gmdate("Y-m-d H:i:s");
+		$this->load->library("flux_log");
 	}
 
 	function index() {
@@ -43,6 +44,6 @@ class Crons extends MX_Controller {
 		exit;
 	}
 	private function calculateNextRun($obj, $CurrentDate) {
-		return gmdate("Y-m-d H:i:s", strtotime($CurrentDate . ' + ' . $obj->exec_interval . ' ' . $obj->command));
+		return gmdate("Y-m-d H:i:s", strtotime($CurrentDate . ' + ' . $obj->exec_interval . ' ' . $obj->command . ' UTC'));
 	}
 }
