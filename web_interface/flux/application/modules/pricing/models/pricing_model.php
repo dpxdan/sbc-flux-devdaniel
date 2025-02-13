@@ -52,6 +52,24 @@ class pricing_model extends CI_Model
         return $query;
     }
 
+    function getpricing_refactor_list($flag, $start = 0, $limit = 0)
+    {        
+        $this->db_model->build_search('price_refactor_search');
+        if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logintype') == 5) {
+            $account_data = $this->session->userdata("accountinfo");
+            $reseller = $account_data['id'];
+            $where = array(
+                "reseller_id" => $reseller
+            );
+        }
+        if ($flag) {
+            $query = $this->db_model->Select("*", "refactor" , $where = "", "id", "ASC", $limit, $start);
+        } else {
+            $query = $this->db_model->countQuery("*", "refactor", $where = "");
+        }
+        return $query;
+    }
+
     function add_price($add_array)
     {
         unset($add_array["action"]);
@@ -135,5 +153,39 @@ class pricing_model extends CI_Model
         );
         $query = $this->db_model->countQuery("*", "pricelists", $where);
         return $query;
+    }
+
+    function add_refactor($add_array)
+    {
+        unset($add_array["action"]);
+
+        if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logintype') == 5) {
+            $account_data = $this->session->userdata("accountinfo");
+            $add_array["reseller_id"] = $account_data['id'];
+        } else {
+            $add_array["reseller_id"] = "0";
+        }
+
+        $add_array['creation_date'] = gmdate("Y-m-d H:i:s");
+        $add_array['from_date'] = $add_array['callstart'][0];
+        $add_array['to_date'] = $add_array['callstart'][1];
+        $add_array['account_id'] = $add_array['accountcode'];
+
+        unset($add_array["callstart"]);
+        unset($add_array["accountcode"]);
+        
+        $where = array(
+            'id' => $add_array['account_id'],
+        );
+        $this->db->where($where);
+        $this->db->select("pricelist_id");
+        $this->db->from('accounts');
+        $query = $this->db->get();
+        $result = $query->row();
+        $add_array['pricelist_id'] = $result->pricelist_id;
+
+        $this->db->insert("refactor", $add_array);
+
+        return $this->db->insert_id();
     }
 }

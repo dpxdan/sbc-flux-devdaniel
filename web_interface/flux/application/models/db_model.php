@@ -748,6 +748,8 @@ class Db_model extends CI_Model {
 	function build_search($accounts_list_search,$table_name='') { 
 		if ($this->session->userdata ( 'advance_search' ) == 1) {
 			$account_search = $this->session->userdata ( $accounts_list_search );
+			$this->flux_log->write_log ('build_search', json_encode($account_search));
+
 			unset ( $account_search ["ajax_search"] );
 			unset ( $account_search ["advance_search"] );
 
@@ -758,6 +760,7 @@ class Db_model extends CI_Model {
 				foreach ( $account_search as $key => $value ) {
 					if ($value != "") {
 						if (is_array ( $value )) {
+							$this->flux_log->write_log ('build_search_value', json_encode($value));
 							if (array_key_exists ( $key . "-integer", $value )) {
 								if($key == 'debit_exchange_rate' || $key == 'credit_exchange_rate' ){
 									$this->get_interger_array_invoice_amount ( $table_name.$key, $value [$key . "-integer"], $value [$key]);
@@ -769,8 +772,7 @@ class Db_model extends CI_Model {
 								$this->get_string_array ( $table_name.$key, $value [$key . "-string"], $value [$key]);
 							}
 							if ($key == 'callstart' || $key == 'date' || $key == 'order_date' || $key == 'timestamp' || $key == 'payment_date' || $key == 'first_used' || $key == 'creation' || $key == 'from_date' || $key == 'generate_date' || $key == 'expiry' || $key == 'created_date' || $key == 'to_date' || $key == 'triggered_date' || $key == 'last_triggered_date') {
-
-							$this->get_date_array ( $table_name.$key, $value );
+								$this->get_date_array ( $table_name.$key, $value );
 							}
 						} else {
 							if($key == 'disposition'){
@@ -796,7 +798,9 @@ class Db_model extends CI_Model {
 					$this->db->where ( $field . ' >= ', gmdate ( "Y-m-d", strtotime ( $value ['0'] ) ) . " 00:00:01" );
 					$this->db->where ( $field . ' <= ', gmdate ( "Y-m-d", strtotime ( $value ['0'] ) ) . " 23:59:59" );
 				} else if ($field == 'to_date') {
-					$this->db->where ( $field . ' <= ', gmdate ( "Y-m-d", strtotime ( $value ['0'] ) ) . " 23:59:59" );
+					$this->db->where ( $field . ' <= ', date ( "Y-m-d", strtotime ( $value ['0'] ) ) . " 23:59:59" );
+				} else if ($field == 'from_date') {
+					$this->db->where ( $field . ' >= ', date ( "Y-m-d", strtotime ( $value ['0'] ) ) . " 00:00:00" );
 				}else if ($field == 'expiry'){
 					$this->db->where ( $field . ' >= ', gmdate ( "Y-m-d", strtotime ( $value ['0'] ) ) . " 00:00:01" );
 					$this->db->where ( $field . ' <= ', gmdate ( "Y-m-d", strtotime ( $value ['0'] ) ) . " 23:59:59" );

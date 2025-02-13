@@ -162,11 +162,11 @@ function build_grid_reports(grid_id, destination, collumn_arr, buttons) {
         usepager: false,
         resizable: true,
         title: '',
-        pagetext: 'Page',
-        outof: 'of',
-        nomsg: 'No Records',
-        procmsg: 'Processing, please wait ...',
-        pagestat: 'Displaying {from} to {to} of {total} Records',
+        pagetext: gettext_custom('Page'),
+        outof: gettext_custom('of'),
+        nomsg: gettext_custom('No Records'),
+        procmsg: gettext_custom('Processing, please wait ...'),
+        pagestat: `{from} - {to} ${gettext_custom("of")} {total} ${gettext_custom("Records")}`,
         onSuccess: function (data) {
             $('a[rel*=facebox]').facebox({
                 loadingImage: '/assets/images/loading.gif',
@@ -211,11 +211,11 @@ function build_grid(grid_id, destination, collumn_arr, buttons) {
         sort: true,
         sortname: sort,
         sortorder: "desc",
-        pagetext: 'Page',
-        outof: 'of',
-        nomsg: 'No Records',
-        procmsg: 'Processing, please wait ...',
-        pagestat: '{from} - {to} of {total} Records',
+        pagetext: gettext_custom('Page'),
+        outof: gettext_custom('of'),
+        nomsg: gettext_custom('No Records'),
+        procmsg: gettext_custom('Processing, please wait ...'),
+        pagestat: `{from} - {to} ${gettext_custom("of")} {total} ${gettext_custom("Records")}`,
         onSuccess: function (data) {
             $('a[rel*=facebox]').facebox({
                 loadingImage: '/assets/images/loading.gif',
@@ -379,9 +379,9 @@ function delete_multiple(btn_url, flag) {
 
     if (result) {
         if (flag > 0) {
-            confirm_string = 'Are you sure want to delete? This action will delete all other data which belongs to this account(s).';
+            confirm_string = gettext_custom('Are you sure want to delete? This action will delete all other data which belongs to this account(s).');
         } else {
-            confirm_string = 'Are you sure want to delete this selected records?';
+            confirm_string = gettext_custom('Tem certeza que deseja deletar?');
         }
         var answer = confirm(confirm_string);
         if (answer) {
@@ -391,7 +391,8 @@ function delete_multiple(btn_url, flag) {
                 async: true,
                 url: btn_url,
                 data: "selected_ids=" + result,
-                success: function (data) { //alert(data); 
+                success: function (data) { 
+                    // console.log("DATA",data)
                     var tmpdata = '';
                     if (data.trim() == 'SUBSCRIPTION') {
                         process_subscription('SUBSCRIPTION', idarr);
@@ -406,16 +407,16 @@ function delete_multiple(btn_url, flag) {
                         }).flexReload();
                         $('input:checkbox').removeAttr('checked');
                         $("#toast-container_error").css("display", "block");
-                        $(".toast-message").html("Selected records has been deleted.");
+                        $(".toast-message").html(gettext_custom("Selected records has been deleted."));
                         $('.toast-top-right').delay(5000).fadeOut();
                     } else {
-                        alert("Problem to delete records");
+                        alert(gettext_custom("Problem to delete records"));
                     }
                 }
             });
         }
     } else {
-        alert("Please select atleast one record to delete.");
+        alert(gettext_custom("Please select atleast one record to delete."));
     }
 }
 function process_subscription(type, idarr) {
@@ -451,14 +452,14 @@ function export_multiple(btn_url, flag) {
     });
     result = result.substr(1);
     if (result) {
-            confirm_string = 'Are you sure want to export records';
+            confirm_string = gettext_custom('Are you sure want to export records');
         var answer = confirm(confirm_string);
 	
         if (answer) {
 		location.href=btn_url+'/'+result; 
         }
     } else {
-        alert("Please select atleast one record to export.");
+        alert(gettext_custom("Please select atleast one record to export."));
     }
 }
 function delete_multiple_selected(btn_url) {
@@ -478,7 +479,7 @@ function delete_multiple_selected(btn_url) {
             data: "selected_ids=" + result,
             success: function (response) {
                 var data = jQuery.parseJSON(response);
-                var str = 'Are you sure want to delete this selected records?';
+                var str = gettext_custom('Are you sure want to delete this selected records?');
                 var answer = '';
                 if (data.selected_ids) {
                     if (data.str) {
@@ -519,7 +520,7 @@ function delete_multiple_selected(btn_url) {
                                     $(".toast-message").html("Selected records has been deleted.");
                                     $('.toast-top-right').delay(5000).fadeOut();
                                 } else {
-                                    alert("Problem to delete records");
+                                    alert(gettext_custom("Problem to delete records"));
                                 }
                             }
                         });
@@ -532,7 +533,7 @@ function delete_multiple_selected(btn_url) {
         });
     }
     else {
-        alert("Please select atleast one record to delete.");
+        alert(gettext_custom("Please select atleast one record to delete."));
     }
 }
 function button_action(t) {
@@ -616,9 +617,9 @@ function submit_form(form_id) {
                 for (i in myObject) {
                     var fieldname = i.replace("_error", "");
                     $("input[name='" + fieldname + "']").addClass("borderred");
-                    $("#" + i + "_div").css("display", "block");
+                    // $("#" + i + "_div").css("display", "block");
                     $("#" + i).html(gettext_custom(capitalizeFirstLetter(myObject[i])));
-                    //                    $("#"+i).html(myObject[i]);
+                    // $("#"+i).html(myObject[i]);
                 }
             } else {
                 $("#toast-container").css("display", "block");
@@ -692,10 +693,7 @@ function get_lang(value) {
 function gettext_custom(collumn_property) {
 
     var collumn = '';
-    //var url = 'http://65.111.177.99:9999/accounts/customer_global_grid_list/';
     var url = base_url + "login/get_language_text/";
-    //var url = "http://192.168.1.22:8073/login/get_language_text/";
-    //alert(url);exit;
     $.ajax({
         url: url,
         type: 'post',

@@ -19,6 +19,15 @@ msgstr "Mostrando %s a %s de %s itens"
 msgid "Reverse Rate"
 msgstr "Tarifação Reversa"
 
+msgid "Scheduled"
+msgstr "Agendado"
+
+msgid "Finalized"
+msgstr "Finalizado"
+
+msgid "In Execution"
+msgstr "Em execução"
+
 msgid "Account Valid Days"
 msgstr "Dias válidos da conta"
 
@@ -426,6 +435,21 @@ msgstr "Criar Provedor"
 
 msgid "Create Rate Group"
 msgstr "Criar Grupo de Tarifas"
+
+msgid "Refactor"
+msgstr "Retarifação"
+
+msgid "Add Refactor"
+msgstr "Adicionar retarifação"
+
+msgid "Start Date"
+msgstr "Data de início"
+
+msgid "Finish Date"
+msgstr "Data final"
+
+msgid "Refactor Date"
+msgstr "Data da retarifação"
 
 msgid "Create Refill Coupon"
 msgstr "Criar cupom de recarga"
@@ -1057,6 +1081,21 @@ msgstr "Valor Pendente INR"
 msgid "Page"
 msgstr "Página"
 
+msgid "Problem to delete records"
+msgstr "Falha ao deletar"
+
+msgid "Are you sure want to export records"
+msgstr "Certeza que deseja exportar os registros?"
+
+msgid "Please select atleast one record to export."
+msgstr "Selecione pelo menos um registro para exportar!"
+
+msgid "Selected records has been deleted."
+msgstr "Os registros selecionados foram deletados com sucesso!"
+
+msgid "Please select atleast one record to delete."
+msgstr "Selecione pelo menos um registro para excluir!"
+
 msgid "Password"
 msgstr "Senha"
 
@@ -1143,6 +1182,15 @@ msgstr "Lucro"
 
 msgid "Provider"
 msgstr "Fornecedor"
+
+msgid "Are you sure want to delete this selected records?"
+msgstr "Tem certeza que deseja deletar?"
+
+msgid "Are you sure delete"
+msgstr "Tem certeza que deseja deletar"
+
+msgid "Are you sure want to delete? This action will delete all other data which belongs to this account(s)."
+msgstr "Tem certeza que deseja deletar? Esta ação excluirá todos os outros dados que pertencem a esta(s) conta(s)."
 
 msgid "Provider CDRs Report"
 msgstr "Relatório de CDRs do Fornecedor"
@@ -1908,6 +1956,9 @@ msgstr "Você deve selecionar um campo de seu"
 
 msgid "Records with duplicate account number an"
 msgstr "Registros com número de conta duplicado e"
+
+msgid "of"
+msgstr "de"
 
 msgid "Account Import Error"
 msgstr "Erro de importação de conta"
@@ -4922,7 +4973,7 @@ msgid "Create Termination Rate"
 msgstr "Criar Tarifa de Terminação"
 
 msgid "Edit Company Profile"
-msgstr "Editar Perfil da XCXX"
+msgstr "Editar Perfil da Empresa"
 
 msgid "Website"
 msgstr "Local na rede Internet"

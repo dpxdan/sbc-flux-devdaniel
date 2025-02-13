@@ -1378,6 +1378,15 @@ class common {
 		);
 		return $status_array;
 	}
+	function set_search_refactor_status($select = '') {
+		$status_array = array (
+				"" => gettext ( "--Select--" ),
+				"0" => gettext ( "Scheduled" ),
+				"1" => gettext ( "Finalized" ),
+				"2" => gettext ( "In Execution" )
+		);
+		return $status_array;
+	}
 	function set_Billing_Schedule_status($select = '') {
 		$status_array = array (
 				"" => gettext ( "--Select--" ),
@@ -2138,6 +2147,11 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			return $this->CI->timezone->display_GMT ( $date, 1, $timezone_id );
 		}
 	}
+
+	function convert_GMT_to_noChange($select = "", $table = "", $date, $timezone_id = '') {
+		return $date;
+	}
+
 	function convert_GMT($date) { 
 		return $this->CI->timezone->convert_to_GMT ($date );
 	}

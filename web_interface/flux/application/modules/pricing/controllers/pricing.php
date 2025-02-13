@@ -237,6 +237,22 @@ class pricing extends MX_Controller
         }
     }
 
+    function price_refactor_search()
+    {
+        $ajax_search = $this->input->post('ajax_search', 0);
+
+        if ($this->input->post('advance_search', TRUE) == 1) {
+            $this->session->set_userdata('advance_search', $this->input->post('advance_search'));
+            $action = $this->input->post();
+            unset($action['action']);
+            unset($action['advance_search']);
+            $this->session->set_userdata('price_refactor_search', $action);
+        }
+        if (@$ajax_search != 1) {
+            redirect(base_url() . 'accounts/customer_list/');
+        }
+    }
+
     function price_list_clearsearchfilter()
     {
         $this->session->set_userdata('advance_search', 0);
@@ -440,5 +456,168 @@ class pricing extends MX_Controller
             }
         }
     }
+
+    function price_refactor()
+    {
+        $data['username'] = $this->session->userdata('user_name');
+        $data['page_title'] = gettext('Refactor');
+        $data['search_flag'] = true;
+        $this->session->set_userdata('advance_search', 0);
+        $data['grid_fields'] = $this->pricing_form->build_pricing_refactor_for_admin();
+        $data["grid_buttons"] = $this->pricing_form->build_grid_buttons_refactor();
+        $data['form_search'] = $this->form->build_serach_form($this->pricing_form->get_refactor_search_form());
+        $this->load->view('view_price_list', $data);
+    }
+    
+    function price_refactor_json()
+    {   
+        $json_data = array();
+        $count_all = $this->pricing_model->getpricing_refactor_list(false);
+
+        $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
+        $json_data = $paging_data["json_paging"];
+
+        $query = $this->pricing_model->getpricing_refactor_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
+
+        $grid_fields = json_decode($this->pricing_form->build_pricing_refactor_for_admin());
+
+        $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
+
+        foreach ($json_data['rows'] as &$row) {
+            foreach ($row['cell'] as &$cell) {
+                if ($cell == '0') {
+                    $cell = "<span style='color:#fff;background-color:#d66c15; padding:2px; border-radius:3px;'><b> " . gettext('Scheduled') . "</b></span>";
+                } elseif ($cell == '1') {
+                    $cell = "<span style='color:#fff;background-color:#28a745; padding:2px; border-radius:3px;'><b> " . gettext('Finalized') . "</b></span>";
+                } elseif ($cell == '2') {
+                    $cell = "<span style='color:#fff;background-color:#dbc416; padding:2px; border-radius:3px;'><b> " . gettext('In Execution') . "</b></span>";
+                }
+            }
+        }
+
+        echo json_encode($json_data);
+    }
+
+    function price_refactor_add($type = "")
+    {
+        $data['username'] = $this->session->userdata('user_name');
+        $this->session->set_userdata('type_version', $this->config->item('edition'));
+        $data['flag'] = 'Add Refactor';
+        $data['page_title'] = gettext('Add Refactor');
+        $data['trunk_count'] = Common_model::$global_config['system_config']['trunk_count'];
+        $data['routing_type'] = 0;
+        $data['reseller_id'] = 0;
+        $data['form'] = $this->form->build_form($this->pricing_form->get_pricing_refactor_form_fields(''), '');
+        $this->load->view('view_refactor_add_edit', $data);
+    }
+
+    function price_refactor_save()
+    {
+        $add_array = $this->input->post();
+        $i = 1;
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+            $data['form'] = $this->form->build_form($this->pricing_form->get_pricing_refactor_form_fields($add_array['id']), $add_array);
+            if ($add_array['id'] != '') {
+                $data['page_title'] = gettext('Edit Price Details');
+                if ($this->form_validation->run() == FALSE) {
+                    $data['validation_errors'] = validation_errors();
+                    echo $data['validation_errors'];
+                    exit();
+                } 
+                else {
+
+                    if (isset($add_array['routing_prefix']) && $add_array['routing_prefix'] != "") {
+                        $no_of_rows = $this->pricing_model->check_unique_prefix_for_edit($add_array['routing_prefix']);
+                        $result = $no_of_rows->result_array();
+                        if (count($result) > 0) {
+                            if ($result[0]['id'] != $add_array['id'] && $result[0]['routing_prefix'] == $add_array['routing_prefix']) {
+                                echo json_encode(array(
+                                    "routing_prefix_error" => gettext("Routing Prefix already exist in system.")
+                                ));
+                                exit();
+                            }
+                        }
+                    }
+
+                    $where = array(
+                        "pricelist_id" => $add_array['id']
+                    );
+                    $this->db->delete("routing", $where);
+                    if (isset($add_array['trunk_id']) || isset($add_array['routing_type'])) {
+                        if (isset($add_array['trunk_id']) || ($add_array['routing_type'] == 2 || $add_array['routing_type'] == 3 || $add_array['routing_type'] == 4)) {
+                                $this->set_force_routing($add_array['id'], $add_array['trunk_id']);
+                        }
+                    }
+                    if (isset($add_array['trunk_id'])) {
+                        unset($add_array['trunk_id']);
+                        if (isset($add_array['trunk_id']) && $add_array['trunk_id'] != '') {
+                            $this->set_force_routing($add_array['id'], $add_array['trunk_id']);
+                            unset($add_array['trunk_id']);
+                        }
+                    }
+                    if (isset($add_array['reseller_id']) && $add_array['reseller_id'] != '') {
+                        unset($add_array['reseller_id']);
+                    }
+
+                    $this->pricing_model->edit_price($add_array, $add_array['id']);
+                    echo json_encode(array(
+                        "SUCCESS" => ucfirst($add_array['name']).' '.gettext('Rate Group Updated Successfully!')
+                    ));
+                    exit();
+                }
+
+                $this->load->view('view_price_add_edit', $data);
+            } else {
+                $data['page_title'] = gettext('Create Refactor');
+                if ($this->form_validation->run() == FALSE) {
+                    $data['validation_errors'] = validation_errors();
+                    echo $data['validation_errors'];
+                    exit();
+                } else {
+                    if (isset($add_array['callstart']) && ($add_array['callstart'][0] > $add_array['callstart'][1])) {
+                        echo json_encode(array(
+                            "callstart[]_error" => gettext("Invalid period of refactor.")
+                        ));
+                        exit();
+                    }
+
+                    if (isset($add_array['refactor_date']) && new DateTime($add_array['refactor_date']) < new DateTime()) {
+                        echo json_encode(array(
+                            "refactor_date_error" => gettext("Invalid date of refactor.")
+                        ));
+                        exit();
+                    }
+                    
+                    $refactor_id = $this->pricing_model->add_refactor($add_array);
+                    echo json_encode(array(
+                        "SUCCESS" => ucfirst($add_array['description']). ' '.gettext('Price Refactor Added Successfully!')
+                    ));
+                    exit();
+                }
+            }
+        } else {
+            $this->session->set_flashdata('flux_notification', gettext('Permission Denied!'));
+            redirect(base_url() . 'pricing/price_list/');
+        }
+    }
+
+    function price_refactor_delete_multiple()
+    {
+        $add_array = $this->input->post();
+
+        if (! empty($add_array) && isset($add_array['selected_ids'])) {
+
+            $ids = $this->input->post("selected_ids", true);
+            $where = 'IN (' . $add_array['selected_ids'] . ')';
+            $this->db->where('id ' . $where);   
+            echo $this->db->delete('refactor');
+        
+        } else {
+            $this->session->set_flashdata('flux_notification', gettext('Permission Denied!'));
+            redirect(base_url() . 'pricing/price_list/');
+        }
+    }
+
 }
 ?>

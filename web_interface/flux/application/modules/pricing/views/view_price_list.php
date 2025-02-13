@@ -4,18 +4,42 @@
 
 <script type="text/javascript" language="javascript">
     $(document).ready(function() {
-      
+        
         build_grid("price_grid","",<? echo $grid_fields; ?>,<? echo $grid_buttons; ?>);
+
+        var from_date = date + " 00:00:00";
+        var to_date = date + " 23:59:59";
+
+        $("#customer_search_from_date").datetimepicker({
+			value:from_date,
+            uiLibrary: 'bootstrap4',
+            iconsLibrary: 'fontawesome',
+            modal:true,
+            format: 'yyyy-mm-dd HH:MM:ss',
+            footer:true
+         });
+
+        $("#customer_search_to_date").datetimepicker({
+			value:to_date,
+            uiLibrary: 'bootstrap4',
+            iconsLibrary: 'fontawesome',
+            modal:true,
+            format: 'yyyy-mm-dd HH:MM:ss',
+            footer:true
+         });  
+         
         $('.checkall').click(function () {
            $('.chkRefNos').prop('checked', $(this).prop('checked')); 
         });
         $("#price_search_btn").click(function(){
             post_request_for_search("price_grid","","price_search");
+        });
+        $("#refactor_search_btn").click(function(){
+            post_request_for_search("price_grid","","refactor_search");
         });        
         $("#id_reset").click(function(){
             clear_search_request("price_grid","");
         });
-        
     });
 </script>
 <? endblock() ?>

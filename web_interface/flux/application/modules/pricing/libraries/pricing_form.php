@@ -426,6 +426,260 @@ class pricing_form extends common
         return $form;
     }
 
+    function get_pricing_refactor_form_fields($id = '')
+    {
+        $trunk_count = Common_model::$global_config['system_config']['trunk_count'];
+        $account_data = $this->CI->session->userdata("accountinfo");
+        $type_version = $this->CI->session->userdata("type_version");
+        
+        
+        $logintype = $this->CI->session->userdata("logintype");
+        if ($logintype == 1 || $logintype == 5) {
+            $loginid = $account_data['id'];
+        } else {
+            $loginid = "0";
+        }
+        $account_type = array(
+            gettext('Account'),
+            array(
+                'name' => 'accountcode',
+                'class' => '',
+                'id' => 'account_id'
+            ),
+            'SELECT',
+            '',
+            'trim|dropdown|xss_clean',
+            'tOOL TIP',
+            'Please Enter account number',
+            'id',
+            'first_name,last_name,number',
+            'accounts',
+            'build_concat_dropdown',
+            'where_arr',
+            array(
+                'reseller_id' => $loginid,
+                'deleted'=>0,
+                'status'=>0,
+                'type'=>0
+            )
+        );
+
+        $form['forms'] = array(
+            base_url() . 'pricing/price_refactor_save/',
+            array(
+                'id' => 'pricing_form',
+                'method' => 'POST',
+                'name' => 'pricing_form'
+            )
+        );
+        if ($this->CI->session->userdata('logintype') == 1 || $this->CI->session->userdata('logintype') == 5) {
+
+            $form[gettext('Basic')] = array(
+                array(
+                    '',
+                    'HIDDEN',
+                    array(
+                        'name' => 'id'
+                    ),
+                    '',
+                    '',
+                    '',
+                    ''
+                ),
+                array(
+                    '',
+                    'HIDDEN',
+                    array(
+                        'name' => 'status',
+                        'value' => '1'
+                    ),
+                    '',
+                    '',
+                    ''
+                ),
+                array(
+                    gettext('Name'),
+                    'INPUT',
+                    array(
+                        'name' => 'name',
+                        'size' => '20',
+                        'maxlength' => '30',
+                        'class' => "text field medium"
+                    ),
+                    'trim|required|xss_clean',
+                    'tOOL TIP',
+                    'Please Enter account number'
+                ),
+                array(
+                    gettext('Status'),
+                    'status',
+                    'SELECT',
+                    '',
+                    '',
+                    'tOOL TIP',
+                    'Please Select Status',
+                    '',
+                    '',
+                    '',
+                    'set_status'
+                )
+            );
+            $form[gettext('Billing')] = array(
+
+                array(
+                    gettext('Markup')."(%)",
+                    'INPUT',
+                    array(
+                        'name' => 'markup',
+                        'value' => "0",
+                        'size' => '20',
+                        'class' => "text field medium"
+                    ),
+                    'trim|numeric|greater_than[-1]|less_than[101]|xss_clean',
+                    'tOOL TIP',
+                    'Please Enter account number'
+                ),
+                array(
+                    gettext('Initial Increment'),
+                    'INPUT',
+                    array(
+                        'name' => 'initially_increment',
+                        'size' => '20',
+                        'class' => "text field medium"
+                    ),
+                    'trim|required|numeric|greater_than[-1]|integer|xss_clean',
+                    'tOOL TIP',
+                    'Please Enter account number'
+                ),
+                array(
+                    gettext('Increment'),
+                    'INPUT',
+                    array(
+                        'name' => 'inc',
+                        'size' => '20',
+                        'class' => "text field medium"
+                    ),
+                    'trim|required|numeric|greater_than[-1]|integer|xss_clean',
+                    'tOOL TIP',
+                    'Please Enter account number'
+                )
+            );
+        } else {
+
+            $form[gettext('Basic')] = array(
+                array(
+                    '',
+                    'HIDDEN',
+                    array(
+                        'name' => 'id'
+                    ),
+                    '',
+                    '',
+                    '',
+                    ''
+                ),
+                array(
+                    '',
+                    'HIDDEN',
+                    array(
+                        'name' => 'status',
+                        'value' => '1'
+                    ),
+                    '',
+                    '',
+                    ''
+                ),
+                array(
+                    gettext('Description'),
+                    'INPUT',
+                    array(
+                        'name' => 'description',
+                        'size' => '20',
+                        'maxlength' => '30',
+                        'class' => "text field medium"
+                    ),
+                    'trim|required|xss_clean',
+                    'tOOL TIP',
+                    'Please Enter account number'
+                ),
+                array(
+                    gettext('Refactor Date'),
+                    'INPUT',
+                    array(
+                        'name' => 'refactor_date',
+                        'id' => 'refactor_date',
+                        'size' => '20',
+                        'class' => "datetimepicker"
+                    ),
+                    '',
+                    'tOOL TIP',
+                    ''
+                ),
+                array(
+                    gettext('Status'),
+                    'status',
+                    'SELECT',
+                    '',
+                    '',
+                    'tOOL TIP',
+                    'Please Select Status',
+                    '',
+                    '',
+                    '',
+                    'set_status'
+                )
+            );
+            $form[gettext('Billing')] = array(
+                $account_type,
+                array(
+                    gettext('From Date'),
+                    'INPUT',
+                    array(
+                        'name' => 'callstart[]',
+                        'id' => 'customer_from_date',
+                        'size' => '20',
+                        'class' => "text field "
+                    ),
+                    '',
+                    'tOOL TIP',
+                    ''
+                ),
+                array(
+                    gettext('To Date'),
+                    'INPUT',
+                    array(
+                        'name' => 'callstart[]',
+                        'id' => 'customer_to_date',
+                        'size' => '20',
+                        'class' => "text field "
+                    ),
+                    '',
+                    'tOOL TIP',
+                    ''
+                ),
+            );
+        }
+
+        $form['button_cancel'] = array(
+            'name' => 'action',
+            'content' => gettext('Close'),
+            'value' => 'cancel',
+            'type' => 'button',
+            'class' => 'btn btn-secondary ml-2',
+            'onclick' => 'return redirect_page(\'NULL\')'
+        );
+        $form['button_save'] = array(
+            'name' => 'action',
+            'content' => gettext('Save'),
+            'value' => 'save',
+            'id' => 'submit',
+            'type' => 'button',
+            'class' => 'btn btn-success'
+        );
+
+        return $form;
+    }
+
     function get_pricing_search_form()
     {
         $form['forms'] = array(
@@ -674,6 +928,267 @@ class pricing_form extends common
         $form['button_search'] = array(
             'name' => 'action',
             'id' => "price_search_btn",
+            'content' => gettext('Search'),
+            'value' => 'save',
+            'type' => 'button',
+            'class' => "btn btn-success float-right"
+        );
+        $form['button_reset'] = array(
+            'name' => 'action',
+            'id' => "id_reset",
+            'content' => gettext('Clear'),
+            'value' => 'cancel',
+            'type' => 'reset',
+            'class' => "btn btn-secondary float-right mx-2"
+        );
+
+        return $form;
+    }
+
+    function get_refactor_search_form()
+    {
+        $account_data = $this->CI->session->userdata("accountinfo");
+        $reseller_id = $account_data['type'] == 1 ? $account_data['id'] : 0;
+        $form['forms'] = array(
+            "",
+            array(
+                'id' => "refactor_search"
+            )
+        );
+        if ($this->CI->session->userdata('logintype') == 1 || $this->CI->session->userdata('logintype') == 5) {
+            $form[gettext('Search')] = array(
+                array(
+                    gettext('Description'),
+                    'INPUT',
+                    array(
+                        'name' => 'description[description]',
+                        '',
+                        'size' => '20',
+                        'class' => "text field"
+                    ),
+                    '',
+                    'tOOL TIP',
+                    '1',
+                    'description[description-string]',
+                    '',
+                    '',
+                    '',
+                    'search_string_type',
+                    ''
+                ),
+                array(
+                    gettext('From Date'),
+                    'INPUT',
+                    array(
+                        'name' => 'from_date[]',
+                        'id' => 'customer_search_from_date',
+                        'size' => '20',
+                        'class' => "text field "
+                    ),
+                    '',
+                    'tOOL TIP',
+                    '',
+                    'customer_from_date[customer_from_date-date]'
+                ),
+                array(
+                    gettext('To Date'),
+                    'INPUT',
+                    array(
+                        'name' => 'to_date[]',
+                        'id' => 'customer_search_to_date',
+                        'size' => '20',
+                        'class' => "text field "
+                    ),
+                    '',
+                    'tOOL TIP',
+                    '',
+                    'customer_to_date[customer_to_date-date]'
+                ),
+                array(
+                    gettext('Status'),
+                    'status',
+                    'SELECT',
+                    '',
+                    '',
+                    'tOOL TIP',
+                    'Please Enter account number',
+                    '',
+                    '',
+                    '',
+                    'set_search_refactor_status',
+                    '',
+                    ''
+                ),
+                array(
+                    gettext('Account'),
+                    array(
+                        'name' => 'account_id',
+                        'id' => 'accountid_search_drp',
+                        'class' => 'accountid_search_drp'
+                    ),
+                    'SELECT',
+                    '',
+                    '',
+                    'tOOL TIP',
+                    'Please Enter account number',
+                    'id',
+                    'first_name,last_name,number',
+                    'accounts',
+                    'build_concat_dropdown',
+                    'where_arr',
+                    array(
+                        "reseller_id" => $reseller_id,
+                        "type" => "GLOBAL",
+                        "status" => 0
+                    )
+                ),
+                array(
+                    '',
+                    'HIDDEN',
+                    'ajax_search',
+                    '1',
+                    '',
+                    '',
+                    ''
+                ),
+                array(
+                    '',
+                    'HIDDEN',
+                    'advance_search',
+                    '1',
+                    '',
+                    '',
+                    ''
+                )
+            );
+        } else {
+            $form[gettext('Search')] = array(
+                array(
+                    gettext('Description'),
+                    'INPUT',
+                    array(
+                        'name' => 'description[description]',
+                        '',
+                        'size' => '20',
+                        'class' => "text field"
+                    ),
+                    '',
+                    'tOOL TIP',
+                    '1',
+                    'description[description-string]',
+                    '',
+                    '',
+                    '',
+                    'search_string_type',
+                    ''
+                ),
+                array(
+                    gettext('From Date'),
+                    'INPUT',
+                    array(
+                        'name' => 'from_date[]',
+                        'id' => 'customer_search_from_date',
+                        'size' => '20',
+                        'class' => "text field "
+                    ),
+                    '',
+                    'tOOL TIP',
+                    '',
+                    'from_date[from_date-date]'
+                ),
+                array(
+                    gettext('To Date'),
+                    'INPUT',
+                    array(
+                        'name' => 'to_date[]',
+                        'id' => 'customer_search_to_date',
+                        'size' => '20',
+                        'class' => "text field "
+                    ),
+                    '',
+                    'tOOL TIP',
+                    '',
+                    'to_date[to_date-date]'
+                ),
+                array(
+                    gettext('Status'),
+                    'status',
+                    'SELECT',
+                    '',
+                    '',
+                    'tOOL TIP',
+                    'Please Enter account number',
+                    '',
+                    '',
+                    '',
+                    'set_search_refactor_status',
+                    '',
+                    ''
+                ),
+                array(
+                    gettext('Reseller'),
+                    array(
+                        'name' => 'reseller_id',
+                        'class' => 'reseller_id_search_drp'
+                    ),
+                    'SELECT',
+                    '',
+                    '',
+                    'tOOL TIP',
+                    'Please Enter account number',
+                    'id',
+                    'first_name,last_name,number',
+                    'accounts',
+                    'build_concat_dropdown_reseller',
+                    'where_arr',
+                    ''
+                ),
+                array(
+                    gettext('Account'),
+                    array(
+                        'name' => 'account_id',
+                        'id' => 'accountid_search_drp',
+                        'class' => 'accountid_search_drp'
+                    ),
+                    'SELECT',
+                    '',
+                    '',
+                    'tOOL TIP',
+                    'Please Enter account number',
+                    'id',
+                    'first_name,last_name,number',
+                    'accounts',
+                    'build_concat_dropdown',
+                    'where_arr',
+                    array(
+                        "reseller_id" => $reseller_id,
+                        "type" => "GLOBAL",
+                        "status" => 0
+                    )
+                ),
+                array(
+                    '',
+                    'HIDDEN',
+                    'ajax_search',
+                    '1',
+                    '',
+                    '',
+                    ''
+                ),
+                array(
+                    '',
+                    'HIDDEN',
+                    'advance_search',
+                    '1',
+                    '',
+                    '',
+                    ''
+                )
+            );
+        }
+        $form['button_search'] = array(
+            'name' => 'action',
+            'id' => "refactor_search_btn",
             'content' => gettext('Search'),
             'value' => 'save',
             'type' => 'button',
@@ -969,6 +1484,263 @@ class pricing_form extends common
         return $grid_field_arr;
     }
 
+    function build_pricing_refactor_for_admin()
+    {
+        if ($this->CI->session->userdata('logintype') == 1 || $this->CI->session->userdata('logintype') == 5) {
+            $grid_field_arr = json_encode(array(
+                array(
+                    "<input type='checkbox' name='chkAll' class='ace checkall'/><label class='lbl'></label>",
+                    "30",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "false",
+                    "center"
+                ),
+                array(
+                    gettext("Name"),
+                    "110",
+                    "name",
+                    "",
+                    "",
+                    "",
+                    "EDITABLE",
+                    "true",
+                    "left"
+                ),
+                array(
+                    gettext("Initial Increment"),
+                    "120",
+                    "initially_increment",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "right"
+                ),
+                array(
+                    gettext("Increment"),
+                    "130",
+                    "inc",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "right"
+                ),
+                array(
+                    gettext("Markup")."(%)",
+                    "80",
+                    "markup",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "right"
+                ),
+                array(
+                    gettext("Rates Count"),
+                    "110",
+                    "id",
+                    "pricelist_id",
+                    "routes",
+                    "get_field_count",
+                    "",
+                    "false",
+                    "right"
+                ),
+                array(
+                    gettext("Created Date"),
+                    "90",
+                    "creation_date",
+                    "creation_date",
+                    "creation_date",
+                    "convert_GMT_to",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Modified Date"),
+                    "90",
+                    "last_modified_date",
+                    "last_modified_date",
+                    "last_modified_date",
+                    "convert_GMT_to",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Status"),
+                    "110",
+                    "status",
+                    "id",
+                    "pricelists",
+                    "get_status",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Action"),
+                    "150",
+                    "",
+                    "",
+                    "",
+                    array(
+                        "EDIT" => array(
+                            "url" => "pricing/price_edit/",
+                            "mode" => "popup"
+                        ),
+
+                        "DELETE" => array(
+                            "url" => "pricing/price_delete/",
+                            "mode" => "single"
+                        )
+                    ),
+                    "false"
+                )
+            ));
+        } else {
+
+            $grid_field_arr = json_encode(array(
+                array(
+                    "<input type='checkbox' name='chkAll' class='ace checkall'/><label class='lbl'></label>",
+                    "30",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "false",
+                    "center"
+                ),
+                array(
+                    gettext("Account"),
+                    "105",
+                    "account_id",
+                    "first_name,last_name,number,company_name",
+                    "accounts",
+                    "get_field_name_coma_new",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Reseller"),
+                    "110",
+                    "reseller_id",
+                    "first_name,last_name,number,company_name",
+                    "accounts",
+                    "reseller_select_value"
+                ),
+                array(
+                    gettext("Rate Group"),
+                    "80",
+                    "pricelist_id",
+                    "name",
+                    "pricelists",
+                    "get_field_name",
+                    "",
+                    "true",
+                    "center",
+                ),
+                array(
+                    gettext("Description"),
+                    "90",
+                    "description",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "left"
+                ),
+                array(
+                    gettext("Created Date"),
+                    "90",
+                    "creation_date",
+                    "creation_date",
+                    "creation_date",
+                    "convert_GMT_to",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Start Date"),
+                    "90",
+                    "from_date",
+                    "from_date",
+                    "from_date",
+                    "convert_GMT_to_noChange",
+                    "",
+                    "false",
+                    "center"
+                ),
+                array(
+                    gettext("Finish Date"),
+                    "90",
+                    "to_date",
+                    "to_date",
+                    "to_date",
+                    "convert_GMT_to_noChange",
+                    "",
+                    "false",
+                    "center"
+                ),
+                array(
+                    gettext("Refactor Date"),
+                    "90",
+                    "refactor_date",
+                    "refactor_date",
+                    "refactor_date",
+                    "convert_GMT_to_noChange",
+                    "",
+                    "false",
+                    "center"
+                ),
+                array(
+                    gettext("Status"),
+                    "90",
+                    "status",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Action"),
+                    "150",
+                    "",
+                    "",
+                    "",
+                    array(
+                        "EDIT" => array(
+                            "url" => "pricing/price_edit/",
+                            "mode" => "popup"
+                        ),
+
+                        "DELETE" => array(
+                            "url" => "pricing/price_delete/",
+                            "mode" => "single"
+                        )
+                    ),
+                    "false"
+                )
+            ));
+        }
+        return $grid_field_arr;
+    }
+
     function build_grid_buttons()
     {
         $buttons_json = json_encode(array(
@@ -1001,6 +1773,33 @@ class pricing_form extends common
                 "popup",
                 "",
                 "duplicate"
+            )
+        ));
+        return $buttons_json;
+    }
+
+    function build_grid_buttons_refactor()
+    {
+        $buttons_json = json_encode(array(
+            array(
+                gettext("Create"),
+                "btn btn-line-warning btn",
+                "fa fa-plus-circle fa-lg",
+                "button_action",
+                "/pricing/price_refactor_add/",
+                "popup",
+                "",
+                "create"
+            ),
+            array(
+                gettext("Delete"),
+                "btn btn-line-danger",
+                "fa fa-times-circle fa-lg",
+                "button_action",
+                "/pricing/price_refactor_delete_multiple/",
+                "",
+                "",
+                "delete"
             )
         ));
         return $buttons_json;

@@ -24,11 +24,12 @@ $config ['argv'] = array (
 		//CDRs Archive
 		"ArchiveCDRs" => "CDRsArchive/ProcessCDRsArchive",
 		"FaxSend"=>"faxsend/index",
-                "SendFax"=>"sendFax/index",
+		"SendFax"=>"sendFax/index",
 		"Purge" => "purge/ProcessPurge",
 		"BroadcastEmail" => "broadcastemail/broadcast_email",
 		"crons" => "crons/index",
 		"gitUpdate" => "GitUpdate/executeUpdate",
+		"Refactor" => "Refactor/index",
 		"gitRollback" => "GitUpdate/executeRollback"
 );
 $config ['CRON_BETA_MODE'] = false; // Beta Mode (useful for blocking submissions for testing)
