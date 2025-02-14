@@ -455,7 +455,7 @@ class rates_form extends common
                 'name' => 'origination_rate_form'
             )
         );
-        $form[gettext('Rate Information')] = array(
+        $form['Rate Information'] = array(
             array(
                 '',
                 'HIDDEN',
