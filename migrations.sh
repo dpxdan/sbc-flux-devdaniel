@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Credenciais do banco de dados
+DB_USER="fluxuser"
+DB_PASS=$1
+DB_NAME="flux"
+DB_HOST="localhost"
+
+# Diretório de migrações
+MIGRATIONS_DIR="database/updates/"
+LOG_TABLE="sql_migration_history"
+
+# Verificar se a tabela de log de migrações existe, se não, criar
+mysql -u $DB_USER -p$DB_PASS -h $DB_HOST $DB_NAME -e "
+CREATE TABLE IF NOT EXISTS $LOG_TABLE (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sql_file_name VARCHAR(255),
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);"
+
+# Loop sobre arquivos de migração pendentes
+for FILE in $(ls -tr $MIGRATIONS_DIR*.sql); do
+  # Pegar o nome do arquivo
+  FILENAME=$(basename "$FILE")
+  
+  # Verificar se o arquivo já foi aplicado
+  APPLIED=$(mysql -u $DB_USER -p$DB_PASS -h $DB_HOST $DB_NAME -e "
+  SELECT COUNT(*) FROM $LOG_TABLE WHERE sql_file_name = '$FILENAME';" | tail -n 1)
+  
+  # Se não foi aplicado, execute
+  if [ "$APPLIED" -eq 0 ]; then
+    echo "Applying migration: $FILENAME"
+    mysql -u $DB_USER -p$DB_PASS -h $DB_HOST $DB_NAME < "$FILE"
+    
+    # Registrar a migração no banco
+    mysql -u $DB_USER -p$DB_PASS -h $DB_HOST $DB_NAME -e "
+    INSERT INTO $LOG_TABLE (sql_file_name) VALUES ('$FILENAME');"
+  else
+    echo "Migration $FILENAME already applied. Skipping."
+  fi
+done
