@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS $LOG_TABLE (
 );"
 
 # Loop sobre arquivos de migração pendentes
-for FILE in $(ls -tr $MIGRATIONS_DIR*.sql); do
+for FILE in $(ls $MIGRATIONS_DIR*.sql| sort -t '-' -k 4,4n -k 3,3n -k 2,2n); do
   # Pegar o nome do arquivo
   FILENAME=$(basename "$FILE")
   
