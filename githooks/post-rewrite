@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "Merge detectado! Executando script..."
+source migrations.sh "$(cat /root/.mysql_passwd | grep 'MySQL fluxuser password:' | awk -F':  ' '{print $2}')"

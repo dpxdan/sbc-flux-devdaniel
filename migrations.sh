@@ -11,7 +11,7 @@ MIGRATIONS_DIR="database/updates/"
 LOG_TABLE="sql_migration_history"
 
 # Verificar se a tabela de log de migrações existe, se não, criar
-mysql -u $DB_USER -p$DB_PASS -h $DB_HOST $DB_NAME -e "
+mysql -u $DB_USER -p$DB_PASS -h $DB_HOST $DB_NAME -N -B -e "
 CREATE TABLE IF NOT EXISTS $LOG_TABLE (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sql_file_name VARCHAR(255),
@@ -19,13 +19,13 @@ CREATE TABLE IF NOT EXISTS $LOG_TABLE (
 );"
 
 # Loop sobre arquivos de migração pendentes
-for FILE in $(ls -tr $MIGRATIONS_DIR*.sql); do
+for FILE in $(ls $MIGRATIONS_DIR*.sql| sort -t '-' -k 4,4n -k 3,3n -k 2,2n); do
   # Pegar o nome do arquivo
   FILENAME=$(basename "$FILE")
   
   # Verificar se o arquivo já foi aplicado
-  APPLIED=$(mysql -u $DB_USER -p$DB_PASS -h $DB_HOST $DB_NAME -e "
-  SELECT COUNT(*) FROM $LOG_TABLE WHERE sql_file_name = '$FILENAME';" | tail -n 1)
+  QUERY=$(printf "SELECT COUNT(*) FROM %s WHERE sql_file_name = '%s';" "$LOG_TABLE" "$FILENAME")
+  APPLIED=$(mysql --user="$DB_USER" -p$DB_PASS --host="$DB_HOST" "$DB_NAME" -N -B -e "$QUERY")
   
   # Se não foi aplicado, execute
   if [ "$APPLIED" -eq 0 ]; then
