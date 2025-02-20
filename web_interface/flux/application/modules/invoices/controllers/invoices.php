@@ -1390,16 +1390,17 @@ class Invoices extends MX_Controller
                             if ($imageInformation === FALSE) {
                                 $error_file = gettext("Logo only allows file types of JPG, PNG and JPEG.");
                             } else {
-                                $imageWidth = $imageInformation[0];
+                                // $imageWidth = $imageInformation[0];
 
-                                $imageHeight = $imageInformation[1];
-                                if ($imageWidth > '250' && $imageHeight > '60') {
+                                // $imageHeight = $imageInformation[1];
+                                // if ($imageWidth > '250' && $imageHeight > '60') {
 
-                                    $error_file = gettext("Please upload 250 * 60 size file");
-                                } else {
+                                //     $error_file = gettext("Please upload 250 * 60 size file");
+                                // } else {
 
-                                    $file_status = true;
-                                }
+                                //     $file_status = true;
+                                // }
+                                $file_status = true;
                             }
                         } else {
 
