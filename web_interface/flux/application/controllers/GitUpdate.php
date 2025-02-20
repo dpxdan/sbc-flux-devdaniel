@@ -98,11 +98,12 @@ class GitUpdate extends MX_Controller {
             $this->db->query($query_insert_hash);
         }
 
-        $mergeResult = $this->runCommand('git merge origin/master', $repoPath);
+        $mergeResult = $this->runCommand('git pull origin master', $repoPath);
 
         if ($mergeResult['status'] !== 0) {
             throw new Exception('Erro ao fazer merge: ' . implode("\n", $mergeResult['output']));
         }
+
         $current_hash = $this->getCurrentCommitHash($repoPath);
         $this->flux_log->write_log("GIT_HASH",  "HASH APOS O COMMIT: " . json_encode($current_hash));
         $query_check_new_hash = "SELECT * FROM git_version WHERE commit_hash = '" . $current_hash . "'";
