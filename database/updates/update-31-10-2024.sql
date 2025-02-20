@@ -1,4 +1,4 @@
-CREATE TABLE `git_version` (
+CREATE TABLE IF NOT EXISTS `git_version` (
   `id` int NOT NULL AUTO_INCREMENT,
   `commit_hash` varchar(40) NOT NULL,
   `description` text,
@@ -7,6 +7,8 @@ CREATE TABLE `git_version` (
   `is_current` tinyint(1) DEFAULT '1',
   PRIMARY KEY (`id`)
 );
+
+DROP VIEW IF EXISTS `view_git_version`;
 
 CREATE 
     ALGORITHM = UNDEFINED 
