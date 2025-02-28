@@ -87,8 +87,12 @@ class Customer extends Account {
 		$accountinfo = $this->_authorize_account ( $this->accountinfo,true,true);
 		if ($function != '') {
 			$function = '_' . $function;
+			$function_2 = '_customer' . $function;
+			$this->api_log->write_log ( 'Function : ', json_encode($function) );
 			if (( int ) method_exists ( $this, $function ) > 0) {
 				$this->$function ();
+			} else if (( int ) method_exists ( $this, $function_2 ) > 0) {
+				$this->$function_2 ();
 			} else {
 				$this->response ( array (
 					'status' => false,
@@ -342,12 +346,6 @@ class Customer extends Account {
 		if($postdata['pricelist_id'] == '' || !isset($postdata['pricelist_id'])){
 				if($this->form_validation->required($postdata['pricelist_id'])== ''){
 					$postdata['pricelist_id'] = 1;
-					/*if(empty($postdata['pricelist_id'])){
-						$this->response ( array (
-							'status' => false,
-							'error' => $this->lang->line('require_pricelist_id')
-						), 400 );
-					}*/
 				}
 			}else{
 				$postdata['pricelist_id'] = $this->common->get_field_name('id','pricelists',array('id'=>$postdata['pricelist_id'], 'reseller_id' => $postdata['id']));
@@ -391,8 +389,7 @@ class Customer extends Account {
 				}
 				if($postdata['timezone_id'] == '' || !isset($postdata['timezone_id'])){
 					$postdata['timezone_id'] =  $this->common->get_field_name('id','timezone', array('timezone_name' => 'America/Sao_Paulo'));
-				}
-				else{
+				}else{
 					$postdata['timezone_id'] = $this->common->get_field_name('id','timezone',array('id'=>$postdata['timezone_id']));
 					if(empty($postdata['timezone_id'])){
 						$this->response ( array (
@@ -581,6 +578,26 @@ class Customer extends Account {
 		$last_id = $this->signup_lib->create_account($insert_array);
 		$accountinfo = $this->db_model->getSelect("*",'accounts', array('id' => $last_id))->row_array();
 		if(!empty($accountinfo)) {
+
+			//vinculando pacote ao customer
+			$created_by_accountinfo = '1';
+			if(isset($postdata['product_id']) && $postdata['product_id'] != ''){
+				$productdata['product_id'] = $postdata['product_id'];
+				$account_id = $last_id;
+				$created_by_accountinfo = '1';
+				
+				$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
+				if ($confirm_oder == ''){
+					$this->response ( array (
+						'status' => false,
+						'error' => "Assignment product failure." 
+					), 400 );
+				}
+
+				
+			}
+			
+			$accountinfo['product_id'] = $productdata['product_id'] ? $productdata['product_id'] : '0';
 			if($postdata['action'] != 'provider_create'){
 				$this->response ( array (
 					'status'=> true,
@@ -665,9 +682,8 @@ class Customer extends Account {
 						'status' => false,
 						'error' => $this->lang->line ( 'enter_account_id' ) 
 					), 400 );
-				}
-		else{
-			$customerinfo = (array)$this->db->get_where ("accounts",array("id"=>$postdata['accountid']))->first_row();
+		}else{
+			$customerinfo = (array)$this->db->get_where ("accounts",array("id"=>$postdata['accountid'], "deleted" => "0"))->first_row();
 			if(empty($customerinfo)){
 				$this->response ( array (
 					'status'  => false,
@@ -720,25 +736,33 @@ class Customer extends Account {
 			//validação de pacotes vinculados ao account
 			$account_id = $postdata['accountid'];
 			$created_by_accountinfo = '1';
-			if(isset($postdata['product_id'])){
-				$package = $this->common->get_field_name('product_id', 'packages_view', array('accountid'=>$postdata['accountid']));
+			if(isset($postdata['product_id']) && $postdata['product_id'] != ''){
+				// $package = $this->common->get_field_name('product_id', 'packages_view', array('accountid'=>$postdata['accountid']));
+				$package = $this->db->get_where("packages_view",array('accountid'=>$postdata['accountid'], 'is_terminated' => '0'))->result_array();
+				// $this->api_log->write_log('Package: ', json_encode($package));
+				$productIdsInPackage = array_column($package, 'product_id');
 				if(empty($package)){
 					$productdata['product_id'] = $postdata['product_id'];
 					$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
-				}else if ($package !== $postdata['product_id']){
+				}
 
-					$update_counter = array("status" => "0");
-					$this->db->where ( 'product_id', $package);
-					$this->db->where ( 'accountid', $this->postdata ['accountid'] );
-					$this->db->update ( 'counters', $update_counter );
+				foreach ($package as $key) {
+					$this->api_log->write_log('Package ID: ', json_encode($key['product_id']));
+					if ($key['product_id'] != $postdata['product_id']){
+							$update_counter = array("status" => "0");
+							$this->db->where ( 'product_id', $key['product_id']);
+							$this->db->where ( 'accountid', $this->postdata ['accountid']);
+							$this->db->update ( 'counters', $update_counter );
 
-					$update_order = array("is_terminated" => "1");
-					$this->db->where ( 'product_id', $package);
-					$this->db->where ( 'accountid', $this->postdata ['accountid'] );
-					$this->db->update ( 'order_items', $update_order);
-
-					$productdata['product_id'] = $postdata['product_id'];
-					$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
+							$update_order = array("is_terminated" => "1");
+							$this->db->where ( 'product_id', $key['product_id']);
+							$this->db->where ( 'accountid', $this->postdata ['accountid'] );
+							$this->db->update ( 'order_items', $update_order);
+					}else if (!in_array($postdata['product_id'], $productIdsInPackage)){
+						
+						$productdata['product_id'] = $postdata['product_id'];
+						$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
+					}
 				}
 			}
 	
@@ -762,10 +786,7 @@ class Customer extends Account {
 				"credit_limit" => isset($postdata['credit_limit'])?$postdata['credit_limit']:$customerinfo['credit_limit'],
 				"invoice_day" => isset($postdata['invoice_day'])?$postdata['invoice_day']:$customerinfo['invoice_day'],
 				"generate_invoice" => isset($postdata['generate_invoice'])?$postdata['generate_invoice']:$customerinfo['generate_invoice'],
-//				"domain_id" => isset($postdata['domain_id'])?$postdata['domain_id']:$customerinfo['domain_id'],
 				"notify_email" => isset($postdata['notify_email'])?$postdata['notify_email']:$customerinfo['notify_email']
-
-
 			);
 			$this->db->where ( 'id', $this->postdata ['accountid'] );
 			$this->db->update ( 'accounts', $update_array );
@@ -777,32 +798,40 @@ class Customer extends Account {
 		}
 	}
 
-	function product_add(){
+	function _product_add(){
 		$postdata = $this->postdata;
 		if($this->form_validation->required($postdata['accountid'] == '')){
 			$this->response ( array (
 				'status'  => false,
 				'error'   => $this->lang->line ( 'enter_account_id' )
 			), 400 );
-		}else{
-			$productdata['product_id'] = $postdata['product_id'];
-			$account_id = $postdata['accountid'];
-			$created_by_accountinfo = '1';
-			
-			$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
-			if ($confirm_oder == ''){
-				$this->response ( array (
-					'status' => false,
-					'error' => "Assignment product failure." 
-				), 400 );
-			}else{
-				$this->response ( array (
-					'status'=> true,
-					'data' => $accountinfo,
-					'success' => "Assignment product sucessfully."
-				), 200 );
-			}
 		}
+
+		if($this->form_validation->required($postdata['product_id'] == '')){
+			$this->response ( array (
+				'status' => false,
+				'error' => $this->lang->line ( 'error_param_missing' ) . " integer:product_id"
+			), 400 );
+		}
+
+		$productdata['product_id'] = $postdata['product_id'];
+		$account_id = $postdata['accountid'];
+		$created_by_accountinfo = '1';
+		
+		$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
+		if ($confirm_oder == ''){
+			$this->response ( array (
+				'status' => false,
+				'error' => "Assignment product failure." 
+			), 400 );
+		}else{
+			$this->response ( array (
+				'status'=> true,
+				'data' => $accountinfo,
+				'success' => "Assignment product sucessfully."
+			), 200 );
+		}
+		
 	}
 
 }	
