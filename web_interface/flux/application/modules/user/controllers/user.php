@@ -1577,9 +1577,8 @@ function user_sipdevices_json()
                 $this->common->convert_GMT_to('', '', $value['last_modified_date']),
                 $voicemail_enabled,
                 $this->common->get_status('status', 'sip_devices', $value),
-                    // Jaimin FLUXUPDATE-984
-                $this->freeswitch->get_advance_buttons_fssipdevices ( $value ['id'] )
-                    // End
+                $this->freeswitch->get_advance_buttons_fssipdevices ( $value ['id'] ),
+                $this->freeswitch->get_webrtc_buttons_fssipdevices ( $value ['id'] )
             )
         );
     }
@@ -2952,6 +2951,11 @@ function user_get_order_list_clearsearchfilter()
 function user_fssipdevices_routing($id=''){
     $this->load->module ( "siprouting" );
     $this->siprouting->fssipdevices_routing ( $id );
+}
+
+function user_fssipdevices_phone($id=''){
+    $this->load->module ( "siprouting" );
+    $this->siprouting->fssipdevices_phone ( $id );
 }
 
 function user_fssipdevices_build_extension_dropdown(){

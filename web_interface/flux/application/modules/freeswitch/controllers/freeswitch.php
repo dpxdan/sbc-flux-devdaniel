@@ -91,6 +91,28 @@ class Freeswitch extends MX_Controller
         }
     }
 
+    function fssipdevices_phone($edit_id = '')
+    {
+        $this->permission->check_web_record_permission($edit_id, 'sip_devices', 'freeswitch/fssipdevices/');
+        $data['page_title'] = gettext('Flux WebRTC');
+        $account_data = $this->session->userdata("accountinfo");
+        $where = array(
+            'id' => $edit_id
+        );
+        $account = $this->freeswitch_model->get_edited_data($edit_id);
+        $data['reseller_id']=$account['reseller_id'] > 0 ? $account['reseller_id'] : '0';
+    	$reseller_id=$data['reseller_id'];
+        $account['reseller_id'] = $account['reseller_id'] > 0 ? $this->common->build_concat_string("first_name,last_name,number,company_name", 'accounts', $account['reseller_id']) : 'Admin';
+
+        if ($account_data['type'] == '-1') {
+            $data['form'] = $this->form->build_form($this->freeswitch_form->get_phone_form_fields($edit_id, $reseller_id), $account);
+            $this->load->view('view_freeswitch_phone', $data);
+        } else {
+            $data['form'] = $this->form->build_form($this->freeswitch_form->get_phone_form_fields($edit_id), $account);
+            $this->load->view('view_freeswitch_phone', $data);
+        }
+    }
+
     function customer_fssipdevices_edit($edit_id, $accountid)
     {
         $this->permission->check_web_record_permission($edit_id, 'sip_devices', 'freeswitch/fssipdevices/');
@@ -170,7 +192,7 @@ class Freeswitch extends MX_Controller
             $data['form'] = $this->form->build_form($this->freeswitch_form->fsdevice_form_fields_for_customer($add_array["accountcode"], $add_array['id']), $add_array);
         }
         if ($add_array['id'] != '') {
-            $data['page_title'] = gettext('Freeswitch SIP Devices');
+            $data['page_title'] = gettext('FluxSBC SIP Devices');
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
                 echo $data['validation_errors'];
@@ -188,8 +210,9 @@ class Freeswitch extends MX_Controller
                 ));
                 exit();
             }
-        } else {
-            $data['page_title'] = gettext('Create Freeswitch SIP Devices');
+        } 
+        else {
+            $data['page_title'] = gettext('Create FluxSBC SIP Devices');
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
                 echo $data['validation_errors'];
@@ -213,7 +236,7 @@ class Freeswitch extends MX_Controller
             $data['form'] = $this->form->build_form($this->freeswitch_form->fsdevice_form_fields_for_customer($add_array["accountcode"], $add_array['id']), $add_array);
         }
         if ($add_array['id'] != '') {
-            $data['page_title'] = gettext('Edit Freeswitch SIP Devices');
+            $data['page_title'] = gettext('Edit FluxSBC SIP Devices');
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
                 echo $data['validation_errors'];
@@ -226,7 +249,7 @@ class Freeswitch extends MX_Controller
                 exit();
             }
         } else {
-            $data['page_title'] = gettext('Create Freeswitch SIP Devices');
+            $data['page_title'] = gettext('Create FluxSBC SIP Devices');
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
                 echo $data['validation_errors'];
@@ -247,7 +270,7 @@ class Freeswitch extends MX_Controller
         $add_array = $this->input->post();
         $data['form'] = $this->form->build_form($this->freeswitch_form->fsdevice_form_fields_for_customer($add_array["accountcode"], $add_array['id']), $add_array);
         if ($add_array['id'] != '') {
-            $data['page_title'] = gettext('Edit Freeswitch SIP Devices');
+            $data['page_title'] = gettext('Edit FluxSBC SIP Devices');
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
                 echo $data['validation_errors'];
@@ -260,7 +283,7 @@ class Freeswitch extends MX_Controller
                 exit();
             }
         } else {
-            $data['page_title'] = gettext('Create Freeswitch SIP Devices');
+            $data['page_title'] = gettext('Create FluxSBC SIP Devices');
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
                 echo $data['validation_errors'];
@@ -340,7 +363,6 @@ class Freeswitch extends MX_Controller
                 }
             }
         }
-        // FLUXUPDATE-943 Kinjal END
         foreach ($query as $key => $value) {
             $checkbox = array(
                 '<input type="checkbox" name="chkAll" id=' . $value['id'] . ' class="ace chkRefNos" onclick="clickchkbox(' . $value['id'] . ')" value=' . $value['id'] . '><lable class="lbl"></lable>'
@@ -352,12 +374,10 @@ class Freeswitch extends MX_Controller
             } else {
                 $voicemail_enabled = '<img src=' . $path_false . ' style="height:20px;width:20px;" title="Disable">';
             }
-            // FLUXUPDATE-943 Start
             $live_status = "<i class='fa fa-circle' style='color: #FF3131'></i>";
             if (in_array($value['username'],$new_array)) {
                 $live_status = "<i class='fa fa-circle' style='color: #00FF00'></i>";
             }
-            // FLUXUPDATE-943 END
             $account_data = $this->session->userdata("accountinfo");
             $reseller_ids = $value['reseller_id'];
             if ($reseller_ids == 0) {
@@ -367,13 +387,11 @@ class Freeswitch extends MX_Controller
                     '0' => $reseller_ids
                 ));
             }
-            // FLUXUPDATE-943 Start
             $edit_permission=$value['username'];
             if ((isset($permissioninfo['freeswitch']['fssipdevices']['edit']) && $permissioninfo['freeswitch']['fssipdevices']['edit'] == 0 or $permissioninfo['login_type'] == '-1' )) {
                 $base_url = base_url().'freeswitch/fssipdevices_edit/'.$value['id'];
                 $edit_permission="<span style='margin-right:8px' id='live_status_".$value['username']."'>".$live_status."</span><a href='/freeswitch/fssipdevices_edit/" . $value['id'] . "' style='cursor:pointer;color:#3b3280' rel='facebox_medium' title='".gettext('User Name')."'>" . $value['username'] . "</a>";
             }
-            // FLUXUPDATE-943 END
             $current_row = array(
                 $checkbox,
                 $edit_permission,
@@ -392,7 +410,8 @@ class Freeswitch extends MX_Controller
                 $this->common->convert_GMT_to('', '', $value['last_modified_date']),
                 $this->common->get_status('status', 'sip_devices', $value),
                 $this->get_advance_buttons_fssipdevices ( $value ['id'] ),
-		        $this->get_action_buttons_fssipdevices ( $value ['id'] ) 
+		            $this->get_webrtc_buttons_fssipdevices ( $value ['id'] )
+//	            $this->get_action_fssipdevices_buttons($value['id'], $value['accountid'], $entity_type)
             );
             if ($account_data['type'] == 1) {
                 if (($key = array_search($reseller_number, $current_row)) !== false) {
@@ -410,8 +429,14 @@ class Freeswitch extends MX_Controller
         echo json_encode($json_data);
     }
 
-    //  FLUXUPDATE-984 change 
-     function get_domain_fssipdevices($accountid) { 
+    function fssipwebrtc()
+    {
+        $data['page_title'] = gettext('Flux WebRTC');
+        $this->load->view('view_freeswitch_phone', $data);
+    }
+
+    function get_domain_fssipdevices($accountid)
+    { 
         $sip_routing_status = $this->db_model->countQuery ( "*", "addons", array("package_name"=>"multi_tenant_ip_pbx") );  
         if(isset($sip_routing_status) && $sip_routing_status ==1){  
             $ret_url=$this->common->get_field_name ( 'domain', '`domains', array (  
@@ -477,10 +502,9 @@ class Freeswitch extends MX_Controller
                     $this->common->convert_GMT_to('', '', $value['creation_date']),
                     $this->common->convert_GMT_to('', '', $value['last_modified_date']),
                     $this->common->get_status('status', 'sip_devices', $value),
-                    // $this->get_action_fssipdevices_buttons($value['id'], $value['accountid'], $entity_type)
-                    // Jaimin FLUXUPDATE-984 
-                        $this->get_advance_buttons_fssipdevices ( $value ['id'] ),
-                    // End
+                    $this->get_advance_buttons_fssipdevices ( $value ['id'] ),
+                    $this->get_webrtc_buttons_fssipdevices ( $value ['id'] )
+//                    $this->get_action_fssipdevices_buttons($value['id'], $value['accountid'], $entity_type),
                 )
             );
         }
@@ -492,6 +516,20 @@ class Freeswitch extends MX_Controller
             $ret_url = '<a href="' . base_url () . 'user/user_fssipdevices_routing/' . $id . '/" class="btn btn-royelblue btn-sm"  rel="" title="Call Routing">&nbsp;<i class="fa fa-info fa-fw"></i></a>&nbsp;';   
         }else{  
             $ret_url = '<a href="' . base_url () . 'siprouting/fssipdevices_routing/' . $id . '/" class="btn btn-royelblue btn-sm"  rel="" title="Call Routing">&nbsp;<i class="fa fa-info fa-fw"></i></a>&nbsp;';  
+        }       
+        return $ret_url;    
+    }
+
+    function get_webrtc_buttons_fssipdevices($id)
+    {    
+        if ($this->session->userdata('logintype') == '0'){  
+            $ret_url = '<button class="btn btn-royelblue btn-sm launchPhoneFluxApp" title="WebRTC Client" id="launchPhoneFluxApp" onclick="PopupCustomerPhone('.$id.')"><i class="fa fa-phone fa-fw"></i></button>&nbsp;'; 
+        }
+        else{
+            $ret_url = '<button class="btn btn-royelblue btn-sm launchPhoneFluxApp" title="WebRTC Client" id="launchPhoneFluxApp" onclick="PopupPhone('.$id.')">&nbsp;<i class="fa fa-phone fa-fw"></i></button>&nbsp;';
+            //$ret_url = '<a href="'.$path_url.'" class="btn btn-royelblue btn-sm" target="fluxAppPhone" title="WebRTC Client" id="launchPhoneFluxApp" onclick="PopupPhone('.$id.')">&nbsp;<i class="fa fa-phone fa-fw"></i></a>&nbsp;';
+           // $ret_url = '<div><a data-ripple target="fluxAppPhone" id="live_phone_'.$id.'" class="btn btn-royelblue btn-sm" onclick="PopupCenter('.$path_url.', resizable=1,width=580,height=700)" rel="" title="WebRTC Client">&nbsp;<i class="fa fa-phone fa-fw"></i></a>&nbsp;';
+//            $ret_url = '<a href="' . base_url () . 'phone.php?id=' . $id . '" target="fluxAppPhone" id="live_phone_'.$id.'" class="btn btn-royelblue btn-sm" onclick="PopupCenter("'.$path_url.', '.$path_title.', '.$width.', '.$height.')" rel="" title="WebRTC Client">&nbsp;<i class="fa fa-phone fa-fw"></i></a>&nbsp;';  
         }       
         return $ret_url;    
     }
@@ -630,9 +668,7 @@ class Freeswitch extends MX_Controller
                 $json_data['rows'][] = array(
                     'cell' => array(
                         "<a href='" . base_url() . "freeswitch/livecall_hangup?uuid=" . $value['uuid'] . "' class='btn btn-warning'> ". gettext('Hang Up')." </button>",
-                        // Ashish FLUXUPDATE-752
                         $value['created'],
-                        // Ashish 752 End
                         $value['cid_name'] . " " . $value['cid_num'],
                         $value['ip_addr'],
                         $account,
@@ -725,9 +761,7 @@ class Freeswitch extends MX_Controller
         $gateway_data = array();
         $query = $this->freeswitch_model->get_gateway_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
         $gateway_result = array();
-        // Kinjal FLUXUPDATE-943 Start
         $live_status = "<i class='fa fa-circle' style='color: #FF3131'></i>";
-        // Kinjal FLUXUPDATE-943 END
         if ($query->num_rows() > 0) {
             $query = $query->result_array();
             foreach ($query as $key => $query_value) {
@@ -748,7 +782,6 @@ class Freeswitch extends MX_Controller
                         }else{
                             $gateway_data[$gateway_key] = $gateway_val;
                         }
-                        // Kinjal FLUXUPDATE-943 END
                     } else {
                         $tmp = (array) json_decode($gateway_val);
                     }
@@ -1179,7 +1212,8 @@ class Freeswitch extends MX_Controller
                 if ($gateway_key != 'id' && $gateway_key != 'name' && $gateway_key != 'sip_ip' && $gateway_key != 'sip_port') {
                     if ($gateway_key != "profile_data") {
                         $gateway_data[$gateway_key] = $gatewau_val;
-                    } else {
+                    } 
+                    else {
                         $tmp = (array) json_decode($gatewau_val);
                         $gateway_result = array_merge($gateway_data, $tmp);
                     }

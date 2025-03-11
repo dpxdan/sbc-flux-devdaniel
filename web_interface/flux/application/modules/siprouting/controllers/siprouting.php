@@ -30,6 +30,7 @@ class Siprouting extends MX_Controller {
 		$this->load->library ( 'flux/form','siprouting_form' );
 		$this->load->library ( 'flux/permission');
 		$this->load->library ( 'freeswitch_lib' );
+		$this->load->library('flux_log');
 		$this->load->library ('FLUX_Sms');
 		$this->load->model ( 'siprouting_model' );
 		
@@ -112,7 +113,7 @@ class Siprouting extends MX_Controller {
 		}
 		exit;
 	}
-	//Nirali  issue 3110 PBX Voicemail greeting based on SIP device status
+	
 	function fssipdevices_voicemail($edit_id = '',$type = "")
     {
 
@@ -171,8 +172,7 @@ class Siprouting extends MX_Controller {
 		}
         //END
         }
-		//END
-		//Nirali  issue 3110 PBX Voicemail greeting based on SIP device status
+	
 		function fssipdevices_voice_mail_save($edit_id='')
 		{
 			$add_array = $this->input->post();
@@ -188,19 +188,18 @@ class Siprouting extends MX_Controller {
 			exit;
 			
 		}
-		//END
-		//Nirali  issue 3110 PBX Voicemail greeting based on SIP device status
-		function fssipdevices_voicemail_file_play($file_name) {
+	
+	function fssipdevices_voicemail_file_play($file_name)
+	{
 			$file_name = FCPATH."upload/pbx/" . $file_name;
 			ob_clean();
 			flush();
 			readfile($file_name);
 			exit();
 		}
-		//END
 
-
-	function fssipdevices_routing($id='') { 
+	function fssipdevices_routing($id='')
+	{ 
 		$data ['page_title'] = gettext ( 'Advance Sip Routing' );
 		if(isset($id) && $id!=""){
 			$data['sip_device_id']= $id;
@@ -274,7 +273,90 @@ class Siprouting extends MX_Controller {
 		}
 	}
 
-	function fssipdevices_build_extension_dropdown(){
+	function fssipdevices_phone($id='')
+	{ 
+		$data ['page_title'] = gettext ( 'Flux WebRTC Client' );
+		if(isset($id) && $id!=""){
+			$data['sip_device_id']= $id;
+			$data['back_flag'] = true;
+			//select * from sip_devices where id
+			$account_id = $this->common->get_field_name ( 'accountid', 'sip_devices', array ('id' => $id) );
+			$sip_device_routing_details = $this->db_model->getSelect("*","sip_devices",array('id'=>$id));
+			if($sip_device_routing_details->num_rows()>0){
+				$sip_device_routing_details_array=$sip_device_routing_details->result_array();
+				$sip_routing_data=$sip_device_routing_details_array[0];				
+        $vars = json_decode($sip_routing_data['dir_vars']);
+        $vars_old = json_decode($sip_routing_data['dir_vars'], true);
+        $vars_new = json_decode($sip_routing_data['dir_params'], true);
+        $passwords = json_decode($sip_routing_data['dir_params']);
+        $extension = $sip_routing_data['username'];
+        $extension_password = $vars_new['password'];
+        $extension_id = $id;
+        $outbound_caller_id_name = $vars_old['effective_caller_id_name'];
+        $outbound_caller_id_number = $vars_old['effective_caller_id_number'];
+        $extension_enabled = $sip_routing_data['status'];
+        $extension_accountid = $sip_routing_data['accountid'];
+        $sip_profile_id = $sip_routing_data['sip_profile_id'];
+        $data['accountid'] = $account_id;			
+        $data['extension'] = $extension;
+        $data['extension_password'] = $extension_password;
+        $data['extension_id'] = $extension_id;
+        $data['outbound_caller_id_name'] = $outbound_caller_id_name;
+        $data['outbound_caller_id_number'] = $outbound_caller_id_number;
+        $data['extension_enabled'] = $extension_enabled;
+        $data['extension_accountid'] = $extension_accountid;
+        $data['sip_profile_id'] = $sip_profile_id;
+        
+        
+			  $json_data = array();
+        $gateway_data = array();
+        $where = array(
+            'id' => $sip_profile_id
+        );
+        $query = $this->db_model->getSelect("*", "sip_profiles", $where);
+        $query = $query->result_array();
+        $gateway_result = array();
+        $i = 0;
+        foreach ($query as $key => $query_value) {
+            foreach ($query_value as $gateway_key => $gatewau_val) {
+                if ($gateway_key != 'id' && $gateway_key != 'name' && $gateway_key != 'sip_ip' && $gateway_key != 'sip_port') {
+                    if ($gateway_key != "profile_data") {
+                        $gateway_data[$gateway_key] = $gatewau_val;
+                    } 
+                    else {
+                        $tmp = (array) json_decode($gatewau_val);
+//                      $this->flux_log->write_log('tmp', json_encode($tmp['wss-binding']));
+                        $data['wss_port'] = $tmp['wss-binding'];
+                        $data['domain'] = $tmp['domain'];
+//                        $gateway_result = array_merge($gateway_data, $tmp);                        
+  //                    $this->flux_log->write_log('gateway_result', json_encode($gateway_result));
+                    }
+                }
+            }
+        }
+        		
+			if ($this->session->userdata('logintype') == '0'){
+				$this->load->view("view_freeswitch_phone",$data);
+			}
+			else{
+
+				$this->load->view("view_freeswitch_phone",$data);
+			}
+		}
+		  
+		  else{
+			if ($this->session->userdata('logintype') == '0'){
+				$this->load->view("view_freeswitch_phone",$data);
+			}
+			else{
+				$this->load->view("view_freeswitch_phone", $data);
+			}
+		}
+	}
+	}
+
+	function fssipdevices_build_extension_dropdown()
+	{
 		if($_POST['extension_value'] == '2'){
 			$accountid = $_POST['accountid'];
 			$name = $_POST['name'];

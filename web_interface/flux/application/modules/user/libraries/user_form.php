@@ -1643,28 +1643,42 @@ class User_form extends common
 
     function build_user_sipdevices()
     {
-        // Jaimin FLUXUPDATE-984
-            // $sip_routing_status = $this->CI->db_model->countQuery ( "*", "addons", array    ("package_name" => "siprouting"));
-            // if(isset($sip_routing_status) && $sip_routing_status == 1){
-            //     $action_array = array (
-            //         gettext ( "Advance" ),
-            //         "60",
-            //         "",
-            //         "",
-            //         "",
-            //         array (
-            //             "EDIT" => array (
-            //                 "url" => "/siprouting/siprouting_edit/",
-            //                 "mode" => "single",
-            //                 "layout" => "medium"
-            //             )
-            //         ),
-            //         "false"
-            //     );
-            // }else{
-            //     $action_array = array();
-            // }
-        // End
+            $sip_routing_status = $this->CI->db_model->countQuery ( "*", "addons", array    ("package_name" => "siprouting"));
+            if(isset($sip_routing_status) && $sip_routing_status == 1){
+                $action_array = array (
+                    gettext ( "Advance" ),
+                    "60",
+                    "",
+                    "",
+                    "",
+                    array (
+                        "EDIT" => array (
+                            "url" => "/siprouting/siprouting_edit/",
+                            "mode" => "single",
+                            "layout" => "medium"
+                        )
+                    ),
+                    "false"
+                );
+                $webrtc_array = array (
+                    gettext ( "WebRTC" ),
+                    "50",
+                    "",
+                    "",
+                    "",
+                    array (
+                        "EDIT" => array (
+                        "url" => "/siprouting/fssipdevices_phone/",
+                        "mode" => "single",
+                        "layout" => "medium"
+                    )
+                ),
+                    "true"
+                );
+            }else{
+                $action_array = array();
+                $webrtc_array = array();
+            }
 
         $grid_field_arr = json_encode(array(
             array(
@@ -1756,9 +1770,8 @@ class User_form extends common
                 "true",
                 "center"
             ),
-             // Jaimin FLUXUPDATE-984
-                // $action_array
-             // End
+                $action_array,
+                $webrtc_array
         ));
         return $grid_field_arr;
     }

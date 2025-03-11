@@ -190,6 +190,37 @@ function PopupCenter(url, title, w, h) {
     }
 }        
 </script> 
+<script type="text/javascript" language="javascript">
+function PopupPhone(id) {
+  var url      = '<? echo base_url(); ?>siprouting/fssipdevices_phone/'+id+'',
+      features = 'name=fluxAppPhone,popup=yes,left=100,top=100,width=350,height=820'
+      $('.launchPhoneFluxApp').on('click', function(event) { 
+          event.preventDefault() 
+          if (!localStorage.getItem('fluxPhone')) { 
+              window.open(url, 'fluxAppPhone', features)
+              return false
+          } else { 
+              window.alert('Seu ramal já está em uso.')
+          }
+      })
+    }
+function PopupCustomerPhone(id) {
+  var url      = '<? echo base_url(); ?>user/user_fssipdevices_phone/'+id+'',
+      features = 'name=fluxAppPhone,popup=yes,left=100,top=100,width=350,height=820'
+      $('.launchPhoneFluxApp').on('click', function(event) { 
+          event.preventDefault() 
+          if (!localStorage.getItem('fluxPhone')) { 
+              window.open(url, 'fluxAppPhone', features)
+              return false
+          } else { 
+              window.alert('Seu ramal já está em uso.')
+          }
+      })
+    }
+function updatevariable(data) { 
+		value = data;
+  } 
+</script>
 </head>
 <body>   
 <nav class="navbar navbar-expand-lg navbar-light bg-light mainmenu px-lg-4">
