@@ -499,7 +499,7 @@
     
         platform.login({
           code: "U0pDMTJQMDFQQVMwMHxBQUM5TTVzVm1UTjIzdFVIaE96cEJOOTlMRGlKakRlR0U4ZEFVOVFHYjZxV3pic2g1dzBNQU5JUHZVY3duWGxSNmRWRWdzR1ZFX3NpSk5BM3hLT3JOc0d5cjcwT09aSzdpVjN5MW5ZM3VwRjQtLVRudTltTFlybWVfVks1TXVWbHZnQVdHTjR0ZGdpLXFjckJqUi0tdHpIQlZ1aDFpb0NhdEdMWlhKVG5vXzB8VHVSSjhRfHUtTjFNeld5TGd2YzdScXZ2d1JUdFF8QVE",
-          redirectUri: "https://sbc.fasterisk.com.br/oauth.html"
+          redirectUri: "https://sbcdev4.flux.net.br/oauth.html"
         }).then(function (response) {
           console.log('The redirect uri value :', response);
         }).catch(function (e) {
@@ -514,13 +514,13 @@
         var user = JSON.parse(localStorage.getItem('SIPCreds'));
         var remoteVideoElement = document.getElementById('remoteVideo');
         var localVideoElement = document.getElementById('localVideo');
-        var $server = 'https://sbc.fasterisk.com.br';
+        var $server = 'https://sbcdev4.flux.net.br';
         var $appKey = 's6Xt27cgQlKJXA1QyWZTvg';
         var $appSecret = '5Rd9O5ACQjyJBaTKg8Ic_w7sh8uxtYQAato7qLIjIx5g';
         var $login = user.Display;
         var $ext = user.User;
         var $password = user.Pass;
-        var $logLevel = 1;
+        var $logLevel = 3;
         loginUser($server, $appKey, $appSecret, $ext, $password, $logLevel)
           .then(
             (message) => {
@@ -539,11 +539,11 @@
       function onInvite(session) {
         outboundCall = false;
         cur_call = session;
-                console.log('EVENT: Invite', session.request);
+/*        console.log('EVENT: Invite', session.request);
                console.log('UA INVITE', arguments);
               console.log('To', session.request.to.friendlyName, session.request.to.friendlyName);
-            console.log('From', session.request.from.displayName, session.request.from.friendlyName);
-//        notifyMe("Chamada de: "+ session.request.from.friendlyName);
+        console.log('From', session.request.from.displayName, session.request.from.friendlyName);*/
+        notifyMe("Chamada de: "+ session.request.from.friendlyName);
     
         if (session !== null && session.request.headers['Alert-Info'] && session.request.headers['Alert-Info'][0].raw === 'Auto Answer') {
           session
@@ -1506,7 +1506,7 @@
     
         if (Notification.permission === "granted") {
           console.log(msg);
-          let img = '/themes/default/images/logo_side_contracted.png';
+          let img = '/assets/images/logo-only.png';
           let notification = new Notification('Flux', {
             body: msg,
             icon: img
@@ -1648,7 +1648,7 @@
     
             if (Notification.permission === "granted") {
               console.log(msg);
-              let img = '/themes/default/images/logo_side_contracted.png';
+              let img = '/assets/images/logo-only.png';
               let notification = new Notification('Flux Phone', {
                 body: msg,
                 icon: img
@@ -2862,9 +2862,9 @@
           appAgent: sipInfo.appAgent,
           audioHelper: {
             enabled: true,
-            incoming: '/assets/audio/mp3/ringtone_in.mp3'
+            incoming: '/assets/audio/mp3/incoming.mp3'
           },
-          logLevel: 1,
+          logLevel: sipInfo.logLevel,
           appName: 'FluxPhone',
           appVersion: '6.3.1',
           displayName: sipInfo.displayName,
@@ -2878,14 +2878,15 @@
           enableQos: false,
           enableMediaReportLogging: false,
           enableTurnServers: true,
-          hackViaTcp: false,
+          hackViaTcp: sipInfo.hackViaTcp,
+          traceSip: sipInfo.traceSip,
           appSecret: sipInfo.appKey,
-          hackIpInContact: true,
+          hackIpInContact: sipInfo.hackIpInContact,
           enableDefaultModifiers: true,
-          hackWssInTransport: true,
+          hackWssInTransport: sipInfo.hackWssInTransport,
           stunServers: ['stun.l.google.com:19302'],
           turnServers: [{
-            urls: 'turn:sbc.fasterisk.com.br:9579',
+            urls: 'turn:'+sipInfo.domain+':9579',
             username: 'fluxDev',
             credential: 'FluxDev4SBC201'
           }],
@@ -2894,7 +2895,7 @@
         });
     
         fluxPhone.userAgent.audioHelper.loadAudio({
-          incoming: '/assets/audio/mp3/ringtone_in.mp3'
+          incoming: '/assets/audio/mp3/incoming.mp3'
         });
         fluxPhone.userAgent.audioHelper.setVolume(1.0);
     
@@ -2929,8 +2930,12 @@
             //fluxPhone.userAgent.unregister();
             localStorage.removeItem('fluxPhone');
             localStorage.removeItem('User');
+            localStorage.removeItem('sipData');
+            localStorage.removeItem('regData');
+            localStorage.removeItem('cData');
             localStorage.removeItem('SIPCreds');
             localStorage.removeItem('ipApiUser');
+            localStorage.removeItem('windowUser');
             //localStorage.removeItem('sipCalls');
             localStorage.removeItem('AgentStatus');
             localStorage.removeItem('flux-webPhone-uuid');
@@ -2953,7 +2958,7 @@
                console.log('UA Message', arguments);
             });*/
     
-//        fluxPhone.userAgent.on('notify', fluxSip.handleNotify);
+        fluxPhone.userAgent.on('notify', fluxSip.handleNotify);
     
         fluxPhone.userAgent.transport.on('switchBackProxy', function () {
           console.log('switching back to primary outbound proxy');
@@ -3462,16 +3467,18 @@
         var $display = $fluxform.find('input[name=Display]').eq(0);
         var $user = $fluxform.find('input[name=User]').eq(0);
         var $pass = $fluxform.find('input[name=Pass]').eq(0);
+        var $domain = $fluxform.find('input[name=domain]').eq(0);
+        var $server = $domain.val();
         $fluxform.on('submit', function (e) {
           console.log('Flux Normal Flow');
           var userform = {
     
             "User": $user.val(),
             "Pass": $pass.val(),
-            "Realm": "sbc.fasterisk.com.br",
-            "Domain": "sbc.fasterisk.com.br",
+            "Realm": $domain.val(),
+            "Domain": $domain.val(),
             "Display": $display.val(),
-            "WSServer": "wss://sbc.fasterisk.com.br:7443",
+            "WSServer": "wss://"+$server+":7443",
             "IP": ipApiUser
           };
           var sipform = {
@@ -3479,12 +3486,12 @@
             "username": $user.val(),
             "password": $pass.val(),
             "name": $display.val(),
-            "domain": "sbc.fasterisk.com.br",
+            "domain": $domain.val(),
             "stunServers": ["stun:stun.l.google.com:19302"],
-            "outboundProxy": "sbc.fasterisk.com.br:7443",
+            "outboundProxy": ""+$domain.val()+":7443",
             "transport": "WSS",
             "authorizationId": $user.val(),
-            "wsServers": "sbc.fasterisk.com.br:7443"
+            "wsServers": ""+$domain.val()+":7443"
           };
           var sipInfoForm = [sipform];
           var sipdataform = {

@@ -2524,7 +2524,7 @@
                     options = options || {};
                     var effectiveType = navigator['connection'].effectiveType || '';
                     var networkType = calculateNetworkUsage(qosStatsObj) || '';
-                    var targetUrl = options.targetUrl || 'flux@sbc.fasterisk.com.br:5060';
+                    var targetUrl = options.targetUrl || 'flux@sbcdev4.flux.net.br:5060';
                     var event = options.event || 'vq-rtcpxr';
                     options.expires = 60;
                     options.contentType = 'application/vq-rtcpxr';

@@ -415,7 +415,7 @@
     
         platform.login({
           code: "U0pDMTJQMDFQQVMwMHxBQUM5TTVzVm1UTjIzdFVIaE96cEJOOTlMRGlKakRlR0U4ZEFVOVFHYjZxV3pic2g1dzBNQU5JUHZVY3duWGxSNmRWRWdzR1ZFX3NpSk5BM3hLT3JOc0d5cjcwT09aSzdpVjN5MW5ZM3VwRjQtLVRudTltTFlybWVfVks1TXVWbHZnQVdHTjR0ZGdpLXFjckJqUi0tdHpIQlZ1aDFpb0NhdEdMWlhKVG5vXzB8VHVSSjhRfHUtTjFNeld5TGd2YzdScXZ2d1JUdFF8QVE",
-          redirectUri: "https://sbc.fasterisk.com.br/oauth.html"
+          redirectUri: "https://sbcdev4.flux.net.br/oauth.html"
         }).then(function (response) {
           console.log('The redirect uri value :', response);
         }).catch(function (e) {
@@ -430,7 +430,7 @@
         var user = JSON.parse(localStorage.getItem('SIPCreds'));
         var remoteVideoElement = document.getElementById('remoteVideo');
         var localVideoElement = document.getElementById('localVideo');
-        var $server = 'https://sbc.fasterisk.com.br';
+        var $server = 'https://sbcdev4.flux.net.br';
         var $appKey = 's6Xt27cgQlKJXA1QyWZTvg';
         var $appSecret = '5Rd9O5ACQjyJBaTKg8Ic_w7sh8uxtYQAato7qLIjIx5g';
         var $login = user.Display;
@@ -3385,16 +3385,18 @@
         var $display = $fluxform.find('input[name=Display]').eq(0);
         var $user = $fluxform.find('input[name=User]').eq(0);
         var $pass = $fluxform.find('input[name=Pass]').eq(0);
+        var $domain = $fluxform.find('input[name=domain]').eq(0);
+        var $server = $domain.val();
         $fluxform.on('submit', function (e) {
           console.log('Flux Normal Flow');
           var userform = {
     
             "User": $user.val(),
             "Pass": $pass.val(),
-            "Realm": "sbc.fasterisk.com.br",
-            "Domain": "sbc.fasterisk.com.br",
+            "Realm": $domain.val(),
+            "Domain": $domain.val(),
             "Display": $display.val(),
-            "WSServer": "wss://sbc.fasterisk.com.br:7443",
+            "WSServer": "wss://"+$server+":7443",
             "IP": ipApiUser
           };
           var sipform = {
@@ -3402,12 +3404,12 @@
             "username": $user.val(),
             "password": $pass.val(),
             "name": $display.val(),
-            "domain": "sbc.fasterisk.com.br",
+            "domain": $domain.val(),
             "stunServers": ["stun:stun.l.google.com:19302"],
-            "outboundProxy": "sbc.fasterisk.com.br:7443",
+            "outboundProxy": ""+$domain.val()+":7443",
             "transport": "WSS",
             "authorizationId": $user.val(),
-            "wsServers": "sbc.fasterisk.com.br:7443"
+            "wsServers": ""+$domain.val()+":7443"
           };
           var sipInfoForm = [sipform];
           var sipdataform = {
