@@ -185,6 +185,7 @@ class Reports extends MX_Controller
                     "",
                     "",
                     "",
+                    "",
                     "<b>$duration</b>",
                     "<b>" . $this->common->calculate_currency_manually($currency_info, $count_all['total_debit'] - $count_all['free_debit'], false) . "</b>",
                     "<b>" . $this->common->calculate_currency_manually($currency_info, $count_all['total_cost'], false) . "</b>",
