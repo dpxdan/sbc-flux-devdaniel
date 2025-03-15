@@ -30,7 +30,8 @@ $config ['argv'] = array (
 		"crons" => "crons/index",
 		"gitUpdate" => "GitUpdate/executeUpdate",
 		"Refactor" => "Refactor/index",
-		"gitRollback" => "GitUpdate/executeRollback"
+		"gitRollback" => "GitUpdate/executeRollback",
+		"ApiProxy" => "ApiProxy/update_data"
 );
 $config ['CRON_BETA_MODE'] = false; // Beta Mode (useful for blocking submissions for testing)
 ?>

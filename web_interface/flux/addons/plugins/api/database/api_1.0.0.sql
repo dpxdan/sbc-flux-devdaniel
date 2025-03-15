@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS dialer_device_info;
   CREATE TABLE `dialer_device_info` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `accountid` int(11) NOT NULL,

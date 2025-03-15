@@ -4,7 +4,7 @@
 	<name>OPEN APIs</name>
 	<description>A connective interface to commute with FLUX</description>		
 	<icon>static/images/api.png</icon>
-	<version>1.0.0</version>
+	<version>3.0.0</version>
 	<license>plugins</license>	
 	<author>Flux Telecom</author>
 	<status>production</status>

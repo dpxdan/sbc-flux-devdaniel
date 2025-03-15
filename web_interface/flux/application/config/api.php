@@ -12,9 +12,8 @@
  |
  */
  $flux_config = parse_ini_file ( "/var/lib/flux/flux-config.conf" );
- //Riya 3490 Mobile Dialer - Recharge functional is not working
- //Riya FLUXENT-3993 API- Token keys ISSUE
-  $config['api_x_auth_token'] = isset($flux_config ['api_x_auth_token']) && $flux_config ['api_x_auth_token'] != "<AUTH_KEY>
+
+ $config['api_x_auth_token'] = isset($flux_config ['api_x_auth_token']) && $flux_config ['api_x_auth_token'] != "<AUTH_KEY>
 " ? $flux_config ['api_x_auth_token'] :
      "nOcBurg5KvyurOri8A9ds3rXWafZ99Du";
  //end
@@ -28,8 +27,7 @@
  |
  |
  */
- //Riya 3490 Mobile Dialer - Recharge functional is not working
- //Riya FLUXENT-3993 API- Token keys ISSUE
+
  $config['token_key'] = isset($flux_config ['token_key']) && $flux_config ['token_key'] != "<TOKEN_KEY>" ? $flux_config ['token_key'] : "8CA7*^bnlAOMqR%?vYMBR62P8Ks1BN4L";
  //end
 /*
@@ -42,8 +40,7 @@
  |
  |
  */
- //Riya 3490 Mobile Dialer - Recharge functional is not working
- //Riya FLUXENT-3993 API- Token keys ISSUE
+
  $config['iv_key'] = isset($flux_config ['iv_key']) && $flux_config ['iv_key'] != "<IV_KEY>" ? $flux_config ['iv_key'] : "UwCs*^jjkNU53u%?QjGb2CAycS3Wqg94";
  //end
 /*
@@ -234,7 +231,6 @@ $config['api_ajax_only'] = FALSE;
  |
  */
 $config['api_debug_log'] = TRUE;
-
 
 /* End of file config.php */
 /* Location: ./system/application/config/api.php */

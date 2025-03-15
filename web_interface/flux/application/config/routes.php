@@ -62,6 +62,9 @@ $route['confirmpass']     = "signup/confirmpass";
 
 $route['feedback'] = "feedback/index";
 
+$route['proxy'] = "ApiProxy/forward_get";
+$route['proxy-post'] = "ApiProxy/forward_post";
+
 $route['signup']           = "signup/index";
 $route['otp_verification'] = "signup/otp_verification/";
 $route['signup/(:any)']    = "signup/index/$1";
