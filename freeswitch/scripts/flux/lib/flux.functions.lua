@@ -547,7 +547,7 @@ end
 function get_rates(userinfo,destination_number,number_loop,call_direction,config,callerid_number)
 	
 	local rates_info
-    	Logger.notice("[GET_RATES] call_direction :" .. call_direction)
+	Logger.notice("[GET_RATES] call_direction :" .. call_direction)
 	if (call_direction == "inbound" and userinfo['reverse_rate'] ~= nil and userinfo['reverse_rate'] ~= "0")  then
 		Logger.notice("[GET_RATES] callerid_number :" .. callerid_number)
 		rates_info = check_did(destination_number,config,callerid_number)
