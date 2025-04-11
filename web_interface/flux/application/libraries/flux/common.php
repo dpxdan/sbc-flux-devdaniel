@@ -414,17 +414,17 @@ class common {
 		return rtrim ( $value, ',' );
 	}
 	function set_invoice_option($select = "", $table = "", $call_type = "", $edit_value = '') {
+		$this->CI->flux_log->write_log('set_invoice_option', json_encode($select));	
 		$invoice_date = false;
 		$uri_segment = $this->CI->uri->segments;
 		if (isset ( $uri_segment [3] ) && $uri_segment [3] > 0 && empty ( $edit_value )) {
 			$field_name = $this->CI->db_model->getSelect ( "sweep_id,invoice_day", "accounts", array (
 					"id" => $uri_segment [3]
-			) );
-			$field_name = $field_name->result_array ();
+			));
+			$field_name = $field_name->result_array();
 			$select = $field_name [0] ["sweep_id"];
 			$invoice_date = $field_name [0] ["invoice_day"];
-		} 
-		else {
+		} else {
 			$invoice_date = $edit_value;
 		}
 		if ($select == "" || $select == "0") {
@@ -433,19 +433,19 @@ class common {
 			);
 			return $daily_arr;
 		}
-		if ($select == 1) {
+		if ($select == "1") {
 			$week_arr = array (
-					"0" => "Sunday",
-					"1" => "Monday",
-					"2" => "Tuesday",
-					"3" => "Wednesday",
-					"4" => "Thursday",
-					"5" => "Friday",
-					"6" => "Saturday"
+					"0" => gettext("Sunday"),
+					"1" => gettext("Monday"),
+					"2" => gettext("Tuesday"),
+					"3" => gettext("Wednesday"),
+					"4" => gettext("Thursday"),
+					"5" => gettext("Friday"),
+					"6" => gettext("Saturday")
 			);
 			$rawDate = date ( "Y-m-d" );
 			$day = date ( 'N', strtotime ( $rawDate ) );
-			if (isset ( $uri_segment [3] )) {
+			if (isset ( $uri_segment [3] ) && $uri_segment [3] > 0 && empty ( $edit_value )) {
 				return $week_arr;
 			} else {
 				$week_drp = form_dropdown ( array (
@@ -2471,13 +2471,13 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	}
 	function get_week_days() {
 		$day_array = array (
-			'monday' => gettext ( 'Monday' ),
-			'tuesday' => gettext ( 'Tuesday' ),
-			'wednesday' => gettext ( 'Wednesday' ),
-			'thursday' => gettext ( 'Thursday' ),
-			'friday' => gettext ( 'Friday' ),
-			'saturday' => gettext ( 'Saturday' ),
-			'sunday' => gettext ( 'Sunday' ),
+			'monday' => gettext ("Monday"),
+			'tuesday' => gettext ("Tuesday"),
+			'wednesday' => gettext ("Wednesday"),
+			'thursday' => gettext ("Thursday"),
+			'friday' => gettext ("Friday"),
+			'saturday' => gettext ("Saturday"),
+			'sunday' => gettext ("Sunday"),
 		);
 		return $day_array;
 	}
