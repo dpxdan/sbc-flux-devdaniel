@@ -1,0 +1,1 @@
+INSERT INTO `sweeplist` (`id`, `sweep`) VALUES (1, 'Weekly');

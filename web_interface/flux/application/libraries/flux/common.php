@@ -435,13 +435,13 @@ class common {
 		}
 		if ($select == 1) {
 			$week_arr = array (
+					"0" => "Sunday",
 					"1" => "Monday",
 					"2" => "Tuesday",
 					"3" => "Wednesday",
 					"4" => "Thursday",
 					"5" => "Friday",
-					"6" => "Saturday",
-					"7" => "Sunday"
+					"6" => "Saturday"
 			);
 			$rawDate = date ( "Y-m-d" );
 			$day = date ( 'N', strtotime ( $rawDate ) );
@@ -1391,6 +1391,7 @@ class common {
 		$status_array = array (
 				"" => gettext ( "--Select--" ),
 				"0" => gettext ( "Daily" ),
+				"1" => gettext ( "Weekly" ),
 				"2" => gettext ( "Monthly" )
 		);
 		return $status_array;
@@ -2468,6 +2469,18 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		);
 		return $day_array;
 	}
+	function get_week_days() {
+		$day_array = array (
+			'monday' => gettext ( 'Monday' ),
+			'tuesday' => gettext ( 'Tuesday' ),
+			'wednesday' => gettext ( 'Wednesday' ),
+			'thursday' => gettext ( 'Thursday' ),
+			'friday' => gettext ( 'Friday' ),
+			'saturday' => gettext ( 'Saturday' ),
+			'sunday' => gettext ( 'Sunday' ),
+		);
+		return $day_array;
+	}
 	function convert_GMT_to_date($select = "", $table = "", $date, $timezone_id = '' ) {
 		return $this->CI->timezone->display_GMT ( $date,2,$timezone_id);
 	}
@@ -2859,6 +2872,17 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		}
 
 		return $array;
+	}
+	function group_by_time_new() {
+		$status_array = array (
+				'' => gettext ( "--Select--" ),
+				'HOUR' => gettext ( 'Hour' ),
+				'DAY' => gettext ( "Day" ),
+				'WEEK' => gettext ( "Week" ),
+				'MONTH' => gettext ( 'Month' ),
+				"YEAR" => gettext ( "Year" )
+		);
+		return $status_array;
 	}
 	function group_by_time() {
 		$status_array = array (
