@@ -1,6 +1,6 @@
 <?php
 // ##############################################################################
-// Flux Telecom - Unindo pessoas e neg�cios
+// Flux Telecom - Unindo pessoas e negocios
 //
 // Copyright (C) 2023 Flux Telecom
 // Daniel Paixao <daniel@flux.net.br>
@@ -90,6 +90,14 @@ class ProcessInvoice extends MX_Controller {
 			}
 			$this->EndDate = date("Y-m-d 23:59:59", strtotime($this->CurrentDate . " - 1 days"));
 			if ($this->EndDate != '') {
+			   $DayLog = array(
+					"accountid" => $accountinfo['id'],
+					"last_bill_date" => $accountinfo['last_bill_date'],					
+					"current_date" => $this->CurrentDate,
+					"start_date" => $this->StartDate,
+					"end_date" => $this->EndDate,
+				);
+				$this->flux_log->write_log('InvoiceWeek_day_log', json_encode($DayLog));
 				$invoiceid = $this->create_invoice($accountinfo);
 				if ($invoiceid > 0) {
 					$this->bill_calls($accountinfo, $invoiceid);
@@ -100,6 +108,35 @@ class ProcessInvoice extends MX_Controller {
 					));
 
 				}
+			}
+			break;
+		case 1:
+			if (date("w", strtotime($this->CurrentDate)) == $accountinfo['invoice_day']){
+				if (Strtotime($this->StartDate) > strtotime($this->CurrentDate)) {
+					$this->flux_log->write_log('InvoiceWeek_Week_StartDateMaior', json_encode($this->StartDate));
+					$this->StartDate = date("Y-m-d 00:00:01", strtotime($this->CurrentDate . " - 7 days"));
+				}
+				$this->EndDate = date("Y-m-d 23:59:59", strtotime($this->CurrentDate . " -2 second"));	
+				if ($this->EndDate != '') {
+					$WeekLog = array(
+						"accountid" => $accountinfo['id'],
+						"last_bill_date" => $accountinfo['last_bill_date'],					
+						"current_date" => $this->CurrentDate,
+						"start_date" => $this->StartDate,
+						"end_date" => $this->EndDate,
+					);
+					$this->flux_log->write_log('InvoiceWeek_week_log', json_encode($WeekLog));
+					$invoiceid = $this->create_invoice($accountinfo);
+					if ($invoiceid > 0) {
+						$this->bill_calls($accountinfo, $invoiceid);
+						$this->apply_taxes($accountinfo, $invoiceid);					
+						$this->db->where("id", $accountinfo['id']);
+						$this->db->update("accounts", array(
+							"last_bill_date" => $this->CurrentDate,
+						));
+
+					}
+				}			
 			}
 			break;
 		case 2:
@@ -240,9 +277,15 @@ class ProcessInvoice extends MX_Controller {
 				}
 
 				//LOG
+					if (isset($InvoiceDataLog)) {
 					$this->flux_log->write_log ( 'account_insert_invoice', json_encode($InvoiceDataLog) );
+					}
+					if (isset($update_billable_item_log)) {
 					$this->flux_log->write_log ( 'update_billable_item_log', json_encode($update_billable_item_log) );
+					}
+					if (isset($log_final_array)) {
 					$this->flux_log->write_log ( 'log_final_array', json_encode($log_final_array) );
+					}
 				//END LOG
 				return $invoiceid;
 			}
