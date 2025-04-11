@@ -190,7 +190,7 @@ class ProcessInvoice extends MX_Controller {
 			$last_invoice_ID = str_pad($last_invoice_ID, 6, '0', STR_PAD_LEFT);
 			$automatic_flag = self::$global_config['system_config']['automatic_invoice'] == 1 ? '0' : '1';
 			if ($invoiceconf['no_usage_invoice'] == 1) {
-			$this->flux_log->write_log('no_usage_invoice', json_encode($invoiceconf));
+				$this->flux_log->write_log('no_usage_invoice', json_encode($invoiceconf));
 				$InvoiceData = array(
 					"accountid" => $accountinfo['id'],
 					"prefix" => $invoiceconf['invoice_prefix'],
