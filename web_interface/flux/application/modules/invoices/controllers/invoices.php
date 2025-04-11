@@ -1702,12 +1702,14 @@ class Invoices extends MX_Controller
             $ountstanding_value = 0;
 
             foreach ($query as $key => $value) {
-                $date = strtotime($value['to_date']);
+                $date = strtotime($value['generate_date']);
                 $invoice_date = date("Y-m-d", $date);
                 $fromdate = strtotime($value['from_date']);
                 $from_date = date("Y-m-d", $fromdate);
                 $duedate = strtotime($value['due_date']);
                 $due_date = date("Y-m-d", $duedate);
+                $todate = strtotime($value['to_date']);
+                $to_date = date("Y-m-d", $todate);
                 $from_currency = Common_model::$global_config['system_config']['base_currency'];
                 $to_currency = $this->common->get_field_name('currency', 'currency', $accountinfo['currency_id']);
                 if ($from_currency != $to_currency) {
@@ -1783,13 +1785,11 @@ class Invoices extends MX_Controller
                 $json_data['rows'][] = array(
                     'cell' => array(
                         $value['number'] . $icon,
-
                         $invoice_type,
-
                         $invoice_date,
                         $from_date,
+                        $to_date,
                         $due_date,
-                        $payment_last,
                         $this->common->currency_decimal($amount),
                         $this->common->currency_decimal($outstanding),
                         $download . '' . $download3 . '' . $delete_button

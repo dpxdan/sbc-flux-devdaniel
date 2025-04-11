@@ -212,8 +212,8 @@ class invoices_form extends common
                 "center"
             ),
             array(
-                gettext("Due Date"),
-                "130",
+                gettext("To Date"),
+                "100",
                 "",
                 "",
                 "",
@@ -223,8 +223,8 @@ class invoices_form extends common
                 "center"
             ),
             array(
-                gettext("Last Pay Date"),
-                "100",
+                gettext("Due Date"),
+                "130",
                 "",
                 "",
                 "",
@@ -322,7 +322,7 @@ class invoices_form extends common
                 "center"
             ),
             array(
-                gettext("Due Date"),
+                gettext("To Date"),
                 "150",
                 "",
                 "",
@@ -333,7 +333,7 @@ class invoices_form extends common
                 "center"
             ),
             array(
-                gettext("Last Pay Date"),
+                gettext("Due Date"),
                 "150",
                 "",
                 "",
