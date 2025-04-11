@@ -263,7 +263,7 @@ msgid "Calling Card"
 msgstr "Cartão Pré-Pago"
 
 msgid "Calls"
-msgstr "Ligações"
+msgstr "Chamadas"
 
 msgid "Calls Breakdown"
 msgstr "Discriminação de chamadas"
@@ -1214,7 +1214,7 @@ msgid "Proxy"
 msgstr "Proxy"
 
 msgid "Purge"
-msgstr "Purga"
+msgstr "Rotina de remoção"
 
 msgid "Push Notifications"
 msgstr "Notificações via push"
@@ -1376,7 +1376,7 @@ msgid "Setup Fee"
 msgstr "Taxa criada"
 
 msgid "Signup"
-msgstr "Inscrever-se"
+msgstr "Padrão"
 
 msgid "SIP Devices"
 msgstr "Dispositivos SIP"
@@ -2697,6 +2697,24 @@ msgstr "Semanal"
 
 msgid "Monday"
 msgstr "Segunda"
+
+msgid "Sunday"
+msgstr "Domingo"
+
+msgid "Tuesday"
+msgstr "Terça"
+
+msgid "Wednesday"
+msgstr "Quarta"
+
+msgid "Thursday"
+msgstr "Quinta"
+
+msgid "Friday"
+msgstr "Sexta"
+
+msgid "Saturday"
+msgstr "Sábado"
 
 msgid "Registered SIP Devices"
 msgstr "Dispositivos Registrados"
