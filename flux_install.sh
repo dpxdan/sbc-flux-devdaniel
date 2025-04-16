@@ -339,9 +339,11 @@ normalize_mysql ()
 {
         if [ ${DIST} = "DEBIAN" ]; then
                 cp ${FLUX_SOURCE_DIR}/misc/odbc_conf/deb_odbc.ini /etc/odbc.ini
-                sed -i '33i wait_timeout=600' /etc/mysql/mysql.conf.d/mysqld.cnf
-                sed -i '33i interactive_timeout = 600' /etc/mysql/mysql.conf.d/mysqld.cnf
-                sed -i '33i sql_mode=""' /etc/mysql/mysql.conf.d/mysqld.cnf
+                mv /etc/mysql/mysql.conf.d/mysqld.cnf /tmp/mysql/mysql.conf.d/mysqld.old
+                cp ${FLUX_SOURCE_DIR}/config/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf                
+#                sed -i '33i wait_timeout=600' /etc/mysql/mysql.conf.d/mysqld.cnf
+#                sed -i '33i interactive_timeout = 600' /etc/mysql/mysql.conf.d/mysqld.cnf
+#                sed -i '33i sql_mode=""' /etc/mysql/mysql.conf.d/mysqld.cnf
                 systemctl restart mysql
                 systemctl enable mysql
         elif  [ ${DIST} = "CENTOS" ]; then
@@ -355,11 +357,13 @@ normalize_mysql ()
                 systemctl enable mysqld
         elif  [ ${DIST} = "DEBIAN10" ]; then
                 cp ${FLUX_SOURCE_DIR}/misc/odbc_conf/deb_odbc.ini /etc/odbc.ini
-                sed -i '28i wait_timeout=600' /etc/mysql/conf.d/mysql.cnf
-                sed -i '28i interactive_timeout = 600' /etc/mysql/conf.d/mysql.cnf
-                sed -i '28i sql_mode=""' /etc/mysql/conf.d/mysql.cnf
-		        sed -i '33i log_bin_trust_function_creators = 1' /etc/mysql/conf.d/mysql.cnf
-                sed -i '28i [mysqld]' /etc/mysql/conf.d/mysql.cnf
+                mv /etc/mysql/mysql.conf.d/mysqld.cnf /tmp/mysql/mysql.conf.d/mysqld.old
+                cp ${FLUX_SOURCE_DIR}/config/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf   
+                #sed -i '28i wait_timeout=600' /etc/mysql/conf.d/mysql.cnf
+                #sed -i '28i interactive_timeout = 600' /etc/mysql/conf.d/mysql.cnf
+                #sed -i '28i sql_mode=""' /etc/mysql/conf.d/mysql.cnf
+		            #sed -i '33i log_bin_trust_function_creators = 1' /etc/mysql/conf.d/mysql.cnf
+                #sed -i '28i [mysqld]' /etc/mysql/conf.d/mysql.cnf
                 systemctl restart mysql
                 systemctl enable mysql
         fi
@@ -424,6 +428,8 @@ normalize_flux ()
                 cp -rf ${FLUX_SOURCE_DIR}/web_interface/nginx/deb_flux.conf /etc/nginx/conf.d/flux.conf
                 mv /etc/nginx/nginx.conf /etc/nginx/nginx.old
                 cp ${FLUX_SOURCE_DIR}/web_interface/nginx/deb_nginx.conf /etc/nginx/nginx.conf
+                mv /etc/php/7.3/fpm/pool.d/www.conf /etc/php/7.3/fpm/pool.d/www.old
+                cp ${FLUX_SOURCE_DIR}/web_interface/nginx/deb_www.conf /etc/php/7.3/fpm/pool.d/www.conf
                 systemctl start nginx
                 systemctl enable nginx
                 systemctl start php7.3-fpm
@@ -478,7 +484,7 @@ normalize_flux ()
                 cp -rf ${FLUX_SOURCE_DIR}/web_interface/nginx/deb_flux.conf /etc/nginx/conf.d/flux.conf
                 sed "s@ssl_certificate[ \t]*/etc/nginx/ssl/nginx.crt;@ssl_certificate /etc/letsencrypt/live/${FLUX_HOST_DOMAIN_NAME}/fullchain.pem;@g" -i /etc/nginx/conf.d/flux.conf
                 sed "s@ssl_certificate_key[ \t]*/etc/nginx/ssl/nginx.key;@ssl_certificate_key /etc/letsencrypt/live/${FLUX_HOST_DOMAIN_NAME}/privkey.pem;@g" -i /etc/nginx/conf.d/flux.conf
-                sed -i "s#server_name _#server_name ${FLUX_HOST_DOMAIN_NAME}#g" /etc/nginx/conf.d/flux.conf
+                sed -i "s#server_name _#server_name ${FLUX_HOST_DOMAIN_NAME}#g" /etc/nginx/conf.d/flux.conf                
                 systemctl start nginx
                 systemctl enable nginx
                 systemctl start php7.3-fpm
@@ -563,6 +569,7 @@ install_freeswitch ()
         cp -rf ${FLUX_SOURCE_DIR}/freeswitch/conf/autoload_configs/* /etc/freeswitch/autoload_configs/
         cp ${FLUX_SOURCE_DIR}/freeswitch/conf/vars.xml /etc/freeswitch/vars.xml
         sed -i "s#dbname:user:password#FLUX:fluxuser:${FLUXUSER_MYSQL_PASSWORD}#g" /etc/freeswitch/vars.xml
+        sed -i "s#{db_password}#${FLUXUSER_MYSQL_PASSWORD}#g" /etc/freeswitch/autoload_configs/switch.conf.xml        
 }
 
 #Normalize freeswitch installation
