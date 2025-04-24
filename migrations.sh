@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Credenciais do banco de dados
-DB_USER="fluxuser"
+DB_USER="root"
 DB_PASS=$1
 DB_NAME="flux"
 DB_HOST="localhost"
