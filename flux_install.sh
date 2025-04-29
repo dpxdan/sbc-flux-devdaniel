@@ -339,7 +339,7 @@ normalize_mysql ()
 {
         if [ ${DIST} = "DEBIAN" ]; then
                 cp ${FLUX_SOURCE_DIR}/misc/odbc_conf/deb_odbc.ini /etc/odbc.ini
-                mv /etc/mysql/mysql.conf.d/mysqld.cnf /tmp/mysql/mysql.conf.d/mysqld.old
+                mv /etc/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.old
                 cp ${FLUX_SOURCE_DIR}/config/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf                
 #                sed -i '33i wait_timeout=600' /etc/mysql/mysql.conf.d/mysqld.cnf
 #                sed -i '33i interactive_timeout = 600' /etc/mysql/mysql.conf.d/mysqld.cnf
@@ -357,7 +357,7 @@ normalize_mysql ()
                 systemctl enable mysqld
         elif  [ ${DIST} = "DEBIAN10" ]; then
                 cp ${FLUX_SOURCE_DIR}/misc/odbc_conf/deb_odbc.ini /etc/odbc.ini
-                mv /etc/mysql/mysql.conf.d/mysqld.cnf /tmp/mysql/mysql.conf.d/mysqld.old
+                mv /etc/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.old
                 cp ${FLUX_SOURCE_DIR}/config/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf   
                 #sed -i '28i wait_timeout=600' /etc/mysql/conf.d/mysql.cnf
                 #sed -i '28i interactive_timeout = 600' /etc/mysql/conf.d/mysql.cnf
