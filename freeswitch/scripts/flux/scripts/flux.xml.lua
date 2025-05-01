@@ -184,6 +184,16 @@ function freeswitch_xml_outbound(xml,destination_number,outbound_info,callerid_a
 		
 	end
 	xml = freeswitch_xml_callerid(xml,callerid_array)
+	if(outbound_info['instant_ringback'] ~= '' and outbound_info['instant_ringback'] ~= nil) then
+	Logger.debug("instant_ringback::::::::: "..outbound_info['instant_ringback']);
+    if(tonumber(outbound_info['instant_ringback']) == 0) then
+    table.insert(xml, [[<action application="set" data="instant_ringback=true"/>]]);
+	table.insert(xml, [[<action application="ring_ready" data=""/>]]);
+	table.insert(xml, [[<action application="set" data="ringback=$${pt-ring}"/>]]);
+    else
+    table.insert(xml, [[<action application="set" data="instant_ringback=false"/>]]);
+    end
+	end
 	if(outbound_info['prepend'] ~= '' or outbound_info['strip'] ~= '') then
 
         if (outbound_info['prepend'] == '') then 

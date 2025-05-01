@@ -394,12 +394,11 @@ if (userinfo ~= nil) then
 		    return 0
 	    end
     
-		number_loop_str = number_loop(destination_number)
---		number_loop_str_orig = number_loop(callerid_number,'pattern')
+		number_loop_str_dest = number_loop(destination_number)
 		number_loop_str_orig = number_loop(callerid_number)
 		reseller_ids[i] = reseller_userinfo
 	    
-    livecall_reseller = livecall_reseller.."//"..reseller_userinfo['id']
+    	livecall_reseller = livecall_reseller.."//"..reseller_userinfo['id']
 		Logger.info("[Dialplan] =============== Reseller Information ===================")
 		Logger.info("[Dialplan] User id : "..reseller_userinfo['id'])  
 		Logger.info("[Dialplan] Account code : "..reseller_userinfo['number'])
@@ -407,7 +406,7 @@ if (userinfo ~= nil) then
 		Logger.info("[Dialplan] Type : "..reseller_userinfo['posttoexternal'].." [0:prepaid,1:postpaid]")  
 		Logger.info("[Dialplan] Ratecard id : "..reseller_userinfo['pricelist_id'])  
 		
-		origination_array_reseller=get_call_maxlength(reseller_userinfo,destination_number,call_direction,number_loop_str,config,didinfo,callerid_number)
+		origination_array_reseller= get_call_maxlength(reseller_userinfo,destination_number,call_direction,number_loop_str_dest,config,didinfo,callerid_number)
 
         if( origination_array_reseller == 'NO_SUFFICIENT_FUND' or origination_array_reseller == 'ORIGINATION_RATE_NOT_FOUND') then
             error_xml_without_cdr(destination_number,origination_array_reseller,calltype,1,customer_userinfo['id']) 
@@ -806,7 +805,8 @@ if (userinfo ~= nil) then
 			Logger.info("[Dialplan] Prefix : "..termination_value['pattern'])      		    
 			Logger.info("[Dialplan] Strip : "..termination_value['strip'])      		  
 			Logger.info("[Dialplan] Prepend : "..termination_value['prepend'])      		  
-			Logger.info("[Dialplan] Trunk ID : "..termination_value['trunk_id'])  		      		    
+			Logger.info("[Dialplan] Trunk ID : "..termination_value['trunk_id']) 
+			Logger.info("[Dialplan] Instant Ringback : "..termination_value['instant_ringback'])  		      		    
 			Logger.info("[Dialplan] Carrier Name : "..termination_value['path'])
 			Logger.info("[Dialplan] Failover Route : "..termination_value['failover_route'])
 			Logger.info("[Dialplan] dialplan_variable : "..termination_value['dialplan_variable']) 

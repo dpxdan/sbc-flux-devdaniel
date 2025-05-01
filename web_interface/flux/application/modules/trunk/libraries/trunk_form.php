@@ -287,7 +287,19 @@ class trunk_form extends common
 				'',
 				''
 		),*/
-
+            array(
+                gettext('Instant Ringback'),
+                'instant_ringback',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Select Instant Ringback',
+                '',
+                '',
+                '',
+                'enable_signup'
+            ),
             array(
                 gettext('Status'),
                 'status',
