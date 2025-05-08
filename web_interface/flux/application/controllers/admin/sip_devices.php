@@ -229,11 +229,24 @@ class Sip_devices extends Account {
 				if($this->accountinfo['type'] == '1'){
 					$where_array = array('username' => $postdata['username'],
 					'reseller_id' => $postdata['id']);
+					$where_did = array('number' => $postdata['username'],
+					'parent_id' => $postdata['id']);
 				}else{
 					$where_array = array('username' => $postdata['username'],'reseller_id' => $postdata['reseller_id']);
+					$where_did = array('number' => $postdata['username'],'parent_id' => $postdata['reseller_id']);
+
 				}
+				
 				$sip_device_id = $this->common->get_field_name('id','sip_devices',$where_array);
 				if(!empty($sip_device_id)){
+					$this->response ( array (
+						'status'  => false,
+						'error'   => $this->lang->line ( 'duplicate_sip_device' )
+					), 400 );
+				}
+
+				$did_id = $this->common->get_field_name('id','dids',$where_did);
+				if(!empty($did_id)){
 					$this->response ( array (
 						'status'  => false,
 						'error'   => $this->lang->line ( 'duplicate_sip_device' )
@@ -415,6 +428,66 @@ class Sip_devices extends Account {
 				'success' =>  $this->lang->line ('valid_sip_id')  
 			), 400 );
 		}
+
+		$get_device = $this->common->get_field_name('username', 'sip_devices',array('id' => $postdata['sipdevice_id']));
+		$did_info = (array) $this->db->get_where("dids", "number = $get_device")->result_array();
+		$did_details = $did_info[0];
+		$this->api_log->write_log ( 'get_device : ', json_encode($get_device));		
+		$this->api_log->write_log ( 'did_info : ', json_encode($did_details['product_id']));
+
+		$accountinfo = $this->accountinfo;
+		$this->did_number_release($did_details, $accountinfo, 'remove');
+
+		$category_name = '';
+		$acc_id = '';
+		$order_items_id = '';
+		$order_id = '';
+		$did_delete = array();
+		$product_category_details = array();
+		$product_category_details_result = array();
+		$product_category_details = $this->db_model->getSelect("name,product_category", "products", array(
+			"id" => $did_details['product_id']
+		));
+
+		if ($product_category_details->num_rows > 0) {
+			$product_category_details_result = $product_category_details->result_array()[0];
+
+			$did_delete['product_name'] = $product_category_details_result['name'];
+
+			$category_name = $this->common->get_field_name("name", "category", array(
+				"id" => $product_category_details_result['product_category']
+			));
+			$acc_id = $this->common->get_field_name("accountid", "order_items", array(
+				"product_id" => $did_details['product_id']
+			));
+			$order_items_id = $this->common->get_field_name("order_id", "order_items", array(
+				"product_id" => $did_details['product_id']
+			));
+			$order_id = $this->common->get_field_name("order_id", "orders", array(
+				"id" => $order_items_id
+			));
+			
+			$did_delete['category_name'] = $category_name;
+			$did_delete['next_billing_date'] = gmdate('Y-m-d H:i:s');
+			$acc_info_result = array();
+			$did_delete['order_id'] = $order_id;
+			$acc_info = $this->db_model->getSelect("id,number,first_name,last_name,company_name,email,reseller_id", "accounts", array(
+				"id" => $acc_id
+			));
+
+			if ($acc_info->num_rows > 0) {
+				$acc_info_result = $acc_info->result_array()[0];
+				$final_array = array_merge($acc_info_result, $did_delete);
+				$this->common->mail_to_users('product_release', $final_array);
+			}
+		}
+		$this->db->where("id = " . $did_details['product_id']);
+		$this->db->delete('products');
+		$this->db->where(array(
+			"id" => $did_details['id']
+		));
+		$this->db->delete('dids');
+
 		$where = array();
 		if($this->accountinfo['type'] == '1'){
 			$where = array('reseller_id' => $postdata['id']);
@@ -423,6 +496,7 @@ class Sip_devices extends Account {
 		$delete_sip_info = $this->db->delete('sip_devices',$where);
 		$delete_sip_info = $this->db->affected_rows($delete_sip_info ); 
 		if($delete_sip_info != '0'){
+
 			$this->response ( array (
 				'status'=>true,
 				'success' => $this->lang->line( 'sipdevice_deleted' )
@@ -569,6 +643,108 @@ class Sip_devices extends Account {
 	        }
 		}
 	}
+
+	function did_number_release($did_info, $accountinfo, $action){
+        if ($this->session->userdata['userlevel_logintype'] == '-1' || $this->session->userdata['userlevel_logintype'] == '2' ) {
+            $did_update_array = array(
+                "accountid" => 0,
+                "parent_id" => 0,
+                "call_type" => 0,
+                "extensions" => "",
+                "always" => 0,
+                "always_destination" => "",
+                "user_busy" => 0,
+                "user_busy_destination" => "",
+                "user_not_registered" => 0,
+                "user_not_registered_destination" => "",
+                "no_answer" => 0,
+                "no_answer_destination" => "",
+                "call_type_vm_flag" => 1,
+                "failover_call_type" => 1,
+                "always_vm_flag" => 1,
+                "user_busy_vm_flag" => 1,
+                "user_not_registered_vm_flag" => 1,
+                "no_answer_vm_flag" => 1,
+                "failover_extensions" => ""
+            );
+            $order_where = array(
+                "is_terminated" => 0,
+                "product_id" => $did_info['product_id']
+            );
+            
+            if ($did_info['accountid'] > 0) {
+                unset($did_update_array['parent_id']);
+                $order_where['accountid']  =  $did_info['accountid'];       
+            }
+        } else {
+            if ($action == 'release') {
+                $did_update_array = array(
+                    "accountid" => 0,
+                    "call_type" => 0,
+                    "extensions" => "",
+                    "always" => 0,
+                    "always_destination" => "",
+                    "user_busy" => 0,
+                    "user_busy_destination" => "",
+                    "user_not_registered" => 0,
+                    "user_not_registered_destination" => "",
+                    "no_answer" => 0,
+                    "no_answer_destination" => "",
+                    "call_type_vm_flag" => 1,
+                    "failover_call_type" => 1,
+                    "always_vm_flag" => 1,
+                    "user_busy_vm_flag" => 1,
+                    "user_not_registered_vm_flag" => 1,
+                    "no_answer_vm_flag" => 1,
+                    "failover_extensions" => ""
+                );
+            } else {
+                $did_update_array = array(
+                    "accountid" => 0,
+                    "parent_id" => 0,
+                    "call_type" => 0,
+                    "extensions" => "",
+                    "always" => 0,
+                    "always_destination" => "",
+                    "user_busy" => 0,
+                    "user_busy_destination" => "",
+                    "user_not_registered" => 0,
+                    "user_not_registered_destination" => "",
+                    "no_answer" => 0,
+                    "no_answer_destination" => "",
+                    "call_type_vm_flag" => 1,
+                    "failover_call_type" => 1,
+                    "always_vm_flag" => 1,
+                    "user_busy_vm_flag" => 1,
+                    "user_not_registered_vm_flag" => 1,
+                    "no_answer_vm_flag" => 1,
+                    "failover_extensions" => ""
+                );
+            }
+            $order_where = array(
+                "is_terminated" => 0,
+                "product_id" => $did_info['product_id'],
+                "accountid" => $did_info['accountid']
+            );
+        }
+        if($did_info['parent_id'] > 0 && $did_info['accountid'] == 0){
+            
+            $this->db->delete("reseller_products",array("product_id" => $did_info['product_id']));
+        }
+        $this->db->where(array(
+            "product_id" => $did_info['product_id']
+        ));
+        $this->db->update("dids", $did_update_array);
+
+        $order_update_array = array(
+            "is_terminated" => 1,
+            "termination_date" => gmdate('Y-m-d H:i:s'),
+            "termination_note" => "DID(" . $did_info['number'] . ") has been released by " . $accountinfo['number'] . "( " . $accountinfo['first_name'] . " " . $accountinfo['last_name'] . ") "
+        );
+        $this->db->where($order_where);
+        $this->db->update("order_items", $order_update_array);
+        return true;
+    }
 }
 
 ?>

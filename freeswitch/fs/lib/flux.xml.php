@@ -119,6 +119,31 @@ function load_acl($logger, $db, $config) {
 	return $xml;
 }
 
+// Build translate xml
+function load_translate($logger, $db, $config) {
+	$xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n";
+	$xml .= "<document type=\"freeswitch/xml\">\n";
+	$xml .= "   <section name=\"Configuration\" description=\"Configuration\">\n";
+	$xml .= "   <configuration name=\"translate.conf\" description=\"Number Translation Rules\">\n";	
+	$xml .= "   <profiles>\n";
+	$query = "SELECT * FROM number_translations WHERE status=0";
+//	$logger->log ( "Translate Query : " . $query );
+	$res_translate = $db->run ( $query );
+//	$logger->log($res_translate);	
+	foreach ( $res_translate as $translate_key => $translate_value ) {
+		$xml .= "   <profile name=\"" . $translate_value['name'] . "\" description=\"" . $translate_value['description'] . "\">\n";
+        $xml .= "   <rule regex=\"" . $translate_value['pattern'] . "\" replace=\"" . $translate_value['replace'] . "\"/>\n";		
+		$xml .= "   </profile>\n";
+		//$xml .= "   </profiles>\n";
+	}
+    $xml .= "   </profiles>\n";
+	$xml .= "   </configuration>\n";
+	$xml .= "   </section>\n";
+	$xml .= "</document>\n";
+//	$logger->log ( $xml );
+	return $xml;
+}
+
 // Build sofia xml
 function load_sofia($logger, $db, $config) {
 	$xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n";
