@@ -510,7 +510,7 @@ if (userinfo ~= nil) then
 			a = callerid_number	        
 			
 			num_regex = callerid_number
-			rgx_number = regex_cmd(num_regex,"unknown", "0")
+			rgx_number = regex_cmd(num_regex,"unknown", "1$2$3")
 			rgx_cn_number = regex_cmd(rgx_number,"unknown","1")
 			rgx_prefix_number = regex_cmd(rgx_number,"unknown","2")
 			rgx_end_number = regex_cmd(rgx_number,"unknown","3")
@@ -522,6 +522,7 @@ if (userinfo ~= nil) then
 					rgx_cn_dest_number = string.sub(rgx_cn_number, 2, 3)
 					rgx_dest_number = rgx_cn_dest_number..rgx_prefix_number..rgx_end_number
 				else
+					rgx_cn_dest_number = rgx_cn_number
 					rgx_dest_number = rgx_number
 				end
 			
@@ -567,7 +568,7 @@ if (userinfo ~= nil) then
 				didinfo['tipo'] = 'Fixo'
 				--didinfo['call_type_custom'] = 'Fixo'
 			end
-			
+
 			didinfo['prefixo'] = carrier_info['prefixo']
 			didinfo['codArea'] = carrier_info['codArea']
 			didinfo['uf'] = carrier_info['uf']		
