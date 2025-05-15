@@ -223,8 +223,11 @@ class Sip_devices extends Account {
 			if(!($postdata['status'] == '1' || $postdata['status']=='0') ){
 				$postdata['status'] = '0';
 			}
-			if ($postdata['username'] == "") {
-				$postdata['username'] = $this->common->find_uniq_rendno('10', '', '');
+			if ($postdata['username'] == "" || !isset($postdata['username'])) {
+				$this->response(array(
+					'status' => false,
+					'error' => $this->lang->line('invalid_sip_number')
+				), 400);
 			}else{
 				if($this->accountinfo['type'] == '1'){
 					$where_array = array('username' => $postdata['username'],
@@ -260,7 +263,7 @@ class Sip_devices extends Account {
 					), 400);
 				}
 			}
-
+			
 			$sip_device_id_external = $this->common->get_field_name('id_sip_external','sip_devices',array('id_sip_external' => $postdata['id_sip_external']));
 			if(!empty($sip_device_id_external)){
 					$this->response ( array (
@@ -274,6 +277,14 @@ class Sip_devices extends Account {
 
 			}else{
 				$password = $postdata['password'];
+			}
+			
+			if (!isset($postdata['caller_name']) || $postdata['caller_name'] == ""){
+				$postdata['caller_name'] = $postdata['username'];
+			}
+
+			if (!isset($postdata['caller_number']) || $postdata['caller_number'] == ""){
+				$postdata['caller_number'] = $postdata['username'];
 			}
 
 			if(isset($postdata['mailto']) && !empty($postdata['mailto']) && (!filter_var($postdata['mailto'], FILTER_VALIDATE_EMAIL))){
@@ -529,6 +540,11 @@ class Sip_devices extends Account {
 					), 400 );
 				}
 			}
+		}else{
+			$this->response(array(
+				'status' => false,
+				'error' => $this->lang->line('invalid_sip_number')
+			), 400);
 		}
 
 		if($this->form_validation->required($postdata['sipdevice_id'] == '')){
