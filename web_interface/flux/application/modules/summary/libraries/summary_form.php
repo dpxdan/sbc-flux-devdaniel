@@ -376,6 +376,14 @@ class Summary_form extends common
                 ''
             ),
             array(
+                gettext("Block Duration"),
+                "85",
+                "block_duration",
+                '',
+                '',
+                ''
+            ),
+            array(
                 gettext("ASR"),
                 "83",
                 "asr",
@@ -602,6 +610,17 @@ class Summary_form extends common
                 gettext("Duration"),
                 "85",
                 "billable",
+                '',
+                '',
+                '',
+                "",
+                "true",
+                "center"
+            ),
+            array(
+                gettext("Block Duration"),
+                "85",
+                "block_duration",
                 '',
                 '',
                 '',
@@ -916,6 +935,17 @@ class Summary_form extends common
                 gettext("Duration"),
                 "80",
                 "billable",
+                '',
+                '',
+                '',
+                "",
+                "true",
+                "center"
+            ),
+            array(
+                gettext("Block Duration"),
+                "80",
+                "block_duration",
                 '',
                 '',
                 '',

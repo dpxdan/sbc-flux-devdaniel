@@ -78,15 +78,16 @@ class Reports extends MX_Controller
             foreach ($pricelist_res as $value) {
                 $pricelist_arr[$value['id']] = $value['name'];
             }
-      $where = "carrier_id IN (" . $count_all['carrier_ids'] . ")";
-      $this->db->where($where);
-      $this->db->select('carrier_id,carrier_name,carrier_rn1');
-      $this->db->group_by ( "carrier_id" );
-      $carrier_res = $this->db->get('carrier_routing');
-      $carrier_res = $carrier_res->result_array();
-      foreach ($carrier_res as $value) {
-        $carrier_arr[$value['carrier_id']] = $value['carrier_name'] . ' (' . $value['carrier_rn1'] . ')';
-      }
+
+            $where = "carrier_id IN (" . $count_all['carrier_ids'] . ")";
+            $this->db->where($where);
+            $this->db->select('carrier_id,carrier_name,carrier_rn1');
+            $this->db->group_by ( "carrier_id" );
+            $carrier_res = $this->db->get('carrier_routing');
+            $carrier_res = $carrier_res->result_array();
+            foreach ($carrier_res as $value) {
+                $carrier_arr[$value['carrier_id']] = $value['carrier_name'] . ' (' . $value['carrier_rn1'] . ')';
+            }
 
             $where = "id IN (" . $count_all['trunk_ids'] . ")";
             $this->db->where($where);
@@ -107,8 +108,9 @@ class Reports extends MX_Controller
             $currency_info = $this->common->get_currency_info();
             foreach ($query as $value) {
                 $duration = ($show_seconds == 'minutes') ? ($value['billseconds'] > 0) ? sprintf('%02d', $value['billseconds'] / 60) . ":" . sprintf('%02d', $value['billseconds'] % 60) : "00:00" : $value['billseconds'];
+                $duration_block = ($show_seconds == 'minutes') ? ($value['block_billseconds'] > 0) ? sprintf('%02d', $value['block_billseconds'] / 60) . ":" . sprintf('%02d', $value['block_billseconds'] % 60) : "00:00" : $value['block_billseconds'];
                 $account = isset($account_arr[$value['accountid']]) ? $account_arr[$value['accountid']] : 'Anonymous';
-        $carrier = isset($carrier_arr[$value['carrier_id']]) ? $carrier_arr[$value['carrier_id']] : '--';
+                $carrier = isset($carrier_arr[$value['carrier_id']]) ? $carrier_arr[$value['carrier_id']] : '--';
                 $is_recording = isset($account_is_recording[$value['accountid']]) ? $account_is_recording[$value['accountid']] : '1';
                 $uid = $value['uniqueid'];
                 if ($value['call_direction'] == 'inbound') {
@@ -143,6 +145,7 @@ class Reports extends MX_Controller
                             $value['notes'],
                             $carrier,
                             $duration,
+                            $duration_block,
                             $this->common->calculate_currency_manually($currency_info, $value['debit'], false),
                             $this->common->calculate_currency_manually($currency_info, $value['cost'], false),
                             $value['disposition'],
@@ -163,6 +166,7 @@ class Reports extends MX_Controller
                             $value['notes'],
                             $carrier,
                             $duration,
+                            $duration_block,
                             $this->common->calculate_currency_manually($currency_info, $value['debit'], false),
                             $this->common->calculate_currency_manually($currency_info, $value['cost'], false),
                             $value['disposition'],
@@ -177,6 +181,7 @@ class Reports extends MX_Controller
                 }
             }
             $duration = ($show_seconds == 'minutes') ? ($count_all['billseconds'] > 0) ? floor($count_all['billseconds'] / 60) . ":" . sprintf('%02d', $count_all['billseconds'] % 60) : "00:00" : $count_all['billseconds'];
+            $duration_block = ($show_seconds == 'minutes') ? ($count_all['block_billseconds'] > 0) ? floor($count_all['block_billseconds'] / 60) . ":" . sprintf('%02d', $count_all['block_billseconds'] % 60) : "00:00" : $count_all['block_billseconds'];
             $json_data['rows'][] = array(
                 "cell" => array(
                     "<b>".gettext("Grand Total")."</b>",
@@ -187,6 +192,7 @@ class Reports extends MX_Controller
                     "",
                     "",
                     "<b>$duration</b>",
+                    "<b>$duration_block</b>",
                     "<b>" . $this->common->calculate_currency_manually($currency_info, $count_all['total_debit'] - $count_all['free_debit'], false) . "</b>",
                     "<b>" . $this->common->calculate_currency_manually($currency_info, $count_all['total_cost'], false) . "</b>",
                     "",
@@ -302,6 +308,7 @@ class Reports extends MX_Controller
                     gettext("Code"),
                     gettext("Destination"),
                     gettext("Duration"),
+                    gettext("Block Duration"),
                     gettext("Debit") . "(" . $currency . ")",
                     gettext("Cost") . "(" . $currency . ")",
                     gettext("Disposition"),
@@ -322,6 +329,7 @@ class Reports extends MX_Controller
                 }
                 foreach ($query->result_array() as $value) {
                     $duration = ($show_seconds == 'minutes') ? ($value['billseconds'] > 0) ? floor($value['billseconds'] / 60) . ":" . sprintf('%02d', $value['billseconds'] % 60) : "00:00" : $value['billseconds'];
+                    $block_duration = ($show_seconds == 'minutes') ? ($value['block_billseconds'] > 0) ? floor($value['block_billseconds'] / 60) . ":" . sprintf('%02d', $value['block_billseconds'] % 60) : "00:00" : $value['block_billseconds'];
                     $account = isset($account_arr[$value['accountid']]) ? $account_arr[$value['accountid']] : 'Anonymous';
                     $customer_array[] = array(
                         $this->common->convert_GMT_to('', '', $value['callstart']),
@@ -330,6 +338,7 @@ class Reports extends MX_Controller
                         filter_var($value['pattern'], FILTER_SANITIZE_NUMBER_INT),
                         $value['notes'],
                         $duration,
+                        $block_duration,
                         $this->common->calculate_currency_manually($currency_info, $value['debit'], false, false),
                         $this->common->calculate_currency_manually($currency_info, $value['cost'], false, false),
                         $value['disposition'],
@@ -342,6 +351,7 @@ class Reports extends MX_Controller
                     );
                 }
                 $duration = ($show_seconds == 'minutes') ? ($count_all['billseconds'] > 0) ? floor($count_all['billseconds'] / 60) . ":" . sprintf('%02d', $count_all['billseconds'] % 60) : "00:00" : $count_all['billseconds'];
+                $block_duration = ($show_seconds == 'minutes') ? ($value['block_billseconds'] > 0) ? floor($value['block_billseconds'] / 60) . ":" . sprintf('%02d', $value['block_billseconds'] % 60) : "00:00" : $value['block_billseconds'];
                 $customer_array[] = array(
                     "Grand Total",
                     "",
@@ -349,6 +359,7 @@ class Reports extends MX_Controller
                     "",
                     "",
                     $duration,
+                    $block_duration,
                     $this->common->calculate_currency_manually($currency_info, $count_all['total_debit'], false, false),
                     $this->common->calculate_currency_manually($currency_info, $count_all['total_cost'], false, false),
                     "",
@@ -368,6 +379,7 @@ class Reports extends MX_Controller
                     gettext("Code"),
                     gettext("Destination"),
                     gettext("Duration"),
+                    gettext("Block Duration"),
                     gettext("Debit") . "(" . $currency . ")",
                     gettext("Cost") . "(" . $currency . ")",
                     gettext("Disposition"),
@@ -378,6 +390,7 @@ class Reports extends MX_Controller
                 );
                 foreach ($query->result_array() as $value) {
                     $duration = ($show_seconds == 'minutes') ? ($value['billseconds'] > 0) ? floor($value['billseconds'] / 60) . ":" . sprintf('%02d', $value['billseconds'] % 60) : "00:00" : $value['billseconds'];
+                    $block_duration = ($show_seconds == 'minutes') ? ($value['block_billseconds'] > 0) ? floor($value['block_billseconds'] / 60) . ":" . sprintf('%02d', $value['block_billseconds'] % 60) : "00:00" : $value['block_billseconds'];
                     $account = isset($account_arr[$value['accountid']]) ? $account_arr[$value['accountid']] : 'Anonymous';
                     $customer_array[] = array(
                         $this->common->convert_GMT_to('', '', $value['callstart']),
@@ -386,6 +399,7 @@ class Reports extends MX_Controller
                         filter_var($value['pattern'], FILTER_SANITIZE_NUMBER_INT),
                         $value['notes'],
                         $duration,
+                        $block_duration,
                         $this->common->calculate_currency_manually($currency_info, $value['debit'], false, false),
                         $this->common->calculate_currency_manually($currency_info, $value['cost'], false, false),
                         $value['disposition'],
@@ -396,6 +410,7 @@ class Reports extends MX_Controller
                     );
                 }
                 $duration = ($show_seconds == 'minutes') ? ($count_all['billseconds'] > 0) ? floor($count_all['billseconds'] / 60) . ":" . sprintf('%02d', $count_all['billseconds'] % 60) : "00:00" : $count_all['billseconds'];
+                $block_duration = ($show_seconds == 'minutes') ? ($count_all['block_billseconds'] > 0) ? floor($count_all['block_billseconds'] / 60) . ":" . sprintf('%02d', $count_all['block_billseconds'] % 60) : "00:00" : $count_all['block_billseconds'];
                 $customer_array[] = array(
                     "Grand Total",
                     "",
@@ -403,6 +418,7 @@ class Reports extends MX_Controller
                     "",
                     "",
                     $duration,
+                    $block_duration,
                     $this->common->calculate_currency_manually($currency_info, $count_all['total_debit'], false, false),
                     $this->common->calculate_currency_manually($currency_info, $count_all['total_cost'], false, false),
                     "",
@@ -426,6 +442,7 @@ class Reports extends MX_Controller
                 gettext("Code"),
                 gettext("Destination"),
                 gettext("Duration"),
+                gettext("Block Duration"),
                 gettext("Debit") . "(" . $currency . ")",
                 gettext("Cost") . "(" . $currency . ")",
                 gettext("Disposition"),
@@ -467,6 +484,8 @@ class Reports extends MX_Controller
             $search_arr = $this->session->userdata('reseller_cdr_list_search');
             $show_seconds = (! empty($search_arr['search_in'])) ? $search_arr['search_in'] : 'minutes';
             $duration = ($show_seconds == 'minutes') ? ($count_all['billseconds'] > 0) ? sprintf('%02d', $count_all['billseconds'] / 60) . ":" . sprintf('%02d', $count_all['billseconds'] % 60) : "00:00" : sprintf('%02d', $count_all['billseconds']);
+            $block_duration = ($show_seconds == 'minutes') ? ($count_all['block_billseconds'] > 0) ? sprintf('%02d', $count_all['block_billseconds'] / 60) . ":" . sprintf('%02d', $count_all['block_billseconds'] % 60) : "00:00" : sprintf('%02d', $count_all['block_billseconds']);
+            
             $json_data['rows'][] = array(
                 "cell" => array(
                     "<b>".gettext("Grand Total")."</b>",
@@ -475,6 +494,7 @@ class Reports extends MX_Controller
                     "",
                     "",
                     "<b>$duration</b>",
+                    "<b>$block_duration</b>",
                     "<b>" . $this->common_model->calculate_currency($count_all['total_debit'] - $count_all['free_debit'], '', '', true, false) . "</b>",
                     "<b>" . $this->common_model->calculate_currency($count_all['total_cost'], '', '', true, false) . "</b>",
                     "",
@@ -543,6 +563,7 @@ class Reports extends MX_Controller
             gettext("Code"),
             gettext("Destination"),
             gettext("Duration"),
+            gettext("Block Duration"),
             gettext("Debit") . "(" . $currency . ")",
             gettext("Cost") . "(" . $currency . ")",
             gettext("Disposition"),
@@ -576,6 +597,7 @@ class Reports extends MX_Controller
             }
             foreach ($query->result_array() as $value) {
                 $duration = ($show_seconds == 'minutes') ? ($value['billseconds'] > 0) ? sprintf('%02d', $value['billseconds'] / 60) . ":" . sprintf('%02d', $value['billseconds'] % 60) : "00:00" : $value['billseconds'];
+                $block_duration = ($show_seconds == 'minutes') ? ($value['block_billseconds'] > 0) ? sprintf('%02d', $value['block_billseconds'] / 60) . ":" . sprintf('%02d', $value['block_billseconds'] % 60) : "00:00" : $value['block_billseconds'];
                 $reseller_array[] = array(
                     $this->common->convert_GMT_to('', '', $value['callstart']),
                     $value['callerid'],
@@ -583,6 +605,7 @@ class Reports extends MX_Controller
                     filter_var($value['pattern'], FILTER_SANITIZE_NUMBER_INT),
                     $value['notes'],
                     $duration,
+                    $block_duration,
                     $this->common->calculate_currency_manually($currency_info, $value['debit'], false, false),
                     $this->common->calculate_currency_manually($currency_info, $value['cost'], false, false),
                     $value['disposition'],
@@ -594,6 +617,7 @@ class Reports extends MX_Controller
                 );
             }
             $duration = ($show_seconds == 'minutes') ? ($count_all['billseconds'] > 0) ? floor($count_all['billseconds'] / 60) . ":" . sprintf('%02d', $count_all['billseconds'] % 60) : "00:00" : $count_all['billseconds'];
+            $block_duration = ($show_seconds == 'minutes') ? ($count_all['block_billseconds'] > 0) ? floor($count_all['block_billseconds'] / 60) . ":" . sprintf('%02d', $count_all['block_billseconds'] % 60) : "00:00" : $count_all['block_billseconds'];
             $reseller_array[] = array(
                 gettext("Grand Total"),
                 "",
@@ -601,6 +625,7 @@ class Reports extends MX_Controller
                 "",
                 "",
                 $duration,
+                $block_duration,
                 $this->common->calculate_currency_manually($currency_info, $count_all['total_debit'], false, false),
                 $this->common->calculate_currency_manually($currency_info, $count_all['total_cost'], false, false),
                 "",
@@ -644,6 +669,7 @@ class Reports extends MX_Controller
             $search_arr = $this->session->userdata('provider_cdr_list_search');
             $show_seconds = (! empty($search_arr['search_in'])) ? $search_arr['search_in'] : 'minutes';
             $duration = ($show_seconds == 'minutes') ? ($count_all['billseconds'] > 0) ? floor($count_all['billseconds'] / 60) . ":" . sprintf("%02d", $count_all['billseconds'] % 60) : "00:00" : $count_all['billseconds'];
+            $block_duration = ($show_seconds == 'minutes') ? ($count_all['block_billseconds'] > 0) ? floor($count_all['block_billseconds'] / 60) . ":" . sprintf("%02d", $count_all['block_billseconds'] % 60) : "00:00" : $count_all['block_billseconds'];
             $json_data['rows'][] = array(
                 "cell" => array(
                     "<b>".gettext("Grand Total")."</b>",
@@ -654,6 +680,7 @@ class Reports extends MX_Controller
                     "",
                     "",
                     "<b>$duration</b>",
+                    "<b>$block_duration</b>",
                     "<b>" . $this->common_model->calculate_currency($count_all['total_cost'], '', '', true, false) . "</b>",
                     "",
                     "",

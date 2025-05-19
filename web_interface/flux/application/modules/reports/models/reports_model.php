@@ -60,11 +60,10 @@ class Reports_model extends CI_Model
             $this->db->order_by("callstart desc");
         }
         if ($flag) {
-      if (!$export) $this->db->limit($limit, $start);
-      $this->db->select('callstart,is_recording,sip_user,call_direction,callerid,callednum,pattern,notes,billseconds,disposition,debit,cost,accountid,pricelist_id,calltype,carrier_id,trunk_id,uniqueid');
-    }
-    else {
-      $this->db->select('count(*) as count,sum(billseconds) as billseconds,sum(debit) as total_debit,SUM(CASE WHEN calltype = "Gratuita" THEN debit ELSE 0 END) AS free_debit,sum(cost) as total_cost,group_concat(distinct(pricelist_id)) as pricelist_ids,group_concat(distinct(trunk_id)) as trunk_ids,group_concat(distinct(carrier_id)) as carrier_ids,group_concat(distinct(accountid)) as accounts_ids');
+            if (!$export) $this->db->limit($limit, $start);
+            $this->db->select('callstart,is_recording,sip_user,call_direction,callerid,callednum,pattern,notes,billseconds,block_billseconds,disposition,debit,cost,accountid,pricelist_id,calltype,carrier_id,trunk_id,uniqueid');
+        }else {
+            $this->db->select('count(*) as count,sum(billseconds) as billseconds,sum(block_billseconds) as block_billseconds,sum(debit) as total_debit,SUM(CASE WHEN calltype = "Gratuita" THEN debit ELSE 0 END) AS free_debit,sum(cost) as total_cost,group_concat(distinct(pricelist_id)) as pricelist_ids,group_concat(distinct(trunk_id)) as trunk_ids,group_concat(distinct(carrier_id)) as carrier_ids,group_concat(distinct(accountid)) as accounts_ids');
         }
         $result = $this->db->get($table_name);
         $customer_cdr_list_search = $this->session->userdata('customer_cdr_list_search');
@@ -141,9 +140,9 @@ class Reports_model extends CI_Model
         if ($flag) {
             if (! $export)
                 $this->db->limit($limit, $start);
-            $this->db->select('callstart,call_direction,callerid,country_id,callednum,pattern,notes,billseconds,disposition,debit,cost,accountid,pricelist_id,calltype,trunk_id');
+            $this->db->select('callstart,call_direction,callerid,country_id,callednum,pattern,notes,billseconds,block_billseconds, disposition,debit,cost,accountid,pricelist_id,calltype,trunk_id');
         } else {
-            $this->db->select('count(*) as count,sum(billseconds) as billseconds,sum(debit) as total_debit,SUM(CASE WHEN calltype = "Gratuita" THEN debit ELSE 0 END) AS free_debit,sum(cost) as total_cost,group_concat(distinct(pricelist_id)) as pricelist_ids,group_concat(distinct(trunk_id)) as trunk_ids');
+            $this->db->select('count(*) as count,sum(billseconds) as billseconds,sum(block_billseconds) as block_billseconds,sum(debit) as total_debit,SUM(CASE WHEN calltype = "Gratuita" THEN debit ELSE 0 END) AS free_debit,sum(cost) as total_cost,group_concat(distinct(pricelist_id)) as pricelist_ids,group_concat(distinct(trunk_id)) as trunk_ids');
         }
         $result = $this->db->get($table_name);
         return $result;
@@ -179,9 +178,9 @@ class Reports_model extends CI_Model
         if ($flag) {
             if (! $export)
                 $this->db->limit($limit, $start);
-            $this->db->select('calltype,callstart,sip_user,call_direction,callerid,callednum,pattern,notes,billseconds,provider_call_cost,disposition,provider_id,cost,carrier_id,call_id_cadup');
+            $this->db->select('calltype,callstart,sip_user,call_direction,callerid,callednum,pattern,notes,billseconds,block_billseconds,provider_call_cost,disposition,provider_id,cost,carrier_id,call_id_cadup');
         } else {
-            $this->db->select('count(*) as count,sum(billseconds) as billseconds,sum(cost) as total_cost');
+            $this->db->select('count(*) as count,sum(billseconds) as billseconds,sum(block_billseconds) as block_billseconds,sum(cost) as total_cost');
         }
         $result = $this->db->get($table_name);
         return $result;

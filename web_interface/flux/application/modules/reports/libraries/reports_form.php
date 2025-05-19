@@ -1516,6 +1516,17 @@ class Reports_form extends common
                     "center"
                 ),
                 array(
+                    gettext("Block Duration"),
+                    "80",
+                    "block_billseconds",
+                    "customer_cdr_list_search",
+                    "block_billseconds",
+                    "convert_to_show_in",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
                     gettext("Debit")." ($currency)",
                     "75",
                     "debit",
@@ -1828,6 +1839,17 @@ class Reports_form extends common
                     "billseconds",
                     "reseller_cdr_list_search",
                     "billseconds",
+                    "convert_to_show_in",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Block Duration"),
+                    "80",
+                    "block_billseconds",
+                    "customer_cdr_list_search",
+                    "block_billseconds",
                     "convert_to_show_in",
                     "",
                     "true",
@@ -2150,6 +2172,17 @@ class Reports_form extends common
                 "billseconds",
                 "provider_cdr_list_search",
                 "billseconds",
+                "convert_to_show_in",
+                "",
+                "true",
+                "center"
+            ),
+            array(
+                gettext("Block Duration"),
+                "110",
+                "block_billseconds",
+                "customer_cdr_list_search",
+                "block_billseconds",
                 "convert_to_show_in",
                 "",
                 "true",
