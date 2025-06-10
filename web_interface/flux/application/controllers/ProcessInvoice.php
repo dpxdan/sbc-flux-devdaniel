@@ -752,6 +752,7 @@ else {
 						), 'order_items', 'orders.id=order_items.order_id', 'inner', '', '', '', '');
 			
 			}
+
 			
 			if ($renewable_order->num_rows > 0) {
 				$renewable_order = $renewable_order->result_array();
