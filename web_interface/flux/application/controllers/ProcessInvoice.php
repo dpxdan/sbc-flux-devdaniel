@@ -23,7 +23,7 @@
 class ProcessInvoice extends MX_Controller {
 
 	public static $global_config;
-	public $Error_flag = "true";
+	public $Error_flag = false;
 
 	public $CurrentDate = "";
 	public $StartDate = "";
@@ -48,9 +48,11 @@ class ProcessInvoice extends MX_Controller {
 
 		$this->CurrentDate = gmdate("Y-m-d 00:00:01");
 		$this->custom_current_date = gmdate("Y-m-d 23:59:59");
+		$this->custom_date = "2025-07-10 23:59:59";
 	}
 
 	function ManageServices() {
+	    $this->flux_log->write_log('ManageServices', json_encode('ManageServices'));
 		$this->product_renewal_reminder();
 		$this->renew_product_service();
 	}
@@ -120,6 +122,7 @@ class ProcessInvoice extends MX_Controller {
 				if ($this->EndDate != '') {
 					$WeekLog = array(
 						"accountid" => $accountinfo['id'],
+						"number" => $accountinfo['number'],
 						"last_bill_date" => $accountinfo['last_bill_date'],					
 						"current_date" => $this->CurrentDate,
 						"start_date" => $this->StartDate,
@@ -190,7 +193,7 @@ class ProcessInvoice extends MX_Controller {
 			$last_invoice_ID = str_pad($last_invoice_ID, 6, '0', STR_PAD_LEFT);
 			$automatic_flag = self::$global_config['system_config']['automatic_invoice'] == 1 ? '0' : '1';
 			if ($invoiceconf['no_usage_invoice'] == 1) {
-				$this->flux_log->write_log('no_usage_invoice', json_encode($invoiceconf));
+			$this->flux_log->write_log('no_usage_invoice', json_encode($invoiceconf));
 				$InvoiceData = array(
 					"accountid" => $accountinfo['id'],
 					"prefix" => $invoiceconf['invoice_prefix'],
@@ -545,14 +548,11 @@ else {
 							$product_info = (array) $user_product_info;
 							$total_amt = ($ordervalue['price'] * $ordervalue['quantity']);
 							if ($accountdata['posttoexternal'] == 1) {
-								$account_balance = $accountdata['credit_limit'];
+								$account_balance = '1000.0000';
+								//$account_balance = $accountdata['credit_limit'];
 							} else {
-
 								$account_balance = $accountdata['balance'];
-
 							}
-
-							//		$account_balance = $accountdata ['posttoexternal'] == 1 ? $accountdata ['credit_limit'] - ($accountdata ['balance']) :        $accountdata ['balance'];
 							$product_info['product_name'] = $product_info['name'];
 							$final_array = array_merge($accountdata, $product_info);
 							$acc_id = '';
@@ -612,7 +612,7 @@ else {
 										'function' => 'renew_product',
 										'message' => "Produto removido por falta de saldo",
 									);
-									$this->flux_log->write_log('no_get_account_product_info', json_encode($no_account_balance_insert_arr));
+									$this->flux_log->write_log('no_get_account_product_info_615', json_encode($no_account_balance_insert_arr));
 									//LOG
 
 								}
@@ -695,22 +695,7 @@ else {
 								"order_id" => $ordervalue['id'],
 								'message' => "Produto nao encontrado para a conta.",
 							);
-							$this->flux_log->write_log('no_get_account_product_info', json_encode($no_acc_product_insert_arr));
-							/*$update_order_arr = array(
-								                "is_terminated" => '1',
-								                "termination_note" => "Product has been terminated",
-								                "termination_date" => $this->CurrentDate
-								              );
-								              $this->db->update("order_items", $update_order_arr, array(
-								                "id" => $ordervalue['id']
-								              ));
-								              if ($product_info['product_category'] == 4)
-								              {
-								                $this->db->update("dids", $did_update_array, array(
-								                  "product_id" => $ordervalue['product_id']
-								                ));
-							*/
-
+							$this->flux_log->write_log('no_get_account_product_info', json_encode($no_acc_product_insert_arr));							
 						}
 
 					}
@@ -732,7 +717,7 @@ else {
 				'message' => "Nenhum pedido para renovar.",
 
 			);
-			$this->flux_log->write_log('no_renew', json_encode($no_renew_insert_arr));
+			$this->flux_log->write_log('no_renew_737', json_encode($no_renew_insert_arr));
 
 		}
 
@@ -832,14 +817,12 @@ else {
 								$product_info = (array) $user_product_info;
 								$total_amt = ($ordervalue['price'] * $ordervalue['quantity']);
 								if ($accountdata['posttoexternal'] == 1) {
-									$account_balance = $accountdata['credit_limit'];
-								} else {
-	
-									$account_balance = $accountdata['balance'];
-	
-								}
-	
-								//		$account_balance = $accountdata ['posttoexternal'] == 1 ? $accountdata ['credit_limit'] - ($accountdata ['balance']) :        $accountdata ['balance'];
+									$account_balance = '1000.0000';
+									//$account_balance = $accountdata['credit_limit'];
+								} 
+								else {	
+									$account_balance = $accountdata['balance'];	
+								}	
 								$product_info['product_name'] = $product_info['name'];
 								$final_array = array_merge($accountdata, $product_info);
 								$acc_id = '';
@@ -898,7 +881,7 @@ else {
 											"product_total" => $total_amt,
 											'message' => "Produto removido por falta de saldo",
 										);
-										$this->flux_log->write_log('no_get_account_product_info', json_encode($no_account_balance_insert_arr));
+										$this->flux_log->write_log('no_get_account_product_info_901', json_encode($no_account_balance_insert_arr));
 										//LOG
 	
 									}
@@ -984,22 +967,7 @@ else {
 									"order_id" => $ordervalue['id'],
 									'message' => "Produto nao encontrado para a conta.",
 								);
-								$this->flux_log->write_log('no_get_account_product_info', json_encode($no_acc_product_insert_arr));
-								/*$update_order_arr = array(
-									                "is_terminated" => '1',
-									                "termination_note" => "Product has been terminated",
-									                "termination_date" => $this->CurrentDate
-									              );
-									              $this->db->update("order_items", $update_order_arr, array(
-									                "id" => $ordervalue['id']
-									              ));
-									              if ($product_info['product_category'] == 4)
-									              {
-									                $this->db->update("dids", $did_update_array, array(
-									                  "product_id" => $ordervalue['product_id']
-									                ));
-								*/
-	
+								$this->flux_log->write_log('no_get_account_product_info', json_encode($no_acc_product_insert_arr));									
 							}
 	
 						}
@@ -1023,7 +991,7 @@ else {
 					'message' => "Nenhum pedido para renovar.",
 	
 				);
-				$this->flux_log->write_log('no_renew', json_encode($no_renew_insert_arr));
+				$this->flux_log->write_log('no_renew_1030', json_encode($no_renew_insert_arr));
 	
 			}
 	
@@ -1066,10 +1034,12 @@ else {
 						}
 	
 						else if(($product_info['can_purchase'] == 1 ||$product_info['can_resell'] == 1) && $product_info['reseller_id'] == $ordervalue['reseller_id'] && $ordervalue['reseller_id'] > 0){
+								$this->flux_log->write_log('product_renewal_notice_1074', json_encode($final_array));
 								$this->common->mail_to_users ( "product_renewal_notice", $final_array );
 						}
 						else{
-							$this->common->mail_to_users ( "product_renewal_notice", $final_array );
+						$this->flux_log->write_log('product_renewal_notice_1078', json_encode($final_array));
+						$this->common->mail_to_users ( "product_renewal_notice", $final_array );
 	
 						}
 				     }
@@ -1091,17 +1061,14 @@ else {
 					if (is_array($MessageValue)) {
 						foreach ($MessageValue as $LogKey => $LogValue) {
 						        $this->flux_log->write_log(''.$LogKey.'', json_encode($LogValue));
-//							fwrite($this->fp, "::::: " . $LogKey . " ::::: " . $LogValue . " :::::\n");
 						}
 					} else {
 					       $this->flux_log->write_log(''.$MessageKey.'', json_encode($MessageValue));
-	//					fwrite($this->fp, "::::: " . $MessageKey . " ::::: " . $MessageValue . " :::::\n");
 					}
 				}
 			} else {
 				if ($this->Error_flag) {
 				         $this->flux_log->write_log('error_invoice', json_encode($Message));
-	//				fwrite($this->fp, "::::: " . $Message . " :::::\n");
 				}
 			}
 		}
