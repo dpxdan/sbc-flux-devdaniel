@@ -748,7 +748,7 @@ class Db_model extends CI_Model {
 	function build_search($accounts_list_search,$table_name='') { 
 		if ($this->session->userdata ( 'advance_search' ) == 1) {
 			$account_search = $this->session->userdata ( $accounts_list_search );
-			$this->flux_log->write_log ('build_search', json_encode($account_search));
+			// $this->flux_log->write_log ('build_search', json_encode($account_search));
 
 			unset ( $account_search ["ajax_search"] );
 			unset ( $account_search ["advance_search"] );
@@ -760,7 +760,7 @@ class Db_model extends CI_Model {
 				foreach ( $account_search as $key => $value ) {
 					if ($value != "") {
 						if (is_array ( $value )) {
-							$this->flux_log->write_log ('build_search_value', json_encode($value));
+							// $this->flux_log->write_log ('build_search_value', json_encode($value));
 							if (array_key_exists ( $key . "-integer", $value )) {
 								if($key == 'debit_exchange_rate' || $key == 'credit_exchange_rate' ){
 									$this->get_interger_array_invoice_amount ( $table_name.$key, $value [$key . "-integer"], $value [$key]);

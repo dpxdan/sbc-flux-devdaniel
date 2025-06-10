@@ -428,9 +428,11 @@ class Summary extends MX_Controller
                 $avgsec = $acd > 0 ? sprintf('%02d', $acd / 60) . ":" . sprintf('%02d', ($acd % 60)) : "00:00";
                 $maxsec = $mcd > 0 ? sprintf('%02d', $mcd / 60) . ":" . sprintf('%02d', ($mcd % 60)) : "00:00";
                 $duration = ($row1['duration'] > 0) ? sprintf('%02d', $row1['duration'] / 60) . ":" . sprintf('%02d', ($row1['duration'] % 60)) : "00:00";
+                $block_duration = ($row1['block_duration'] > 0) ? sprintf('%02d', $row1['block_duration'] / 60) . ":" . sprintf('%02d', ($row1['block_duration'] % 60)) : "00:00";
                 $billsec = ($row1['billable'] > 0) ? sprintf('%02d', $row1['billable'] / 60) . ":" . sprintf('%02d', ($row1['billable'] % 60)) : "00:00";
             } else {
                 $duration = sprintf('%02d', $row1['duration']);
+                $block_duration = sprintf('%02d', $row1['block_duration']);
                 $avgsec = $acd;
                 $maxsec = $mcd;
                 $billsec = sprintf('%02d', $row1['billable']);
@@ -529,6 +531,7 @@ class Summary extends MX_Controller
                     $atmpt,
                     $cmplt,
                     $duration,
+                    $block_duration,
                     round($asr, 2),
                     $avgsec,
                     $maxsec,
@@ -542,6 +545,7 @@ class Summary extends MX_Controller
                     $atmpt,
                     $cmplt,
                     $duration,
+                    $block_duration,
                     round($asr, 2),
                     $avgsec,
                     $maxsec,
@@ -563,6 +567,7 @@ class Summary extends MX_Controller
         $total_acd = ($total_info['completed'] > 0) ? round($total_info['duration'] / $total_info['completed']) : 0;
         if ($show_seconds == 'minutes') {
             $total_info['duration'] = $total_info['duration'] > 0 ? sprintf('%02d', $total_info['duration'] / 60) . ":" . sprintf('%02d', ($total_info['duration'] % 60)) : "00:00";
+            $total_info['block_duration'] = $total_info['block_duration'] > 0 ? sprintf('%02d', $total_info['block_duration'] / 60) . ":" . sprintf('%02d', ($total_info['block_duration'] % 60)) : "00:00";
             $total_info['billable'] = $total_info['billable'] > 0 ? sprintf('%02d', $total_info['billable'] / 60) . ":" . sprintf('%02d', ($total_info['billable'] % 60)) : "00:00";
             $total_acd = $total_acd > 0 ? sprintf('%02d', $total_acd / 60) . ":" . sprintf('%02d', ($total_acd % 60)) : "00:00";
             $total_info['mcd'] = $total_info['mcd'] > 0 ? sprintf('%02d', $total_info['mcd'] / 60) . ":" . sprintf('%02d', ($total_info['mcd'] % 60)) : "00:00";
@@ -577,6 +582,7 @@ class Summary extends MX_Controller
                 "<b>" . $total_info['attempts'] . "</b>",
                 "<b>" . $total_info['completed'] . "</b>",
                 "<b>" . $total_info['duration'] . "</b>",
+                "<b>" . $total_info['block_duration'] . "</b>",
                 "<b>" . $total_asr . "</b>",
                 "<b>" . $total_acd . "</b>",
                 "<b>" . $total_info['mcd'] . "</b>",
@@ -590,6 +596,7 @@ class Summary extends MX_Controller
                 "<b>" . $total_info['attempts'] . "</b>",
                 "<b>" . $total_info['completed'] . "</b>",
                 "<b>" . $total_info['duration'] . "</b>",
+                "<b>" . $total_info['block_duration'] . "</b>",
                 "<b>" . $total_asr . "</b>",
                 "<b>" . $total_acd . "</b>",
                 "<b>" . $total_info['mcd'] . "</b>",

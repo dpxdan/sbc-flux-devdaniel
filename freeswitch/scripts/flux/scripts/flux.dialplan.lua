@@ -494,94 +494,95 @@ if (userinfo ~= nil) then
 		if(didinfo['reverse_rate'] ~= nil and didinfo['reverse_rate'] == "0")then
 			config['free_inbound'] = 1
 		
-		Logger.info("[DIALPLAN] STRIPCADUP IN")
-	--      Exemplos de patterns
-	--		num_pattern_0 = "^0([1-9][1-9])(\\d{7,20})$"
-	--		num_pattern_cn = "^([1-9][1-9])(\\d{7,8})$"
-	--		num_regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
-	--    num_regex_unknown = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
-	--		num_pattern_local = "^([2-9]\\d{3})(\\d{4})$"
+			Logger.info("[DIALPLAN] STRIPCADUP IN")
+			--      Exemplos de patterns
+			--		num_pattern_0 = "^0([1-9][1-9])(\\d{7,20})$"
+			--		num_pattern_cn = "^([1-9][1-9])(\\d{7,8})$"
+			--		num_regex_pattern = "^(0([1-9][1-9]))(\\d{7,20})$"
+			--    num_regex_unknown = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+			--		num_pattern_local = "^([2-9]\\d{3})(\\d{4})$"
 
-	--    Exemplos de replace
+			--    Exemplos de replace
 
-	--		num_pattern_replace = "%1" - Retorna o grupo 1
-	--    num_pattern_replace = "%2" - Retorna o grupo 2
+			--		num_pattern_replace = "%1" - Retorna o grupo 1
+			--    num_pattern_replace = "%2" - Retorna o grupo 2
 
-		a = callerid_number	        
+			a = callerid_number	        
+			
+			num_regex = callerid_number
+			rgx_number = regex_cmd(num_regex,"unknown", "1$2$3")
+			rgx_cn_number = regex_cmd(rgx_number,"unknown","1")
+			rgx_prefix_number = regex_cmd(rgx_number,"unknown","2")
+			rgx_end_number = regex_cmd(rgx_number,"unknown","3")
+			
+			
+			if(rgx_cn_number ~= nil and rgx_cn_number ~= "false") then 
+				rgx_number_len = string.len(rgx_cn_number)
+				if(rgx_number_len > 2) then
+					rgx_cn_dest_number = string.sub(rgx_cn_number, 2, 3)
+					rgx_dest_number = rgx_cn_dest_number..rgx_prefix_number..rgx_end_number
+				else
+					rgx_cn_dest_number = rgx_cn_number
+					rgx_dest_number = rgx_number
+				end
+			
+				cn_dest_number = rgx_cn_dest_number
+				area_number = rgx_cn_dest_number
+				prefix_dest_number = rgx_prefix_number
+				end_dest_number = rgx_end_number
+				carrier_dest_number = rgx_dest_number
+				Logger.info("[DIALPLAN] FUNCTION cn_dest_number: "..cn_dest_number)
+				Logger.info("[DIALPLAN] FUNCTION area_number: "..area_number)
+				Logger.info("[DIALPLAN] FUNCTION carrier_dest_number: "..carrier_dest_number)
+				Logger.info("[DIALPLAN] FUNCTION prefix_dest_number: "..prefix_dest_number)
+				Logger.info("[DIALPLAN] FUNCTION end_dest_number: "..end_dest_number)
+			end
 		
-		num_regex = callerid_number
-		rgx_number = regex_cmd(num_regex,"unknown","0")
-		rgx_cn_number = regex_cmd(num_regex,"unknown","1")
-		rgx_prefix_number = regex_cmd(num_regex,"unknown","2")
-		rgx_end_number = regex_cmd(num_regex,"unknown","3")
 		
-		
-		if(rgx_cn_number ~= nil and rgx_cn_number ~= "false") then 
-			rgx_number_len = string.len(rgx_cn_number)
-		if(rgx_number_len > 2) then
-			rgx_cn_dest_number = string.sub(rgx_cn_number, 2, 3)
-			rgx_dest_number = rgx_cn_dest_number..rgx_prefix_number..rgx_end_number
+			Logger.info("[Dialplan] =============== Carrier Information ===================")
+			Logger.info("[Dialplan] cn_dest_number : "..cn_dest_number) 
+			Logger.info("[Dialplan] area_number : "..area_number)  
+			Logger.info("[Dialplan] prefix_dest_number : "..prefix_dest_number)  
+			Logger.info("[Dialplan] end_dest_number : "..end_dest_number)
+			Logger.info("[Dialplan] carrier_dest_number : "..carrier_dest_number)
+			Logger.info("[Dialplan] destination_number : "..destination_number)
+			Logger.info("[Dialplan] callerid_number : "..callerid_number)
+			didinfo['cn_dest_number'] = cn_dest_number
+
+			Logger.info("[Dialplan] ================================================================")  	    		 
+			carrier_info = get_carrier_in(didinfo,cn_dest_number,carrier_dest_number)
+			if(carrier_info ~= nil and carrier_info['carrier_rn1'] ~= nil) then
+				
+				-- Get termination RN1
+				didinfo['rn1'] = carrier_info['carrier_rn1']
+				didinfo['idCadup'] = carrier_info['idCadup']
+				didinfo['nomePrestadora'] = carrier_info['nomePrestadora']
+				didinfo['carrier_id'] = carrier_info['carrier_id']
+				didinfo['nomeLocalidade'] = carrier_info['nomeLocalidade']
+				didinfo['areaLocal'] = carrier_info['areaLocal']
+				didinfo['tipo'] = carrier_info['tipo']
+				if(didinfo['tipo'] == 'M' ) then
+					didinfo['tipo'] = 'Movel'
+					--didinfo['call_type_custom'] = 'Movel'
+			else
+				didinfo['tipo'] = 'Fixo'
+				--didinfo['call_type_custom'] = 'Fixo'
+			end
+
+			didinfo['prefixo'] = carrier_info['prefixo']
+			didinfo['codArea'] = carrier_info['codArea']
+			didinfo['uf'] = carrier_info['uf']		
+			didinfo['carrier_rn1'] = carrier_info['carrier_rn1']
+			didinfo['call_count'] = carrier_info['call_count']
+			didinfo['carrier_name'] = carrier_info['carrier_name']
+			didinfo['carrier_route_id'] = carrier_info['carrier_route_id']
+			didinfo['rate_carrier_id'] = carrier_info['rn1']
+			didinfo['pattern'] = carrier_info['pattern']
+			--check_carrier = user_rates['check_carrier']
 		else
-		rgx_cn_dest_number = rgx_cn_number
-		rgx_dest_number = rgx_number
-		end
-		
-		cn_dest_number = rgx_cn_dest_number
-		area_number = rgx_cn_dest_number
-		prefix_dest_number = rgx_prefix_number
-		end_dest_number = rgx_end_number
-		carrier_dest_number = rgx_dest_number
-		Logger.info("[DIALPLAN] FUNCTION cn_dest_number: "..cn_dest_number)
-		Logger.info("[DIALPLAN] FUNCTION area_number: "..area_number)
-		Logger.info("[DIALPLAN] FUNCTION carrier_dest_number: "..carrier_dest_number)
-		Logger.info("[DIALPLAN] FUNCTION prefix_dest_number: "..prefix_dest_number)
-		Logger.info("[DIALPLAN] FUNCTION end_dest_number: "..end_dest_number)
-		end
-		
-		
-		Logger.info("[Dialplan] =============== Carrier Information ===================")
-		Logger.info("[Dialplan] cn_dest_number : "..cn_dest_number) 
-		Logger.info("[Dialplan] area_number : "..area_number)  
-		Logger.info("[Dialplan] prefix_dest_number : "..prefix_dest_number)  
-		Logger.info("[Dialplan] end_dest_number : "..end_dest_number)
-		Logger.info("[Dialplan] carrier_dest_number : "..carrier_dest_number)
-		Logger.info("[Dialplan] destination_number : "..destination_number)
-		Logger.info("[Dialplan] callerid_number : "..callerid_number)
-		didinfo['cn_dest_number'] = cn_dest_number
-
-		Logger.info("[Dialplan] ================================================================")  	    		 
-		carrier_info = get_carrier_in(didinfo,cn_dest_number,carrier_dest_number)
-		if(carrier_info ~= nil and carrier_info['carrier_rn1'] ~= nil) then
-		
-		-- Get termination RN1
-		didinfo['rn1'] = carrier_info['carrier_rn1']
-		didinfo['idCadup'] = carrier_info['idCadup']
-		didinfo['nomePrestadora'] = carrier_info['nomePrestadora']
-		didinfo['carrier_id'] = carrier_info['carrier_id']
-		didinfo['nomeLocalidade'] = carrier_info['nomeLocalidade']
-		didinfo['areaLocal'] = carrier_info['areaLocal']
-		didinfo['tipo'] = carrier_info['tipo']
-		if(didinfo['tipo'] == 'M' ) then
-		didinfo['tipo'] = 'Movel'
---		didinfo['call_type_custom'] = 'Movel'
-		else
-		didinfo['tipo'] = 'Fixo'
---		didinfo['call_type_custom'] = 'Fixo'
-		end	
-		didinfo['prefixo'] = carrier_info['prefixo']
-		didinfo['codArea'] = carrier_info['codArea']
-		didinfo['uf'] = carrier_info['uf']		
-		didinfo['carrier_rn1'] = carrier_info['carrier_rn1']
-		didinfo['call_count'] = carrier_info['call_count']
-		didinfo['carrier_name'] = carrier_info['carrier_name']
-		didinfo['carrier_route_id'] = carrier_info['carrier_route_id']
-		didinfo['rate_carrier_id'] = carrier_info['rn1']
-		didinfo['pattern'] = carrier_info['pattern']
---		check_carrier = user_rates['check_carrier']
-		else
-		didinfo['idCadup'] = 0
-		didinfo['carrier_rn1'] = 0
-		didinfo['rn1'] = 0
+			didinfo['idCadup'] = 0
+			didinfo['carrier_rn1'] = 0
+			didinfo['rn1'] = 0
 		end
 		else
 		config['free_inbound'] = 0

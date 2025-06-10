@@ -844,7 +844,6 @@ function regex_cmd(destination_number,pattern,replace)
     Logger.notice("[regex_pattern] FUNCTION")
     Logger.notice("[regex_pattern] DESTINATION_NUMBER: ".. destination_number)
     Logger.notice("[regex_pattern] PATTERN: ".. pattern)
-    Logger.notice("[regex_pattern] REPLACE: ".. replace)
     local rgx_pattern = pattern
     local regex_number = destination_number:gsub("%s+", "")
     local api = freeswitch.API();
@@ -862,7 +861,7 @@ function regex_cmd(destination_number,pattern,replace)
     elseif (rgx_pattern == "num_pattern_cn") then
     	regex_pattern = "^([1-9][1-9])(\\d{7,8})$"
     elseif (rgx_pattern == "unknown") then
-    	regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
+    	regex_pattern = "^(?:55)?(\\d{2})([2-9]\\d{3,4})(\\d{4})$"
     elseif (rgx_pattern == "num_local_regex") then
     	regex_pattern = "^(\\d{4,5})(\\d{4})$"
     elseif (rgx_pattern == "num_regex_pattern") then
@@ -870,7 +869,7 @@ function regex_cmd(destination_number,pattern,replace)
     elseif (rgx_pattern == "num_pattern_local") then
     	regex_pattern = "^([2-9]\\d{3})(\\d{4})$"
     elseif (rgx_pattern == "num_pattern_any") then
-    regex_pattern = "^(\\d+)$"
+    	regex_pattern = "^(\\d+)$"
     else
     	regex_pattern = "^([0-9]\\d{1,2})([2-9]\\d{3,4})(\\d{4})$"
     end

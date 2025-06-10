@@ -25,7 +25,7 @@
     <param name="colorize-console" value="true"/>
 
     <!--Include full timestamps in dialplan logs -->
-    <param name="dialplan-timestamps" value="true"/>
+    <param name="dialplan-timestamps" value="false"/>
 
     <!-- Run the timer at 20ms by default and drop down as needed unless you set 1m-timer=true which was previous default -->
     <!-- <param name="1ms-timer" value="true"/> -->
@@ -41,9 +41,9 @@
 
 
     <!-- Maximum number of simultaneous DB handles open -->
-    <param name="max-db-handles" value="200"/>
+    <param name="max-db-handles" value="50"/>
     <!-- Maximum number of seconds to wait for a new DB handle before failing -->
-    <param name="db-handle-timeout" value="30"/>
+    <param name="db-handle-timeout" value="10"/>
 
     <!-- Minimum idle CPU before refusing calls -->
     <!-- <param name="min-idle-cpu" value="25"/> -->
@@ -58,9 +58,9 @@
 	this will ensure you're able to use the entire DS3 without a problem.  Otherwise you'll
 	be 144 channels short of always filling that DS3 up which can translate into waste.
     -->
-    <param name="max-sessions" value="2000"/>
+    <param name="max-sessions" value="1000"/>
     <!--Most channels to create per second -->
-    <param name="sessions-per-second" value="50"/>
+    <param name="sessions-per-second" value="30"/>
     <!-- Default Global Log Level - value is one of debug,info,notice,warning,err,crit,alert -->
     <param name="loglevel" value="debug"/>
 
@@ -129,7 +129,7 @@
     <param name="dump-cores" value="yes"/>
 
     <!-- Enable verbose channel events to include every detail about a channel on every event  -->
-    <param name="verbose-channel-events" value="yes"/>
+    <!-- <param name="verbose-channel-events" value="yes"/> -->
 
     <!-- Enable clock nanosleep -->
     <!-- <param name="enable-clock-nanosleep" value="true"/> -->
@@ -153,7 +153,7 @@
     <!-- Test each port to make sure it is not in use by some other process before allocating it to RTP -->
     <!-- <param name="rtp-port-usage-robustness" value="true"/> -->
 
-    <param name="rtp-enable-zrtp" value="false"/>
+    <!-- <param name="rtp-enable-zrtp" value="false"/> -->
 
     <!--
 	 Store encryption keys for secure media in channel variables and call CDRs. Default: false.
@@ -183,10 +183,9 @@
     <!-- <param name="core-db-dsn" value="pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE'" /> -->
     <!-- <param name="core-db-dsn" value="postgresql://freeswitch:@127.0.0.1/freeswitch?options=-c%20client_min_messages%3DNOTICE" /> -->
     <!-- <param name="core-db-dsn" value="mariadb://Server=localhost;Database=freeswitch;Uid=freeswitch;Pwd=pass;" /> -->
-    <param name="core-db-dsn" value="$${dsn}"/>
-
-
-<!--     <param name="odbc-skip-autocommit-flip" value="true" /> -->
+    <param name="core-db-dsn" value="FLUX:fluxuser:{db_password}" />
+    <!-- <param name="core-db-dsn" value="$${dsn}"/> -->
+    <!-- <param name="odbc-skip-autocommit-flip" value="true" /> -->
 
     <!-- 
 	 Allow to specify the sqlite db at a different location (In this example, move it to ramdrive for
@@ -198,14 +197,10 @@
      <param name="auto-create-schemas" value="true"/>
     <!-- <param name="auto-clear-sql" value="true"/> -->
     <!-- <param name="enable-early-hangup" value="true"/> -->
-
-<!--    <param name="core-dbtype" value="MSSQL"/>-->
-
+    <!-- <param name="core-dbtype" value="MSSQL"/> -->
     <!-- Allow multiple registrations to the same account in the central registration table -->
-<!--     <param name="multiple-registrations" value="true"/>-->
-
-     <param name="max-audio-channels" value="2"/>
-
+    <!-- <param name="multiple-registrations" value="true"/> -->
+    <!-- <param name="max-audio-channels" value="2"/> -->
   </settings>
 
 </configuration>

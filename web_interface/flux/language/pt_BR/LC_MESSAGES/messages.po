@@ -577,6 +577,9 @@ msgstr "Duplicar"
 msgid "Duration"
 msgstr "Duração"
 
+msgid "Block Duration"
+msgstr "Duração em Bloco"
+
 msgid "Email"
 msgstr "E-mail"
 

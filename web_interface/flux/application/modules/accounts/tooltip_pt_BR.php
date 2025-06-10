@@ -90,7 +90,7 @@ $tooltip_data = array(
 
 	"customer_form_sweep_id" => "Agenda de faturamento para a geração de faturas.",
 
-	"customer_form_invoice_day" => "Se a programação de faturamento for mensal, você poderá definir o dia em que a fatura do cliente deve ser gerada.",
+	"customer_form_invoice_day" => "Se a programação de faturamento for mensal, ou semanal, você poderá definir o dia em que a fatura do cliente deve ser gerada.",
 
 	"customer_form_tax_number" => "Exibir o número de imposto nas faturas.",
 
