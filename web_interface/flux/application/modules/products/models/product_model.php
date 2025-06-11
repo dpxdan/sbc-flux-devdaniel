@@ -151,7 +151,7 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 				"destination_calltypes"=>isset($patternSearchArr['destination_calltypes'])?implode(",",$patternSearchArr['destination_calltypes']):"",
 				"apply_on_existing_account"=>isset($add_array['apply_on_existing_account'])?$add_array['apply_on_existing_account']:0,
 				"applicable_for"=>isset($add_array['applicable_for'])?$add_array['applicable_for']:0,
-				"release_no_balance"=>isset($add_array['release_no_balance'])?$add_array['release_no_balance']:"0",
+				"release_no_balance"=>isset($add_array['release_no_balance'])?$add_array['release_no_balance']:"1",
 				"created_by"=>$add_array['accountid'],
 				"reseller_id"=>isset($add_array['reseller_id'])?$add_array['reseller_id']:0,
 				"creation_date"=>gmdate("Y-m-d H:i:s"),
@@ -247,9 +247,9 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 	}
 	function edit_product($add_array, $id,$editpatternSearchArr='') {
 		$accountinfo = $this->session->userdata ( "accountinfo" );
-//		unset($add_array['apply_on_existing_account']);
-//		unset($add_array['product_rate_group']);
-//		unset ( $add_array ["email_notify"] );
+		//		unset($add_array['apply_on_existing_account']);
+		//		unset($add_array['product_rate_group']);
+		//		unset ( $add_array ["email_notify"] );
 		$add_array['product_category'] = isset($add_array['product_category'])?$add_array['product_category']:'';
 		if($add_array['product_category']=='DID' || $add_array['product_category']== 4){
 				$destination_info = $this->db_model->getSelect("call_type,extensions","dids",array("number"=>$add_array['number']));
@@ -278,9 +278,9 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 					"rate_group"=>isset($add_array['rate_group'])?$add_array['rate_group']:"",
 					"leg_timeout"=>isset($add_array['leg_timeout'])?$add_array['leg_timeout']:"30"
 				   );
-		$this->db->where ( "number", $add_array['name'] );
-		$this->db->update ( "dids", $did_update_array );
-	}
+			$this->db->where ( "number", $add_array['name'] );
+			$this->db->update ( "dids", $did_update_array );
+		}
 
 		$update_array = array(
 				"name"=>($add_array['product_category'] == "DID" || $add_array['product_category'] == 4)?$add_array['number']:$add_array['product_name'],
@@ -292,7 +292,7 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 				"status"=>$add_array['status'],	
 				"setup_fee"=>isset($add_array['setup_fee'])?$this->common_model->add_calculate_currency ($add_array['setup_fee'], "", '', false, false ):"0",
 				"can_resell"=>isset($add_array['can_resell'])?$add_array['can_resell']:"0",
-//				"area_code"=>isset($add_array['area_code'])?$add_array['area_code']:"",
+				//				"area_code"=>isset($add_array['area_code'])?$add_array['area_code']:"",
 				"commission"=>isset($add_array['commission'])?$add_array['commission']:"0",
 				"billing_type"=>isset($add_array['billing_type'])?$add_array['billing_type']:"",
 				"billing_days"=>isset($add_array['billing_days'])?$add_array['billing_days']:"",
@@ -302,7 +302,7 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 				"destination_rategroups"=>isset($editpatternSearchArr['destination_rategroups'])?implode(",",$editpatternSearchArr['destination_rategroups']):"",
 				"destination_countries"=>isset($editpatternSearchArr['destination_countries'])?implode(",",$editpatternSearchArr['destination_countries']):"",
 				"destination_calltypes"=>isset($editpatternSearchArr['destination_calltypes'])?implode(",",$editpatternSearchArr['destination_calltypes']):"",
-				"release_no_balance"=>isset($add_array['release_no_balance'])?$add_array['release_no_balance']:"0",
+				"release_no_balance"=>isset($add_array['release_no_balance'])?$add_array['release_no_balance']:"1",
 				"created_by"=>$add_array['accountid'],
 				"creation_date"=>gmdate("Y-m-d H:i:s"),
 				"last_modified_date"=>gmdate("Y-m-d H:i:s")

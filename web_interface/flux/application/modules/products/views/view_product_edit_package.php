@@ -167,13 +167,13 @@
                       </select>
                   </div>
 		  
-		    <div class='col-md-6 form-group'>
+		    <!-- <div class='col-md-6 form-group'>
                       <label class="p-0 control-label"><?php echo gettext('Release if no balance'); ?></label>
                       <select  name="release_no_balance" class="col-md-12 form-control selectpicker form-control-lg" data-live-search='true' datadata-live-search-style='begins'>
                         	<option value="1" <?php if($product_info['release_no_balance'] == '1'){ ?> selected="selected" <?php } ?>><?php echo gettext('No'); ?></option>
 					<option value="0" <?php if($product_info['release_no_balance'] == '0'){ ?> selected="selected" <?php } ?>><?php echo gettext('Yes'); ?></option>
                       </select>
-                  </div>
+                  </div> -->
 
                  
 		<div class="col-md-12 my-4">

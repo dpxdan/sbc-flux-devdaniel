@@ -51,6 +51,7 @@ class ProcessInvoice extends MX_Controller {
 	}
 
 	function ManageServices() {
+		$this->flux_log->write_log('ManageServices', 'Start ManageServices');
 		$this->product_renewal_reminder();
 		$this->renew_product_service();
 	}
@@ -305,7 +306,7 @@ class ProcessInvoice extends MX_Controller {
 		$billable_calls = $this->db->query($billable_calls_qr);
 
 		if ($billable_calls->num_rows() > 0) {
-//    $update_billable_calls_qr = "select calltype,sum(debit) as debit,sum(billseconds) as duration from ".$table_name." where accountid =" . $accountinfo['id'] . "  AND callstart <= '" .$end_Date. "' ".$where_condition." group by calltype";
+			//    $update_billable_calls_qr = "select calltype,sum(debit) as debit,sum(billseconds) as duration from ".$table_name." where accountid =" . $accountinfo['id'] . "  AND callstart <= '" .$end_Date. "' ".$where_condition." group by calltype";
 
 			$billable_calls = $billable_calls->result_array();
 			$base_currency = Common_model::$global_config['system_config']['base_currency'];
@@ -453,35 +454,23 @@ class ProcessInvoice extends MX_Controller {
 			}
 		}
 	}
-
-	function renew_product($accountinfo, $invoiceid) {
+	
+	function renew_product_service() {
 		$is_apply_commission = "false";
 		$renew_deleted_flag = Common_model::$global_config['system_config']['renew_deleted_product'];
-		if ($renew_deleted_flag == 0) {
-		$renewable_order = $this->db_model->getJionQuery('orders', 'orders.payment_status,orders.order_id as order_number,order_items.id,order_items.order_id,order_items.product_category,order_items.product_id,
-order_items.quantity,order_items.billing_type,order_items.billing_days,order_items.free_minutes,
-order_items.billing_date,order_items.next_billing_date,order_items.is_terminated ,order_items.termination_date,
-order_items.termination_note,order_items.from_currency,order_items.exchange_rate,order_items.to_currency,
-order_items.reseller_id,order_items.accountid,order_items.setup_fee,order_items.price', array(
-			"order_items.next_billing_date <=" => $this->custom_current_date,
-			"order_items.product_category <>" => "3",
-			"orders.payment_status <>" => "FAIL",
-		), 'order_items', 'orders.id=order_items.order_id', 'inner', '', '', '', '');
 		
-		}
-		else {
-				$renewable_order = $this->db_model->getJionQuery('orders', 'orders.payment_status,orders.order_id as order_number,order_items.id,order_items.order_id,order_items.product_category,order_items.product_id,
+		$renewable_order = $this->db_model->getJionQuery('orders', 'orders.payment_status,orders.order_id as order_number,order_items.id,order_items.order_id,order_items.product_category,order_items.product_id,
 		order_items.quantity,order_items.billing_type,order_items.billing_days,order_items.free_minutes,
 		order_items.billing_date,order_items.next_billing_date,order_items.is_terminated ,order_items.termination_date,
 		order_items.termination_note,order_items.from_currency,order_items.exchange_rate,order_items.to_currency,
 		order_items.reseller_id,order_items.accountid,order_items.setup_fee,order_items.price', array(
-					"order_items.next_billing_date <=" => $this->custom_current_date,
-					"order_items.product_category <>" => "3",
-					"order_items.is_terminated" => "0",
-					"orders.payment_status <>" => "FAIL",
-				), 'order_items', 'orders.id=order_items.order_id', 'inner', '', '', '', '');
+		"order_items.next_billing_date <=" => $this->custom_current_date,
+		"order_items.product_category <>" => "3",
+		"order_items.is_terminated" => "0",
+		"orders.payment_status <>" => "FAIL",
+		), 'order_items', 'orders.id=order_items.order_id', 'inner', '', '', '', '');
 		
-		}
+		
 		if ($renewable_order->num_rows > 0) {
 			$renewable_order = $renewable_order->result_array();
 			foreach ($renewable_order as $orderkey => $ordervalue) {
@@ -496,20 +485,19 @@ order_items.reseller_id,order_items.accountid,order_items.setup_fee,order_items.
 					"product_id" => $ordervalue['product_id'],
 				);
 
-if ($renew_deleted_flag == 0) {
-				$product_data = $this->db_model->getSelect("*", "products", array(
-					"id" => $ordervalue['product_id'],
-				));
-				
-	} 
-else {
-					$product_data = $this->db_model->getSelect("*", "products", array(
-					"id" => $ordervalue['product_id'],
-					'is_deleted' => "0",
-					'status' => "0",
-				));
-	
-	}
+				if ($renew_deleted_flag == 0) {
+						$product_data = $this->db_model->getSelect("*", "products", array(
+							"id" => $ordervalue['product_id'],
+						));
+						
+				} else {
+						$product_data = $this->db_model->getSelect("*", "products", array(
+						"id" => $ordervalue['product_id'],
+						'is_deleted' => "0",
+						'status' => "0",
+					));
+			
+				}
 				if ($product_data->num_rows() > 0) {
 					$accountdata = $this->db_model->getSelect("*", "accounts", array(
 						"id" => $ordervalue["accountid"],
@@ -552,7 +540,6 @@ else {
 
 							}
 
-							//		$account_balance = $accountdata ['posttoexternal'] == 1 ? $accountdata ['credit_limit'] - ($accountdata ['balance']) :        $accountdata ['balance'];
 							$product_info['product_name'] = $product_info['name'];
 							$final_array = array_merge($accountdata, $product_info);
 							$acc_id = '';
@@ -593,33 +580,32 @@ else {
 								"no_answer_vm_flag" => 1,
 								"failover_extensions" => "",
 							);
+							// release de produto por falta de saldo - REMOVIDO
+							// if ($product_info['release_no_balance'] == 0 && $produc_tinfo['product_category'] == 1) {
+							// 	if ($account_balance < $total_amt) {
+							// 		$is_process = false;
+							// 		$this->db->update("order_items", $update_order_arr, array(
+							// 			"id" => $ordervalue['id'],
+							// 		));
+							// 		$final_array['next_billing_date'] = $update_order_arr['termination_date'];
+							// 		$this->common->mail_to_users("product_release", $final_array);
+							// 		$no_account_balance_insert_arr = array(
+							// 			"cron_date" => $this->CurrentDate,
+							// 			"account_number" => $final_array['number'],
+							// 			"product_category" => $product_info['product_category'],
+							// 			"order_id" => $ordervalue['id'],
+							// 			"account_balance" => $account_balance,
+							// 			"product_total" => $total_amt,
+							// 			'message' => "Produto removido por falta de saldo",
+							// 		);
+							// 		$this->flux_log->write_log('no_get_account_product_info', json_encode($no_account_balance_insert_arr));
+							// 		//LOG
 
-							if ($product_info['release_no_balance'] == 0 && $product_info['product_category'] == 1) {
-								if ($account_balance < $total_amt) {
-									$is_process = false;
-									$this->db->update("order_items", $update_order_arr, array(
-										"id" => $ordervalue['id'],
-									));
-									$final_array['next_billing_date'] = $update_order_arr['termination_date'];
-									$this->common->mail_to_users("product_release", $final_array);
-									$no_account_balance_insert_arr = array(
-										"cron_date" => $this->CurrentDate,
-										"account_number" => $final_array['number'],
-										"product_category" => $product_info['product_category'],
-										"order_id" => $ordervalue['id'],
-										"account_balance" => $account_balance,
-										"product_total" => $total_amt,
-										'function' => 'renew_product',
-										'message' => "Produto removido por falta de saldo",
-									);
-									$this->flux_log->write_log('no_get_account_product_info', json_encode($no_account_balance_insert_arr));
-									//LOG
-
-								}
-							}
+							// 	}
+							// }
 							if ($is_process == true) {
 								$parentdata = $this->db_model->getSelect("*", "accounts", array(
-									"id" => $ordervalue["reseller_id"],
+									"id" => $ordervalue["accountid"],
 								));
 								$parentdata = $parentdata->first_row();
 
@@ -628,13 +614,17 @@ else {
 								$product_info['order_item_id'] = $ordervalue['order_id'];
 								$product_info['invoice_type'] = "debit";
 								$product_info['is_apply_tax'] = "false";
-//                $product_info['add_invoice_credit']= "true";
+								$product_info['add_invoice_credit']= "false";
 								$product_info['charge_type'] = $this->common->get_field_name("code", "category", array(
 									"id" => $product_info['product_category'],
 								));
-								$product_info['description'] = $product_info['charge_type'] . " (" . $product_info['name'] . ") has been renewed.";
+								if ($product_info['charge_type'] == 'PACKAGE') {
+									$product_info['charge_type'] = 'Plano';
+								}
+								$product_info['description'] = "O " . $product_info['charge_type'] . " (" . $product_info['name'] . ") foi renovado.";
 								$to_date = gmdate ( "Y-m-".$accountdata['invoice_day']." H:i:s" );
 								$from_date = gmdate ( "Y-m-".$accountdata['invoice_day']." 23:59:59", strtotime ( $to_date . " + 1 month" ) );
+
 								$update_order_arr = array(
 									"billing_date" => $this->CurrentDate,
 									"next_billing_date" => $from_date,
@@ -644,12 +634,8 @@ else {
 								$final_array['next_billing_date'] = $update_order_arr['next_billing_date'];
 								$last_payment_id = $this->payment->add_payments_transcation($product_info, $accountdata, $account_currency_info);
 								if ($last_payment_id != '') {
-									$update_invoice_item = "update invoices set payment_id = " . $last_payment_id . " where accountid=" . $accountinfo['id'] . " AND id = " . $invoiceid . "";
-									$this->db->query($update_invoice_item);
-									$update_invoice_detail_item = "update invoice_details set order_item_id = " . $ordervalue['order_id'] . " where accountid=" . $accountinfo['id'] . " AND invoiceid = " . $invoiceid . " AND charge_type = 'PACKAGE' AND created_date >='" . $this->StartDate . "' AND created_date <= '" . $this->EndDate . "'";
-									$this->db->query($update_invoice_detail_item);
-									$this->common->mail_to_users("product_renewed", $final_array);
-
+									$this->common->mail_to_users ( "product_renewed", $final_array );
+								
 								}
 
 								$this->db->update("counters", array(
@@ -687,6 +673,7 @@ else {
 								$this->db->update("order_items", $update_order_arr, array(
 									"id" => $ordervalue['id'],
 								));
+								$this->update_bill_date($accountdata);
 							}
 						} else {
 							$no_acc_product_insert_arr = array(
@@ -696,25 +683,11 @@ else {
 								'message' => "Produto nao encontrado para a conta.",
 							);
 							$this->flux_log->write_log('no_get_account_product_info', json_encode($no_acc_product_insert_arr));
-							/*$update_order_arr = array(
-								                "is_terminated" => '1',
-								                "termination_note" => "Product has been terminated",
-								                "termination_date" => $this->CurrentDate
-								              );
-								              $this->db->update("order_items", $update_order_arr, array(
-								                "id" => $ordervalue['id']
-								              ));
-								              if ($product_info['product_category'] == 4)
-								              {
-								                $this->db->update("dids", $did_update_array, array(
-								                  "product_id" => $ordervalue['product_id']
-								                ));
-							*/
-
 						}
 
 					}
-				} else {
+				} 
+				else {
 					$no_product_insert_arr = array(
 						"cron_date" => $this->CurrentDate,
 						"product_id" => $productdatalog,
@@ -735,304 +708,13 @@ else {
 			$this->flux_log->write_log('no_renew', json_encode($no_renew_insert_arr));
 
 		}
-
-	}
-	
-	function renew_product_service() {
-			$is_apply_commission = "false";
-			$renew_deleted_flag = Common_model::$global_config['system_config']['renew_deleted_product'];
-			if ($renew_deleted_flag == 0) {
-			$renewable_order = $this->db_model->getJionQuery('orders', 'orders.payment_status,orders.order_id as order_number,order_items.id,order_items.order_id,order_items.product_category,order_items.product_id,
-	order_items.quantity,order_items.billing_type,order_items.billing_days,order_items.free_minutes,
-	order_items.billing_date,order_items.next_billing_date,order_items.is_terminated ,order_items.termination_date,
-	order_items.termination_note,order_items.from_currency,order_items.exchange_rate,order_items.to_currency,
-	order_items.reseller_id,order_items.accountid,order_items.setup_fee,order_items.price', array(
-				"order_items.next_billing_date <=" => $this->custom_current_date,
-				"order_items.product_category <>" => "3",
-				"orders.payment_status <>" => "FAIL",
-			), 'order_items', 'orders.id=order_items.order_id', 'inner', '', '', '', '');
-			
-			} 
-			else {
-			
-						$renewable_order = $this->db_model->getJionQuery('orders', 'orders.payment_status,orders.order_id as order_number,order_items.id,order_items.order_id,order_items.product_category,order_items.product_id,
-				order_items.quantity,order_items.billing_type,order_items.billing_days,order_items.free_minutes,
-				order_items.billing_date,order_items.next_billing_date,order_items.is_terminated ,order_items.termination_date,
-				order_items.termination_note,order_items.from_currency,order_items.exchange_rate,order_items.to_currency,
-				order_items.reseller_id,order_items.accountid,order_items.setup_fee,order_items.price', array(
-							"order_items.next_billing_date <=" => $this->custom_current_date,
-							"order_items.product_category <>" => "3",
-							"order_items.is_terminated" => "0",
-							"orders.payment_status <>" => "FAIL",
-						), 'order_items', 'orders.id=order_items.order_id', 'inner', '', '', '', '');
-			
-			}
-			
-			if ($renewable_order->num_rows > 0) {
-				$renewable_order = $renewable_order->result_array();
-				foreach ($renewable_order as $orderkey => $ordervalue) {
-					$orderobjArr = array();
-					$parentdata = array();
-					$parent_array = array();
-					$parent_key_arr = array();
-					$productdata = array(
-						"product_id" => $ordervalue['product_id'],
-					);
-					$productdatalog = array(
-						"product_id" => $ordervalue['product_id'],
-					);
-	
-if ($renew_deleted_flag == 0) {
-				$product_data = $this->db_model->getSelect("*", "products", array(
-					"id" => $ordervalue['product_id'],
-				));
-				
-	} 
-else {
-					$product_data = $this->db_model->getSelect("*", "products", array(
-					"id" => $ordervalue['product_id'],
-					'is_deleted' => "0",
-					'status' => "0",
-				));
 	
 	}
-					if ($product_data->num_rows() > 0) {
-						$accountdata = $this->db_model->getSelect("*", "accounts", array(
-							"id" => $ordervalue["accountid"],
-							'deleted' => "0",
-							"status" => "0",
-						));
-						if ($accountdata->num_rows() > 0) {
-							$accountdata = $accountdata->result_array()[0];
-							$account_currency_info = $this->db_model->getSelect("*", "currency", array(
-								"id" => $accountdata['currency_id'],
-							));
-							if ($account_currency_info->num_rows > 0) {
-								$account_currency_info = (array) $account_currency_info->result_array();
-								$account_currency_info = $account_currency_info[0];
-							} 
-							else {
-								{
-									$base_currency = Common_model::$global_config['system_config']['base_currency'];
-									$account_currency_info = $this->db_model->getSelect("*", "currency", array(
-										"currency" => $base_currency,
-									));
-									$account_currency_info = (array) $account_currency_info->result_array();
-									$account_currency_info = $account_currency_info[0];
-								}
-	
-							}
-							$user_product_info = $this->order->get_account_product_info($orderobjArr, (object) $accountdata, $productdata);
-							if (!empty($user_product_info) && $product_data->num_rows() > 0) {
-								$is_process = true;
-								$user_product_info->price = $ordervalue['price'];
-								$user_product_info->quantity = $ordervalue['quantity'];
-								$user_product_info->setup_fee = $ordervalue['setup_fee'];
-								$user_product_info->billing_days = $ordervalue['billing_days'];
-								$product_info = (array) $user_product_info;
-								$total_amt = ($ordervalue['price'] * $ordervalue['quantity']);
-								if ($accountdata['posttoexternal'] == 1) {
-									$account_balance = $accountdata['credit_limit'];
-								} else {
-	
-									$account_balance = $accountdata['balance'];
-	
-								}
-	
-								//		$account_balance = $accountdata ['posttoexternal'] == 1 ? $accountdata ['credit_limit'] - ($accountdata ['balance']) :        $accountdata ['balance'];
-								$product_info['product_name'] = $product_info['name'];
-								$final_array = array_merge($accountdata, $product_info);
-								$acc_id = '';
-								$order_id = '';
-	
-								$acc_id = $this->common->get_field_name("id", "accounts", array(
-									"number" => $final_array['number'],
-								));
-								$order_id = $this->common->get_field_name("order_id", "orders", array(
-									"id" => $ordervalue['order_id'],
-								));
-								$final_array['order_id'] = $order_id;
-								$final_array['next_billing_date'] = $this->common->get_field_name("next_billing_date", "order_items", array(
-									"order_id" => $ordervalue['order_id'],
-								));
-								$update_order_arr = array(
-									"is_terminated" => '1',
-									"termination_date" => $this->CurrentDate,
-									"termination_note" => "Product has been terminated",
-								);
-								$did_update_array = array(
-									"accountid" => 0,
-									"call_type" => 0,
-									"extensions" => "",
-									"always" => 0,
-									"always_destination" => "",
-									"user_busy" => 0,
-									"user_busy_destination" => "",
-									"user_not_registered" => 0,
-									"user_not_registered_destination" => "",
-									"no_answer" => 0,
-									"no_answer_destination" => "",
-									"call_type_vm_flag" => 1,
-									"failover_call_type" => 1,
-									"always_vm_flag" => 1,
-									"user_busy_vm_flag" => 1,
-									"user_not_registered_vm_flag" => 1,
-									"no_answer_vm_flag" => 1,
-									"failover_extensions" => "",
-								);
-	
-								if ($product_info['release_no_balance'] == 0 && $product_info['product_category'] == 1) {
-									if ($account_balance < $total_amt) {
-										$is_process = false;
-										$this->db->update("order_items", $update_order_arr, array(
-											"id" => $ordervalue['id'],
-										));
-										$final_array['next_billing_date'] = $update_order_arr['termination_date'];
-										$this->common->mail_to_users("product_release", $final_array);
-										$no_account_balance_insert_arr = array(
-											"cron_date" => $this->CurrentDate,
-											"account_number" => $final_array['number'],
-											"product_category" => $product_info['product_category'],
-											"order_id" => $ordervalue['id'],
-											"account_balance" => $account_balance,
-											"product_total" => $total_amt,
-											'message' => "Produto removido por falta de saldo",
-										);
-										$this->flux_log->write_log('no_get_account_product_info', json_encode($no_account_balance_insert_arr));
-										//LOG
-	
-									}
-								}
-								if ($is_process == true) {
-									$parentdata = $this->db_model->getSelect("*", "accounts", array(
-										"id" => $ordervalue["accountid"],
-									));
-									$parentdata = $parentdata->first_row();
-	
-									$product_info['payment_status'] = "PAID";
-									$product_info['payment_by'] = "Account Balance";
-									$product_info['order_item_id'] = $ordervalue['order_id'];
-									$product_info['invoice_type'] = "debit";
-									$product_info['is_apply_tax'] = "false";
-	        $product_info['add_invoice_credit']= "false";
-									$product_info['charge_type'] = $this->common->get_field_name("code", "category", array(
-										"id" => $product_info['product_category'],
-									));
-									if ($product_info['charge_type'] == 'PACKAGE') {
-									$product_info['charge_type'] = 'Plano';
-									
-									}
-									$product_info['description'] = "O " . $product_info['charge_type'] . " (" . $product_info['name'] . ") foi renovado.";
-	$to_date = gmdate ( "Y-m-".$accountdata['invoice_day']." H:i:s" );
-	$from_date = gmdate ( "Y-m-".$accountdata['invoice_day']." 23:59:59", strtotime ( $to_date . " + 1 month" ) );
-	
-									$update_order_arr = array(
-										"billing_date" => $this->CurrentDate,
-										"next_billing_date" => $from_date,
-									);
-	
-									$final_array = array_merge($accountdata, $product_info);
-									$final_array['next_billing_date'] = $update_order_arr['next_billing_date'];
-									$last_payment_id = $this->payment->add_payments_transcation($product_info, $accountdata, $account_currency_info);
-									if ($last_payment_id != '') {
-										$this->common->mail_to_users ( "product_renewed", $final_array );
-									
-									}
-	
-									$this->db->update("counters", array(
-										"status" => 0,
-									), array(
-										"product_id" => $ordervalue['product_id'],
-										"accountid" => $ordervalue['accountid'],
-									));
-									$counter_update_arr = array(
-										"product_id" => $ordervalue['product_id'],
-										"accountid" => $ordervalue['accountid'],
-										"status" => 0,
-									);
-									$this->flux_log->write_log('update_counter', json_encode($counter_update_arr));
-									$counters_insert_arr = array(
-										"used_seconds" => 0,
-										"product_id" => $ordervalue['product_id'],
-										"accountid" => $ordervalue['accountid'],
-										"package_id" => $ordervalue['id'],
-										"type" => 1,
-										"status" => 1,
-									);
-									$this->db->insert("counters", $counters_insert_arr);
-									$counter_id = $this->db->insert_id();
-									$counters_log_insert_arr = array(
-										"used_seconds" => 0,
-										"product_id" => $ordervalue['product_id'],
-										"accountid" => $ordervalue['accountid'],
-										"package_id" => $ordervalue['id'],
-										"counter_id" => $counter_id,
-										"type" => 1,
-										"status" => 1,
-									);
-									$this->flux_log->write_log('insert_counter', json_encode($counters_log_insert_arr));
-									$this->db->update("order_items", $update_order_arr, array(
-										"id" => $ordervalue['id'],
-									));
-									$this->update_bill_date($accountdata);
-								}
-							} 
-							else {
-								$no_acc_product_insert_arr = array(
-									"cron_date" => $this->CurrentDate,
-									"account" => $accountdata,
-									"order_id" => $ordervalue['id'],
-									'message' => "Produto nao encontrado para a conta.",
-								);
-								$this->flux_log->write_log('no_get_account_product_info', json_encode($no_acc_product_insert_arr));
-								/*$update_order_arr = array(
-									                "is_terminated" => '1',
-									                "termination_note" => "Product has been terminated",
-									                "termination_date" => $this->CurrentDate
-									              );
-									              $this->db->update("order_items", $update_order_arr, array(
-									                "id" => $ordervalue['id']
-									              ));
-									              if ($product_info['product_category'] == 4)
-									              {
-									                $this->db->update("dids", $did_update_array, array(
-									                  "product_id" => $ordervalue['product_id']
-									                ));
-								*/
-	
-							}
-	
-						}
-					} 
-					else {
-						$no_product_insert_arr = array(
-							"cron_date" => $this->CurrentDate,
-							"product_id" => $productdatalog,
-							'message' => "Produto nao encontrado.",
-	
-						);
-						$this->flux_log->write_log('not_found_product', json_encode($no_product_insert_arr));
-						$this->PrintLogger('renew_product', $product_data);
-	
-					}
-				}
-			} 
-			else {
-				$no_renew_insert_arr = array(
-					"cron_date" => $this->CurrentDate,
-					'message' => "Nenhum pedido para renovar.",
-	
-				);
-				$this->flux_log->write_log('no_renew', json_encode($no_renew_insert_arr));
-	
-			}
-	
-		}
 
 	function product_renewal_reminder(){
-	$renew_deleted_flag = Common_model::$global_config['system_config']['renew_deleted_product'];
+		$renew_deleted_flag = Common_model::$global_config['system_config']['renew_deleted_product'];
 		if ($renew_deleted_flag == 0) {
-		$renewable_order = "SELECT  order_items.*,notify_before_day from order_items inner join invoice_conf ON invoice_conf.accountid = IF(order_items.reseller_id=0,1,order_items.reseller_id) where  order_items.next_billing_date <= DATE(DATE_ADD('".$this->CurrentDate."', INTERVAL invoice_conf.notify_before_day  DAY))";
+			$renewable_order = "SELECT  order_items.*,notify_before_day from order_items inner join invoice_conf ON invoice_conf.accountid = IF(order_items.reseller_id=0,1,order_items.reseller_id) where  order_items.next_billing_date <= DATE(DATE_ADD('".$this->CurrentDate."', INTERVAL invoice_conf.notify_before_day  DAY))";
 		
 		} 
 		else {
@@ -1076,13 +758,12 @@ else {
 			  }
 		   }
 		}
-	    }
+	}
 	    
- function update_bill_date($accountinfo) {
- 
-     $this->db->where("id",$accountinfo['id']);
-  $this->db->update("accounts",array("last_bill_date" => $this->CurrentDate));
-     }
+	function update_bill_date($accountinfo) {
+			$this->db->where("id",$accountinfo['id']);
+			$this->db->update("accounts",array("last_bill_date" => $this->CurrentDate));
+	}
 
 	function PrintLogger($Error_flag, $Message) {
 		if ($Error_flag) {
@@ -1090,18 +771,15 @@ else {
 				foreach ($Message as $MessageKey => $MessageValue) {
 					if (is_array($MessageValue)) {
 						foreach ($MessageValue as $LogKey => $LogValue) {
-						        $this->flux_log->write_log(''.$LogKey.'', json_encode($LogValue));
-//							fwrite($this->fp, "::::: " . $LogKey . " ::::: " . $LogValue . " :::::\n");
+								$this->flux_log->write_log(''.$LogKey.'', json_encode($LogValue));
 						}
 					} else {
-					       $this->flux_log->write_log(''.$MessageKey.'', json_encode($MessageValue));
-	//					fwrite($this->fp, "::::: " . $MessageKey . " ::::: " . $MessageValue . " :::::\n");
+							$this->flux_log->write_log(''.$MessageKey.'', json_encode($MessageValue));
 					}
 				}
 			} else {
 				if ($this->Error_flag) {
-				         $this->flux_log->write_log('error_invoice', json_encode($Message));
-	//				fwrite($this->fp, "::::: " . $Message . " :::::\n");
+							$this->flux_log->write_log('error_invoice', json_encode($Message));
 				}
 			}
 		}
