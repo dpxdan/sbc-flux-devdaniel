@@ -38,7 +38,7 @@
 		var did_id = "<?php echo $id; ?>";
 		var call_type_code = val;
 		if(call_type_code != ''){
-			if(call_type_code == 7 || call_type_code == 8 || call_type_code == 9 || call_type_code == 10 || call_type_code== 11){
+			if(call_type_code == 7 || call_type_code == 9 || call_type_code == 10 || call_type_code== 11){
 				
 				$.ajax({
 					type: "POST",

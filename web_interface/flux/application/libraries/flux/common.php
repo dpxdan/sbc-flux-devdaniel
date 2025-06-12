@@ -4038,19 +4038,21 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	
 		return $contents;
 	}
+	
 	function get_call_type_grid($select = "", $table = "" ,$did_id="") {
+		$this->CI->flux_log->write_log('get_call_type_grid', json_encode($did_id));	
 		$query = (array)$this->CI->db_model->getSelect("call_type,extensions", "dids", array("id"=>$did_id))->first_row();
 		$call_type = $query['call_type'];
 		$extensions = $query['extensions'];
-		if($call_type > 6){
+		if($call_type == 7){
 			$this->CI->load->library('flux/pbx_feature');
 			$destination_name = $this->CI->pbx_feature->pbx_destination_name($call_type,$extensions);
 			return $destination_name;	
-		}
-		else{
+		}else{
 			return $extensions;
 		}
 	}
+
 	function carrier_dropdown($id){
 		  		$drop_down = "";
 				$drop_down .= '<select name="'.$id.'" id="'.$id.'" class="form-control float-left col-md-12 form-control-lg selectpicker '.$id.'" data-live-search="true">';

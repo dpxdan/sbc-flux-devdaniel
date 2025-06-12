@@ -434,7 +434,7 @@ function custom_inbound_0(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 		for i = 1, #destination_str do
 			if notify then notify(xml,destination_str[i]) end
 			local sip_codec = get_sip_codec(destination_str[i])
-			local did_local_chan = ""
+			local did_local_chan = ""  
 			if(sip_codec and sip_codec ~= "")then
 				Logger.debug("[XML]  did_local_sip_codec : "..sip_codec)
 				did_local_chan = ",absolute_codec_string=".."^^:"..sip_codec:gsub("%,", ":")
@@ -451,9 +451,10 @@ function custom_inbound_0(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 	leave_voicemail(xml,destination_number,destination_str[1])
 	return xml;
 end
+
 function custom_inbound_1(xml,didinfo,userinfo,config,xml_did_rates,callerid_array,livecall_data)
 	table.insert(xml, [[<action application="set" data="calltype=DID@IP"/>]]);
---	table.insert(xml, [[<action application="info" data=""/>]]);
+	--	table.insert(xml, [[<action application="info" data=""/>]]);
 	local did_local_chan = ""
 	if(params:getHeader('variable_sip_from_user') and params:getHeader('variable_sip_from_user') ~= "")then
 		local sip_codec = get_sip_codec(params:getHeader('variable_sip_from_user'))
@@ -465,6 +466,7 @@ function custom_inbound_1(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 	table.insert(xml, [[<action application="bridge" data="[leg_timeout=]]..didinfo['leg_timeout']..did_local_chan..[[]sofia/${sofia_profile_name}/]]..didinfo['extensions']..[["/>]]);
 	return xml;
 end
+
 function custom_inbound_2(xml,didinfo,userinfo,config,xml_did_rates,callerid_array,livecall_data)
 	table.insert(xml, [[<action application="set" data="calltype=DIRECT-IP"/>]]);
 	local did_local_chan = ""
@@ -478,11 +480,15 @@ function custom_inbound_2(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 	table.insert(xml, [[<action application="bridge" data="[leg_timeout=]]..didinfo['leg_timeout']..did_local_chan..[[]sofia/${sofia_profile_name}/]]..destination_number..[[@]]..didinfo['extensions']..[["/>]]);
 	return xml;
 end
+
 function custom_inbound_3(xml,didinfo,userinfo,config,xml_did_rates,callerid_array,livecall_data)
 	table.insert(xml, [[<action application="set" data="calltype=OTHER"/>]]); 
+	
 	table.insert(xml, [[<action application="bridge" data="]]..didinfo['extensions']..[["/>]]);
+
 	return xml;
 end
+
 function custom_inbound_4(xml,didinfo,userinfo,config,xml_did_rates,callerid_array,livecall_data)
 	table.insert(xml, [[<action application="set" data="calltype=Padrao"/>]]);     
 	table.insert(xml, [[<action application="set" data="accountcode=]]..didinfo['account_code']..[["/>]]);
@@ -493,6 +499,7 @@ function custom_inbound_4(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 	table.insert(xml, [[<action application="transfer" data="]]..didinfo['extensions']..[[ XML default"/>]]);
 	return xml;
 end
+
 function custom_inbound_5(xml,didinfo,userinfo,config,xml_did_rates,callerid_array,livecall_data)
 	is_local_extension = "1"
         local bridge_str = ""
@@ -520,8 +527,37 @@ function custom_inbound_5(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 		end
 		table.insert(xml, [[<action application="bridge" data="]]..common_chan_var..bridge_str..[["/>]]);            
         
--- To leave voicemail 
+	-- To leave voicemail 
         leave_voicemail(xml,destination_number,destination_str[1])
+	return xml;
+end
+
+function custom_inbound_8(xml,didinfo,userinfo,config,xml_did_rates,callerid_array,livecall_data)
+	table.insert(xml, [[<action application="set" data="calltype=MCDU"/>]]); 
+	local ext_str = didinfo['extensions']
+
+	local device, mcdu = string.match(ext_str, "([^/]+)/([^/]+)")
+	if not device or not mcdu then
+		Logger.debug("[MCDU] formato inválido em extensions: "..tostring(ext_str))
+		return xml
+	end
+
+	local api = freeswitch.API()
+	local domain = api:execute("eval", "${domain_name}")
+	Logger.debug("[MCDU] DOMAIN: " .. domain)
+	Logger.debug("[MCDU] DEVICE: " .. device)
+
+	local contact = api:execute("sofia_contact", "user/" .. device .. "@" .. domain)
+
+	if not contact or contact == "error/user_not_registered" then
+		Logger.debug("[MCDU] device não registrado: " .. device)
+		return xml
+	end
+
+	local new_uri = contact:gsub("sip:[^@]+@", "sip:" .. mcdu .. "@")
+	Logger.debug("[MCDU] BRIDGE para URI: " .. new_uri)
+
+	table.insert(xml, ([[<action application="bridge" data="%s"/>]]):format(new_uri))
 	return xml;
 end
 
@@ -531,7 +567,7 @@ function freeswitch_xml_local(xml,destination_number,destinationinfo,callerid_ar
     -------------- Caller Id translation ---------    
     callerid_array['cid_name'] = do_number_translation(destinationinfo['did_cid_translation'],callerid_array['cid_name'])
 	callerid_array['cid_number'] = do_number_translation(destinationinfo['did_cid_translation'],callerid_array['cid_number'])
---	tr_localization = get_localization(destinationinfo['did_cid_translation'],'T')
+	--	tr_localization = get_localization(destinationinfo['did_cid_translation'],'T')
 	xml = freeswitch_xml_callerid(xml,callerid_array)	    	       
     ----------------------------------------------------------------------
 

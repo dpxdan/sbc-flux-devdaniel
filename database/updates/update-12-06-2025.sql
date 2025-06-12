@@ -1,0 +1,1 @@
+INSERT INTO `flux`.`did_call_types` (`id`, `call_type_code`, `call_type`) VALUES ('8', '8', 'MCDU');
