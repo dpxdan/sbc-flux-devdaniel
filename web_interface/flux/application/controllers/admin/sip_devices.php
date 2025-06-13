@@ -540,11 +540,6 @@ class Sip_devices extends Account {
 					), 400 );
 				}
 			}
-		}else{
-			$this->response(array(
-				'status' => false,
-				'error' => $this->lang->line('invalid_sip_number')
-			), 400);
 		}
 
 		if($this->form_validation->required($postdata['sipdevice_id'] == '')){
@@ -587,7 +582,7 @@ class Sip_devices extends Account {
 
 			$update_array = array(
 				"status" => isset($postdata['status'])?$postdata['status']:$sipdeviceinfo['status'],
-				"username" => $postdata['number'],
+				"username" => !empty($postdata['number']) ? $postdata['number'] : $sipdeviceinfo['username'],
 				'dir_params' => json_encode(array(
 					"password" => $postdata['password'],
 					"vm-enabled" => isset($postdata['voice_mail']) && !empty($postdata['voice_mail']) ? $postdata['voice_mail']:$vars_new['vm-enabled'],
