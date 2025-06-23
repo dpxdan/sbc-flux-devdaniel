@@ -409,6 +409,7 @@ class Sip_devices extends Account {
 				'status' => '0',
 				'extensions' => $sipdevice_array['username'],
 				'product_id' => $product_did_id,
+				'leg_timeout' => !empty($postdata['ring_timeout']) ? $postdata['ring_timeout'] : '60',
 			);
 
 			$this->db->insert("dids",$did_add_array);
@@ -559,9 +560,14 @@ class Sip_devices extends Account {
 
 			$queryDidsUpdate = $this->common->get_field_name('did_id','view_devices', array('sip_device_id' => $postdata['sipdevice_id']));
 			$did_update_array = array (
-				'number' => $postdata['number'],
-				'extensions' => $postdata['number']
+				'number' => !empty($postdata['number']) ? $postdata['number'] : $sipdeviceinfo['username'],
+				'extensions' => !empty($postdata['number']) ? $postdata['number'] : $sipdeviceinfo['username']
 			);
+			
+			if (!empty($postdata['ring_timeout'])){
+				$did_update_array['leg_timeout'] = $postdata['ring_timeout'];
+			}
+
 			$this->db->where("id", $queryDidsUpdate);
 			$this->db->update("dids",$did_update_array);
 
