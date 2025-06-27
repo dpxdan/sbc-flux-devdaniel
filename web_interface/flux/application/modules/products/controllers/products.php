@@ -118,7 +118,12 @@ class Products extends MX_Controller {
 		$accountinfo = $this->session->userdata ( 'accountinfo' );
 		if(isset($_POST['product_category']) && $_POST['product_category'] != ''){
 			$data['product_name'] = isset($_POST['product_name'])?$_POST['product_name']:'';
-			$category =$data['product_category'][$_POST['product_category']];
+			$category = $data['product_category'][$_POST['product_category']];
+
+			if ($category == "Pacote"){
+				$category = "Package";
+			}
+			
 			$data['add_array'] = $_POST;
 			$ProductDataLog = array(
 				"function" => 'products_add',
