@@ -148,7 +148,11 @@ function did_pbx_info(xml,didinfo,userinfo,config,xml_did_rates,callerid_array)
                         params_ring[delay] =0
                     end
                     if(tonumber(final_count) == 0)then
-                        ringgroup_dlr_str = ringgroup_dlr_str .."[sip_invite_params=user=local,sip_h_p-call_type='custom_forward',call_timeout="..params_ring[timeout]..","..group_confirm.."leg_timeout="..params_ring[timeout]..",leg_delay_start="..params_ring[delay].."]".."user/"..params_ring[destination].."@"..params:getHeader("variable_sip_contact_host")..":"..params:getHeader("variable_sip_contact_port")..separated
+
+                        local safe_host = params:getHeader("variable_sip_contact_host") or ""
+                        local safe_port = params:getHeader("variable_sip_contact_port") or ""
+
+                        ringgroup_dlr_str = ringgroup_dlr_str .."[sip_invite_params=user=local,sip_h_p-call_type='custom_forward',call_timeout="..params_ring[timeout]..","..group_confirm.."leg_timeout="..params_ring[timeout]..",leg_delay_start="..params_ring[delay].."]".."user/"..params_ring[destination].."@"..safe_host..":"..safe_port..separated
                     end
                 end
             end
