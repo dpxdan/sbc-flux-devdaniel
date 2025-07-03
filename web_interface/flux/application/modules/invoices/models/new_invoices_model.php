@@ -144,8 +144,12 @@ class New_Invoices_model extends CI_Model {
     public function getPlans($filter) {
         $this->db->select('*');
         $this->db->from('packages_view');
-//        $this->db->join('accounts', 'packages_view.accountid = accounts.id');
-        $this->db->where('accountid', $filter->accountid);
+        $this->db->where(array(
+            'accountid' => $filter->accountid,
+            'status' => '0',
+            'is_terminated' => '0',
+            'counter_status' => '1'
+        ));
 
         $query = $this->db->get();
         $charges = $query->result_object();
@@ -156,7 +160,6 @@ class New_Invoices_model extends CI_Model {
             $plan = new stdClass();
             $plan->name = $charge->package_name;
             $plan->value = $this->codeIgniter->common->convert_to_currency('', '', $charge->price);
-//            $plan->value = $charge->price;
             $plans[] = $plan;
         }
 
@@ -166,12 +169,11 @@ class New_Invoices_model extends CI_Model {
     public function getPackages($filter) {
         $this->db->select('*');
         $this->db->from('packages_view');
-//        $this->db->join('accounts', 'accounts.id = packages_view.accountid');
         $this->db->where(array(
             'accountid' => $filter->accountid,
             'status' => '0',
-            'is_terminated' => '0'
-            
+            'is_terminated' => '0',
+            'counter_status' => '1'
         ));
 
         $query = $this->db->get();
@@ -184,8 +186,6 @@ class New_Invoices_model extends CI_Model {
             $invoicePackage->name = $package->package_name;
             $invoicePackage->minutes = gmdate('i:s', $package->free_minutes);
             $counters = gmdate('i:s', $package->counters_used_minutes);
-
-//            $counters = $this->db->get_where('packages_view', array('counters_package_id' => $package->id))->result_object();
 
             if (empty($counters)) {
                 $invoicePackage->usedMinutes = '00:00';
