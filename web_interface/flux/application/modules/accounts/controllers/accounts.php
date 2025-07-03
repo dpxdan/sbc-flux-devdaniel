@@ -3025,6 +3025,7 @@ function admin_save($add_array = false)
 		if ($order_item->num_rows > 0) {
 			$order_item = $order_item->result_array();
 			foreach ($order_item as $key => $item) {
+				$this->db->where("id", $item['id']);
 				$this->db->update("order_items", array(
 						"is_terminated"    => 1,
 						"termination_date" => gmdate("Y-m-d"),
