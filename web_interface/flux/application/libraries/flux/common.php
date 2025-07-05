@@ -420,8 +420,8 @@ class common {
 		if (isset ( $uri_segment [3] ) && $uri_segment [3] > 0 && empty ( $edit_value )) {
 			$field_name = $this->CI->db_model->getSelect ( "sweep_id,invoice_day", "accounts", array (
 					"id" => $uri_segment [3]
-			));
-			$field_name = $field_name->result_array();
+			) );
+			$field_name = $field_name->result_array ();
 			$select = $field_name [0] ["sweep_id"];
 			$invoice_date = $field_name [0] ["invoice_day"];
 		} else {
@@ -474,6 +474,13 @@ class common {
 		}
 	}
 	function set_status($status = '') {
+		$status_array = array (
+				'0' => gettext ( 'Active' ),
+				'1' => gettext ( 'Inactive' )
+		);
+		return $status_array;
+	}
+	function set_cron_status($status = '') {
 		$status_array = array (
 				'0' => gettext ( 'Active' ),
 				'1' => gettext ( 'Inactive' )
@@ -836,6 +843,15 @@ class common {
 		$status_array = array (
 				'no' => gettext ( 'No' ),
 				'yes' => gettext ( 'Yes' )
+		);
+		return $status_array;
+	}
+	function set_authtype_drp_option($option = "") {
+		$status_array = array (
+				'basic' => gettext ( 'Basic' ),
+				'password' => gettext ( 'Password' ),
+				'token' => gettext ( 'Token' ),
+				'oauth' => gettext ( 'OAuth' )
 		);
 		return $status_array;
 	}
@@ -4038,7 +4054,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	
 		return $contents;
 	}
-	
 	function get_call_type_grid($select = "", $table = "" ,$did_id="") {
 		$this->CI->flux_log->write_log('get_call_type_grid', json_encode($did_id));	
 		$query = (array)$this->CI->db_model->getSelect("call_type,extensions", "dids", array("id"=>$did_id))->first_row();
@@ -4052,7 +4067,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			return $extensions;
 		}
 	}
-
 	function carrier_dropdown($id){
 		  		$drop_down = "";
 				$drop_down .= '<select name="'.$id.'" id="'.$id.'" class="form-control float-left col-md-12 form-control-lg selectpicker '.$id.'" data-live-search="true">';

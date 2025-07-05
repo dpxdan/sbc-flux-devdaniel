@@ -30,7 +30,13 @@ $config ['argv'] = array (
 		"crons" => "crons/index",
 		"gitUpdate" => "GitUpdate/executeUpdate",
 		"Refactor" => "Refactor/index",
-		"gitRollback" => "GitUpdate/executeRollback"
+		"gitRollback" => "GitUpdate/executeRollback",
+		//Sync API
+		"ApiSync" => "VoipSync/sync",
+		"ApiEndpoints" => "ApiEndpoints/curl_request",
+		"ApiProxy" => "ApiProxy/update_data",
+		"CdrSync" => "VoipSync/sincronizar_ausentes",
+		"GetCdrs" => "VoipSync/sincronizar_cdrs"
 );
 $config ['CRON_BETA_MODE'] = false; // Beta Mode (useful for blocking submissions for testing)
 ?>

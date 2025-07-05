@@ -26,6 +26,7 @@ class Signup_lib {
 	function __construct($library_name = '') {
 		$this->CI = & get_instance ();
 		$this->CI->load->library ( 'flux/payment' );
+		$this->CI->load->library('flux_log');
 	}
 	
 	function create_account($accountinfo){
@@ -128,6 +129,67 @@ class Signup_lib {
 		}
 		return $last_id;
 	}
+	function proxy_create_account($accountinfo){
+		$current_date = gmdate("Y-m-d H:i:s");
+		$invoice_config = "1";
+		if ($accountinfo ['type'] == 1) {
+			
+			$accountinfo['expiry'] = "0000-00-00 00:00:00";
+			$invoice_config = $accountinfo ['invoice_config_flag'];
+		}
+		if($accountinfo['type'] ==0 || $accountinfo['type'] ==3){
+			$accountinfo['permission_id'] =0;
+		}
+		$sip_flag = isset ( $accountinfo ['sip_device_flag'] ) ? $accountinfo ['sip_device_flag'] :Common_model::$global_config ['system_config'] ['create_sipdevice'];		
+		unset ( $accountinfo ['invoice_config_flag'],$accountinfo ['sip_device_flag'],  $accountinfo ['tax_id'] );
+		$accountinfo['posttoexternal']=isset($accountinfo['posttoexternal']) ? $accountinfo['posttoexternal'] : '0';
+		$accountinfo = $this->default_signup_configuration($accountinfo,$current_date);
+		if ($accountinfo ['type'] == 1) {	
+			$accountinfo['expiry'] = "0000-00-00 00:00:00";
+		}
+		$default_taxes = $accountinfo['tax_id'];
+		unset($accountinfo['tax_id']);
+		$accountinfo ['creation'] = $current_date;
+		$accountinfo ['last_bill_date'] = $current_date; 
+		if ($accountinfo ['posttoexternal'] == 0) {
+			$accountinfo['credit_limit'] = 0;
+		}
+		
+		if ($accountinfo['credit_limit'] == 0 && $accountinfo ['posttoexternal'] == 1){
+			$accountinfo['credit_limit'] = 10000;
+		}
+		$accountinfo['balance'] = 0;
+		$accountinfo=array_map('trim',$accountinfo);
+		$result = $this->CI->db->insert ( 'accounts', $accountinfo );
+		$last_id = $this->CI->db->insert_id ();
+		if($accountinfo['type'] == 0 || $accountinfo['type'] ==1 || $accountinfo['type'] ==3 || $accountinfo['type'] ==5){
+			$accountinfo['id']=$last_id;
+			if(Common_model::$global_config ['system_config'] ['balance'] > 0){
+				$balance = $accountinfo ['posttoexternal'] == 0 ? Common_model::$global_config ['system_config'] ['balance']: 0;
+				if($accountinfo['posttoexternal'] == 0){
+					$this->generate_receipt($accountinfo,$balance);
+				}
+			}
+		
+			if($sip_flag == '0' && $accountinfo['type'] != 1) {
+				$sip_profile_info = $this->_get_sip_profile();
+				if(!empty($sip_profile_info)){
+					$this->_proxy_create_sip_device($accountinfo,$sip_profile_info);
+				}
+			}
+			$this->account_taxes($default_taxes,$accountinfo['id'],$current_date);
+			if(($accountinfo['type']==1 || $accountinfo['type'] ==5) && $invoice_config == '0') 	
+				$this->_create_invoice_conf($accountinfo);
+			$accountinfo ['confirm'] = base_url ();
+			if ($accountinfo ['id'] == "") {
+				$accountinfo ['id'] = $last_id;
+			}
+			if($accountinfo['notifications'] == 0){
+				$this->_send_email($accountinfo);
+			}
+		}
+		return $last_id;
+	}
 	public function account_taxes($taxes,$accountid,$current_date=''){
 		$current_date = empty($current_date) ? gmdate("Y-m-d H:i:s") : $current_date;
 		$taxes_array=explode(",",$taxes);
@@ -149,6 +211,12 @@ class Signup_lib {
 		}
 	}
 	private function _get_sip_profile(){
+		$this->CI->db->select ( 'id' );
+		$this->CI->db->order_by('id', 'ASC');
+		$this->CI->db->limit('1');
+		return ( array ) $this->CI->db->get ( 'sip_profiles' )->first_row ();
+	}
+	public function _proxy_get_sip_profile(){
 		$this->CI->db->select ( 'id' );
 		$this->CI->db->order_by('id', 'ASC');
 		$this->CI->db->limit('1');
@@ -186,6 +254,43 @@ class Signup_lib {
 				'last_modified_date'=>$current_date
 		);
 		$this->CI->db->insert("sip_devices",$sipdevice_array);
+	}
+	public function _proxy_create_sip_device($accountinfo,$sip_profile_info){
+		$current_date = gmdate("Y-m-d H:i:s");
+//		$this->CI->flux_log->write_log('create_sip_device_dev', json_encode($accountinfo));
+		$this->CI->db->select ( 'id' );
+		$this->CI->db->where ( 'name', 'default' );
+		$sipprofile_result = ( array ) $this->CI->db->get ( 'sip_profiles' )->first_row ();
+		$digits=5;
+		$random_password = rand(pow(10, $digits-1), pow(10, $digits)-1);
+		$sipdevice_array = array (
+				'username' => $accountinfo ['number'],
+				'sip_profile_id' => $sip_profile_info ['id'],
+				"reseller_id"=>isset($accountinfo ['reseller_id']) ? $accountinfo ['reseller_id'] : '0',
+				'accountid' => isset($accountinfo ['accountid']) ? $accountinfo ['accountid'] : $accountinfo ['id'],
+				'id_sip_external' => isset($accountinfo ['id_sip_external']) ? $accountinfo ['id_sip_external'] : '0',				
+				'dir_params' => json_encode(array(
+					"password"=> $this->CI->common->decode ( $accountinfo ['password'] ),
+					'vm-enabled' => "false",
+					"vm-password"=> $random_password,
+					"vm-mailto"=> (isset($accountinfo['email']))?$accountinfo['email']:'',
+					"vm-attach-file"=>"true",
+					"vm-keep-local-after-email"=>"true",
+					"vm-email-all-messages"=>"true"
+				)),
+				"dir_vars"=>json_encode(array(
+					'effective_caller_id_name' => $accountinfo ['number'],
+					'effective_caller_id_number' => $accountinfo ['number'],
+					"user_context"=>"default"
+				)),
+				'codec' => 'PCMA,PCMU',
+				'status' => isset($accountinfo ['status']) ? $accountinfo ['status'] : '0',
+				'creation_date'=>$current_date,
+				'last_modified_date'=>$current_date
+		);
+		$this->CI->db->insert("sip_devices",$sipdevice_array);
+		$last_sip_id = $this->CI->db->insert_id ();
+		return $last_sip_id;
 	}
 	public function default_signup_configuration($accountinfo,$current_date){
 		$accountinfo['local_call_cost'] = Common_model::$global_config ['system_config'] ['charge_per_min'];
