@@ -1,3 +1,5 @@
+SET FOREIGN_KEY_CHECKS=0;
+
 ALTER TABLE `accounts` ADD COLUMN `int_balance` decimal(20, 5) NOT NULL DEFAULT 0.00000 AFTER `tax_number`;
 
 ALTER TABLE `accounts` ADD COLUMN `int_credit_limit` decimal(20, 5) NOT NULL DEFAULT 0.00000 AFTER `int_balance`;
