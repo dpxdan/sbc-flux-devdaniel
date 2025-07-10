@@ -2,8 +2,6 @@
 <link rel="stylesheet"
 	href="<?php echo base_url(); ?>assets/css/flexigrid.css"
 	type="text/css">
-<link href="<?php echo base_url(); ?>assets/css/facebox.css"
-	rel="stylesheet" media="all" />
 <script type="text/javascript">
     $("#submit").click(function(){
         submit_form("api_test_form");
@@ -42,7 +40,7 @@ if (isset($validation_errors)) {
             </div>
             <form method="post" id="api_test_form" action="<?= base_url('api_endpoints/api_test_send') ?>">
     <div class="form-group">
-      <label for="endpoint_url">URL do Endpoint</label>
+      <label for="endpoint_url"><?php echo gettext('Endpoint URL'); ?></label>
       <input type="text" class="form-control" name="endpoint_url" id="endpoint_url" value="<?= isset($endpoint_info['endpoint_url']) ? $endpoint_info['endpoint_url'] : '' ?>" readonly/>
       <input type="hidden" name="url" id="final_url" />
     </div>
@@ -57,7 +55,7 @@ if (isset($validation_errors)) {
 		    </div>
 
     <div class="form-group">
-      <label for="method">Método HTTP</label>
+      <label for="method"><?php echo gettext('HTTP Method'); ?></label>
       <select name="method" id="method" class="form-control">
         <option value="GET">GET</option>
         <option value="POST" selected>POST</option>
@@ -67,45 +65,45 @@ if (isset($validation_errors)) {
     </div>
 
     <hr>
-    <h5>Autenticação</h5>
+    <h5><?php echo gettext('Authentication'); ?></h5>
 
     <div class="form-group">
-      <label for="endpoint_auth">Tipo de Autenticação</label>
+      <label for="endpoint_auth"><?php echo gettext('Authentication Type'); ?></label>
       <select name="endpoint_auth" id="endpoint_auth" class="form-control">
-        <option value="">Nenhuma</option>
-        <option value="basic">Basic</option>
-        <option value="bearer">Bearer Token</option>
+        <option value=""><?php echo gettext('None'); ?></option>
+        <option value="basic"><?php echo gettext('Basic'); ?></option>
+        <option value="bearer"><?php echo gettext('Bearer Token'); ?></option>
       </select>
     </div>
 
     <div class="form-group">
-      <label for="endpoint_user">Usuário</label>
+      <label for="endpoint_user"><?php echo gettext('Authentication User'); ?></label>
       <input type="text" class="form-control" name="endpoint_user" id="endpoint_user" value="<?php echo (isset($endpoint_info['endpoint_user']))?$endpoint_info['endpoint_user']:'' ?>">
     </div>
 
     <div class="form-group">
-      <label for="endpoint_password">Senha</label>
+      <label for="endpoint_password"><?php echo gettext('Authentication Password'); ?></label>
       <input type="password" class="form-control" name="endpoint_password" id="endpoint_password" value="<?php echo (isset($endpoint_info['endpoint_password']))?$endpoint_info['endpoint_password']:'' ?>">
     </div>
 
     <div class="form-group">
-      <label for="endpoint_token">Token</label>
+      <label for="endpoint_token"><?php echo gettext('Authentication Token'); ?></label>
       <input type="text" class="form-control" name="endpoint_token" id="endpoint_token" value="<?php echo (isset($endpoint_info['endpoint_token']))?$endpoint_info['endpoint_token']:'' ?>">
     </div>
 
     <hr>
-    <h5>Headers Personalizados</h5>
+    <h5><?php echo gettext('Additional Headers'); ?></h5>
 
     <div id="headers-container"></div>
 
-    <button type="button" class="btn btn-outline-primary mb-3" id="add-header">+ Adicionar Header</button>
+    <button type="button" class="btn btn-outline-primary mb-3" id="add-header"><?php echo gettext('Add'); ?></button>
     <hr>
     <div class="form-group">
-      <label for="body">Body (JSON)</label>
+      <label for="body"><?php echo gettext('Body (JSON)'); ?></label>
       <textarea class="form-control" name="body" id="body" rows="6" placeholder='{"key": "value"}' style="font-size: inherit;"></textarea>
     </div>
 
-    <button type="submit" class="btn btn-success">Enviar Requisição</button>
+    <button type="submit" class="btn btn-success"><?php echo gettext('Send'); ?></button>
     <br/><br/>
   </form>
         </div>
@@ -114,26 +112,23 @@ if (isset($validation_errors)) {
 </div>
 
 <script type="text/javascript" language="javascript">
-$(document).ready(function() {
-    $("input[type='hidden']").parents('li.form-group').addClass("d-none");
-});
-</script>
-<script type="text/javascript">
-  $(document).ready(function(){
-      $('.page-wrap').addClass('addon_wrap');
-  });
-</script>
-
-<script type="text/javascript" language="javascript">
     document.getElementById('add-header').addEventListener('click', function () {
       const container = document.getElementById('headers-container');
       const div = document.createElement('div');
       div.className = 'header-pair';
       div.innerHTML = `
-        <input type="text" name="headers[key][]" placeholder="Header" class="form-control" />
-        <input type="text" name="headers[value][]" placeholder="Valor" class="form-control" />
-        <button type="button" onclick="this.parentNode.remove()" class="btn btn-danger btn-sm">Remover</button>
-      `;
+        <div class="header-pair form-row mb-2">
+        <div class="col">
+        <input type="text" name="headers[key][]" placeholder="<?php echo gettext('Header'); ?>" class="form-control" />
+        </div>
+        <div class="col">
+        <input type="text" name="headers[value][]" placeholder="<?php echo gettext('Value'); ?>" class="form-control" />
+        </div>
+        <div class="col-auto">
+        <button type="button" onclick="this.parentNode.remove()" class="btn btn-danger btn-sm"><?php echo gettext('Remove'); ?></button>
+        </div>
+        </div>
+      `;      
       container.appendChild(div);
     });
 
@@ -165,7 +160,7 @@ $(document).ready(function() {
         div.innerHTML = `
           <input type="text" name="headers[key][]" class="form-control" value="Authorization" readonly />
           <input type="text" name="headers[value][]" class="form-control" value="${authHeader}" readonly />
-          <button type="button" onclick="this.parentNode.remove()" class="btn btn-danger btn-sm">Remover</button>
+          <button type="button" onclick="this.parentNode.remove()" class="btn btn-danger btn-sm"><?php echo gettext('Remove'); ?></button>
         `;
         container.appendChild(div);
       }
