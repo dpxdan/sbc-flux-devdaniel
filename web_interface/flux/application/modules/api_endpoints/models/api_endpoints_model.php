@@ -24,10 +24,10 @@
 class api_endpoints_model extends CI_Model
 {
 
-    function __construct()
-    {
-        parent::__construct();
-    }
+	function __construct() {
+		parent::__construct();
+		$this->load->library("flux_log");
+	}
 
     function getapi_endpoints_list($flag, $start = 0, $limit = 0)
     {
@@ -43,8 +43,55 @@ class api_endpoints_model extends CI_Model
         }
         if ($flag) {
             $query = $this->db_model->select("*", "api_endpoints", $where, "id", "ASC", $limit, $start);
+            $this->flux_log->write_log('getapi_endpoints_list_flag', json_encode($query));
         } else {
             $query = $this->db_model->countQuery("*", "api_endpoints", $where);
+            $this->flux_log->write_log('getapi_endpoints_list_count', json_encode($query));
+        }
+        return $query;
+    }
+    
+    function api_endpoints_list($flag, $start = 0, $limit = 0)
+    {
+        $partnerinfo = array();
+        $this->db_model->build_search('api_endpoints_list_search');
+        $accountinfo = $this->session->userdata("accountinfo");
+        $reseller_id = $accountinfo['type'] == 1 ? $accountinfo['id'] : 0;
+        $query = array();
+        $logintype = $this->session->userdata("logintype");
+        $where = array();
+        if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logintype') == 5) {
+            $where['reseller_id'] = $reseller_id;
+        }
+        if ($flag) {
+            $partnerinfo = $this->db_model->select("*", "api_endpoints", $where, "id", "ASC", $limit, $start);
+            if ($partnerinfo->num_rows() > 0) {
+                $add_array = $partnerinfo->result_array();
+                foreach ($add_array as $key => $value) {
+                    $query[] = array(
+                        'id' => $value['id'],
+                        'endpoint_name' => $value['endpoint_name'],
+                        'endpoint_url' => $value['endpoint_url'],
+                        'redirect_url' => $value['redirect_url'],
+                        'accountid' => $value['accountid'],
+                        'reseller_id' => $value['reseller_id'],
+                        'endpoint_auth' => $value['endpoint_auth'],
+                        'partner_id' => $value['partner_id'],
+                        'endpoint_user' => $value['endpoint_user'],
+                        'endpoint_password' => $value['endpoint_password'],
+                        'endpoint_token' => $value['endpoint_token'],
+                        'apply_on_endpoints' => $value['apply_on_endpoints'],
+                        'status' => $value['status'],
+                        'last_login_date' => $value['last_login_date'],
+                        'creation_date' => $value['creation_date'],
+                        'last_modified_date' => $value['last_modified_date']                     
+                        );
+                    $this->flux_log->write_log('api_endpoints_list_flag', json_encode($query));
+                }
+            }
+        } else {
+            $query = $this->db_model->countQuery("*", 'api_endpoints', $where);
+            $this->flux_log->write_log('api_endpoints_list_count', json_encode($query));
         }
         return $query;
     }
@@ -106,6 +153,52 @@ class api_endpoints_model extends CI_Model
         $this->db->where("id", $id);
         $this->db->update("api_endpoints", $data);
     }
+    
+    function get_api_edited_data($edit_id)
+    {
+        $partnerinfo = array();
+        $where = array(
+            'id' => $edit_id
+        );
+        $partnerinfo = $this->db_model->getSelect("*", "api_endpoints", $where);
+        $add_array = $partnerinfo->result_array();
+        foreach ($add_array as $key => $value) {
+            $query = array(
+                'id' => $value['id'],
+                'endpoint_name' => $value['endpoint_name'],
+                'endpoint_url' => $value['endpoint_url'],
+                'redirect_url' => $value['redirect_url'],
+                'accountid' => $value['accountid'],
+                'reseller_id' => $value['reseller_id'],
+                'endpoint_auth' => $value['endpoint_auth'],
+                'partner_id' => $value['partner_id'],
+                'endpoint_user' => $value['endpoint_user'],
+                'endpoint_password' => $value['endpoint_password'],
+                'endpoint_token' => $value['endpoint_token'],
+                'apply_on_endpoints' => $value['apply_on_endpoints'],
+                'status' => $value['status'],
+                'last_login_date' => $value['last_login_date'],
+                'creation_date' => $value['creation_date'],
+                'last_modified_date' => $value['last_modified_date'] 
+            );
+        }
+        return $query;
+    }
+
+    function log_request($data) 
+    {
+    $this->db->insert('api_requests', $data);
+    return $this->db->insert_id();
+    }
+
+	function log_response($request_id, $response) 
+	{
+	$this->db->insert('api_responses', [
+		'request_id' => $request_id,
+		'response'   => $response,
+		'created_at' => date('Y-m-d H:i:s')
+	]);
+	}
 
     function add_partners_endpoints($add_array)
     {
