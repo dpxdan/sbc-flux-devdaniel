@@ -12,7 +12,6 @@ class Voip_model extends CI_Model {
 	}
 
     public function salvar_voip_sippeers($data) {
-    // Lista de campos permitidos (os que existem na tabela)
     $campos_permitidos = array(
         'id',
         'cliente_id',
@@ -33,7 +32,6 @@ class Voip_model extends CI_Model {
         'id_plano_sip'
     );
 
-    // Filtrar o array de dados
     
 //    $this->flux_log->write_log('salvar_voip_sippeers', json_encode($data['id']));
     $device_id = $data['id'];
@@ -43,8 +41,7 @@ class Voip_model extends CI_Model {
             $dados_filtrados[$campo] = $data[$campo];            
         }
     }
-
-    // Executar replace apenas com os campos válidos
+    
     $this->db->replace('voip_sippeers', $dados_filtrados);        
     $updateDevice = $this->api_model->insert_or_update_device($device_id);
 //    $this->flux_log->write_log('updateDevice', json_encode($data));
@@ -57,13 +54,10 @@ class Voip_model extends CI_Model {
     return $this->db->get($table)->result_array();
 }
     public function salvar_voip_devices($data) {
-    // Lista de campos permitidos (os que existem na tabela)
     $campos_permitidos = array(
         'id',
         'id_plano_sip'
     );
-
-    // Filtrar o array de dados
     
 //    $this->flux_log->write_log('salvar_voip_sippeers', json_encode($data['id']));
     $device_id = $data['id'];
@@ -74,7 +68,6 @@ class Voip_model extends CI_Model {
         }
     }
 
-    // Executar replace apenas com os campos válidos
     $this->db->replace('voip_sippeers', $dados_filtrados);        
     $updateDevice = $this->api_model->insert_or_update_device($device_id);
 }
@@ -130,7 +123,6 @@ class Voip_model extends CI_Model {
 			
 }
     public function salvar_cliente($data) {
-    // Lista de campos existentes na tabela `clientes`
     $campos_permitidos = array(
         'id',
         'razao',
@@ -150,7 +142,6 @@ class Voip_model extends CI_Model {
         'numero'
     );
 
-    // Filtrar os dados recebidos
     $cliente_id = $data['id'];
     $dados_filtrados = array();
     foreach ($campos_permitidos as $campo) {
@@ -159,13 +150,11 @@ class Voip_model extends CI_Model {
         }
     }
 
-    // Executar replace com os dados filtrados
     $this->db->replace('clientes', $dados_filtrados);
     $updateClient = $this->api_model->insert_or_update_cliente($cliente_id);
 //    $this->flux_log->write_log('updateClient', json_encode($updateClient));
 }
     public function salvar_cliente_contrato($data) {
-    // Lista de campos existentes na tabela `cliente_contrato`
     $campos_permitidos = array(
         'id',
         'contrato',
@@ -176,8 +165,6 @@ class Voip_model extends CI_Model {
         'status',
         'ultima_atualizacao'
     );
-
-    // Filtrar os dados recebidos
     $dados_filtrados = array();
     foreach ($campos_permitidos as $campo) {
         if (isset($data[$campo])) {
@@ -185,11 +172,9 @@ class Voip_model extends CI_Model {
         }
     }
 
-    // Executar replace com os dados filtrados
     $this->db->replace('cliente_contrato', $dados_filtrados);
 }
     public function salvar_cdrs($data) {
-    // Lista de campos existentes na tabela `clientes`
     $campos_permitidos = array(
         'id',
         'accountcode',
@@ -214,7 +199,6 @@ class Voip_model extends CI_Model {
         'uniqueid'
     );
 
-    // Filtrar os dados recebidos
     $dados_filtrados = array();
     foreach ($campos_permitidos as $campo) {
         if (isset($data[$campo])) {
@@ -222,11 +206,9 @@ class Voip_model extends CI_Model {
         }
     }
 
-    // Executar replace com os dados filtrados
     $this->db->replace('cdr', $dados_filtrados);
 }
     public function salvar_cidade($data) {
-    // Lista de campos permitidos (os que existem na tabela)
     $campos_permitidos = array(
         'id',
         'codigo',
@@ -236,7 +218,6 @@ class Voip_model extends CI_Model {
         'regiao'
     );
 
-    // Filtrar o array de dados
     $dados_filtrados = array();
     foreach ($campos_permitidos as $campo) {
         if (isset($data[$campo])) {
@@ -244,11 +225,9 @@ class Voip_model extends CI_Model {
         }
     }
 
-    // Executar replace apenas com os campos válidos
     $this->db->replace('cidade', $dados_filtrados);
 }
     public function salvar_uf($data) {
-    // Lista de campos permitidos (os que existem na tabela)
     $campos_permitidos = array(
         'id',
         'cod_uf',
@@ -259,7 +238,6 @@ class Voip_model extends CI_Model {
         'cod_ibge'
     );
 
-    // Filtrar o array de dados
     $dados_filtrados = array();
     foreach ($campos_permitidos as $campo) {
         if (isset($data[$campo])) {
@@ -267,11 +245,9 @@ class Voip_model extends CI_Model {
         }
     }
 
-    // Executar replace apenas com os campos válidos
     $this->db->replace('uf', $dados_filtrados);
 }
     public function salvar_account($data) {
-    // Lista de campos existentes na tabela `clientes`
     $campos_permitidos = array(
         'id',
         'razao',
@@ -290,7 +266,6 @@ class Voip_model extends CI_Model {
         'ultima_atualizacao'
     );
 
-    // Filtrar os dados recebidos
     $dados_filtrados = array();
     foreach ($campos_permitidos as $campo) {
         if (isset($data[$campo])) {
@@ -298,7 +273,6 @@ class Voip_model extends CI_Model {
         }
     }
 
-    // Executar replace com os dados filtrados
     $this->db->replace('clientes', $dados_filtrados);
 }
     public function get_cdrs_nao_enviados() {
@@ -309,6 +283,11 @@ class Voip_model extends CI_Model {
         $this->db->where('status', '0');
         $this->db->where('run_cron', '0');
         return $this->db->get('api_partners')->result_array();
+    }
+    public function get_api_endpoints() {
+        $this->db->where('status', '0');
+        $this->db->where('run_cron', '0');
+        return $this->db->get('api_endpoints')->result_array();
     }
     public function marcar_como_enviado($uniqueid) {
         $this->db->where('uniqueid', $uniqueid);
@@ -321,6 +300,13 @@ class Voip_model extends CI_Model {
         'ixc_id' => $ixc_id
     ));
 }
+	public function marcar_como_enviado_com_id_ligacao($id_ligacao, $ixc_id) {
+		$this->db->where('id_ligacao', $id_ligacao);
+		$this->db->update('cdr', array(
+			'enviado_ixc' => 'sim',
+			'ixc_id' => $ixc_id
+		));
+	}
     public function get_cdrs_nao_enviados_por_uniqueids($lista_uniqueids_na_api) {
     if (empty($lista_uniqueids_na_api)) return [];
     $this->db->where_not_in('uniqueid', $lista_uniqueids_na_api);
@@ -350,7 +336,7 @@ class Voip_model extends CI_Model {
 
     $this->db->where('enviado_ixc', 'nao');
     $this->db->where_not_in('id_ligacao', $lista_idligacao_na_api);
-    $this->db->where('id_ligacao IS NOT NULL'); // opcional, dependendo da qualidade dos dados
+    $this->db->where('id_ligacao IS NOT NULL');
 
     return $this->db->get('cdr')->result_array();
 }
@@ -358,11 +344,9 @@ class Voip_model extends CI_Model {
 	public function get_cdrs_idligacao_tmp($lista_idligacao_na_api) {
     if (empty($lista_idligacao_na_api)) return [];
 
-    // 1. Cria tabela temporária
     $this->db->query("CREATE TEMPORARY TABLE tmp_ixc_ids (id_ligacao VARCHAR(255) PRIMARY KEY)");
 
-    // 2. Insere os IDs aos poucos (em lotes)
-    $chunks = array_chunk($lista_idligacao_na_api, 500); // Pode ajustar esse valor conforme necessário
+    $chunks = array_chunk($lista_idligacao_na_api, 500);
     foreach ($chunks as $lote) {
         $values = array_map(function ($id) {
             return "('" . $this->db->escape_str($id) . "')";
@@ -371,7 +355,6 @@ class Voip_model extends CI_Model {
         $this->db->query($sql);
     }
 
-    // 3. Consulta com LEFT JOIN
     $sql = "
         SELECT cdr.*
         FROM cdr

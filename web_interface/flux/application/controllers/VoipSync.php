@@ -1,4 +1,26 @@
-<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php
+
+// ##############################################################################
+// Flux Telecom - Unindo pessoas e negócios
+//
+// Copyright (C) 2025 Flux Telecom
+// Daniel Paixao <daniel@flux.net.br>
+// FluxSBC Version 4.2 and above
+// License https://www.gnu.org/licenses/agpl-3.0.html
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+// ##############################################################################
 
 class VoipSync extends CI_Controller {
 
@@ -13,26 +35,24 @@ class VoipSync extends CI_Controller {
 
     public function sync() {
         $this->flux_log->write_log('success', 'Start Sync.');
-        $voip_accounts = $this->get_api_accounts();        
-        if ($voip_accounts || isset($voip_accounts['partner_url'])){
+        $voip_accounts = $this->get_api_endpoints();        
+        if ($voip_accounts || isset($voip_accounts['endpoint_url'])){
         foreach ($voip_accounts as $voip_account) {
-        $account_name = $voip_account['partner_name'];
-        $account_url = $voip_account['partner_url'];
-        $account_user = $voip_account['partner_user'];
-        $account_password = $voip_account['partner_password'];
-        $account_auth = $voip_account['partner_auth'];
+        $account_name = $voip_account['endpoint_name'];
+        $account_url = $voip_account['endpoint_url'];
+        $account_user = $voip_account['endpoint_user'];
+        $account_password = $voip_account['endpoint_password'];
+        $account_auth = $voip_account['endpoint_auth'];
         $accountAuth = $account_user.':'.$account_password;
-//        $this->flux_log->write_log($account_name, json_encode($accountAuth));
+        $this->flux_log->write_log($account_name, json_encode($accountAuth));
         
         
-        // 1. Requisição para view_voip_sippeers_cliente
         $voip_response = $this->request_voip_sippeers($account_url,$accountAuth);
         
         if (!$voip_response || !isset($voip_response['registros'])) {
             $this->flux_log->write_log('error', 'Erro na resposta da API view_voip_sippeers_cliente');
             return;
         }
-		// Remove devices excluidos
 		$ids_na_api = [];
 		if (isset($voip_response['registros']) && is_array($voip_response['registros'])) {
 			foreach ($voip_response['registros'] as $registro) {
@@ -53,20 +73,16 @@ class VoipSync extends CI_Controller {
 		}
         $cliente_ids = array();
         foreach ($voip_response['registros'] as $registro) {
-            // Salvar no banco
             $this->Voip_model->salvar_voip_sippeers($registro);
 
-            // Guardar IDs únicos
             if (isset($registro['cliente_id'])) {
                 $cliente_ids[] = $registro['cliente_id'];
             }            
             
         }
         
-        // Remover duplicados
         $cliente_ids = array_unique($cliente_ids);
 
-        // 2. Requisição para cliente usando os IDs filtrados
         foreach ($cliente_ids as $cliente_id) {
             $cliente_response = $this->request_cliente($account_url,$accountAuth,$cliente_id);
             if ($cliente_response && isset($cliente_response['registros'])) {
@@ -82,8 +98,7 @@ class VoipSync extends CI_Controller {
             }
         }
         
-		// 3. Requisição adicional para voip_sippeers (com id_plano_sip)
-		$plano_response = $this->request_voip_devices($account_url,$accountAuth); // Pode ser o mesmo método usado acima
+		$plano_response = $this->request_voip_devices($account_url,$accountAuth);
 	
 		if ($plano_response && isset($plano_response['registros'])) {
 			foreach ($plano_response['registros'] as $registro) {
@@ -101,32 +116,30 @@ class VoipSync extends CI_Controller {
 		}
 		} 
 		else {
-		$this->flux_log->write_log('sync', 'Sem dados get_api_accounts');
+		$this->flux_log->write_log('sync', 'Sem dados get_api_endpoints');
 		return;
 		}
     }
 
     //Sync Cidade
     public function sincronizar_cidade() {
-        $voip_accounts = $this->get_api_accounts();        
-        if ($voip_accounts || isset($voip_accounts['partner_url'])){
+        $voip_accounts = $this->get_api_endpoints();        
+        if ($voip_accounts || isset($voip_accounts['endpoint_url'])){
         foreach ($voip_accounts as $voip_account) {
-        $account_name = $voip_account['partner_name'];
-        $account_url = $voip_account['partner_url'];
-        $account_user = $voip_account['partner_user'];
-        $account_password = $voip_account['partner_password'];
-        $account_auth = $voip_account['partner_auth'];
+        $account_name = $voip_account['endpoint_name'];
+        $account_url = $voip_account['endpoint_url'];
+        $account_user = $voip_account['endpoint_user'];
+        $account_password = $voip_account['endpoint_password'];
+        $account_auth = $voip_account['endpoint_auth'];
         $accountAuth = $account_user.':'.$account_password;
         
         
-        // 1. Requisição para view_voip_sippeers_cliente
         $cidade_response = $this->request_cidade($account_url,$accountAuth);
         if (!$cidade_response || !isset($cidade_response['registros'])) {
             $this->flux_log->write_log('error', 'Erro na resposta da API cidade');
             return;
         }
         foreach ($cidade_response['registros'] as $cidade) {
-            // Salvar no banco
             $this->Voip_model->salvar_cidade($cidade);
         }
 
@@ -136,7 +149,6 @@ class VoipSync extends CI_Controller {
             return;
         }
         foreach ($uf_response['registros'] as $uf) {
-            // Salvar no banco
             $this->Voip_model->salvar_uf($uf);
         }  
         }
@@ -145,10 +157,8 @@ class VoipSync extends CI_Controller {
 
     //Sync Planos    
     public function enviar_planos_voip() {
-    // Carrega o banco de dados, se ainda não estiver carregado
     $this->load->database();
 
-    // Consulta produtos válidos
     $produtos = $this->db
         ->select('id, name')
         ->from('products')
@@ -163,18 +173,17 @@ class VoipSync extends CI_Controller {
             'descricao'     => $produto['name']
         );
                 
-        $voip_accounts = $this->get_api_accounts();
-        if ($voip_accounts || isset($voip_accounts['partner_url'])){
+        $voip_accounts = $this->get_api_endpoints();
+        if ($voip_accounts || isset($voip_accounts['endpoint_url'])){
         foreach ($voip_accounts as $voip_account) {
-		$account_name = $voip_account['partner_name'];
-		$account_url = $voip_account['partner_url'];
-		$account_user = $voip_account['partner_user'];
-		$account_password = $voip_account['partner_password'];
-		$account_auth = $voip_account['partner_auth'];
+		$account_name = $voip_account['endpoint_name'];
+		$account_url = $voip_account['endpoint_url'];
+		$account_user = $voip_account['endpoint_user'];
+		$account_password = $voip_account['endpoint_password'];
+		$account_auth = $voip_account['endpoint_auth'];
 		$accountAuth = $account_user.':'.$account_password;
 		$url = $account_url.'planos_voip';
 		$response = $this->send_post_request($url,$accountAuth, $body, '');
-		// Log de retorno, útil para depuração
         $this->flux_log->write_log('info', 'Plano VOIP enviado: ' . json_encode($body) . ' | Resposta: ' . json_encode($response));
 		}        
     }
@@ -182,7 +191,6 @@ class VoipSync extends CI_Controller {
 }
 
     public function sincronizar_planos_voip() {
-    // 1. Buscar produtos locais
     $this->load->database();
     $produtos = $this->db
         ->select('id, name')
@@ -192,31 +200,29 @@ class VoipSync extends CI_Controller {
         ->get()
         ->result_array();
 
-    // 2. Buscar planos existentes na API
     $postData = array(
         'qtype' => 'planos_voip.id_plataforma',
         'query' => '0',
         'oper'  => '>',
         'page'  => '1',
-        'rp'    => '1000', // quantidade alta para garantir cobertura
+        'rp'    => '1000',
         'sortname' => 'planos_voip.id',
         'sortorder' => 'asc'
     );
-    $voip_accounts = $this->get_api_accounts(); 
-	if ($voip_accounts || isset($voip_accounts['partner_url'])){
+    $voip_accounts = $this->get_api_endpoints(); 
+	if ($voip_accounts || isset($voip_accounts['endpoint_url'])){
 	foreach ($voip_accounts as $voip_account) {
-	$account_name = $voip_account['partner_name'];
-	$account_url = $voip_account['partner_url'];
-	$account_user = $voip_account['partner_user'];
-	$account_password = $voip_account['partner_password'];
-	$account_auth = $voip_account['partner_auth'];
+	$account_name = $voip_account['endpoint_name'];
+	$account_url = $voip_account['endpoint_url'];
+	$account_user = $voip_account['endpoint_user'];
+	$account_password = $voip_account['endpoint_password'];
+	$account_auth = $voip_account['endpoint_auth'];
 	$accountAuth = $account_user.':'.$account_password;
 	$url = $account_url.'planos_voip';
 
     $resposta_api = $this->send_post_request($url,$accountAuth, $postData, 'listar');
     $planos_api = isset($resposta_api['registros']) ? $resposta_api['registros'] : array();
 
-    // 3. Criar lista de IDs de plataforma já existentes
     $ids_existentes = array();
     foreach ($planos_api as $registro) {
         if (isset($registro['id_plataforma'])) {
@@ -224,7 +230,6 @@ class VoipSync extends CI_Controller {
         }
     }
 
-    // 4. Verificar produtos não existentes e inseri-los
     foreach ($produtos as $produto) {
         if (!in_array($produto['id'], $ids_existentes)) {
             $body = array(
@@ -234,7 +239,6 @@ class VoipSync extends CI_Controller {
 
             $res = $this->send_post_request($url,$accountAuth, $body, '');
 
-            // Log de inserção
             $this->flux_log->write_log('info', 'Plano VOIP inserido via sincronização: ' . json_encode($body) . ' | Resposta: ' . json_encode($res));
         }
     }
@@ -244,14 +248,14 @@ class VoipSync extends CI_Controller {
 
     //Sync CDRs    
     public function sincronizar_cdr() {
-        $voip_accounts = $this->get_api_accounts();        
-        if ($voip_accounts || isset($voip_accounts['partner_url'])){
+        $voip_accounts = $this->get_api_endpoints();        
+        if ($voip_accounts || isset($voip_accounts['endpoint_url'])){
         foreach ($voip_accounts as $voip_account) {
-        $account_name = $voip_account['partner_name'];
-        $account_url = $voip_account['partner_url'];
-        $account_user = $voip_account['partner_user'];
-        $account_password = $voip_account['partner_password'];
-        $account_auth = $voip_account['partner_auth'];
+        $account_name = $voip_account['endpoint_name'];
+        $account_url = $voip_account['endpoint_url'];
+        $account_user = $voip_account['endpoint_user'];
+        $account_password = $voip_account['endpoint_password'];
+        $account_auth = $voip_account['endpoint_auth'];
         $accountAuth = $account_user.':'.$account_password;        
         }
         
@@ -269,21 +273,20 @@ class VoipSync extends CI_Controller {
             return;
         }
         foreach ($cdrs_response['registros'] as $cdrs) {
-            // Salvar no banco
             $this->Voip_model->salvar_cdrs($cdrs);
         }    
     }
     }
    
     public function enviar_cdr() {
-         $voip_accounts = $this->get_api_accounts();        
-        if ($voip_accounts || isset($voip_accounts['partner_url'])){
+         $voip_accounts = $this->get_api_endpoints();        
+        if ($voip_accounts || isset($voip_accounts['endpoint_url'])){
         foreach ($voip_accounts as $voip_account) {
-        $account_name = $voip_account['partner_name'];
-        $account_url = $voip_account['partner_url'];
-        $account_user = $voip_account['partner_user'];
-        $account_password = $voip_account['partner_password'];
-        $account_auth = $voip_account['partner_auth'];
+        $account_name = $voip_account['endpoint_name'];
+        $account_url = $voip_account['endpoint_url'];
+        $account_user = $voip_account['endpoint_user'];
+        $account_password = $voip_account['endpoint_password'];
+        $account_auth = $voip_account['endpoint_auth'];
         $accountAuth = $account_user.':'.$account_password;
         $url = $account_url.'cdr';       
         }        
@@ -350,21 +353,18 @@ class VoipSync extends CI_Controller {
     public function sincronizar_ausentes() {
     $this->flux_log->write_log('success', 'sincronizar_ausentes.');
     
-    $voip_accounts = $this->get_api_accounts();        
-        if ($voip_accounts || isset($voip_accounts['partner_url'])){
+    $voip_accounts = $this->get_api_endpoints();        
+        if ($voip_accounts || isset($voip_accounts['endpoint_url'])){
         foreach ($voip_accounts as $voip_account) {
-        $account_name = $voip_account['partner_name'];
-        $account_url = $voip_account['partner_url'];
-        $account_user = $voip_account['partner_user'];
-        $account_password = $voip_account['partner_password'];
-        $account_auth = $voip_account['partner_auth'];
+        $account_name = $voip_account['endpoint_name'];
+        $account_url = $voip_account['endpoint_url'];
+        $account_user = $voip_account['endpoint_user'];
+        $account_password = $voip_account['endpoint_password'];
+        $account_auth = $voip_account['endpoint_auth'];
         $accountAuth = $account_user.':'.$account_password;
         $url = $account_url.'cdr';    
         }
         
-    
-    
-    // 1. Obtém os registros existentes na API
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Content-Type: application/json',
@@ -405,10 +405,8 @@ class VoipSync extends CI_Controller {
     }
     }
 
-    // 2. Busca no banco local os que ainda não foram enviados
     $cdrs_nao_enviados = $this->Voip_model->get_cdrs_nao_enviados_por_idligacao($ids_ligacao_na_api);
 
-    // 3. Envia apenas os ausentes
     foreach ($cdrs_nao_enviados as $cdr) {
         $payload = array(
             'accountcode'   => $cdr['accountcode'],
@@ -455,10 +453,9 @@ class VoipSync extends CI_Controller {
             $resposta = json_decode($response, true);
             $ixc_id = isset($resposta['id']) ? $resposta['id'] : null;
             $this->Voip_model->marcar_como_enviado_com_id($cdr['uniqueid'], $ixc_id);
-            // Executa o PUT para atualizar campos que o POST não aceita
     if ($ixc_id) {
         $put_payload = $payload;
-        $put_payload['id'] = $ixc_id; // ID do registro na IXC
+        $put_payload['id'] = $ixc_id;
         
         $urlCurl = $url.'/'.$ixc_id.'';
 
@@ -501,19 +498,18 @@ class VoipSync extends CI_Controller {
 
 	public function sincronizar_cdrs() {
 			$this->flux_log->write_log('success', 'Iniciando sincronizar_ausentes');
-	        $voip_accounts = $this->get_api_accounts();        
-			if ($voip_accounts || isset($voip_accounts['partner_url'])){
+	        $voip_accounts = $this->get_api_endpoints();        
+			if ($voip_accounts || isset($voip_accounts['endpoint_url'])){
 			foreach ($voip_accounts as $voip_account) {
-			$account_name = $voip_account['partner_name'];
-			$account_url = $voip_account['partner_url'];
-			$account_user = $voip_account['partner_user'];
-			$account_password = $voip_account['partner_password'];
-			$account_auth = $voip_account['partner_auth'];
+			$account_name = $voip_account['endpoint_name'];
+			$account_url = $voip_account['endpoint_url'];
+			$account_user = $voip_account['endpoint_user'];
+			$account_password = $voip_account['endpoint_password'];
+			$account_auth = $voip_account['endpoint_auth'];
 			$accountAuth = $account_user.':'.$account_password;
 			$url = $account_url.'cdr';
 			$this->flux_log->write_log('success', 'URL sincronizar_ausentes:'.$url);   
 			}		
-			// 1. Buscar todos os ID_LIGACAO existentes na IXC com paginação
 			$ids_ligacao_na_api = [];
 			$page = 1;
 	
@@ -555,7 +551,6 @@ class VoipSync extends CI_Controller {
 				$page++;
 			} while (!empty($dados_api['registros']) && count($dados_api['registros']) == 10000);
 	
-			// 2. Buscar CDRs locais que não estão na IXC
 			$cdrs_nao_enviados = $this->Voip_model->get_cdrs_idligacao($ids_ligacao_na_api);
 	
 			foreach ($cdrs_nao_enviados as $cdr) {
@@ -604,6 +599,8 @@ class VoipSync extends CI_Controller {
 	
 				$response = curl_exec($ch);
 				$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+				//$this->flux_log->write_log('response_cdr_insert', $response);
+				$this->api_model->salvar_log_api($url, $payload, $response, 'insert', $httpCode);
 				curl_close($ch);
 	
 				if (in_array($httpCode, [200, 201])) {
@@ -612,12 +609,12 @@ class VoipSync extends CI_Controller {
 					if ($ixc_id) {
 						$this->Voip_model->marcar_como_enviado_com_id_ligacao($cdr['id_ligacao'], $ixc_id);
 	
-						// PUT
 						$put_payload = $payload;
 						$put_payload['id'] = $ixc_id;
-	
-						$ch_put = curl_init($url."/".$ixc_id);
-						curl_setopt_array($ch_put, [
+						$url_put = $url . '/' . $ixc_id;
+						
+						$ch = curl_init($url_put);
+						curl_setopt_array($ch, [
 							CURLOPT_CUSTOMREQUEST => 'PUT',
 							CURLOPT_HTTPHEADER => [
 								'Content-Type: application/json',
@@ -628,18 +625,21 @@ class VoipSync extends CI_Controller {
 							CURLOPT_POSTFIELDS => json_encode($put_payload)
 						]);
 	
-						$response_put = curl_exec($ch_put);
-						$httpCodePut = curl_getinfo($ch_put, CURLINFO_HTTP_CODE);
-						curl_close($ch_put);
+						$response_put = curl_exec($ch);
+						$httpCodePut = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+						$this->api_model->salvar_log_api($url_put, $put_payload, $response_put, 'update', $httpCodePut);
+						curl_close($ch);
 	
 						if (in_array($httpCodePut, [200, 201])) {
 							$this->flux_log->write_log('success', "PUT realizado com sucesso no IXC ID {$ixc_id}: " . json_encode($put_payload));
-						} else {
-							$this->api_model->salvar_log_api('PUT', json_encode($put_payload), $response_put, 'update_cdr', $httpCodePut);
+						} 
+						else {
+							$this->api_model->salvar_log_api($url_put, json_encode($put_payload), $response_put, 'update_cdr', $httpCodePut);
 						}
 					}
-				} else {
-					$this->api_model->salvar_log_api('POST', $json_payload, $response, 'insert_cdr', $httpCode);
+				} 
+				else {
+					$this->api_model->salvar_log_api($url, $json_payload, $response, 'insert_cdr', $httpCode);
 				}
 			}
 			}
@@ -761,7 +761,6 @@ class VoipSync extends CI_Controller {
     $accountAuth = $url.' - '.$auth;
     $this->curl->create($url);
 
-    // Cabeçalhos personalizados
     $headers = array(
         'Content-Type: application/json',
         'ixcsoft: ' . $acao,
@@ -773,12 +772,11 @@ class VoipSync extends CI_Controller {
     $response = $this->curl->execute();
     $http_code = $this->curl->info['http_code'];
      
-    // Verifica se a resposta é erro (>=400 ou 401)
     if ($http_code >= 400 || $http_code == 401) {
         $this->load->model('api_model');
         $this->api_model->salvar_log_api($url, $postData, $response, $acao, $http_code);
     }
-    $this->api_model->salvar_log_api($url, $postData, $response, $acao, $http_code);
+//    $this->api_model->salvar_log_api($url, $postData, $response, $acao, $http_code);
 //    $this->flux_log->write_log($url, json_encode($response));
     return json_decode($response, true);
 }
@@ -787,7 +785,10 @@ class VoipSync extends CI_Controller {
         $accounts = $this->Voip_model->get_api_data();
         return $accounts;
     }
-    
+    public function get_api_endpoints() {
+        $accounts = $this->Voip_model->get_api_endpoints();
+        return $accounts;
+    }
     private function converter_para_brasilia($data_utc) {
     $date = new DateTime($data_utc, new DateTimeZone('UTC'));
     $date->setTimezone(new DateTimeZone('America/Sao_Paulo'));

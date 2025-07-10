@@ -210,7 +210,20 @@ class api_endpoints_form
                 '',
                 '',
                 'set_status'
-            )
+            ),
+            array(
+				gettext('Cron Status'),
+				'run_cron',
+				'SELECT',
+				'',
+				'',
+				'tOOL TIP',
+				'Please Select Status',
+				'',
+				'',
+				'',
+				'set_cron_status'
+			)
         );
         $form[gettext('Authentication Information')] = array(
             array(
