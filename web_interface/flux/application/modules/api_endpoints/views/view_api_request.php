@@ -1,149 +1,145 @@
 <?php include(FCPATH.'application/views/popup_header.php'); ?>
-<link rel="stylesheet"
-	href="<?php echo base_url(); ?>assets/css/flexigrid.css"
-	type="text/css">
-<script type="text/javascript">
-    $("#submit").click(function(){
-        submit_form("api_test_form");
-    });
-</script>
+<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/flexigrid.css" type="text/css">
 <script type="text/javascript">
   $(document).ready(function(){
-      $(".breadcrumb li a").removeAttr("data-ripple","");
-      
+    $(".breadcrumb li a").removeAttr("data-ripple");
   });
 </script>
 
 <section class="slice m-0">
-	<div class="w-section inverse p-0">
-		<div>
-			<div>
-				<div class="col-md-12 p-0 card-header">
-					<h3 class="fw4 p-4 m-0"><? echo $page_title; ?></h3 class="text-light p-3 rounded-top">
-				</div>
-			</div>
-		</div>
-	</div>
+  <div class="w-section inverse p-0">
+    <div>
+      <div>
+        <div class="col-md-12 p-0 card-header">
+          <h3 class="fw4 p-4 m-0"><?php echo $page_title; ?></h3>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <div>
-	<div>
-		<section class="slice m-0">
-			<div class="w-section inverse p-4">
-				<div style="">
-                <?php
-
-if (isset($validation_errors)) {
-                    echo $validation_errors;
-                }
-                ?> 
-            </div>
-            <form method="post" id="api_test_form" action="<?= base_url('api_endpoints/api_test_send') ?>">
-    <div class="form-group">
-      <label for="endpoint_url"><?php echo gettext('Endpoint URL'); ?></label>
-      <input type="text" class="form-control" name="endpoint_url" id="endpoint_url" value="<?= isset($endpoint_info['endpoint_url']) ? $endpoint_info['endpoint_url'] : '' ?>" readonly/>
-      <input type="hidden" name="url" id="final_url" />
-    </div>
-    
-                      <div class='form-group'>
-                      <label for="destination_endpoints"><?php echo gettext('Destination Endpoint'); ?></label>
-                      <select name="destination_endpoints" id="api_destination_endpoints" class="form-control">
-                        <?php foreach($destination_endpoints as $key1 => $destination_endpoint) {  ?>
-				<option value= "<?php echo $key1; ?>"> <?php echo  $destination_endpoint ?> </option>
-			<?php } ?>
-                      </select>
-		    </div>
-
-    <div class="form-group">
-      <label for="method"><?php echo gettext('HTTP Method'); ?></label>
-      <select name="method" id="method" class="form-control">
-        <option value="GET">GET</option>
-        <option value="POST" selected>POST</option>
-        <option value="PUT">PUT</option>
-        <option value="DELETE">DELETE</option>
-      </select>
-    </div>
-
-    <hr>
-    <h5><?php echo gettext('Authentication'); ?></h5>
-
-    <div class="form-group">
-      <label for="endpoint_auth"><?php echo gettext('Authentication Type'); ?></label>
-      <select name="endpoint_auth" id="endpoint_auth" class="form-control">
-        <option value=""><?php echo gettext('None'); ?></option>
-        <option value="basic"><?php echo gettext('Basic'); ?></option>
-        <option value="bearer"><?php echo gettext('Bearer Token'); ?></option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="endpoint_user"><?php echo gettext('Authentication User'); ?></label>
-      <input type="text" class="form-control" name="endpoint_user" id="endpoint_user" value="<?php echo (isset($endpoint_info['endpoint_user']))?$endpoint_info['endpoint_user']:'' ?>">
-    </div>
-
-    <div class="form-group">
-      <label for="endpoint_password"><?php echo gettext('Authentication Password'); ?></label>
-      <input type="password" class="form-control" name="endpoint_password" id="endpoint_password" value="<?php echo (isset($endpoint_info['endpoint_password']))?$endpoint_info['endpoint_password']:'' ?>">
-    </div>
-
-    <div class="form-group">
-      <label for="endpoint_token"><?php echo gettext('Authentication Token'); ?></label>
-      <input type="text" class="form-control" name="endpoint_token" id="endpoint_token" value="<?php echo (isset($endpoint_info['endpoint_token']))?$endpoint_info['endpoint_token']:'' ?>">
-    </div>
-
-    <hr>
-    <h5><?php echo gettext('Additional Headers'); ?></h5>
-
-    <div id="headers-container"></div>
-
-    <button type="button" class="btn btn-outline-primary mb-3" id="add-header"><?php echo gettext('Add'); ?></button>
-    <hr>
-    <div class="form-group">
-      <label for="body"><?php echo gettext('Body (JSON)'); ?></label>
-      <textarea class="form-control" name="body" id="body" rows="6" placeholder='{"key": "value"}' style="font-size: inherit;"></textarea>
-    </div>
-
-    <button type="submit" class="btn btn-success"><?php echo gettext('Send'); ?></button>
-    <br/><br/>
-  </form>
+  <div>
+    <section class="slice m-0">
+      <div class="w-section inverse p-4">
+        <div>
+          <?php if (isset($validation_errors)) echo $validation_errors; ?>
         </div>
-		</section>
-	</div>
+
+        <form method="post" id="api_test_form" action="<?= base_url('api_endpoints/api_test_send') ?>">
+          <div class="form-group">
+            <label for="endpoint_url"><?php echo gettext('Endpoint URL'); ?></label>
+            <input type="text" class="form-control" name="endpoint_url" id="endpoint_url" value="<?= isset($endpoint_info['endpoint_url']) ? $endpoint_info['endpoint_url'] : '' ?>" readonly/>
+            <input type="hidden" name="url" id="final_url" />
+          </div>
+
+          <div class='form-group'>
+            <label for="destination_endpoints"><?php echo gettext('Destination Endpoint'); ?></label>
+            <select name="destination_endpoints" id="api_destination_endpoints" class="form-control">
+              <?php foreach($destination_endpoints as $key1 => $destination_endpoint) { ?>
+                <option value= "<?php echo $key1; ?>"> <?php echo  $destination_endpoint ?> </option>
+              <?php } ?>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="method"><?php echo gettext('HTTP Method'); ?></label>
+            <select name="method" id="method" class="form-control">
+              <option value="GET">GET</option>
+              <option value="POST" selected>POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+          </div>
+
+          <hr>
+          <h5><?php echo gettext('Authentication'); ?></h5>
+
+          <div class="form-group">
+            <label for="endpoint_auth"><?php echo gettext('Authentication Type'); ?></label>
+            <select name="endpoint_auth" id="endpoint_auth" class="form-control">
+              <option value=""><?php echo gettext('None'); ?></option>
+              <option value="basic"><?php echo gettext('Basic'); ?></option>
+              <option value="bearer"><?php echo gettext('Bearer Token'); ?></option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="endpoint_user"><?php echo gettext('Authentication User'); ?></label>
+            <input type="text" class="form-control" name="endpoint_user" id="endpoint_user" value="<?php echo (isset($endpoint_info['endpoint_user']))?$endpoint_info['endpoint_user']:'' ?>">
+          </div>
+
+          <div class="form-group">
+            <label for="endpoint_password"><?php echo gettext('Authentication Password'); ?></label>
+            <input type="password" class="form-control" name="endpoint_password" id="endpoint_password" value="<?php echo (isset($endpoint_info['endpoint_password']))?$endpoint_info['endpoint_password']:'' ?>">
+          </div>
+
+          <div class="form-group">
+            <label for="endpoint_token"><?php echo gettext('Authentication Token'); ?></label>
+            <input type="text" class="form-control" name="endpoint_token" id="endpoint_token" value="<?php echo (isset($endpoint_info['endpoint_token']))?$endpoint_info['endpoint_token']:'' ?>">
+          </div>
+
+          <hr>
+          <h5><?php echo gettext('Additional Headers'); ?></h5>
+
+          <div id="headers-container"></div>
+          <button type="button" class="btn btn-outline-primary mb-3" id="add-header"><?php echo gettext('Add'); ?></button>
+
+          <hr>
+          <div class="form-group">
+            <label for="body"><?php echo gettext('Body (JSON)'); ?></label>
+            <textarea class="form-control" name="body" id="body" rows="6" placeholder='{"key": "value"}'></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-secondary"><?php echo gettext('Send'); ?></button>
+          <br/><br/>
+        </form>
+
+        <div id="api_response_result" class="mt-4 p-3 border rounded bg-light"></div>
+      </div>
+    </section>
+  </div>
 </div>
 
-<script type="text/javascript" language="javascript">
-    document.getElementById('add-header').addEventListener('click', function () {
-      const container = document.getElementById('headers-container');
-      const div = document.createElement('div');
-      div.className = 'header-pair';
-      div.innerHTML = `
+<script>
+  $(document).ready(function () {
+    function updateFinalURL() {
+      const baseUrl = $('#endpoint_url').val().replace(/\/$/, '');
+      const destination = $('#api_destination_endpoints').val();
+      $('#final_url').val(baseUrl + '/' + destination);
+    }
+
+    $('#api_destination_endpoints').on('change', updateFinalURL);
+    updateFinalURL();
+
+    $('#add-header').click(function () {
+      $('#headers-container').append(`
         <div class="header-pair form-row mb-2">
-        <div class="col">
-        <input type="text" name="headers[key][]" placeholder="<?php echo gettext('Header'); ?>" class="form-control" />
-        </div>
-        <div class="col">
-        <input type="text" name="headers[value][]" placeholder="<?php echo gettext('Value'); ?>" class="form-control" />
-        </div>
-        <div class="col-auto">
-        <button type="button" onclick="this.parentNode.remove()" class="btn btn-danger btn-sm"><?php echo gettext('Remove'); ?></button>
-        </div>
-        </div>
-      `;      
-      container.appendChild(div);
+          <div class="col">
+            <input type="text" name="headers[key][]" placeholder="<?php echo gettext('Header'); ?>" class="form-control" />
+          </div>
+          <div class="col">
+            <input type="text" name="headers[value][]" placeholder="<?php echo gettext('Value'); ?>" class="form-control" />
+          </div>
+          <div class="col-auto">
+            <button type="button" onclick="$(this).parent().parent().remove()" class="btn btn-danger btn-sm"><?php echo gettext('Remove'); ?></button>
+          </div>
+        </div>`);
     });
 
-    document.getElementById('api_test_form').addEventListener('submit', function (e) {
-      const authType = document.getElementById('endpoint_auth').value.trim().toLowerCase();
-      const user = document.getElementById('endpoint_user').value;
-      const pass = document.getElementById('endpoint_password').value;
-      const token = document.getElementById('endpoint_token').value;
-      const container = document.getElementById('headers-container');
+    $('#api_test_form').submit(function (e) {
+      e.preventDefault();
+      updateFinalURL();
 
-      const existingHeaders = container.querySelectorAll('.header-pair');
-      existingHeaders.forEach(pair => {
-        const keyInput = pair.querySelector('input[name="headers[key][]"]');
-        if (keyInput && keyInput.value.toLowerCase() === 'authorization') {
-          pair.remove();
+      const authType = $('#endpoint_auth').val().trim().toLowerCase();
+      const user = $('#endpoint_user').val();
+      const pass = $('#endpoint_password').val();
+      const token = $('#endpoint_token').val();
+
+      $('.header-pair').each(function () {
+        const keyInput = $(this).find('input[name="headers[key][]"]');
+        if (keyInput.val().toLowerCase() === 'authorization') {
+          $(this).remove();
         }
       });
 
@@ -155,33 +151,35 @@ if (isset($validation_errors)) {
       }
 
       if (authHeader) {
-        const div = document.createElement('div');
-        div.className = 'header-pair';
-        div.innerHTML = `
-          <input type="text" name="headers[key][]" class="form-control" value="Authorization" readonly />
-          <input type="text" name="headers[value][]" class="form-control" value="${authHeader}" readonly />
-          <button type="button" onclick="this.parentNode.remove()" class="btn btn-danger btn-sm"><?php echo gettext('Remove'); ?></button>
-        `;
-        container.appendChild(div);
+        $('#headers-container').append(`
+          <div class="header-pair form-row mb-2">
+            <div class="col">
+              <input type="text" name="headers[key][]" class="form-control" value="Authorization" readonly />
+            </div>
+            <div class="col">
+              <input type="text" name="headers[value][]" class="form-control" value="${authHeader}" readonly />
+            </div>
+            <div class="col-auto">
+              <button type="button" onclick="$(this).parent().parent().remove()" class="btn btn-danger btn-sm"><?php echo gettext('Remove'); ?></button>
+            </div>
+          </div>`);
       }
+
+      const formData = $(this).serialize();
+
+      $('#api_response_result').html('<div class="text-center text-muted"><?php echo gettext("Sending Request"); ?>...</div>');
+
+      $.ajax({
+        url: $(this).attr('action'),
+        type: 'POST',
+        data: formData,
+        success: function (response) {
+          $('#api_response_result').html(response);
+        },
+        error: function (xhr, status, error) {
+          $('#api_response_result').html('<div class="text-danger">Erro na requisição: ' + error + '</div>');
+        }
+      });
     });
-  </script>
-  <script type="text/javascript">
-  $(document).ready(function () {
-    function updateFinalURL() {
-      const baseUrl = $('#endpoint_url').val();
-      const destination = $('#api_destination_endpoints').val();
-      const finalUrl = baseUrl.replace(/\/$/, '') + '/' + destination;
-      $('#final_url').val(finalUrl);
-    }
-
-    $('#api_destination_endpoints').on('change', updateFinalURL);
-
-    $('#api_test_form').on('submit', function () {
-      updateFinalURL();
-    });
-
-    updateFinalURL();
   });
 </script>
-
