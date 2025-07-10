@@ -197,7 +197,7 @@ class api_endpoints_form
                 'tOOL TIP',
                 'Please Enter Endpoint URL'
             ),            
-            $partner,
+            $partner,            
             array(
                 gettext('Status'),
                 'status',
@@ -274,25 +274,7 @@ class api_endpoints_form
                 '',
                 'tOOL TIP',
                 ''
-            )
-           /* array(
-				gettext('Endpoints'),
-				'apply_on_endpoints',
-				'SELECT',
-				'',
-				'',
-				'tOOL TIP',
-				'Please Select Trunks',
-				'id',
-				'nome',
-				'endpoints',
-				'build_dropdown',
-				'where_arr',
-				array(
-					"status" => "0"
-				),
-				'multi'
-			),*/
+            )           
         );
         $form['button_cancel'] = array(
             'name' => 'action',
@@ -469,6 +451,354 @@ class api_endpoints_form
         );
         return $form;
     }
+    
+    function get_api_test_form_fields($id = false, $partner_id = false)
+    {
+        if (! $partner_id) {
+
+            $partner = array(
+                gettext('Partner'),
+                array(
+                    'name' => 'partner_id',
+                    'class' => 'partner_id'
+                ),
+                'SELECT',
+                '',
+                array(
+                    "name" => "partner_id",
+                    "rules" => "required"
+                ),
+                'tOOL TIP',
+                'Please Enter account number',
+                'id',
+                'partner_name',
+                'api_partners',
+                'build_dropdown_country_camel',
+                '',
+                ''
+            );
+        } 
+        else {
+            $partner = array(
+                gettext('Partner'),
+                array(
+                    'name' => 'partner_id',
+                    'class' => 'partner_id',
+                    'vlaue' => $partner_id
+                ),
+                'SELECT',
+                '',
+                array(
+                    "name" => "partner_id",
+                    "rules" => "required",
+                    'selected' => 'selected'
+                ),
+                'tOOL TIP',
+                'Please Enter account number',
+                'id',
+                'partner_name',
+                'api_partners',
+                'build_dropdown_country_camel',
+                '',
+                ''
+            );
+        }
+        $val = $id > 0 ? 'api_endpoints.endpoint_name.' . $id : 'api_endpoints.endpoint_name';
+        $form['forms'] = array(
+            base_url() . 'api_endpoints/api_endpoints_test_send/',
+            array(
+                'id' => 'apiendpoints_test_form',
+                'method' => 'POST',
+                'name' => 'apiendpoints_test_form'
+            )
+        );
+        $form[gettext('Endpoint Information')] = array(
+            array(
+                '',
+                'HIDDEN',
+                array(
+                    'name' => 'id'
+                ),
+                '',
+                '',
+                '',
+                ''
+            ),
+            array(
+                gettext('Endpoint URL'),
+                'INPUT',
+                array(
+                    'name' => 'endpoint_url',
+                    'size' => '50',
+                    'class' => "text field medium"
+                ),
+                'trim',
+                'tOOL TIP',
+                'Please Enter Endpoint URL'
+            ),            
+            $partner,
+            array(
+                gettext('Request Body'),
+                'TEXTAREA',
+                '',
+                'trim',
+                'tOOL TIP',
+                'Please Enter Endpoint Body'
+            )
+        );
+        $form[gettext('Authentication Information')] = array(
+            array(
+                gettext('Authentication Type'),
+                'endpoint_auth',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                '',
+                '',
+                '',
+                '',
+                'set_authtype_drp_option'
+            ),            
+            array(
+                gettext('Authentication User'),
+                'INPUT',
+                array(
+                    'name' => 'endpoint_user',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                '',
+                'tOOL TIP',
+                ''
+            ),
+            array(
+                gettext('Authentication Password'),
+                'INPUT',
+                array(
+                    'name' => 'endpoint_password',
+                    'size' => '50',
+                    'class' => "text field medium"
+                ),
+                '',
+                'tOOL TIP',
+                ''
+            ),
+            array(
+                gettext('Endpoint Token'),
+                'INPUT',
+                array(
+                    'name' => 'endpoint_token',
+                    'size' => '50',
+                    'class' => "text field medium"
+                ),
+                '',
+                'tOOL TIP',
+                ''
+            )          
+        );
+        $form['button_cancel'] = array(
+            'name' => 'action',
+            'content' => gettext('Close'),
+            'value' => 'cancel',
+            'type' => 'button',
+            'class' => 'btn btn-secondary ml-2',
+            'onclick' => 'return redirect_page(\'/api_endpoints/api_endpoints_list/\')'
+        );
+        $form['button_save'] = array(
+                'name'    => 'action',
+                'content' => gettext('Save'),
+                'value'   => 'save',
+                'type'    => 'submit',
+                'class'   => 'btn btn-success',
+        );
+        return $form;
+    }
+    
+    function build_api_test_form($id = false, $partner_id = false)
+    {
+    $partner = array(
+        gettext('Partner'),
+        array(
+            'name' => 'partner_id',
+            'class' => 'partner_id'
+        ),
+        'SELECT',
+        '',
+        array(
+            'name' => 'partner_id',
+            'rules' => 'required'
+        ),
+        'tOOL TIP',
+        'Please select a partner',
+        'id',
+        'partner_name',
+        'api_partners',
+        'build_dropdown_country_camel',
+        '',
+        ''
+    );
+
+    $form['forms'] = array(
+        base_url() . 'api_endpoints/api_test_form',
+        array(
+            'id' => 'api_test_form',
+            'method' => 'POST',
+            'name' => 'api_test_form'
+        )
+    );
+
+    $form[gettext('Endpoint Information')] = array(
+        array('', 'HIDDEN', array('name' => 'id'), '', '', '', ''),
+        array(
+            gettext('Endpoint URL'),
+            'INPUT',
+            array(
+                'name' => 'endpoint_url',
+                'size' => '50',
+                'class' => "text field full"
+            ),
+            'trim|required',
+            'tOOL TIP',
+            'Enter the API endpoint URL'
+        ),
+        array(
+            gettext('Request Method'),
+            'method',
+            'SELECT',
+            '',
+            '',
+            'tOOL TIP',
+            '',
+            '',
+            '',
+            '',
+            'set_request_method_options'
+        ),
+        array(
+            '',
+            'TEXTAREA',
+            array(
+                'name' => 'body',
+                'rows' => 6,
+                'cols' => 40,
+                'class' => 'text field full'
+            ),
+            'trim',
+            'tOOL TIP',
+            'Request body for POST/PUT'
+        ),
+        $partner
+    );
+
+    $form[gettext('Authentication')] = array(
+        array(
+            gettext('Authentication Type'),
+            'endpoint_auth',
+            'SELECT',
+            '',
+            '',
+            'tOOL TIP',
+            '',
+            '',
+            '',
+            '',
+            'set_authtype_drp_option' // Você já usa esse helper
+        ),  
+        array(
+            gettext('Authentication User'),
+            'INPUT',
+            array(
+                'name' => 'endpoint_user',
+                'size' => '40',
+                'class' => "text field medium"
+            ),
+            '',
+            'tOOL TIP',
+            'User for Basic Auth'
+        ),
+        array(
+            gettext('Authentication Password / Token'),
+            'INPUT',
+            array(
+                'name' => 'endpoint_password',
+                'size' => '50',
+                'class' => "text field medium"
+            ),
+            '',
+            'tOOL TIP',
+            'Password or bearer token'
+        )
+    );
+
+    $form['button_cancel'] = array(
+        'name' => 'action',
+        'content' => gettext('Cancel'),
+        'value' => 'cancel',
+        'type' => 'button',
+        'class' => 'btn btn-secondary ml-2',
+        'onclick' => 'return redirect_page(\'/api_endpoints/api_endpoints_list/\')'
+    );
+
+    $form['button_save'] = array(
+        'name' => 'action',
+        'content' => gettext('Test'),
+        'value' => 'test',
+        'type' => 'submit',
+        'class' => 'btn btn-success'
+    );
+
+    return $form;
+}
+    
+    function build_api_test_form2()
+    {
+    $form = '<form id="apiendpoints_test_form" method="POST" action="'.site_url('api_endpoints/test_request').'">';
+    $form .= '<ul class="form">';
+
+    // URL
+    $form .= '<li class="form-group"><label>URL:</label>';
+    $form .= '<input class="form-control" type="text" name="url" required></li>';
+
+    // Método
+    $form .= '<li class="form-group"><label>Método:</label>';
+    $form .= '<select class="form-control" name="method">';
+    $form .= '<option value="GET" selected>GET</option>';
+    $form .= '<option value="POST">POST</option>';
+    $form .= '<option value="PUT">PUT</option>';
+    $form .= '<option value="DELETE">DELETE</option>';
+    $form .= '</select></li>';
+
+    // Tipo de autenticação
+    $form .= '<li class="form-group"><label>Tipo de Autenticação:</label>';
+    $form .= '<select class="form-control" name="auth_type">';
+    $form .= '<option value="">Nenhum</option>';
+    $form .= '<option value="basic">Basic</option>';
+    $form .= '<option value="bearer">Bearer Token</option>';
+    $form .= '</select></li>';
+
+    // Usuário
+    $form .= '<li class="form-group"><label>Usuário:</label>';
+    $form .= '<input class="form-control" type="text" name="username"></li>';
+
+    // Senha ou Token
+    $form .= '<li class="form-group"><label>Senha / Token:</label>';
+    $form .= '<input class="form-control" type="text" name="password"></li>';
+
+    // Payload (body)
+    $form .= '<li class="form-group"><label>Payload (body):</label>';
+    $form .= '<textarea class="form-control" name="body" rows="6" placeholder=\'{"key":"value"}\'></textarea></li>';
+
+    // Submit
+    $form .= '<li class="form-group">';
+    $form .= '<input type="submit" class="btn btn-primary" value="Enviar Requisição">';
+    $form .= '</li>';
+
+    $form .= '</ul>';
+    $form .= '</form>';
+
+    return $form;
+}
 
     function get_partners_endpoints_search_form()
     {
@@ -830,6 +1160,29 @@ class api_endpoints_form
     {
         $accountinfo = $this->CI->session->userdata('accountinfo');
         if ($accountinfo['type'] == - 1 || $accountinfo['type'] == 2) {
+             $status = $this->CI->db_model->countQuery("*", "addons", array(
+                "package_name" => "api"
+            ));
+            if(isset($status) && $status == 1 ){
+                $action_array = array (
+                    gettext ( "Test API" ),
+                    "50",
+                    "",
+                    "",
+                    "",
+                    array (
+                        "EDIT" => array (
+                        "url" => "/api_endpoints/api_test_form/",
+                        "mode" => "single",
+                        "layout" => ""
+                    )
+                ),
+                "false"
+                );
+            }
+            else{
+                $action_array = array();
+            }
             $grid_field_arr = array(
                 array(
                     "<input type='checkbox' name='chkAll' class='ace checkall'/><label class='lbl'></label>",
@@ -854,8 +1207,8 @@ class api_endpoints_form
                     "left"
                 ),
                 array(
-                    gettext("Partner"),
-                    "150",
+                    gettext("Endpoint Partner"),
+                    "100",
                     "partner_id",
                     "partner_name",
                     "api_partners",
@@ -866,14 +1219,14 @@ class api_endpoints_form
                 ),
                 array(
                     gettext("Endpoint URL"),
-                    "150",
+                    "230",
                     "endpoint_url",
                     "",
                     "",
                     "",
                     "",
                     "true",
-                    "center"
+                    "left"
                 ),
                 array(
                     gettext("Modified Date"),
@@ -897,6 +1250,7 @@ class api_endpoints_form
                     "true",
                     "center"
                 ),
+                $action_array,
                 array(
                     gettext("Action"),
                     "150",
@@ -1913,39 +2267,19 @@ class api_endpoints_form
                     "",
                     "",
                     "delete"
-                ),
-                array(
-                    gettext("Import"),
-                    "btn btn-line-blue",
-                    "fa fa-download fa-lg",
-                    "button_action",
-                    "/api_endpoints/api_endpoints_import/",
-                    '',
-                    "small",
-                    "import"
-                ),
-                array(
-                    gettext("Export"),
-                    "btn btn-xing",
-                    "fa fa-upload fa-lg",
-                    "button_action",
-                    "/api_endpoints/api_endpoints_export_data_xls",
-                    'single',
-                    "",
-                    "export"
                 )
             ));
         } else {
             $buttons_json = json_encode(array(
                 array(
-                    gettext("Export"),
-                    "btn btn-xing",
-                    "fa fa-upload fa-lg",
+                    gettext("Create"),
+                    "btn btn-line-warning btn",
+                    "fa fa-plus-circle fa-lg",
                     "button_action",
-                    "/api_endpoints/api_endpoints_export_data_xls",
-                    'single',
+                    "/api_endpoints/api_endpoints_add/",
                     "",
-                    "export"
+                    "",
+                    "create"
                 )
             ));
         }

@@ -31,6 +31,9 @@ class api_endpoints extends CI_Controller
         $this->load->library('session');
         $this->load->library("api_endpoints_form");
         $this->load->library('flux/form');
+        $this->load->helper(array('form', 'url'));
+        $this->load->library('flux/permission');
+        $this->load->library('flux_log');
         $this->load->model('api_endpoints_model');
         $this->load->library('csvreader');
         $this->load->library('FLUX_Sms');
@@ -41,7 +44,7 @@ class api_endpoints extends CI_Controller
             redirect(base_url() . '/flux/login');
     }
 
-    function api_endpoints_list()
+    function api_endpoints_list_old()
     {
         $accountinfo = $this->session->userdata("accountinfo");
         $account_arr = (array) $this->db->get_where("accounts", array(
@@ -64,17 +67,52 @@ class api_endpoints extends CI_Controller
         $data['form_search'] = $this->form->build_serach_form($this->api_endpoints_form->get_api_endpoints_search_form());
         $this->load->view('view_api_endpoints_list', $data);
     }
-
+    
+    function api_endpoints_list()
+    {
+        $data['page_title'] = gettext('API Endpoints');
+        $data['search_flag'] = true;
+        $this->session->set_userdata('advance_search', 0);
+        $data['grid_fields'] = $this->api_endpoints_form->build_api_endpoints_list_for_admin();
+        $data["grid_buttons"] = $this->api_endpoints_form->build_grid_buttons();
+        $data['form_search'] = $this->form->build_serach_form($this->api_endpoints_form->get_api_endpoints_search_form());
+        $this->load->view('view_api_endpoints_list', $data);
+    }
+    
     function api_endpoints_list_json()
     {
         $json_data = array();
-        $count_all = $this->api_endpoints_model->getapi_endpoints_list(false);
+        $count_all = $this->api_endpoints_model->api_endpoints_list(false);
         $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
         $json_data = $paging_data["json_paging"];
-        $query = $this->api_endpoints_model->getapi_endpoints_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
-        $grid_fields = json_decode($this->api_endpoints_form->build_api_endpoints_list_for_admin());
-        $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
-        echo json_encode($json_data);
+        $query = $this->api_endpoints_model->api_endpoints_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);        
+        $permissioninfo = $this->session->userdata('permissioninfo');                
+        foreach ($query as $key => $value) {
+        
+            $checkbox = array(
+                '<input type="checkbox" name="chkAll" id=' . $value['id'] . ' class="ace chkRefNos" onclick="clickchkbox(' . $value['id'] . ')" value=' . $value['id'] . '><lable class="lbl"></lable>'
+            );
+            $account_data = $this->session->userdata("accountinfo");
+            $base_url = base_url().'api_endpoints/api_endpoints_edit/'.$value['id'];
+            $edit_permission="<a href='/api_endpoints/api_endpoints_edit/" . $value['id'] . "' style='cursor:pointer;color:#3b3280' title='".gettext('Edit Endpoint')." - ".$value['endpoint_name']."'>" . $value['endpoint_name'] . "</a>";
+            
+            $current_row = array(
+                $checkbox,
+                $edit_permission,
+                $this->common->get_field_name('partner_name', '`api_partners', array(
+                    'id' => $value['partner_id']
+                )),
+                $value['endpoint_url'],               
+                $this->common->convert_GMT_to('', '', $value['last_modified_date']),
+                $this->common->get_status('status', 'api_endpoints', $value),
+		        $this->get_buttons_api_endpoints ( $value ['id'] ) 
+            );
+            $json_data['rows'][] = array(
+                'cell' => $current_row
+            );
+        }
+        echo json_encode($json_data);        
+        
     }
 
     function partners_endpoints_list()
@@ -112,8 +150,7 @@ class api_endpoints extends CI_Controller
         $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
         echo json_encode($json_data);
     }
-    
-    
+        
     function partners_list()
     {
         $accountinfo = $this->session->userdata("accountinfo");
@@ -150,7 +187,6 @@ class api_endpoints extends CI_Controller
         echo json_encode($json_data);
     }
 
-
     function partners_list_search()
     {
         $ajax_search = $this->input->post('ajax_search', 0);
@@ -172,7 +208,6 @@ class api_endpoints extends CI_Controller
         $this->session->set_userdata('advance_search', 0);
         $this->session->set_userdata('account_search', "");
     }
-
     
     function partners_endpoints_list_search()
     {
@@ -299,7 +334,6 @@ class api_endpoints extends CI_Controller
             exit();
         }
     }
-
 
 	function partners_endpoints_save()
 	{
@@ -475,6 +509,128 @@ class api_endpoints extends CI_Controller
                 $this->db->insert("endpoints", $insert_array);
             }
         }
+    }
+        
+    function api_test_form($edit_id = '')
+    {
+        $data['page_title'] = 'Test API Endpoint';
+        $accountinfo = $this->session->userdata ( "accountinfo" );        
+		$add_array = $this->db_model->getSelect ( "*", " api_endpoints", array ('id' => $edit_id));
+		
+		
+		
+		if ($add_array->num_rows > 0) {
+			$endpoint_info = ( array ) $add_array->first_row ();
+			$data['endpoint_info']=$endpoint_info;
+			$data['edit_id']=$edit_id;
+			$data['partner_id']=$endpoint_info['partner_id'];
+			$data['endpoint_auth']=$endpoint_info['endpoint_auth'];
+
+			$partner = $this->common->get_field_name("partner_name","api_partners",array("id"=>$endpoint_info['partner_id']));
+			$where_arr = array("partner_id"=>$endpoint_info['partner_id'],"status"=>0);
+			$data['destination_endpoints'] = $this->db_model->build_dropdown_reseller("id,nome", "endpoints", "where_arr",  $where_arr);
+			$data['partner_name']=$partner;
+			$data['accountinfo']=$accountinfo;
+            $data['session_data'] = json_encode($data);	
+			$this->load->view ( 'view_api_request', $data);
+		} 		
+    }
+    	
+	function api_test_send()
+    {
+    $url_endpoint = rtrim($this->input->post('endpoint_url'), '/');
+    $destination_endpoint = $this->input->post('destination_endpoints');
+
+    if (is_array($destination_endpoint)) {
+        $destination_endpoint = reset($destination_endpoint);
+    }
+
+    $destination_url = ltrim($this->common->get_field_name("base_url", "endpoints", array("id" => $destination_endpoint)), '/');
+    $url = $url_endpoint . '/' . $destination_url;
+
+    $method = strtoupper($this->input->post('method') ?? 'GET');
+    $auth_type = $this->input->post('endpoint_auth');
+    $user = $this->input->post('endpoint_user');
+    $pass = $this->input->post('endpoint_password');
+    $token = $this->input->post('endpoint_token');
+    $headers_input = $this->input->post('headers');
+    $body = $this->input->post('body');
+
+    $headers = [];
+    if (!empty($headers_input['key']) && !empty($headers_input['value'])) {
+        foreach ($headers_input['key'] as $i => $key) {
+            $value = $headers_input['value'][$i] ?? '';
+            if (!empty($key)) {
+                $headers[] = "$key: $value";
+            }
+        }
+    }
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+    if (in_array($method, ['POST', 'PUT', 'PATCH']) && !empty($body)) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+    }
+
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $total_time = curl_getinfo($ch, CURLINFO_TOTAL_TIME);
+    $curl_error = curl_error($ch);
+    curl_close($ch);
+
+    $request_data = array(
+        'url' => $url,
+        'method' => $method,
+        'headers' => json_encode($headers_input),
+        'body' => $body,
+        'created_at' => date('Y-m-d H:i:s')
+    );
+    $this->db->insert('api_test_requests', $request_data);
+    $request_id = $this->db->insert_id();
+
+    $response_data = array(
+        'request_id' => $request_id,
+        'http_code' => $http_code,
+        'response_body' => $response,
+        'error' => $curl_error,
+        'created_at' => date('Y-m-d H:i:s')
+    );
+    $this->db->insert('api_test_responses', $response_data);
+
+    $data = [
+        'http_code'       => $http_code,
+        'total_time'      => $total_time,
+        'curl_error'      => $curl_error,
+        'response_body'   => $response,
+        'request_summary' => json_encode([
+            'url'                 => $url,
+            'method'              => $method,
+            'endpoint_auth'       => $auth_type,
+            'endpoint_user'       => $user,
+            'destination_id'      => $destination_endpoint,
+            'destination_url'     => $destination_url,
+            'headers'             => $headers,
+            'body'                => json_decode($body, true) ?? $body
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+    ];
+
+    $this->load->view('view_api_request_result', $data);
+}
+ 
+    function get_buttons_api_endpoints($id)
+    {    
+        if ($this->session->userdata('logintype') == '0'){  
+            $ret_url = '<a href="' . base_url () . 'api_endpoints/api_test_form/'.$id.'" class="btn btn-royelblue btn-sm"  rel="" title="Test API">&nbsp;<i class="fa fa-rotate-right fa-fw"></i></a>&nbsp;';   
+        }
+        else{  
+            $ret_url = '<a href="' . base_url () . 'api_endpoints/api_test_form/'.$id.'" class="btn btn-royelblue btn-sm"  rel="facebox_medium" title="Test API"><i class="fa fa-rotate-right fa-fw"></i></a>';  
+        }       
+        return $ret_url;    
     }
     
 }
