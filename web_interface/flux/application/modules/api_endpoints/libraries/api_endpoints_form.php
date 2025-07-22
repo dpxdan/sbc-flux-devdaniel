@@ -1,6 +1,6 @@
 <?php
 // ##############################################################################
-// Flux Telecom - Unindo pessoas e neg√≥cios
+// Flux Telecom - Unindo pessoas e negócios
 //
 // Copyright (C) 2021 Flux Telecom
 // Daniel Paixao <daniel@flux.net.br>
@@ -703,7 +703,7 @@ class api_endpoints_form
             '',
             '',
             '',
-            'set_authtype_drp_option' // Voc√™ j√° usa esse helper
+            'set_authtype_drp_option' // Você já usa esse helper
         ),  
         array(
             gettext('Authentication User'),
@@ -760,8 +760,8 @@ class api_endpoints_form
     $form .= '<li class="form-group"><label>URL:</label>';
     $form .= '<input class="form-control" type="text" name="url" required></li>';
 
-    // M√©todo
-    $form .= '<li class="form-group"><label>M√©todo:</label>';
+    // Método
+    $form .= '<li class="form-group"><label>Método:</label>';
     $form .= '<select class="form-control" name="method">';
     $form .= '<option value="GET" selected>GET</option>';
     $form .= '<option value="POST">POST</option>';
@@ -769,16 +769,16 @@ class api_endpoints_form
     $form .= '<option value="DELETE">DELETE</option>';
     $form .= '</select></li>';
 
-    // Tipo de autentica√ß√£o
-    $form .= '<li class="form-group"><label>Tipo de Autentica√ß√£o:</label>';
+    // Tipo de autenticação
+    $form .= '<li class="form-group"><label>Tipo de Autenticação:</label>';
     $form .= '<select class="form-control" name="auth_type">';
     $form .= '<option value="">Nenhum</option>';
     $form .= '<option value="basic">Basic</option>';
     $form .= '<option value="bearer">Bearer Token</option>';
     $form .= '</select></li>';
 
-    // Usu√°rio
-    $form .= '<li class="form-group"><label>Usu√°rio:</label>';
+    // Usuário
+    $form .= '<li class="form-group"><label>Usuário:</label>';
     $form .= '<input class="form-control" type="text" name="username"></li>';
 
     // Senha ou Token
@@ -791,7 +791,7 @@ class api_endpoints_form
 
     // Submit
     $form .= '<li class="form-group">';
-    $form .= '<input type="submit" class="btn btn-primary" value="Enviar Requisi√ß√£o">';
+    $form .= '<input type="submit" class="btn btn-primary" value="Enviar Requisição">';
     $form .= '</li>';
 
     $form .= '</ul>';
@@ -2391,5 +2391,469 @@ class api_endpoints_form
 		}
 		return $buttons_json;
 	}
+	
+	function build_api_activity_list_for_admin()
+    {
+        $grid_field_arr = json_encode(array(
+
+            array(
+                gettext("URL"),
+                "180",
+                "url",                
+                "",
+                "",
+                "",
+                "",
+                "true",
+                "center"
+                 ),
+            
+            array(
+                gettext("Method"),
+                "80",
+                "method",
+                "",
+                "",
+                "",
+                "",
+                "true",
+                "center"
+            ),
+            array(
+                gettext("Created At"),
+                    "130",
+                    "created_at",
+                    "created_at",
+                    "created_at",
+                    "convert_GMT_to_noChange",
+                    "",
+                    "true",
+                    "center"
+                ),
+            array(
+                gettext("Request Headers"),
+                     "285",
+                    "headers",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "right"
+                ),
+            array(
+                gettext("HTTP Code"),
+                    "130",
+                    "http_code",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+            array(
+                gettext("Action"),
+                "80",
+                "",
+                "",
+                "",
+                array(
+                    "VIEW" => array(
+                        "url" => "api_endpoints/api_activity_view/",
+                        "mode" => "popup",
+                        "layout" => "medium"
+                    )
+                ),
+                ""
+            )
+            
+        ));
+        return $grid_field_arr;
+    }
+    
+    function get_form_fields_api_activity_view()
+    {
+        $readable = 'disabled';
+        $form['forms'] = array(
+            base_url() . 'api_endpoints/api_activity_list/',
+            array(
+                'id' => 'api_activity_form',
+                'method' => 'POST',
+                'name' => 'api_activity_form'
+            )
+        );
+        $form[gettext('View API Log')] = array(
+            array(
+                '',
+                'HIDDEN',
+                array(
+                    'name' => 'id'
+                ),
+                '',
+                '',
+                '',
+                ''
+            ),
+            array(
+                '',
+                'HIDDEN',
+                array(
+                    'name' => 'status'
+                ),
+                '',
+                '',
+                '',
+                ''
+            ),
+    		array(
+    			gettext('URL'),
+    			'INPUT',
+    			array(
+    				'name' => 'url',
+    				'size' => '50',
+    				'class' => "text field medium",
+    				'readonly' => true
+    			),
+    			'trim',
+    			'tOOL TIP',
+    			'Please Enter Partner URL'
+    		),
+            array(
+                gettext('Request Body'),
+                'TEXTAREA',
+                array(
+                    'name' => 'body',
+                    'size' => '20',
+                    'cols' => 50,
+                    'rows' => 5,
+                    'readonly' => true,
+                    'class' => "form-control form-control-lg mit-20 col-md-12"
+                ),
+                'trim|required|xss_clean',
+                'tOOL TIP',
+                ''
+            ),
+            array(
+                gettext('Response Body'),
+                'TEXTAREA',
+                array(
+                    'name' => 'response_body',
+                    'size' => '20',
+                    'cols' => 50,
+                    'rows' => 5,
+                    'readonly' => true,
+                    'class' => "form-control form-control-lg mit-20 col-md-12"
+                ),
+                'trim|required|xss_clean',
+                'tOOL TIP',
+                ''
+            ),
+            array(
+                gettext('Headers'),
+                'TEXTAREA',
+                array(
+                    'name' => 'headers',
+                    'size' => '20',
+                    'cols' => 50,
+                    'rows' => 5,
+                    'readonly' => true,
+                    'class' => "form-control form-control-lg mit-20 col-md-12"
+                ),
+                'trim|required|xss_clean',
+                'tOOL TIP',
+                ''
+            ),
+            array(
+    			gettext('HTTP Code'),
+    			'INPUT',
+    			array(
+    				'name' => 'http_code',
+    				'size' => '20',
+    				'class' => "text field medium",
+    				'readonly' => true
+    			),
+    			'trim',
+    			'tOOL TIP',
+    			'Please Enter Partner URL'
+    		),          
+            array(
+                gettext('Status'),
+                'INPUT',
+                array(
+                    'name' => 'status',
+                    'size' => '20',
+                    'cols' => 50,
+                    'rows' => 1,
+                    'readonly' => true,
+                    'class' => "form-control form-control-lg mit-20 col-md-12"
+                ),
+                'trim|required|xss_clean',
+                'tOOL TIP',
+                ''
+            )
+        );
+        $form['button_save'] = array(
+            'name' => 'action',
+            'content' => gettext('Close'),
+            'value' => 'cancel',
+            'type' => 'button',
+            'class' => 'btn btn-secondary ml-2',
+            'onclick' => 'return redirect_page(\'NULL\')'
+        );
+        return $form;
+    }
+    
+    function get_form_fields_api_activity()
+    {
+        $form['forms'] = array(
+            base_url() . 'api_endpoints/api_activity_list/',
+            array(
+                'id' => 'api_activity_form',
+                'method' => 'POST',
+                'name' => 'api_activity_form'
+            )
+        );
+        $form[gettext('Resend Email')] = array(
+            array(
+                '',
+                'HIDDEN',
+                array(
+                    'name' => 'id'
+                ),
+                '',
+                '',
+                '',
+                ''
+            ),
+            array(
+                gettext('To'),
+                'INPUT',
+                array(
+                    'name' => 'to',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                'trim|required|xss_clean',
+                'tOOL TIP',
+                ''
+            ),
+            array(
+                gettext('From'),
+                'INPUT',
+                array(
+                    'name' => 'from',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                'trim|required|xss_clean',
+                'tOOL TIP',
+                ''
+            ),
+            array(
+                gettext('Subject'),
+                'INPUT',
+                array(
+                    'name' => 'subject',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                'trim|required|xss_clean',
+                'tOOL TIP',
+                ''
+            ),
+            array(
+                gettext('Body'),
+                'TEXTAREA',
+                array(
+                    'name' => 'body',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                'trim|required|xss_clean',
+                'tOOL TIP',
+                ''
+            ),
+
+            array(
+                gettext('Status'),
+                'status',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Enter account number',
+                '',
+                '',
+                '',
+                'email_search_status',
+                '',
+                ''
+            )
+        );
+        $form['button_cancel'] = array(
+            'name' => 'action',
+            'content' => gettext('Cancel'),
+            'value' => 'cancel',
+            'type' => 'button',
+            'class' => 'btn btn-secondary ml-2',
+            'onclick' => 'return redirect_page(\'NULL\')'
+        );
+        $form['button_save'] = array(
+            'name' => 'action',
+            'content' => gettext('Save'),
+            'value' => 'save',
+            'id' => 'submit',
+            'type' => 'submit',
+            'class' => 'btn btn-success'
+        );
+
+        return $form;
+    }
+    
+    function build_grid_buttons_admin()
+    {
+        $buttons_json = json_encode(array());
+        return $buttons_json;
+    }
+    
+    function get_search_api_endpoints_form()
+    {
+        $form['forms'] = array(
+            "",
+            array(
+                'id' => "api_activity_search"
+            )
+        );
+        $form[gettext('Search')] = array(
+            array(
+                gettext('From Date'),
+                'INPUT',
+                array(
+                    'name' => 'created_at[]',
+                    'id' => 'created_at_from_date',
+                    'size' => '20',
+                    'class' => "text field "
+                ),
+                '',
+                'tOOL TIP',
+                '',
+                'created_at[created_at-date]'
+            ),
+            array(
+                gettext('To Date'),
+                'INPUT',
+                array(
+                    'name' => 'created_at[]',
+                    'id' => 'created_at_to_date',
+                    'size' => '20',
+                    'class' => "text field "
+                ),
+                '',
+                'tOOL TIP',
+                '',
+                'created_at[created_at-date]'
+            ),
+           
+
+           
+           array(
+                gettext('Method'),
+                'INPUT',
+                array(
+                    'name' => 'method[method]',
+                    'value' => '',
+                    'size' => '20',
+                    'class' => "text field "
+                ),
+                '',
+                'Tool tips info',
+                '1',
+                'method[method-string]',
+                '',
+                '',
+                '',
+                'search_string_type',
+                ''
+            ),
+            array(
+                gettext('Body'),
+                'INPUT',
+                array(
+                    'name' => 'body[body]',
+                    'value' => '',
+                    'size' => '20',
+                    'class' => "text field "
+                ),
+                '',
+                'Tool tips info',
+                '1',
+                'body[body-string]',
+                '',
+                '',
+                '',
+                'search_string_type',
+                ''
+            ),
+            array(
+                gettext('URL'),
+                'INPUT',
+                array(
+                    'name' => 'url[url]',
+                    'value' => '',
+                    'size' => '20',
+                    'class' => "text field "
+                ),
+                '',
+                'Tool tips info',
+                '1',
+                'url[url-string]',
+                '',
+                '',
+                '',
+                'search_string_type',
+                ''
+            ),
+            
+            
+            array(
+                '',
+                'HIDDEN',
+                'ajax_search',
+                '1',
+                '',
+                '',
+                ''
+            ),
+            array(
+                '',
+                'HIDDEN',
+                'advance_search',
+                '1',
+                '',
+                '',
+                ''
+            )
+        );
+
+        $form['button_search'] = array(
+            'name' => 'action',
+            'id' => "api_activity_search_btn",
+            'content' => gettext('Search'),
+            'value' => 'save',
+            'type' => 'button',
+            'class' => 'btn btn-success float-right'
+        );
+        $form['button_reset'] = array(
+            'name' => 'action',
+            'id' => "id_reset",
+            'content' => gettext('Clear'),
+            'value' => 'cancel',
+            'type' => 'reset',
+            'class' => 'btn btn-secondary float-right ml-2'
+        );
+
+        return $form;
+    }
 }
 ?>

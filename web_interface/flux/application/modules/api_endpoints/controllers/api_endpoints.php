@@ -35,6 +35,7 @@ class api_endpoints extends CI_Controller
         $this->load->library('flux/permission');
         $this->load->library('flux_log');
         $this->load->model('api_endpoints_model');
+        $this->load->model('api_model');
         $this->load->library('csvreader');
         $this->load->library('FLUX_Sms');
 
@@ -535,7 +536,8 @@ class api_endpoints extends CI_Controller
 			$this->load->view ( 'view_api_request', $data);
 		} 		
     }
-    	
+    
+ 	
 	function api_test_send()
     {
     $url_endpoint = rtrim($this->input->post('endpoint_url'), '/');
@@ -582,25 +584,46 @@ class api_endpoints extends CI_Controller
     $total_time = curl_getinfo($ch, CURLINFO_TOTAL_TIME);
     $curl_error = curl_error($ch);
     curl_close($ch);
+    
+    if ($http_code == 200 || $http_code == 201) {
+    $request_status = '0';
+    } else {
+    $request_status = '1';
+    
+    }
 
     $request_data = array(
         'url' => $url,
         'method' => $method,
         'headers' => json_encode($headers_input),
         'body' => $body,
+        'status' => $request_status,
         'created_at' => date('Y-m-d H:i:s')
     );
     $this->db->insert('api_test_requests', $request_data);
     $request_id = $this->db->insert_id();
+
+    if ($http_code != 200 || $http_code != 201) {
+    $curl_error = $http_code;
+    }
 
     $response_data = array(
         'request_id' => $request_id,
         'http_code' => $http_code,
         'response_body' => $response,
         'error' => $curl_error,
+        'status' => $request_status,
         'created_at' => date('Y-m-d H:i:s')
     );
     $this->db->insert('api_test_responses', $response_data);
+    
+    $this->api_model->salvar_log_api(
+                $url,
+                json_decode($body, true),
+                $response,
+                'api_test_responses',
+                $http_code
+            );
 
     $data = [
         'http_code'       => $http_code,
@@ -631,6 +654,114 @@ class api_endpoints extends CI_Controller
             $ret_url = '<a href="' . base_url () . 'api_endpoints/api_test_form/'.$id.'" class="btn btn-royelblue btn-sm"  rel="facebox_medium" title="Test API"><i class="fa fa-rotate-right fa-fw"></i></a>';  
         }       
         return $ret_url;    
+    }
+    
+    function api_activity_list()
+    {
+        $data['username'] = $this->session->userdata('user_name');
+        $data['page_title'] = gettext('API Activity Report');
+        $data['search_flag'] = true;
+        $data['report_flag'] = true;
+        $this->session->set_userdata('advance_search', 0);
+        $data['grid_fields'] = $this->api_endpoints_form->build_api_activity_list_for_admin();
+        $data["grid_buttons"] = $this->api_endpoints_form->build_grid_buttons_admin();
+        $data['form_search'] = $this->form->build_serach_form($this->api_endpoints_form->get_search_api_endpoints_form());
+        $this->load->view('view_api_activity_list', $data);
+    }
+
+    function api_activity_list_json()
+    {
+        $json_data = array();
+        $count_all = $this->api_endpoints_model->get_api_activity_list(false);
+        $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
+        $json_data = $paging_data["json_paging"];
+        $query = $this->api_endpoints_model->get_api_activity_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
+        $grid_fields = json_decode($this->api_endpoints_form->build_api_activity_list_for_admin());
+        $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
+        echo json_encode($json_data);
+    }
+
+    function api_activity_list_search()
+    {
+        $ajax_search = $this->input->post('ajax_search', 0);
+
+        if ($this->input->post('advance_search', TRUE) == 1) {
+            $this->session->set_userdata('advance_search', $this->input->post('advance_search'));
+            $action = $this->input->post();
+            if (isset($action['created_at'][0]) && $action['created_at'][0] != "") {
+                $action['created_at'][0]=$this->common->convert_GMT_new ( $action['created_at'][0]);
+//                $action['created_at'][0] = $this->common->convert_GMT_to_noChange($action['created_at'][0]);
+            }
+            if (isset($action['created_at'][1]) && $action['created_at'][1] != '') {
+            $action['created_at'][1]=$this->common->convert_GMT_new ( $action['created_at'][1]);
+//                $action['created_at'][1] = $this->common->convert_GMT_to_noChange($action['created_at'][1]);
+            }
+            unset($action['action']);
+            unset($action['advance_search']);
+            $this->session->set_userdata('api_activity_search', $action);
+        }
+        if (@$ajax_search != 1) {
+            redirect(base_url() . 'api_endpoints/api_activity_list/');
+        }
+    }
+
+    function api_activity_list_clearsearchfilter()
+    {
+        $this->session->set_userdata('advance_search', 0);
+        $this->session->unset_userdata('audit_list_search');
+    }
+    
+    function api_activity_view($edit_id = '')
+    {
+        $this->permission->check_web_record_permission($edit_id, 'api_endpoints', "api_endpoints/api_activity_list/");
+        $data['page_title'] = gettext('View API Log');
+        $where = array(
+            'id' => $edit_id
+        );
+        $account = $this->db_model->getSelect("*", "view_api_logs", $where);
+        if ($account->num_rows() > 0) {
+            foreach ($account->result_array() as $key => $value) {
+                $edit_data = $value;
+            }
+            if ($edit_data['status'] == 1) {
+                $edit_data['status'] = gettext('Request Error');
+            } else {
+                $edit_data['status'] = gettext('Request OK');
+            }
+            $data['form'] = $this->form->build_form($this->api_endpoints_form->get_form_fields_api_activity_view(), $edit_data);
+
+            $this->load->view('view_api_activity_add_edit', $data);
+        } else {
+            redirect(base_url() . 'api_endpoints/api_activity_list/');
+        }
+    }
+    
+    function api_activity_edit($edit_id = '')
+    {
+        $data['page_title'] = gettext('Edit API Activity');
+        if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logintype') == 5) {
+            $account_data = $this->session->userdata("accountinfo");
+            $reseller = $account_data['id'];
+            $where = array(
+                'id' => $edit_id,
+                "reseller_id" => $reseller
+            );
+        } else {
+            $where = array(
+                'id' => $edit_id
+            );
+        }
+        $account = $this->db_model->getSelect("*", "view_api_logs", $where);
+        if ($account->num_rows() > 0) {
+            foreach ($account->result_array() as $key => $value) {
+                $edit_data = $value;
+            }
+            $data['form'] = $this->form->build_form($this->email_form->get_form_fields_api_activity(), $edit_data);
+            $this->load->view('view_api_activity_add_edit', $data);
+        } else {
+            redirect(base_url() . 'api_endpoints/api_activity_list/');
+        }
+        redirect(base_url() . 'api_endpoints/api_activity_list/');
     }
     
 }

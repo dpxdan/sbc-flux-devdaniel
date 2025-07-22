@@ -1,19 +1,3 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title><?= gettext('Summary Result') ?></title>
-  <link rel="stylesheet" href="<?= base_url('assets/css/bootstrap.min.css') ?>">
-  <style>
-    pre {
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-radius: 6px;
-      overflow-x: auto;
-    }
-  </style>
-</head>
-<body class="container py-4">
 <div class="container">
     <h2><?= gettext('API Request Result') ?></h2>
     <div class="card mb-4">
@@ -24,7 +8,7 @@
                 <p><strong><?= gettext('Response Time') ?>:</strong> <?= round($total_time, 3) ?> <?= gettext('seconds') ?></p>
             <?php endif; ?>
             <?php if (!empty($curl_error)) : ?>
-                <p style="color: red;"><strong>Erro cURL:</strong> <?= $curl_error ?></p>
+                <p style="color: red;"><strong>cURL Code:</strong> <?= $curl_error ?></p>
             <?php endif; ?>
         </div>
     </div>
@@ -63,5 +47,3 @@
 
     <!--<a href="<?php echo base_url(); ?>api_endpoints/api_endpoints_list/" class="btn btn-secondary"><?= gettext('Back') ?></a>-->
 </div>
-</body>
-</html>

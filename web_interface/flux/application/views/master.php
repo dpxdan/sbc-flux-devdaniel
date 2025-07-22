@@ -75,27 +75,31 @@ if (strpos($url, 'customer_cdrs') != true) {
                         if($module_name == 'login_activity' && $permissioninfo['login_type'] == '-1'){ ?>
                           <div id="show_search" <?php if($color_flag == 1){ ?> style="background:green;border-color:green;color:aliceblue" <?php }  ?> class="float-end btn btn-warning py-1"><i class="fa fa-search"></i> <?php  ?></div>
                         <?php 
-                        }
-                        // FLUXUPDATE-941 END
+                        }                        
                         if((isset($permissioninfo[$module_name][$sub_module_name]['search']) && $permissioninfo[$module_name][$sub_module_name]['search'] == 0) or $permissioninfo['login_type'] == '-1' or $permissioninfo['login_type'] == '0' or $permissioninfo['login_type'] == '3' ){
                                 ?>
 
 	                <div id="show_search" class="float-right btn btn-warning py-1"><i class="fa fa-search"></i> <?php  ?></div>
                 <?php }} ?>
-                <!-- FLUXUPDATE-941 Start -->
                 <?php if (isset($report_flag) && $report_flag ) {
                  ?>
                   <div class='d-flex justify-content-end mainmenu report_dd text-end'>
                     <?php $action=$this->uri->segment(2);
                       $activityReport='';
                       $login_activity_list='';
+                      $api_activity_list='';
                       if(isset($action) && $action =='login_activity_list'){
                         $login_activity_list="selected='selected'";
-                      }else{
+                      }
+                      elseif(isset($action) && $action =='api_activity_list'){
+                        $api_activity_list="selected='selected'";
+                      }
+                      else{
                         $activityReport="selected='selected'";
                       }
                     ?>
-                  <select class="selectpicker form-control col-md-4 mr-4" id="report_change" >
+                  <select class="selectpicker form-control col-md-6 mr-6" id="report_change" >
+                    <option value="<?php echo base_url();?>api_endpoints/api_activity_list/" <?php echo $api_activity_list; ?> ><?php echo gettext('API Activity Logs'); ?></option>
                     <option value="<?php echo base_url();?>activity_report/activityReport/" <?php echo $activityReport; ?> ><?php echo gettext('Call Activity Report'); ?></option>
                     <option value="<?php echo base_url();?>login_activity/login_activity_list/" <?php echo $login_activity_list; ?> ><?php echo gettext('Login Activity Report'); ?></option>
                   </select>
