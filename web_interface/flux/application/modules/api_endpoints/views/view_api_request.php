@@ -76,7 +76,7 @@
             <label for="endpoint_auth"><?php echo gettext('Authentication Type'); ?></label>
             <select name="endpoint_auth" id="endpoint_auth" class="form-control">
               <option value=""><?php echo gettext('None'); ?></option>
-              <option value="basic"><?php echo gettext('Basic'); ?></option>
+              <option value="basic" selected><?php echo gettext('Basic'); ?></option>
               <option value="bearer"><?php echo gettext('Bearer Token'); ?></option>
             </select>
           </div>

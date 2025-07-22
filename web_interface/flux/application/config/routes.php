@@ -70,7 +70,7 @@ $route['voip/sincronizar-cidade'] = 'VoipSync/sincronizar_cidade';
 
 
 $route['voip/get_cdrs'] = 'VoipSync/sincronizar_cdrs';
-
+$route['getendpoint/(:any)'] = "getendpoint/index/$1";
 
 $route['feedback'] = "feedback/index";
 
