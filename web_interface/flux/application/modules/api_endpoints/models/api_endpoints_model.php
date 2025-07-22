@@ -254,4 +254,25 @@ class api_endpoints_model extends CI_Model
         $affected_row = $this->db->affected_rows();
         return $affected_row;
     }
+    
+    function get_api_activity_list($flag, $start = 0, $limit = 0)
+    {
+        $this->db_model->build_search('api_activity_search');
+        $where = array();
+        if ($this->session->userdata('advance_search') != 1) {
+                $where = array(
+                    'created_at >= ' =>$this->common->convert_GMT_new ( date('Y-m-d') . " 00:00:01"),
+                    'created_at <=' => $this->common->convert_GMT_new (date("Y-m-d") . " 23:59:59")
+                );
+            }
+        
+        if ($flag) {
+            $query = $this->db_model->select("*", "view_api_logs", $where, "created_at", "DESC", $limit, $start);
+              // print_r($this->db->last_query());exit;
+        } else {
+            $query = $this->db_model->countQuery("*", "view_api_logs", $where);
+             // print_r($this->db->last_query());exit;
+        }
+        return $query;
+    }
 }
