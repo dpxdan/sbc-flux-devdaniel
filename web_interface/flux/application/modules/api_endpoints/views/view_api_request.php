@@ -3,7 +3,7 @@
 <script type="text/javascript">
   $(document).ready(function(){
     $(".breadcrumb li a").removeAttr("data-ripple");
-  });
+  });  	
 </script>
 
 <section class="slice m-0">
@@ -35,7 +35,7 @@
 
           <div class='form-group'>
             <label for="destination_endpoints"><?php echo gettext('Destination Endpoint'); ?></label>
-            <select name="destination_endpoints" id="api_destination_endpoints" class="form-control">
+            <select name="destination_endpoints" id="api_destination_endpoints" class="form-control" onchange="changeBodyDefault(this.value)">
               <?php foreach($destination_endpoints as $key1 => $destination_endpoint) { ?>
                 <option value= "<?php echo $key1; ?>"> <?php echo  $destination_endpoint ?> </option>
               <?php } ?>
@@ -52,6 +52,23 @@
             </select>
           </div>
 
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="rp_limit"><?php echo gettext('Limit Records'); ?></label>
+              <select id="rp_limit" name="rp_limit" class="form-control" onchange="updateBodyRP()">
+                  <option value="10" selected>10 <?php echo gettext('records'); ?></option>
+                  <option value="20">20 <?php echo gettext('records'); ?></option>
+                  <option value="50">50 <?php echo gettext('records'); ?></option>
+                  <option value="100">100 <?php echo gettext('records'); ?></option>
+                  <option value="200">200 <?php echo gettext('records'); ?></option>
+                  <option value="500">500 <?php echo gettext('records'); ?></option>
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="page_field"><?php echo gettext('Page'); ?></label>
+              <input type="number" id="page_field" name="page_field" class="form-control" value="1" min="1" step="1" onchange="updateBodyPage()">
+            </div>
+          </div>
           <hr>
           <h5><?php echo gettext('Authentication'); ?></h5>
 
@@ -88,7 +105,7 @@
           <hr>
           <div class="form-group">
             <label for="body"><?php echo gettext('Body (JSON)'); ?></label>
-            <textarea class="form-control" name="body" id="body" rows="6" placeholder='{"key": "value"}'></textarea>
+            <textarea class="form-control" name="body" id="body" rows="10" placeholder='{"key": "value"}' readonly></textarea>
           </div>
 
           <button type="submit" class="btn btn-secondary"><?php echo gettext('Send'); ?></button>
@@ -103,14 +120,45 @@
 
 <script>
   $(document).ready(function () {
+/*    var info = <?php echo json_encode($endpoint_info, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    var endpointdata = {
+        'EndpointInfo': info
+    };
+    console.log('Endpoint INFO:', endpointdata);*/
     function updateFinalURL() {
       const baseUrl = $('#endpoint_url').val().replace(/\/$/, '');
       const destination = $('#api_destination_endpoints').val();
       $('#final_url').val(baseUrl + '/' + destination);
     }
+    function addIXCHeader() {
+      const endpointUrl = '<?php echo $endpoint_info["endpoint_url"]; ?>';
+      console.log('Endpoint URL:', endpointUrl);
+      const HeaderIXCSet = $('input[name="headers[key][]"]').filter(function () {
+        return $(this).val().toLowerCase() === 'ixcsoft';
+      }).length > 0;
+    
+      if (endpointUrl.includes('ixc') && !HeaderIXCSet) {
+        $('#headers-container').append(`
+          <div class="header-pair form-row mb-2">
+            <div class="col">
+              <input type="text" name="headers[key][]" class="form-control" value="ixcsoft" readonly />
+            </div>
+            <div class="col">
+              <input type="text" name="headers[value][]" class="form-control" value="listar" readonly />
+            </div>
+            <div class="col-auto">
+              <button type="button" onclick="$(this).parent().parent().remove()" class="btn btn-danger btn-sm"><?php echo gettext('Remove'); ?></button>
+            </div>
+          </div>`);
+      }
+    }
 
-    $('#api_destination_endpoints').on('change', updateFinalURL);
+    $('#api_destination_endpoints').on('change', function () {
+      updateFinalURL();
+      addIXCHeader();
+    });
     updateFinalURL();
+    addIXCHeader();
 
     $('#add-header').click(function () {
       $('#headers-container').append(`
@@ -183,3 +231,72 @@
     });
   });
 </script>
+
+<script type="text/javascript">
+let lastBodyUsed = null;
+
+function changeBodyDefault(endpointId) {
+    if (!endpointId) return;
+
+    const rpLimitField = document.getElementById('rp_limit');
+    const rpValue = rpLimitField ? parseInt(rpLimitField.value, 10) || 100 : 100;
+
+    $.ajax({
+        type: "POST",
+        url: "<?= base_url() ?>getendpoint/" + endpointId,
+        data: '',
+        success: function(response) {
+            try {
+                const data = JSON.parse(response);
+                if (data.body) {
+                    const pageField = document.getElementById('page_field');
+                    const pageValue = pageField ? parseInt(pageField.value, 10) || 1 : 1;
+
+                    data.body.rp = rpValue;
+                    data.body.page = pageValue;
+
+                    lastBodyUsed = data.body;
+
+                    const bodyField = document.getElementById('body');
+                    if (bodyField) {
+                        bodyField.value = JSON.stringify(data.body, null, 4);
+                    }
+                } else {
+                    console.error("Erro: Resposta inválida");
+                }
+            } catch (e) {
+                console.error("Erro ao interpretar resposta JSON:", e);
+            }
+        }
+    });
+}
+
+function updateBodyRP() {
+    if (!lastBodyUsed) return;
+
+    const rpLimitField = document.getElementById('rp_limit');
+    const RPNewValue = rpLimitField ? parseInt(rpLimitField.value, 10) || 100 : 100;
+
+    lastBodyUsed.rp = RPNewValue;
+
+    const bodyField = document.getElementById('body');
+    if (bodyField) {
+        bodyField.value = JSON.stringify(lastBodyUsed, null, 4);
+    }
+}
+
+function updateBodyPage() {
+    if (!lastBodyUsed) return;
+
+    const pageField = document.getElementById('page_field');
+    const PageNewValue = pageField ? parseInt(pageField.value, 10) || 1 : 1;
+
+    lastBodyUsed.page = PageNewValue;
+
+    const bodyField = document.getElementById('body');
+    if (bodyField) {
+        bodyField.value = JSON.stringify(lastBodyUsed, null, 4);
+    }
+}
+</script>
+
