@@ -38,35 +38,9 @@ class api_endpoints extends CI_Controller
         $this->load->model('api_model');
         $this->load->library('csvreader');
         $this->load->library('FLUX_Sms');
-
-
         
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
-    }
-
-    function api_endpoints_list_old()
-    {
-        $accountinfo = $this->session->userdata("accountinfo");
-        $account_arr = (array) $this->db->get_where("accounts", array(
-            "id" => $accountinfo['id'],
-            "deleted" => "0",
-            "status" => "0"
-        ))->first_row();
-        if (empty($account_arr)) {
-            $this->session->sess_destroy();
-            $this->load->helper('cookie');
-            set_cookie('post_info', json_encode("text"), '20');
-            redirect(base_url() . "login/");
-        }
-        $data['username'] = $this->session->userdata('user_name');
-        $data['page_title'] = gettext('API Endpoints');
-        $data['search_flag'] = true;
-        $this->session->set_userdata('advance_search', 0);
-        $data['grid_fields'] = $this->api_endpoints_form->build_api_endpoints_list_for_admin();
-        $data["grid_buttons"] = $this->api_endpoints_form->build_grid_buttons();
-        $data['form_search'] = $this->form->build_serach_form($this->api_endpoints_form->get_api_endpoints_search_form());
-        $this->load->view('view_api_endpoints_list', $data);
     }
     
     function api_endpoints_list()
@@ -262,39 +236,47 @@ class api_endpoints extends CI_Controller
 		}
 	}
 
-	function partners_save()
+    function partners_save($add_array = false) 
 	{
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$add_array = $this->input->post();
+			$current_date = gmdate("Y-m-d H:i:s");
+			$partner_name = $add_array['partner_name'];
+			$data['partner_name'] = $partner_name;			
+			$data['edit_id']     = $add_array['id'];
 		$data['form'] = $this->form->build_form($this->api_endpoints_form->get_partners_form_fields($add_array['id']), $add_array);
 		if ($add_array['id'] != '') {
-			$data['page_title'] = gettext('Edit Partner');
+				$data['page_title'] = gettext('Edit '.$partner_name);
 			if ($this->form_validation->run() == FALSE) {
 				$data['validation_errors'] = validation_errors();
-				echo $data['validation_errors'];
-				exit();
 			} 
 			else {
-//                $data['product_rate_group'] = $this->db_model->build_dropdown("id,name", "pricelists", "", $where_arr);
 				$this->api_endpoints_model->edit_partners($add_array, $add_array['id']);
-				echo json_encode(array(
-					"SUCCESS" => $add_array["partner_name"] .' '. gettext("Partner Updated Successfully!")
-				));
+					$this->session->set_flashdata('flux_errormsg', $add_array["partner_name"].' '.gettext('Updated successfully!'));
+
+					redirect(base_url().'api_endpoints/partners_list/');
 				exit();
+			}
+				$data["account_data"]["0"] = $add_array;
+				$this->load->view('view_partners_add_edit', $data);
+			} 
+		else {
+				$data['page_title'] = gettext('Create API Partner');
+			if ($this->form_validation->run() == FALSE) {
+				$data['validation_errors'] = validation_errors();
+			} 
+			else {
+					$last_id = $this->api_endpoints_model->add_partners($add_array);
+					$this->session->set_flashdata('flux_errormsg', $add_array["partner_name"].' '.gettext('Added Successfully!'));
+
+					redirect(base_url().'api_endpoints/partners_list/');
+				exit();
+			}
+				$this->load->view('view_partners_add_edit', $data);
 			}
 		} 
 		else {
-			$data['page_title'] = gettext('Partner Details');
-			if ($this->form_validation->run() == FALSE) {
-				$data['validation_errors'] = validation_errors();
-				echo $data['validation_errors'];
-				exit();
-			} else {
-				$this->api_endpoints_model->add_partners($add_array);
-				echo json_encode(array(
-					"SUCCESS" => $add_array["partner_name"] .' '. gettext("Partner Added Successfully!")
-				));
-				exit();
-			}
+			redirect(base_url().'api_endpoints/partners_list/');
 		}
 	}
 
@@ -410,37 +392,44 @@ class api_endpoints extends CI_Controller
         }
     }
 
-    function api_endpoints_save()
+    function api_endpoints_save($add_array = false) 
     {
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $add_array = $this->input->post();
+			$current_date = gmdate("Y-m-d H:i:s");
+			$endpoint_name = $add_array['endpoint_name'];
+			$data['endpoint_name'] = $endpoint_name;			
+			$data['edit_id']     = $add_array['id'];
         $data['form'] = $this->form->build_form($this->api_endpoints_form->get_api_endpoints_form_fields($add_array['id']), $add_array);
         if ($add_array['id'] != '') {
-            $data['page_title'] = gettext('Edit API Endpoint');
+				$data['page_title'] = gettext('Edit '.$endpoint_name);
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
-                echo $data['validation_errors'];
-                exit();
             } 
             else {
-//                $data['product_rate_group'] = $this->db_model->build_dropdown("id,name", "pricelists", "", $where_arr);
                 $this->api_endpoints_model->edit_api_endpoints($add_array, $add_array['id']);
-				$this->session->set_flashdata('flux_errormsg', $add_array["endpoint_name"].' '.gettext('Enpoint Updated Successfully!'));
+					$this->session->set_flashdata('flux_errormsg', $add_array["endpoint_name"].' '.gettext('Updated successfully!'));
+
 				redirect(base_url().'api_endpoints/api_endpoints_list/');
 				exit();
             }
-        } 
-        else {
-            $data['page_title'] = gettext('Endpoint Details');
+				$data["account_data"]["0"] = $add_array;
+				$this->load->view('view_api_endpoints_add_edit', $data);
+			} else {
+				$data['page_title'] = gettext('Create API Endpoint');
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
-                echo $data['validation_errors'];
-                exit();
             } else {
-                $this->api_endpoints_model->add_api_endpoints($add_array);
-				$this->session->set_flashdata('flux_errormsg', $add_array["endpoint_name"].' '.gettext('Enpoint Added Successfully!'));
+					$last_id = $this->api_endpoints_model->add_api_endpoints($add_array);
+					$this->session->set_flashdata('flux_errormsg', $add_array["endpoint_name"].' '.gettext('Added Successfully!'));
+
 				redirect(base_url().'api_endpoints/api_endpoints_list/');
 				exit();
             }
+				$this->load->view('view_api_endpoints_add_edit', $data);
+			}
+		} else {
+			redirect(base_url().'api_endpoints/api_endpoints_list/');
         }
     }
 
@@ -537,7 +526,6 @@ class api_endpoints extends CI_Controller
 		} 		
     }
     
- 	
 	function api_test_send()
     {
     $url_endpoint = rtrim($this->input->post('endpoint_url'), '/');

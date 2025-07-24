@@ -1,35 +1,39 @@
-<?php include(FCPATH.'application/views/popup_header.php'); ?>
+<? extend('master.php') ?>
+<? startblock('extra_head') ?>
+
 <script type="text/javascript">
   $("#submit").click(function(){
     submit_form("partners_form");
   })
 </script>
-<section class="slice m-0">
-	<div class="w-section inverse p-0">
-		<div>
-			<div>
-				<div class="col-md-12 p-0 card-header">
-					<h3 class="fw4 p-4 m-0"><? echo $page_title; ?></h3 class="text-light p-3 rounded-top">
-				</div>
-			</div>
-		</div>
-	</div>
-</section>
-<section class="slice m-0">
-	<div class="w-section inverse p-4">
-		<div style="">
+<?php endblock()?>
+<?php startblock('page-title')?>
+<?=$page_title?>
+<?php endblock()?>
+<?php startblock('content')?>
+<div class="p-0">
+	<section class="slice color-three">
+		<div class="w-section inverse p-0">
+<?php echo $form;?>
     <?php
-
-if (isset($validation_errors)) {
-        echo $validation_errors;
-    }
-    ?>
-  </div>
-  <?php echo $form; ?>
+if (isset($validation_errors) && $validation_errors != '') {
+	?>
+		      <script>
+		       var ERR_STR = '<?php echo $validation_errors;?>';
+		       print_error(ERR_STR);
+		   </script>
+	<?}?>
 </div>
-</section>
+	</section>
+</div>
+<?endblock()?>
+<?startblock('sidebar')?>
+<?endblock()?>
+<?end_extend()?>
 <script type="text/javascript" language="javascript">
-  $(document).ready(function() {
-    $("input[type='hidden']").parents('li.form-group').addClass("d-none");
-  });
+    $(document).ready(function() {
+        $("input[type='hidden']").parents('li.form-group').addClass("d-none");
+
+
+    });
 </script>

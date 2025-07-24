@@ -42,13 +42,15 @@ $tooltip_data = array(
 	
 	"partners_endpoints_form_reseller_id" => "Selection of account for the endpoint",
 
-	"department_form_email_id_new2" => "Other email address added by the maintainer to receive/manage tickets",
+	"partners_form_partner_name" => "Self explanatory reference name of the partner",
 
-	"department_form_email_id_new3" => "Other email address added by the maintainer to receive/manage tickets",
+	"partners_form_accountid" => "Selection of account for the partner",
 
-	"department_form_email_id_new4" => "Other email address added by the maintainer to receive/manage tickets",
+	"partners_form_reseller_id" => "Selection of reseller account for the partner",
 
-	"department_form_email_id_new5" => "Other email address added by the maintainer to receive/manage tickets",	
+	"partners_form_partner_url" => "The URL for the added partner entry",
+	
+	"partners_form_status" => "The Status for the added partner entry",
 	/*End*/
 )
 ?>

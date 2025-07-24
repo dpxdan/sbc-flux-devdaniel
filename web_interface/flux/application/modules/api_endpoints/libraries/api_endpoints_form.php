@@ -193,7 +193,7 @@ class api_endpoints_form
                     'size' => '50',
                     'class' => "text field medium"
                 ),
-                'trim',
+                'required|xss_clean|is_unique[' . $val . ']',
                 'tOOL TIP',
                 'Please Enter Endpoint URL'
             ),            
@@ -1533,7 +1533,7 @@ class api_endpoints_form
                     "true",
                     "left"
                 ),
-                array(
+                /*array(
 					gettext("Authentication"),
 					"80",
 					"partner_auth",
@@ -1543,7 +1543,7 @@ class api_endpoints_form
 					"",
 					"true",
 					"center"
-				),
+				),*/
                 array(
                     gettext("Partner URL"),
                     "170",
@@ -1555,7 +1555,7 @@ class api_endpoints_form
                     "true",
                     "center"
                 ),
-                array(
+                /*array(
                     gettext("Auth User"),
                     "80",
                     "partner_user",
@@ -1565,7 +1565,7 @@ class api_endpoints_form
                     "",
                     "true",
                     "center"
-                ),
+                ),*/
                 array(
 					gettext("Account"),
 					"90",
@@ -1577,7 +1577,7 @@ class api_endpoints_form
 					"true",
 					"center"
 				),
-                array(
+                /*array(
                 	gettext("Last Login Date"),
                 	"80",
                 	"last_login_date",
@@ -1587,7 +1587,7 @@ class api_endpoints_form
                 	"",
                 	"true",
                 	"center",
-                ),
+                ),*/
                 array(
                     gettext("Modified Date"),
                     "150",
@@ -1619,8 +1619,7 @@ class api_endpoints_form
                     array(
                         "EDIT" => array(
                             "url" => "api_endpoints/partners_edit/",
-                            "mode" => "popup",
-                            "layout" => "medium"
+                            "mode" => "single"
                         ),
                         "DELETE" => array(
                             "url" => "api_endpoints/partners_remove/",
@@ -1675,8 +1674,7 @@ class api_endpoints_form
                     array(
                         "EDIT" => array(
                             "url" => "api_endpoints/partners_edit/",
-                            "mode" => "popup",
-                            "layout" => "medium"
+                            "mode" => "single"
                         ),
                         "DELETE" => array(
                             "url" => "api_endpoints/partners_remove/",
@@ -1722,18 +1720,22 @@ class api_endpoints_form
                     ''
                 ),
                 array(
-                    gettext('Authentication Type'),
-                    'partner_auth',
-                    'SELECT',
+                    gettext('Partner URL'),
+                    'INPUT',
+                    array(
+                        'name' => 'partner_url[partner_url]',
                     '',
+                        'size' => '50',
+                        'class' => "text field"
+                    ),
                     '',
                     'tOOL TIP',
-                    'Please Enter account number',
+                    '1',
+                    'partner_url[partner_url-string]',
                     '',
                     '',
                     '',
-                    'set_search_authtype',
-                    '',
+                    'search_string_type',
                     ''
                 ),
                 array(
@@ -2108,7 +2110,7 @@ class api_endpoints_form
     			),
     			'trim|required|xss_clean|is_unique[' . $val . ']',
     			'tOOL TIP',
-    			'Please Enter endpoint Name'
+    			'Please Enter partner Name'
     		),
     		array(
     				gettext('Account'),
@@ -2123,13 +2125,13 @@ class api_endpoints_form
     				'tOOL TIP',
     				'Please Enter account number',
     				'id',
-    				'first_name,last_name,number',
+                    'first_name,last_name,number,type',
     				'accounts',
-    				'build_concat_dropdown',
+                    'build_dropdown_invoices',
     				'where_arr',
     				array(
     					"reseller_id" => "0",
-    					"type" => "0,3",
+                        "type <>" => "2",
     					"deleted" => "0"
     				)
     			),
@@ -2160,7 +2162,7 @@ class api_endpoints_form
     			'set_status'
     		)
     	);
-    	$form[gettext('Authentication Information')] = array(
+    	/*$form[gettext('Authentication Information')] = array(
     		array(
     			gettext('Authentication Type'),
     			'partner_auth',
@@ -2223,22 +2225,21 @@ class api_endpoints_form
 				'',
 				'set_cron_status'
 			)
-    	);
+    	);*/
     	$form['button_cancel'] = array(
     		'name' => 'action',
     		'content' => gettext('Close'),
     		'value' => 'cancel',
     		'type' => 'button',
     		'class' => 'btn btn-secondary ml-2',
-    		'onclick' => 'return redirect_page(\'NULL\')'
+            'onclick' => 'return redirect_page(\'/api_endpoints/partners_list/\')'
     	);
     	$form['button_save'] = array(
     		'name' => 'action',
     		'content' => gettext('Save'),
     		'value' => 'save',
-    		'id' => 'submit',
-    		'type' => 'button',
-    		'class' => 'btn btn-success'
+                'type'    => 'submit',
+                'class'   => 'btn btn-success',
     	);
     	return $form;
     }
@@ -2350,7 +2351,7 @@ class api_endpoints_form
 					"fa fa-plus-circle fa-lg",
 					"button_action",
 					"/api_endpoints/partners_add/",
-					"popup",
+					"single",
 					"medium",
 					"create"
 				),
