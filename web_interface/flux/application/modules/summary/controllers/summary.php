@@ -76,13 +76,11 @@ class Summary extends MX_Controller
         $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
         $json_data = $paging_data["json_paging"];
         $query = $this->summary_model->get_customersummary_report_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"], $search_arr['group_by_str'], $search_arr['select_str'], $search_arr['order_str'], false);
-        
         if ($query->num_rows() > 0) {
-        
             $json_data['rows'] = $this->summary_report_grid($search_arr, $query, 'customer', 'grid');
         }
+        
         $this->session->set_userdata('customersummary_reports_export', $search_arr);
-        $this->flux_log->write_log ( 'customer_json', json_encode($json_data) );
         echo json_encode($json_data);
     }
  
@@ -420,149 +418,158 @@ class Summary extends MX_Controller
         $show_seconds = (! empty($search_arr['search_in'])) ? $search_arr['search_in'] : 'minutes';
         $currency_info = $this->common->get_currency_info();
         foreach ($query->result_array() as $row1) {
-            $atmpt = $row1['attempts'];
-            $cmplt = ($row1['completed'] != 0) ? $row1['completed'] : 0;
-            $acd = ($row1['completed'] > 0) ? round($row1['duration'] / $row1['completed']) : 0;
-            $mcd = $row1['mcd'];
-            if ($show_seconds == 'minutes') {
-                $avgsec = $acd > 0 ? sprintf('%02d', $acd / 60) . ":" . sprintf('%02d', ($acd % 60)) : "00:00";
-                $maxsec = $mcd > 0 ? sprintf('%02d', $mcd / 60) . ":" . sprintf('%02d', ($mcd % 60)) : "00:00";
-                $duration = ($row1['duration'] > 0) ? sprintf('%02d', $row1['duration'] / 60) . ":" . sprintf('%02d', ($row1['duration'] % 60)) : "00:00";
-                $block_duration = ($row1['block_duration'] > 0) ? sprintf('%02d', $row1['block_duration'] / 60) . ":" . sprintf('%02d', ($row1['block_duration'] % 60)) : "00:00";
-                $billsec = ($row1['billable'] > 0) ? sprintf('%02d', $row1['billable'] / 60) . ":" . sprintf('%02d', ($row1['billable'] % 60)) : "00:00";
-            } else {
-                $duration = sprintf('%02d', $row1['duration']);
-                $block_duration = sprintf('%02d', $row1['block_duration']);
-                $avgsec = $acd;
-                $maxsec = $mcd;
-                $billsec = sprintf('%02d', $row1['billable']);
-            }
-            if ($entity != 'provider') {
-                $profit = $this->common->calculate_currency_manually($currency_info, $row1['debit'] - $row1['cost'], false);
-                $debit = $this->common->calculate_currency_manually($currency_info, $row1['debit'], false);
-            }
-            $cost = $this->common->calculate_currency_manually($currency_info, $row1['cost'], false);
-            $asr = ($atmpt > 0) ? (round(($cmplt / $atmpt) * 100, 2)) : '0.00';
-            $new_arr = array();
- 
-            if ($this->session->userdata('advance_search') == 1) {
-                if (! empty($search_arr['groupby_time'])) {
-                    $time = $row1[$search_arr['groupby_time']];
- 
-                    if ($search_arr['groupby_time'] == "HOUR" || $search_arr['groupby_time'] == "DAY") {
-                        $time = sprintf('%02d', $time);
+            if ($row1[$db_field_name] != null){
+                $atmpt = $row1['attempts'];
+                $cmplt = ($row1['completed'] != 0) ? $row1['completed'] : 0;
+                $acd = ($row1['completed'] > 0) ? round($row1['duration'] / $row1['completed']) : 0;
+                $mcd = $row1['mcd'];
+                if ($show_seconds == 'minutes') {
+                    $avgsec = $acd > 0 ? sprintf('%02d', $acd / 60) . ":" . sprintf('%02d', ($acd % 60)) : "00:00";
+                    $maxsec = $mcd > 0 ? sprintf('%02d', $mcd / 60) . ":" . sprintf('%02d', ($mcd % 60)) : "00:00";
+                    $duration = ($row1['duration'] > 0) ? sprintf('%02d', $row1['duration'] / 60) . ":" . sprintf('%02d', ($row1['duration'] % 60)) : "00:00";
+                    $block_duration = ($row1['block_duration'] > 0) ? sprintf('%02d', $row1['block_duration'] / 60) . ":" . sprintf('%02d', ($row1['block_duration'] % 60)) : "00:00";
+                    $billsec = ($row1['billable'] > 0) ? sprintf('%02d', $row1['billable'] / 60) . ":" . sprintf('%02d', ($row1['billable'] % 60)) : "00:00";
+                } else {
+                    $duration = sprintf('%02d', $row1['duration']);
+                    $block_duration = sprintf('%02d', $row1['block_duration']);
+                    $avgsec = $acd;
+                    $maxsec = $mcd;
+                    $billsec = sprintf('%02d', $row1['billable']);
+                }
+                if ($entity != 'provider') {
+                    $profit = $this->common->calculate_currency_manually($currency_info, $row1['debit'] - $row1['cost'], false);
+                    $debit = $this->common->calculate_currency_manually($currency_info, $row1['debit'], false);
+                }
+                $cost = $this->common->calculate_currency_manually($currency_info, $row1['cost'], false);
+                $asr = ($atmpt > 0) ? (round(($cmplt / $atmpt) * 100, 2)) : '0.00';
+                $new_arr = array();
+     
+                if ($this->session->userdata('advance_search') == 1) {
+                    if (! empty($search_arr['groupby_time'])) {
+                        $time = $row1[$search_arr['groupby_time']];
+     
+                        if ($search_arr['groupby_time'] == "HOUR" || $search_arr['groupby_time'] == "DAY") {
+                            $time = sprintf('%02d', $time);
+                        }
+                        if ($search_arr['groupby_time'] == "MONTH") {
+                            $dateObj = DateTime::createFromFormat('!m', $time);
+                            $time = $dateObj->format('F');
+                        }
+                        $new_arr[] = $time;
                     }
-                    if ($search_arr['groupby_time'] == "MONTH") {
-                        $dateObj = DateTime::createFromFormat('!m', $time);
-                        $time = $dateObj->format('F');
+                    if ($search_arr['groupby_1'] == $db_field_name) {
+                            $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
+                    } elseif ($search_arr['groupby_1'] == 'pattern') {
+                        $new_arr[] = filter_var($row1['pattern'], FILTER_SANITIZE_NUMBER_INT);
+                        $new_arr[] = $row1['notes'];
+                    } elseif ($search_arr['groupby_1'] == 'trunk_id') {
+                        $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
+                    } elseif ($search_arr['groupby_1'] == 'package_id') {
+                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
+                    } elseif ($search_arr['groupby_1'] == 'sip_user') {
+                        $new_arr[] = $row1['sip_user'];
+                    } elseif ($search_arr['groupby_1'] == 'call_direction') {
+                        $new_arr[] = $row1['call_direction'];
+                    } elseif ($search_arr['groupby_1'] == 'calltype') {
+                        $new_arr[] = $row1['calltype'];
+                    } elseif ($search_arr['groupby_1'] == 'product_id') {
+                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
+                    } elseif ($search_arr['groupby_1'] == "product_category") {
+                        $new_arr[] = $this->common->get_field_name('name', 'category', $row1['product_category']);
                     }
-                    $new_arr[] = $time;
+                    if ($search_arr['groupby_2'] == $db_field_name) {
+                            $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
+                    } elseif ($search_arr['groupby_2'] == 'pattern') {
+                        $new_arr[] = filter_var($row1['pattern'], FILTER_SANITIZE_NUMBER_INT);
+                        $new_arr[] = $row1['notes'];
+                    } elseif ($search_arr['groupby_2'] == 'trunk_id') {
+                        $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
+                    } elseif ($search_arr['groupby_2'] == 'package_id') {
+                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
+                    } elseif ($search_arr['groupby_2'] == 'sip_user') {
+                        $new_arr[] = $row1['sip_user'];
+                    } elseif ($search_arr['groupby_2'] == 'call_direction') {
+                        $new_arr[] = $row1['call_direction'];
+                    } elseif ($search_arr['groupby_2'] == 'calltype') {
+                        $new_arr[] = $row1['calltype'];
+                    } elseif ($search_arr['groupby_2'] == 'product_id') {
+                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
+                    } elseif ($search_arr['groupby_2'] == "product_category") {
+                        $new_arr[] = $this->common->get_field_name('name', 'category', $row1['product_category']);
+                    }
+     
+                    if ($search_arr['groupby_3'] == $db_field_name) {
+                            $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
+                    } elseif ($search_arr['groupby_3'] == 'pattern') {
+                        $new_arr[] = filter_var($row1['pattern'], FILTER_SANITIZE_NUMBER_INT);
+                        $new_arr[] = $row1['notes'];
+                    } elseif ($search_arr['groupby_3'] == 'trunk_id') {
+                        $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
+                    } elseif ($search_arr['groupby_3'] == 'package_id') {
+                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
+                    } elseif ($search_arr['groupby_3'] == 'sip_user') {
+                        $new_arr[] = $row1['sip_user'];
+                    } elseif ($search_arr['groupby_3'] == 'call_direction') {
+                        $new_arr[] = $row1['call_direction'];
+                    } elseif ($search_arr['groupby_3'] == 'calltype') {
+                        $new_arr[] = $row1['calltype'];
+                    } elseif ($search_arr['groupby_3'] == 'product_id') {
+                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
+                    } elseif ($search_arr['groupby_3'] == "product_category") {
+                        $new_arr[] = $this->common->get_field_name('name', 'category', $row1['product_category']);
+                    }
+     
+                    if (empty($new_arr)) {
+                            $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
+                    }
+                } else {
+                        $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
                 }
-                if ($search_arr['groupby_1'] == $db_field_name) {
-                    $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-                } elseif ($search_arr['groupby_1'] == 'pattern') {
-                    $new_arr[] = filter_var($row1['pattern'], FILTER_SANITIZE_NUMBER_INT);
-                    $new_arr[] = $row1['notes'];
-                } elseif ($search_arr['groupby_1'] == 'trunk_id') {
-                    $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
-                } elseif ($search_arr['groupby_1'] == 'package_id') {
-                    $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
-                } elseif ($search_arr['groupby_1'] == 'sip_user') {
-                    $new_arr[] = $row1['sip_user'];
-                } elseif ($search_arr['groupby_1'] == 'call_direction') {
-                    $new_arr[] = $row1['call_direction'];
-                } elseif ($search_arr['groupby_1'] == 'calltype') {
-                    $new_arr[] = $row1['calltype'];
-                } elseif ($search_arr['groupby_1'] == 'product_id') {
-                    $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
-                } elseif ($search_arr['groupby_1'] == "product_category") {
-                    $new_arr[] = $this->common->get_field_name('name', 'category', $row1['product_category']);
+                if ($entity != 'provider') {
+                    $custom_array = array(
+                        $atmpt,
+                        $cmplt,
+                        $duration,
+                        $block_duration,
+                        round($asr, 2),
+                        $avgsec,
+                        $maxsec,
+                        $billsec,
+                        $debit,
+                        $cost,
+                        $profit
+                    );
+                } else {
+                    $custom_array = array(
+                        $atmpt,
+                        $cmplt,
+                        $duration,
+                        $block_duration,
+                        round($asr, 2),
+                        $avgsec,
+                        $maxsec,
+                        $billsec,
+                        $cost
+                    );
                 }
-                if ($search_arr['groupby_2'] == $db_field_name) {
-                    $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-                } elseif ($search_arr['groupby_2'] == 'pattern') {
-                    $new_arr[] = filter_var($row1['pattern'], FILTER_SANITIZE_NUMBER_INT);
-                    $new_arr[] = $row1['notes'];
-                } elseif ($search_arr['groupby_2'] == 'trunk_id') {
-                    $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
-                } elseif ($search_arr['groupby_2'] == 'package_id') {
-                    $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
-                } elseif ($search_arr['groupby_2'] == 'sip_user') {
-                    $new_arr[] = $row1['sip_user'];
-                } elseif ($search_arr['groupby_2'] == 'call_direction') {
-                    $new_arr[] = $row1['call_direction'];
-                } elseif ($search_arr['groupby_2'] == 'calltype') {
-                    $new_arr[] = $row1['calltype'];
-                } elseif ($search_arr['groupby_2'] == 'product_id') {
-                    $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
-                } elseif ($search_arr['groupby_2'] == "product_category") {
-                    $new_arr[] = $this->common->get_field_name('name', 'category', $row1['product_category']);
-                }
- 
-                if ($search_arr['groupby_3'] == $db_field_name) {
-                    $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-                } elseif ($search_arr['groupby_3'] == 'pattern') {
-                    $new_arr[] = filter_var($row1['pattern'], FILTER_SANITIZE_NUMBER_INT);
-                    $new_arr[] = $row1['notes'];
-                } elseif ($search_arr['groupby_3'] == 'trunk_id') {
-                    $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
-                } elseif ($search_arr['groupby_3'] == 'package_id') {
-                    $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
-                } elseif ($search_arr['groupby_3'] == 'sip_user') {
-                    $new_arr[] = $row1['sip_user'];
-                } elseif ($search_arr['groupby_3'] == 'call_direction') {
-                    $new_arr[] = $row1['call_direction'];
-                } elseif ($search_arr['groupby_3'] == 'calltype') {
-                    $new_arr[] = $row1['calltype'];
-                } elseif ($search_arr['groupby_3'] == 'product_id') {
-                    $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
-                } elseif ($search_arr['groupby_3'] == "product_category") {
-                    $new_arr[] = $this->common->get_field_name('name', 'category', $row1['product_category']);
-                }
- 
-                if (empty($new_arr)) {
-                    $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-                }
-            } else {
-                $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-            }
-            if ($entity != 'provider') {
-                $custom_array = array(
-                    $atmpt,
-                    $cmplt,
-                    $duration,
-                    $block_duration,
-                    round($asr, 2),
-                    $avgsec,
-                    $maxsec,
-                    $billsec,
-                    $debit,
-                    $cost,
-                    $profit
+
+                $final_array = array_merge($new_arr, $custom_array);
+                $json_data[] = array(
+                    'cell' => $final_array
                 );
-            } else {
-                $custom_array = array(
-                    $atmpt,
-                    $cmplt,
-                    $duration,
-                    $block_duration,
-                    round($asr, 2),
-                    $avgsec,
-                    $maxsec,
-                    $billsec,
-                    $cost
-                );
+                $export_arr[] = $final_array;
             }
-            $final_array = array_merge($new_arr, $custom_array);
-            $json_data[] = array(
-                'cell' => $final_array
-            );
-            $export_arr[] = $final_array;
+
+            if ($row1[$db_field_name] == null){
+                $total_info = $row1;
+            }
         }
         $function_name = 'get_' . $entity . 'summary_report_list';
-        $total_info = $this->summary_model->$function_name(true, '', '', '', $search_arr['select_str'], $search_arr['order_str'], true);
-        $total_info = $total_info->result_array();
-        $total_info = $total_info[0];
+        if (!$total_info){
+            $total_info = $this->summary_model->$function_name(true, '', '', '', $search_arr['select_str'], $search_arr['order_str'], true);
+            $total_info = $total_info->result_array();
+            $total_info = $total_info[0];
+        }
         $total_asr = ($total_info['attempts'] > 0) ? round(($total_info['completed'] / $total_info['attempts']) * 100, 2) : 0;
         $total_acd = ($total_info['completed'] > 0) ? round($total_info['duration'] / $total_info['completed']) : 0;
         if ($show_seconds == 'minutes') {
@@ -852,7 +859,11 @@ class Summary extends MX_Controller
         }
  
         }
- 
+        
+        if ($group_by_str == 'accountid'){
+            $group_by_str = 'accountid WITH ROLLUP';
+        }
+
         array_pop($custom_total_array);
         array_unshift($custom_total_array, '<b>Grand Total</b>');
         $new_arr['export_str'] = $export_select_str;
