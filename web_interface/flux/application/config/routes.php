@@ -60,16 +60,13 @@ $route['confirmpassword'] = "signup/confirmpassword";
 $route['confirm_pass']    = "signup/confirm_pass";
 $route['confirmpass']     = "signup/confirmpass";
 
-//Rotas Sync IXC
-$route['voip/sync'] = 'VoipSync/sync';
-$route['voip/planos'] = 'VoipSync/enviar_planos_voip';
-$route['voip/sincronizar-planos'] = 'VoipSync/sincronizar_planos_voip';
-$route['voip/sincronizar-cdr'] = 'VoipSync/sincronizar_cdr';
-$route['voip/sincronizar-ausentes'] = 'VoipSync/sincronizar_ausentes';
-$route['voip/sincronizar-cidade'] = 'VoipSync/sincronizar_cidade';
+//Rotas Sync API
+$route['getendpoint/(:any)'] = 'getendpoint/index/$1';
 
-
-$route['voip/get_cdrs'] = 'VoipSync/sincronizar_cdrs';
+$route['apisync'] = 'ApiSync/sync';
+$route['apisync-locations'] = 'ApiSync/sync_locations';
+$route['apisync-plans'] = 'ApiSync/sync_voip_plans';
+$route['apisync-cdrs'] = 'ApiSync/sync_cdrs';
 
 
 $route['feedback'] = "feedback/index";

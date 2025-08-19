@@ -32,11 +32,10 @@ $config ['argv'] = array (
 		"Refactor" => "Refactor/index",
 		"gitRollback" => "GitUpdate/executeRollback",
 		//Sync API
-		"ApiSync" => "VoipSync/sync",
-		"ApiEndpoints" => "ApiEndpoints/curl_request",
-		"ApiProxy" => "ApiProxy/update_data",
-		"CdrSync" => "VoipSync/sincronizar_ausentes",
-		"GetCdrs" => "VoipSync/sincronizar_cdrs"
+		"GetLocations" => "ApiSync/sync_locations",
+		"GetPlans" => "ApiSync/sync_voip_plans",
+		"SyncCdrs" => "ApiSync/sync_cdrs",
+		"GetSync" => "ApiSync/sync"
 );
 $config ['CRON_BETA_MODE'] = false; // Beta Mode (useful for blocking submissions for testing)
 ?>
