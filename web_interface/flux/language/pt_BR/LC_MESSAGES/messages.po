@@ -5234,7 +5234,7 @@ msgid "Value is Required."
 msgstr "Valor é requerido."
 
 msgid "Update Setting"
-msgstr "Configuração de atualização"
+msgstr "Atualizar Configuração"
 
 msgid "Edit Freeswitch Server"
 msgstr "Editar Servidor FluxSBC"
@@ -7173,3 +7173,186 @@ msgstr "Grupo de busca"
 
 msgid "Ring Strategy"
 msgstr "Estratégia de toque"
+
+msgid "ID External"
+msgstr "ID Externo"
+
+msgid "API Endpoints"
+msgstr "Integrações"
+
+msgid "Endpoint Name"
+msgstr "Nome da integração"
+
+msgid "Endpoint Partner"
+msgstr "Parceiro da integração"
+
+msgid "Endpoint URL"
+msgstr "URL integração"
+
+msgid "Test API"
+msgstr "Testar Conexão"
+
+msgid "Edit Endpoint"
+msgstr "Editar Integração"
+
+msgid "Partners Endpoints"
+msgstr "Destinos de Integração"
+
+msgid "Endpoint Information"
+msgstr "Informações da Integração"
+
+msgid "Authentication Information"
+msgstr "Detalhes da Autenticação"
+
+msgid "Partner"
+msgstr "Parceiro"
+
+msgid "Cron Status"
+msgstr "Status Rotina"
+
+msgid "Authentication Type"
+msgstr "Tipo da Autenticação"
+
+msgid "Sending Request"
+msgstr "Enviando Requisição"
+
+msgid "Authentication User"
+msgstr "Usuário da Autenticação"
+
+msgid "Authentication Password"
+msgstr "Senha da Autenticação"
+
+msgid "Endpoint Token"
+msgstr "Token da Integração"
+
+msgid "Edit API Endpoint"
+msgstr "Editar Integração"
+
+msgid "API Partners"
+msgstr "Parceiros de Integração"
+
+msgid "Partners List"
+msgstr "Lista Parceiros"
+
+msgid "Partner URL"
+msgstr "Parceiro URL"
+
+msgid "Edit Partner"
+msgstr "Editar Parceiro"
+
+msgid "Partner Information"
+msgstr "Detalhes do Parceiro"
+
+msgid "Partner Name"
+msgstr "Nome do Parceiro"
+
+msgid "Create Partner"
+msgstr "Criar Parceiro"
+
+msgid "Edit Partner Endpoint"
+msgstr "Editar destino"
+
+msgid "Create Partner Endpoint"
+msgstr "Criar destino"
+
+msgid "Test API Endpoint"
+msgstr "Testar Conexão"
+
+msgid "Destination Endpoint"
+msgstr "Destinos"
+
+msgid "HTTP Method"
+msgstr "Método da Requisição"
+
+msgid "Limit Records"
+msgstr "Limite de Registros"
+
+msgid "Authentication"
+msgstr "Autenticação"
+
+msgid "Authentication Token"
+msgstr "Token da Autenticação"
+
+msgid "Additional Headers"
+msgstr "Cabeçalhos Adicionais"
+
+msgid "Body (JSON)"
+msgstr "Corpo da Requisição (JSON)"
+
+msgid "API Request Result"
+msgstr "Resultado do Teste"
+
+msgid "Summary Response"
+msgstr "Detalhes da Resposta"
+
+msgid "Status Code"
+msgstr "Código da Resposta"
+
+msgid "Response Time"
+msgstr "Tempo de Resposta"
+
+msgid "seconds"
+msgstr "segundos"
+
+msgid "Response Headers"
+msgstr "Cabeçalhos da Resposta"
+
+msgid "Response Body"
+msgstr "Corpo da Resposta"
+
+msgid "Sent Request"
+msgstr "Requisição Enviada"
+
+msgid "records"
+msgstr "registros"
+
+msgid "View API Log"
+msgstr "Log API"
+
+msgid "Request Body"
+msgstr "Corpo Requisição"
+
+msgid "Headers"
+msgstr "Cabeçalhos"
+
+msgid "HTTP Code"
+msgstr "Código HTTP"
+
+msgid "API Activity Report"
+msgstr "Relatório de Atividade API"
+
+msgid "API Activity Logs"
+msgstr "Logs de Atividade API"
+
+msgid "Login Activity Report"
+msgstr "Logs de Acesso"
+
+msgid "Call Activity Report"
+msgstr "Relatório de Atividade Chamadas"
+
+msgid "Activity Report"
+msgstr "Relatório de Atividade"
+
+msgid "Last DID Call Date"
+msgstr "Última Chamada de Entrada"
+
+msgid "Last DID Call From Date"
+msgstr "Última chamada DID a partir"
+
+msgid "Last DID Call To Date"
+msgstr "Última chamada DID até"
+
+msgid "Last Outbound Call Date"
+msgstr "Última Chamada de Saída"
+
+msgid "Last Outbound Call From Date"
+msgstr "Última chamada efetuada a partir"
+
+msgid "Last Outbound Call To Date"
+msgstr "Última chamada efetuada até"
+
+msgid "Available Credit limit"
+msgstr "Limite de Crédito Disponível"
+
+msgid "Reload the sip profile to reflect the changes applied in Flux SBC."
+msgstr "Realize o re-carregamento do perfil sip para refletir as alterações aplicadas no Flux SBC."

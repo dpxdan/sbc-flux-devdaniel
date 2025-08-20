@@ -605,7 +605,7 @@ class api_endpoints extends CI_Controller
     );
     $this->db->insert('api_test_responses', $response_data);
     
-    $this->api_model->salvar_log_api(
+    $this->api_model->save_api_log(
                 $url,
                 json_decode($body, true),
                 $response,

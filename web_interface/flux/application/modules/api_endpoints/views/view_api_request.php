@@ -56,7 +56,10 @@
             <div class="form-group col-md-6">
               <label for="rp_limit"><?php echo gettext('Limit Records'); ?></label>
               <select id="rp_limit" name="rp_limit" class="form-control" onchange="updateBodyRP()">
-                  <option value="10" selected>10 <?php echo gettext('records'); ?></option>
+                  <option value="1" selected>1 <?php echo gettext('records'); ?></option>
+                  <option value="5">5 <?php echo gettext('records'); ?></option>
+                  <option value="10">10 <?php echo gettext('records'); ?></option>
+                  <option value="15">15 <?php echo gettext('records'); ?></option>
                   <option value="20">20 <?php echo gettext('records'); ?></option>
                   <option value="50">50 <?php echo gettext('records'); ?></option>
                   <option value="100">100 <?php echo gettext('records'); ?></option>
@@ -76,7 +79,7 @@
             <label for="endpoint_auth"><?php echo gettext('Authentication Type'); ?></label>
             <select name="endpoint_auth" id="endpoint_auth" class="form-control">
               <option value=""><?php echo gettext('None'); ?></option>
-              <option value="basic"><?php echo gettext('Basic'); ?></option>
+              <option value="basic" selected><?php echo gettext('Basic'); ?></option>
               <option value="bearer"><?php echo gettext('Bearer Token'); ?></option>
             </select>
           </div>
@@ -120,11 +123,6 @@
 
 <script>
   $(document).ready(function () {
-/*    var info = <?php echo json_encode($endpoint_info, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-    var endpointdata = {
-        'EndpointInfo': info
-    };
-    console.log('Endpoint INFO:', endpointdata);*/
     function updateFinalURL() {
       const baseUrl = $('#endpoint_url').val().replace(/\/$/, '');
       const destination = $('#api_destination_endpoints').val();
@@ -137,7 +135,7 @@
         return $(this).val().toLowerCase() === 'ixcsoft';
       }).length > 0;
     
-      if (endpointUrl.includes('ixc') && !HeaderIXCSet) {
+      if (endpointUrl.includes('webservice') && !HeaderIXCSet) {
         $('#headers-container').append(`
           <div class="header-pair form-row mb-2">
             <div class="col">

@@ -244,6 +244,26 @@ class Api_model extends CI_Model {
         $this->flux_log->write_log('info', "Created DID, Product, and Order for number: {$device->name}");
     }
 
+	public function salvar_planos_voip_externos($planos) {
+	foreach ($planos as $registro) {
+		$data = [
+			'id_plataforma' => $registro['id_plataforma'],
+			'descricao'     => $registro['descricao']
+		];
+
+
+		$this->db->where('id_plataforma', $registro['id_plataforma']);
+		$query = $this->db->get('planos_voip_externos');
+
+		if ($query->num_rows() > 0) {
+			$this->db->where('id_plataforma', $registro['id_plataforma']);
+			$this->db->update('planos_voip_externos', $data);
+		} else {
+			$this->db->insert('planos_voip_externos', $data);
+		}
+	}
+}
+
     public function get_city_name($city_id) {
         $city = $this->db->select('cidade')->get_where('view_cidade', ['cidade_id' => $city_id])->row();
         return $city ? $city->cidade : 'Cidade Desconhecida';

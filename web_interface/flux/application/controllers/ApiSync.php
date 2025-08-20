@@ -116,13 +116,6 @@ class ApiSync extends CI_Controller {
             if (!empty($response['registros'])) {
                 $this->Sync_model->replace_customer($response['registros'][0]);
             }
-
-            /*$contract_response = $this->request_cliente_contrato($api_url, $auth_string, $id);
-            if (!empty($contract_response['registros'])) {
-                foreach ($contract_response['registros'] as $contract) {
-                    $this->Sync_model->replace_contract($contract);
-                }
-            }*/
         }
     }
 
@@ -172,21 +165,69 @@ class ApiSync extends CI_Controller {
         $endpoints = $this->Sync_model->get_api_endpoints();
         if (empty($endpoints)) return;
 
-        $local_products = $this->db->select('id, name')->from('products')->where('product_category', 1)->where('status', 0)->get()->result_array();
-
         foreach ($endpoints as $endpoint) {
             $auth_string = $endpoint['endpoint_user'] . ':' . $endpoint['endpoint_password'];
             $url_voip_plans = $endpoint['endpoint_url'] . 'planos_voip';
 
             $api_plans_response = $this->send_post_request($url_voip_plans, $auth_string, ['rp' => '1000'], 'listar');
-            $api_platform_ids = !empty($api_plans_response['registros']) ? array_column($api_plans_response['registros'], 'id_plataforma') : [];
+		$api_plans = !empty($api_plans_response['registros']) ? $api_plans_response['registros'] : [];
+		$planos_api = isset($api_plans_response['registros']) ? $api_plans_response['registros'] : array();
+		$this->api_model->salvar_planos_voip_externos($planos_api);
+		$api_platform_ids = array_column($api_plans, 'id_plataforma');
+			
+		$local_products = $this->db->select('id, name')->from('products')->where('product_category', 1)->where('status', 0)->get()->result_array();
+		$local_product_ids = array_column($local_products, 'id');
 
             foreach ($local_products as $product) {
                 if (!in_array($product['id'], $api_platform_ids)) {
                     $payload = ['id_plataforma' => $product['id'], 'descricao' => $product['name']];
-                    $this->send_post_request($url_voip_plans, $auth_string, $payload, '');
+				$response = $this->send_post_request($url_voip_plans, $auth_string, $payload, '');
+				$http_code = $this->curl->info['http_code'];
+				if ($http_code >= 200 && $http_code < 300) {
                     $this->flux_log->write_log('info', 'Sent new VoIP plan to API: ' . json_encode($payload));
                 }
+				else {
+					$this->flux_log->write_log('error', 'Failed to send new VoIP plan ' . json_encode($payload) . '. HTTP Code: ' . $http_code . '. Response: ' . json_encode($response));
+					$this->api_model->save_api_log(
+						$url_voip_plans,
+						json_encode($payload),
+						$response,
+						'create_voip_plan',
+						$http_code
+					);
+				}
+			}
+		}
+		foreach ($api_plans as $api_plan) {
+			if (!in_array($api_plan['id_plataforma'], $local_product_ids)) {
+				$plan_id = $api_plan['id'];
+				$url_delete = $url_voip_plans . '/' . $plan_id;
+
+				$ch_delete = curl_init($url_delete);
+				curl_setopt($ch_delete, CURLOPT_CUSTOMREQUEST, 'DELETE');
+				curl_setopt($ch_delete, CURLOPT_HTTPHEADER, [
+					'ixcsoft: ',
+					'Authorization: Basic ' . base64_encode($auth_string)
+				]);
+				curl_setopt($ch_delete, CURLOPT_RETURNTRANSFER, true);
+
+				$response_delete = curl_exec($ch_delete);
+				$http_code_delete = curl_getinfo($ch_delete, CURLINFO_HTTP_CODE);
+				curl_close($ch_delete);
+
+				if ($http_code_delete >= 200 && $http_code_delete < 300) {
+					$this->flux_log->write_log('info', 'Deleted VoIP plan from API with IXC ID: ' . $plan_id . ' (Local ID: ' . $api_plan['id_plataforma'] . ').');
+				} else {
+					$this->flux_log->write_log('error', 'Failed to delete VoIP plan from API with IXC ID: ' . $plan_id . ' (Local ID: ' . $api_plan['id_plataforma'] . '). HTTP Code: ' . $http_code_delete . '. Response: ' . json_encode($response_delete));
+					$this->api_model->save_api_log(
+						$url_delete,
+						'',
+						$response_delete,
+						'delete_voip_plan',
+						$http_code_delete
+					);
+				}
+			}
             }
         }
         $this->flux_log->write_log('info', 'VoIP plans synchronization finished.');
@@ -289,28 +330,6 @@ class ApiSync extends CI_Controller {
 			curl_setopt($ch_put, CURLOPT_POST, true);
 			curl_setopt($ch_put, CURLOPT_POSTFIELDS, json_encode($put_payload));
 									
-            /*			
-            $this->curl = new Curl();		      
-			$this->curl->create($urlCurl);
-		
-			$headers = [
-				'Content-Type: application/json',
-				'ixcsoft: ',
-				'Authorization: Basic ' . base64_encode($auth_string)
-			];
-			
-			$this->curl->option(CURLOPT_HTTPHEADER, $headers);
-			$this->curl->option(CURLOPT_RETURNTRANSFER, true);
-			$this->curl->option(CURLOPT_TIMEOUT, 1000);
-			$this->curl->option(CURLOPT_SSL_VERIFYPEER, true);
-			$this->curl->option(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-			$this->curl->option(CURLOPT_ENCODING, '');
-			$this->curl->option(CURLINFO_HEADER_OUT, true);
-		
-			$this->curl->put(json_encode($put_payload));
-			$response = $this->curl->execute();
-			$http_code = $this->curl->info['http_code'];
-			*/
 			$response_put = curl_exec($ch_put);
 			$httpCodePut = curl_getinfo($ch_put, CURLINFO_HTTP_CODE);
 			curl_close($ch_put);
@@ -320,7 +339,7 @@ class ApiSync extends CI_Controller {
 				$this->flux_log->write_log('success', "PUT Response {$response_id}: " . json_encode($response_put));
 			} 
 			else {
-				$this->api_model->salvar_log_api(
+				$this->api_model->save_api_log(
 					$urlCurl,
 					json_encode($put_payload),
 					$response_put,
@@ -358,7 +377,7 @@ class ApiSync extends CI_Controller {
     // API REQUEST HELPERS
     // ==========================================================================
     private function request_voip_sippeers($api_url, $auth_string) {
-        return $this->send_post_request($api_url . 'view_voip_sippeers_cliente', $auth_string, ['rp' => '20000', 'qtype' => 'view_voip_sippeers_cliente.id_integracao', 'query' => '8', 'oper' => '='], 'listar');
+        return $this->send_post_request($api_url . 'view_voip_sippeers_cliente', $auth_string, ['rp' => '20000', 'qtype' => 'view_voip_sippeers_cliente.id', 'query' => '0', 'oper' => '>'], 'listar');
     }
     private function request_cliente($api_url, $auth_string, $id) {
         return $this->send_post_request($api_url . 'cliente', $auth_string, ['qtype' => 'cliente.id', 'query' => $id, 'oper' => '='], 'listar');
@@ -367,7 +386,7 @@ class ApiSync extends CI_Controller {
         return $this->send_post_request($api_url . 'cliente_contrato', $auth_string, ['qtype' => 'cliente_contrato.id', 'query' => $id_contrato, 'oper' => '='], 'listar');
     }
     private function request_voip_devices($api_url, $auth_string) {
-        return $this->send_post_request($api_url . 'voip_sippeers', $auth_string, ['rp' => '20000', 'qtype' => 'voip_sippeers.id_integracao', 'query' => '8', 'oper' => '='], 'listar');
+        return $this->send_post_request($api_url . 'voip_sippeers', $auth_string, ['rp' => '20000', 'qtype' => 'voip_sippeers.id', 'query' => '0', 'oper' => '>'], 'listar');
     }
     private function request_cidade($api_url, $auth_string) {
         return $this->send_post_request($api_url . 'cidade', $auth_string, ['rp' => '100000'], 'listar');
