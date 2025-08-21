@@ -28,16 +28,18 @@ class api_endpoints extends CI_Controller
     {
         parent::__construct();
         $this->load->helper('template_inheritance');
-        $this->load->library('session');
-        $this->load->library("api_endpoints_form");
+        $this->load->library('api_endpoints_form');
         $this->load->library('flux/form');
-        $this->load->helper(array('form', 'url'));
-        $this->load->library('flux/permission');
         $this->load->library('flux_log');
+        $this->load->library('FLUX_Sms');
+        $this->load->helper(array('form', 'url'));
+        $this->load->model('common_model');
+        $this->load->library('session');
+        $this->load->helper('form');
         $this->load->model('api_endpoints_model');
         $this->load->model('api_model');
-        $this->load->library('csvreader');
-        $this->load->library('FLUX_Sms');
+        $this->load->model('Flux_common');
+        $this->load->library('flux/permission');
         
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
@@ -267,7 +269,7 @@ class api_endpoints extends CI_Controller
 			} 
 			else {
 					$last_id = $this->api_endpoints_model->add_partners($add_array);
-					$this->session->set_flashdata('flux_errormsg', $add_array["partner_name"].' '.gettext('Added Successfully!'));
+					$this->session->set_flashdata('flux_errormsg', gettext('Partner'). ' '.$add_array["partner_name"].' '.gettext('Added Successfully!'));
 
 					redirect(base_url().'api_endpoints/partners_list/');
 				exit();
@@ -503,7 +505,7 @@ class api_endpoints extends CI_Controller
         
     function api_test_form($edit_id = '')
     {
-        $data['page_title'] = 'Test API Endpoint';
+        $data['page_title'] = gettext('Test API Endpoint');
         $accountinfo = $this->session->userdata ( "accountinfo" );        
 		$add_array = $this->db_model->getSelect ( "*", " api_endpoints", array ('id' => $edit_id));
 		
@@ -526,6 +528,71 @@ class api_endpoints extends CI_Controller
 		} 		
     }
     
+    function get_endpoint_base_url()
+    {
+        $this->permission->check_web_record_permission($edit_id, 'api_endpoints', "api_endpoints/api_activity_list/");
+        $endpoint_id = $this->input->post('endpoint_id');
+//        $this->load->database();
+        $query = $this->db->get_where('endpoints', ['id' => $endpoint_id]);
+        if ($query->num_rows()) {
+            $row = $query->row();
+            $base_url = $row->base_url;
+            $last_segment = end(explode('/', rtrim($base_url, '/'))); // exemplo: retorna 'cdr'
+            $qtype = $last_segment . '.id';
+    
+            $response = [
+                'qtype' => $qtype,
+                'body' => [
+                    'qtype' => $qtype,
+                    'query' => '0',
+                    'oper' => '>',
+                    'page' => '1',
+                    'rp' => '10000',
+                    'sortname' => $qtype,
+                    'sortorder' => 'desc'
+                ]
+            ];
+            echo json_encode($response);
+        } else {
+            echo json_encode(['error' => 'Endpoint não encontrado']);
+        }
+    }
+ 	 	
+ 	
+ 	function getendpoint($endpoint_id = '') {
+    if (!$endpoint_id) {
+        echo json_encode(['error' => 'ID inválido']);
+        return;
+    }
+
+    $query = $this->db_model->getSelect("*", "endpoints", array(
+        'id' => $endpoint_id
+    ));
+
+    if ($query->num_rows()) {
+        $row = $query->row();
+        $base_url = $row->base_url;
+        $parts = explode('/', rtrim($base_url, '/'));
+        $last_segment = end($parts);
+        $qtype = $last_segment . '.id';
+
+        $response = array(
+            'qtype' => $qtype,
+            'body' => array(
+                'qtype' => $qtype,
+                'query' => '0',
+                'page' => '1',
+                'rp' => '20',
+                'sortname' => $qtype,
+                'sortorder' => 'desc'
+            )
+        );
+        echo json_encode($response);
+    } else {
+        echo json_encode(array('error' => 'Endpoint não encontrado'));
+    }
+		}
+ 	
 	function api_test_send()
     {
     $url_endpoint = rtrim($this->input->post('endpoint_url'), '/');
@@ -605,14 +672,7 @@ class api_endpoints extends CI_Controller
     );
     $this->db->insert('api_test_responses', $response_data);
     
-    $this->api_model->save_api_log(
-                $url,
-                json_decode($body, true),
-                $response,
-                'api_test_responses',
-                $http_code
-            );
-
+    $this->api_model->save_api_log($url, $body, $response, 'api_test_responses', $http_code );
     $data = [
         'http_code'       => $http_code,
         'total_time'      => $total_time,
@@ -633,13 +693,37 @@ class api_endpoints extends CI_Controller
     $this->load->view('view_api_request_result', $data);
 }
  
+    function get_endpoint_info($endpoints_id)
+    {
+     $id = $this->$endpoints_id;
+     if (!$id || !is_numeric($id)) {
+         echo json_encode(['error' => 'ID inválido']);
+         return;
+     }
+ 
+//     $this->load->model('common');
+ 
+     $endpoint_nome = $this->common->get_field_name("descricao", "endpoints", array("id" => $id));
+     $base_url = $this->common->get_field_name("base_url", "endpoints", array("id" => $id));
+ 
+     if (!$endpoint_nome || !$base_url) {
+         echo json_encode(['error' => 'Registro não encontrado']);
+         return;
+     }
+ 
+     echo json_encode([
+         'nome' => $endpoint_nome,
+         'base_url' => ltrim($base_url, '/')
+     ]);
+ }
+ 
     function get_buttons_api_endpoints($id)
     {    
         if ($this->session->userdata('logintype') == '0'){  
-            $ret_url = '<a href="' . base_url () . 'api_endpoints/api_test_form/'.$id.'" class="btn btn-royelblue btn-sm"  rel="" title="Test API">&nbsp;<i class="fa fa-rotate-right fa-fw"></i></a>&nbsp;';   
+            $ret_url = '<a href="' . base_url () . 'api_endpoints/api_test_form/'.$id.'" class="btn btn-royelblue btn-sm"  rel="" title="'.gettext('Test API').'">&nbsp;<i class="fa fa-rotate-right fa-fw"></i></a>&nbsp;';   
         }
         else{  
-            $ret_url = '<a href="' . base_url () . 'api_endpoints/api_test_form/'.$id.'" class="btn btn-royelblue btn-sm"  rel="facebox_medium" title="Test API"><i class="fa fa-rotate-right fa-fw"></i></a>';  
+            $ret_url = '<a href="' . base_url () . 'api_endpoints/api_test_form/'.$id.'" class="btn btn-royelblue btn-sm"  rel="facebox_medium" title="'.gettext('Test API').'"><i class="fa fa-rotate-right fa-fw"></i></a>';  
         }       
         return $ret_url;    
     }
@@ -677,12 +761,10 @@ class api_endpoints extends CI_Controller
             $this->session->set_userdata('advance_search', $this->input->post('advance_search'));
             $action = $this->input->post();
             if (isset($action['created_at'][0]) && $action['created_at'][0] != "") {
-                $action['created_at'][0]=$this->common->convert_GMT_new ( $action['created_at'][0]);
-//                $action['created_at'][0] = $this->common->convert_GMT_to_noChange($action['created_at'][0]);
+                $action['created_at'][0] = $this->common->convert_GMT_new($action['created_at'][0]);
             }
             if (isset($action['created_at'][1]) && $action['created_at'][1] != '') {
-            $action['created_at'][1]=$this->common->convert_GMT_new ( $action['created_at'][1]);
-//                $action['created_at'][1] = $this->common->convert_GMT_to_noChange($action['created_at'][1]);
+                $action['created_at'][1] = $this->common->convert_GMT_new($action['created_at'][1]);
             }
             unset($action['action']);
             unset($action['advance_search']);

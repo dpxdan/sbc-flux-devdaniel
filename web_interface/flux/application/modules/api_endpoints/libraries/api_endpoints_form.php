@@ -199,6 +199,18 @@ class api_endpoints_form
             ),            
             $partner,            
             array(
+                gettext('External API ID'),
+                'INPUT',
+                array(
+                    'name' => 'external_api_id',
+                    'size' => '50',
+                    'class' => "text field small"
+                ),
+                '',
+                'tOOL TIP',
+                ''
+            ),          
+            array(
                 gettext('Status'),
                 'status',
                 'SELECT',
@@ -352,6 +364,25 @@ class api_endpoints_form
                     '',
                     'set_search_status',
                     '',
+                    ''
+                ),
+                array(
+                    gettext('Endpoint External ID'),
+                    'INPUT',
+                    array(
+                        'name' => 'external_api_id[external_api_id]',
+                        '',
+                        'size' => '50',
+                        'class' => "text field"
+                    ),
+                    '',
+                    'tOOL TIP',
+                    '1',
+                    'external_api_id[external_api_id-string]',
+                    '',
+                    '',
+                    '',
+                    'search_string_type',
                     ''
                 ),
                 array(
@@ -1533,17 +1564,6 @@ class api_endpoints_form
                     "true",
                     "left"
                 ),
-                /*array(
-					gettext("Authentication"),
-					"80",
-					"partner_auth",
-					"",
-					"",
-					"",
-					"",
-					"true",
-					"center"
-				),*/
                 array(
                     gettext("Partner URL"),
                     "170",
@@ -1555,17 +1575,6 @@ class api_endpoints_form
                     "true",
                     "center"
                 ),
-                /*array(
-                    gettext("Auth User"),
-                    "80",
-                    "partner_user",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "true",
-                    "center"
-                ),*/
                 array(
 					gettext("Account"),
 					"90",
@@ -1577,17 +1586,6 @@ class api_endpoints_form
 					"true",
 					"center"
 				),
-                /*array(
-                	gettext("Last Login Date"),
-                	"80",
-                	"last_login_date",
-                	"last_login_date",
-                	"last_login_date",
-                	"convert_GMT_to",
-                	"",
-                	"true",
-                	"center",
-                ),*/
                 array(
                     gettext("Modified Date"),
                     "150",

@@ -80,6 +80,7 @@ class api_endpoints_model extends CI_Model
                         'endpoint_user' => $value['endpoint_user'],
                         'endpoint_password' => $value['endpoint_password'],
                         'endpoint_token' => $value['endpoint_token'],
+                        'external_api_id' => $value['external_api_id'],
                         'apply_on_endpoints' => $value['apply_on_endpoints'],
                         'status' => $value['status'],
                         'last_login_date' => $value['last_login_date'],

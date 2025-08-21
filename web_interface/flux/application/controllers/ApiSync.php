@@ -22,6 +22,8 @@
 // ##############################################################################
 class ApiSync extends CI_Controller {
 
+
+    public $external_api_id = '';
     public function __construct() {
         parent::__construct();
         $this->load->model('Sync_model');
@@ -46,6 +48,10 @@ class ApiSync extends CI_Controller {
             $auth_string = $endpoint['endpoint_user'] . ':' . $endpoint['endpoint_password'];
             $api_url = $endpoint['endpoint_url'];
 
+            $external_api_id = $endpoint['external_api_id'];
+            
+            $this->external_api_id = $external_api_id;
+            
             $customer_ids = $this->_sync_peers($api_url, $auth_string);
             if (empty($customer_ids)) {
                 $this->flux_log->write_log('info', 'No customers to sync for endpoint: ' . $endpoint['endpoint_name']);
@@ -377,7 +383,18 @@ class ApiSync extends CI_Controller {
     // API REQUEST HELPERS
     // ==========================================================================
     private function request_voip_sippeers($api_url, $auth_string) {
-        return $this->send_post_request($api_url . 'view_voip_sippeers_cliente', $auth_string, ['rp' => '20000', 'qtype' => 'view_voip_sippeers_cliente.id', 'query' => '0', 'oper' => '>'], 'listar');
+        
+        if (!empty($this->external_api_id)) {
+        $qtype = 'id_integracao';
+        $external_api_id = $this->external_api_id;
+        $oper = '=';
+        } else {
+        $qtype = 'id';
+        $external_api_id = 0;
+        $oper = '>';
+        }
+        
+        return $this->send_post_request($api_url . 'view_voip_sippeers_cliente', $auth_string, ['rp' => '20000', 'qtype' => 'view_voip_sippeers_cliente.'.$qtype.'', 'query' => $external_api_id, 'oper' => ''.$oper.''], 'listar');
     }
     private function request_cliente($api_url, $auth_string, $id) {
         return $this->send_post_request($api_url . 'cliente', $auth_string, ['qtype' => 'cliente.id', 'query' => $id, 'oper' => '='], 'listar');
@@ -386,7 +403,17 @@ class ApiSync extends CI_Controller {
         return $this->send_post_request($api_url . 'cliente_contrato', $auth_string, ['qtype' => 'cliente_contrato.id', 'query' => $id_contrato, 'oper' => '='], 'listar');
     }
     private function request_voip_devices($api_url, $auth_string) {
-        return $this->send_post_request($api_url . 'voip_sippeers', $auth_string, ['rp' => '20000', 'qtype' => 'voip_sippeers.id', 'query' => '0', 'oper' => '>'], 'listar');
+        if (!empty($this->external_api_id)) {
+        $qtype = 'id_integracao';
+        $external_api_id = $this->external_api_id;
+        $oper = '=';
+        } else {
+        $qtype = 'id';
+        $external_api_id = 0;
+        $oper = '>';
+        }
+        
+        return $this->send_post_request($api_url . 'voip_sippeers', $auth_string, ['rp' => '20000', 'qtype' => 'voip_sippeers.'.$qtype.'', 'query' => $external_api_id, 'oper' => ''.$oper.''], 'listar');
     }
     private function request_cidade($api_url, $auth_string) {
         return $this->send_post_request($api_url . 'cidade', $auth_string, ['rp' => '100000'], 'listar');

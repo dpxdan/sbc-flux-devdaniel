@@ -7225,6 +7225,12 @@ msgstr "Senha da Autenticação"
 msgid "Endpoint Token"
 msgstr "Token da Integração"
 
+msgid "External API ID"
+msgstr "ID Externo da Integração"
+
+msgid "Endpoint External ID"
+msgstr "ID Externo da Integração"
+
 msgid "Edit API Endpoint"
 msgstr "Editar Integração"
 
