@@ -29,7 +29,6 @@ class invoice {
 		$this->CI->load->library ( 'email' );
 		$this->CI->load->model ( 'common_model' );
 		$this->CI->load->library ( 'session' );
-		$this->CI->load->library("Invoice_log");
 		$this->CI->load->library("flux_log");
 	}
 
@@ -184,8 +183,56 @@ class invoice {
 		}
 		return $invoice_id;
 	}
+	public function receive_payment_controller($product_info,$account_info,$tax_calculation='',$payment_id,$currency_info='',$invoice_id){
+		$debit = "0.00";
+		$credit = "0.00";
+		$base_currency = Common_model::$global_config ['system_config'] ['base_currency'];
+		$bal= $this->CI->common->get_field_name("balance","accounts",array("id"=>$account_info['id']));
+		$account_balance = $account_info ['posttoexternal'] == 1 ? ($account_info ['credit_limit'] - $bal) : $bal;
+		$total_amt=$product_info['price'];
+		$after_balance = $account_balance + $total_amt; 
+
+		if($product_info['invoice_type'] == 'credit'){
+			$debit = "0.00";
+			$credit = isset($tax_calculation['amount_with_tax'])?$tax_calculation['amount_with_tax']:$product_info['price'];
+			$after_balance = $account_balance + $total_amt;
+		}
+		else{
+			$debit = isset($tax_calculation['amount_with_tax'])?$tax_calculation['amount_with_tax']:$product_info['price'];
+			$credit = "0.00";
+			$after_balance = $account_balance - $total_amt;
+		}
+		$insert_arr = array (
+				"accountid" =>$account_info['id'],
+				"description" =>trim($product_info['description']),
+				"created_date" =>gmdate("Y-m-d H:i:s"),
+				"invoiceid" => $invoice_id,
+				"reseller_id" => $account_info['reseller_id'],
+				"is_tax"=>0,
+				"order_item_id" =>$product_info['order_item_id'],
+				"payment_id"=>$payment_id,
+				'before_balance' =>$account_balance,
+				'product_category'=>$product_info['product_category'],
+				'charge_type'=>$product_info['charge_type'],
+				'after_balance'=>$after_balance,
+				'base_currency'=>$base_currency,
+				'exchange_rate'=>$currency_info['currencyrate'],
+				'account_currency'=>$currency_info['currency'],
+				'debit'=>$debit,
+				'credit'=>$credit
+				
+		      );
+
+		$this->CI->db->insert("invoice_details",$insert_arr);
+		if($product_info['is_update_balance'] == "true" && $product_info['product_category'] != '1' && $product_info['product_category'] != '4'){
+			
+			$balance = $this->update_balance ($total_amt, $account_info ['id'],$account_info ['posttoexternal'],$product_info['invoice_type']);
+
+		}
+		return $invoice_id;
+	}
 	public function add_invoice_details($product_info,$account_info,$tax_calculation='',$payment_id,$currency_info=''){
-		$this->CI->invoice_log->write_log('add_invoice_details', json_encode($product_info));
+		$this->CI->flux_log->write_log('add_invoice_details', json_encode($product_info));
 		$is_update_after_balance = "true";
 		$debit = "0.00";
 		$credit = "0.00";
@@ -200,6 +247,100 @@ class invoice {
 			$invoice_id = 0;
 		}
 		
+		if($product_info['invoice_type'] == 'credit'){
+			$debit = "0.00";
+			if(isset($tax_calculation['tax']) && !empty($tax_calculation['tax'])){
+				$credit = isset($tax_calculation['amount_with_tax'])?$tax_calculation['amount_with_tax']:$product_info['price'];
+			}else{
+				$credit = isset($tax_calculation['amount_without_tax'])?$tax_calculation['amount_without_tax']:$product_info['price'];
+			}
+			$after_balance = $account_balance + $credit;
+		}else{
+			$debit = isset($tax_calculation['amount_without_tax'])?$tax_calculation['amount_without_tax']:$product_info['price'];
+			$credit = "0.00";
+			$after_balance = $account_balance - $debit;
+		}
+		if(isset($product_info['is_update_balance']) && $product_info['is_update_balance'] == "false"){
+			$after_balance = $account_balance;
+			$is_update_after_balance = "false";
+		}
+		$after_balance = str_replace(',','.',$after_balance);
+		$insert_arr = array (
+				"accountid" =>$account_info['id'],
+				"description" =>trim($product_info['description']),
+				"created_date" =>gmdate("Y-m-d H:i:s"),
+				"invoiceid" => $invoice_id,
+				"reseller_id" => $account_info['reseller_id'],
+				"is_tax"=>0,
+				"order_item_id" => $product_info['order_item_id'],
+				"payment_id"=>$payment_id,
+				'before_balance' =>$account_balance,
+				'product_category'=>$product_info['product_category'],
+				'charge_type'=>$product_info['charge_type'],
+				'after_balance'=>$after_balance,
+				'base_currency'=>$base_currency,
+				'exchange_rate'=>isset($currency_info['currencyrate'])?$currency_info['currencyrate']:0,
+				'account_currency'=>isset($currency_info['currency'])?$currency_info['currency']:0,
+				'debit'=>$debit,
+				'credit'=>$credit
+				
+		      );
+		$this->CI->db->insert("invoice_details",$insert_arr);
+		if(isset($tax_calculation['tax']) && !empty($tax_calculation['tax'])){
+			foreach($tax_calculation['tax'] as $tax_key => $tax){
+				$before_balance = $after_balance;
+				$after_balance = $after_balance - $tax;
+			$tax_insert_arr = array (
+						"accountid" =>$account_info['id'],
+						"description" =>$tax_key,
+						"created_date" =>gmdate("Y-m-d H:i:s"),
+						"invoiceid" => $invoice_id,
+						"reseller_id" => $account_info['reseller_id'],
+						"is_tax"=>1,
+						"order_item_id" => $product_info['order_item_id'],
+						"payment_id"=>$payment_id,
+						'before_balance' =>$before_balance,
+						'product_category'=>'0',
+						'charge_type'=>"TAX",
+						'after_balance'=>($is_update_after_balance == "true")?$after_balance:$account_balance,
+						'base_currency'=>$base_currency,
+						'exchange_rate'=>$currency_info['currencyrate'],
+						'account_currency'=>$currency_info['currency'],
+						'debit'=>$tax,
+						'credit'=>0
+						
+				      );
+				$this->CI->db->insert("invoice_details",$tax_insert_arr);
+			}
+		}
+		if($product_info['is_update_balance'] == "true"){
+			$balance = $this->update_balance ($total_amt, $account_info ['id'],$account_info ['posttoexternal'],$product_info['invoice_type']);
+
+		}
+
+		return $invoice_id;
+	}
+	public function add_invoice_details_controller($product_info,$account_info,$tax_calculation='',$payment_id,$currency_info=''){
+		$this->CI->flux_log->write_log('add_invoice_details_controller', json_encode($product_info));
+		$is_update_after_balance = "true";
+		$debit = "0.00";
+		$credit = "0.00";
+		$bal= $this->CI->common->get_field_name("balance","accounts",array("id"=>$account_info['id']));
+		$base_currency = Common_model::$global_config ['system_config'] ['base_currency'];
+		$account_balance = $account_info ['posttoexternal'] == 1 ? $account_info ['credit_limit'] - ($bal) : $bal;
+		$product_info['is_update_balance'] = isset($product_info['is_update_balance']) ? $product_info['is_update_balance']:"true";
+		$total_amt=$product_info['price'];
+		if(isset($product_info['invoiceid']) && !empty($product_info['invoiceid'])){
+		$invoice_id = $product_info['invoiceid'];
+		}
+		else {
+		if( $account_info ['posttoexternal'] == 0 && $product_info['charge_type'] != "REFILL"){
+			$invoice_id = $this->generate_invoice ($account_info,$total_amt,$payment_id);
+		}
+		else{
+			$invoice_id = 0;
+		}
+		}
 		if($product_info['invoice_type'] == 'credit'){
 			$debit = "0.00";
 			if(isset($tax_calculation['tax']) && !empty($tax_calculation['tax'])){

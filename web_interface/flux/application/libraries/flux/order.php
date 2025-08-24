@@ -215,10 +215,8 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 					$product_info->invoice_type = ($product_info->product_category == 3) ? "credit":"debit";
 					$product_info->charge_type = $this->CI->common->get_field_name("code","category",array("id"=>$product_info->product_category)); 
 					$product_info->description= $product_info->charge_type." (".$product_info->name." X ".$product_info->quantity.") has been added.";
-					$product_info->is_apply_tax =($product_info->payment_by == "Account Balance")?"false":"true";
-
-					// $last_payment_id=$this->CI->payment->add_payments_transcation((array)$product_info,(array)$accountdata,$account_currency_info);
-					// $orderobjArr['accounts'][$key]->invoiceid=$last_payment_id;
+					$product_info->is_apply_tax =($product_info->payment_by == "Account Balance")?"false":"true";                    $last_payment_id=$this->CI->payment->add_payments_transcation((array)$product_info,(array)$accountdata,$account_currency_info);
+					$orderobjArr['accounts'][$key]->invoiceid=$last_payment_id;
 					if($accountdata->type == 1 && !empty($parent_array)){ 
 
 						if($accountdata->reseller_id > 0){

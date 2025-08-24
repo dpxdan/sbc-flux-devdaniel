@@ -38,7 +38,6 @@ class ProcessInvoice extends MX_Controller {
 		$this->load->library("flux_log");
 		$this->load->model("common_model");
 
-//		error_reporting("E_ALL");
 		ini_set("memory_limit", "3048M");
 		ini_set("max_execution_time", "2592000");
 
@@ -52,12 +51,12 @@ class ProcessInvoice extends MX_Controller {
 
 	function ManageServices() {
 		$this->flux_log->write_log('ManageServices', 'Start ManageServices');
-		$this->product_renewal_reminder();
-		$this->renew_product_service();
+		$this->product_renewal();
+		$this->renew_product();
 	}
 
 	function GenerateInvoice() {
-
+        $this->flux_log->write_log('GenerateInvoice', 'Start GenerateInvoice');
 		$this->db->where_in("type", array(
 			0,
 			1,
@@ -74,7 +73,6 @@ class ProcessInvoice extends MX_Controller {
 				if ($accountvalue['generate_invoice'] == '0') {
 					$this->generate_invoices($accountvalue);
 				}
-
 			}
 		}
 		exit();
@@ -93,7 +91,7 @@ class ProcessInvoice extends MX_Controller {
 			if ($this->EndDate != '') {
 			   $DayLog = array(
 					"accountid" => $accountinfo['id'],
-					"last_bill_date" => $accountinfo['last_bill_date'],					
+					"last_bill_date" => $accountinfo['last_bill_date'],
 					"current_date" => $this->CurrentDate,
 					"start_date" => $this->StartDate,
 					"end_date" => $this->EndDate,
@@ -103,6 +101,8 @@ class ProcessInvoice extends MX_Controller {
 				if ($invoiceid > 0) {
 					$this->bill_calls($accountinfo, $invoiceid);
 					$this->apply_taxes($accountinfo, $invoiceid);
+					$this->product_renewal_reminder($accountinfo, $invoiceid);
+					$this->renew_product_service($accountinfo, $invoiceid);
 					$this->db->where("id", $accountinfo['id']);
 					$this->db->update("accounts", array(
 						"last_bill_date" => $this->CurrentDate,
@@ -117,11 +117,11 @@ class ProcessInvoice extends MX_Controller {
 					$this->flux_log->write_log('InvoiceWeek_Week_StartDateMaior', json_encode($this->StartDate));
 					$this->StartDate = date("Y-m-d 00:00:01", strtotime($this->CurrentDate . " - 7 days"));
 				}
-				$this->EndDate = date("Y-m-d 23:59:59", strtotime($this->CurrentDate . " -2 second"));	
+				$this->EndDate = date("Y-m-d 23:59:59", strtotime($this->CurrentDate . " -2 second"));
 				if ($this->EndDate != '') {
 					$WeekLog = array(
 						"accountid" => $accountinfo['id'],
-						"last_bill_date" => $accountinfo['last_bill_date'],					
+						"last_bill_date" => $accountinfo['last_bill_date'],
 						"current_date" => $this->CurrentDate,
 						"start_date" => $this->StartDate,
 						"end_date" => $this->EndDate,
@@ -130,7 +130,9 @@ class ProcessInvoice extends MX_Controller {
 					$invoiceid = $this->create_invoice($accountinfo);
 					if ($invoiceid > 0) {
 						$this->bill_calls($accountinfo, $invoiceid);
-						$this->apply_taxes($accountinfo, $invoiceid);					
+						$this->apply_taxes($accountinfo, $invoiceid);
+						$this->product_renewal_reminder($accountinfo, $invoiceid);
+						$this->renew_product_service($accountinfo, $invoiceid);
 						$this->db->where("id", $accountinfo['id']);
 						$this->db->update("accounts", array(
 							"last_bill_date" => $this->CurrentDate,
@@ -154,9 +156,11 @@ class ProcessInvoice extends MX_Controller {
 				if ($invoiceid > 0) {
 					$this->bill_calls($accountinfo, $invoiceid);
 					$this->apply_taxes($accountinfo, $invoiceid);
+					$this->product_renewal_reminder($accountinfo, $invoiceid);
+					$this->renew_product_service($accountinfo, $invoiceid);
 					$this->db->where("id", $accountinfo['id']);
 					$this->db->update("accounts", array(
-						"last_bill_date" => $this->CurrentDate,
+					"last_bill_date" => $this->CurrentDate,
 					));
 				}
 			}
@@ -271,7 +275,6 @@ class ProcessInvoice extends MX_Controller {
 					$final_array = array_merge($accountinfo, $InvoiceData);
 					$log_final_array = array_merge($accountinfo, $InvoiceData);
 					$this->flux_log->write_log('update_invoice_amount', json_encode($log_final_array));
-					$this->PrintLogger('create_invoice',$log_final_array);
 					$this->common->mail_to_users("new_invoice", $final_array);
 					$this->update_bill_date($accountinfo);
 
@@ -294,19 +297,10 @@ class ProcessInvoice extends MX_Controller {
 	}
 
 	function bill_calls($accountinfo, $invoiceid) {
-		//	   $start_date = $this->common->convert_GMT_to($this->StartDate,$this->StartDate,$this->StartDate,$accountinfo['timezone_id']);
-		//		$end_Date = $this->common->convert_GMT_to($this->EndDate,$this->EndDate,$this->EndDate,$accountinfo['timezone_id']);
-		//		$table_name = $accountinfo['type'] == 1 ? 'reseller_cdrs' : 'cdrs';
-		//		$where_condition = $accountinfo['type'] == 1 ? "AND callstart >= '" .$start_date."'" : ' AND invoiceid =0 ';
-		//		$billable_calls_qr = "select calltype,sum(debit) as debit,sum(billseconds) as duration from ".$table_name." where accountid =" . $accountinfo['id'] . "  AND callstart <= '" .$end_Date. "' ".$where_condition." group by calltype";
-		//	$this->PrintLogger($this->Error_flag,$billable_calls_qr);
-		//    $billable_calls_qr = "select calltype,sum(debit) as debit,sum(billseconds) as duration from cdrs where accountid =" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "' AND invoiceid=0 group by calltype";
-
 		$billable_calls_qr = "select calltype,sum(debit) as debit,sum(billseconds) as duration from cdrs where accountid =" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "' AND invoiceid=0 group by calltype";
 		$billable_calls = $this->db->query($billable_calls_qr);
 
 		if ($billable_calls->num_rows() > 0) {
-			//    $update_billable_calls_qr = "select calltype,sum(debit) as debit,sum(billseconds) as duration from ".$table_name." where accountid =" . $accountinfo['id'] . "  AND callstart <= '" .$end_Date. "' ".$where_condition." group by calltype";
 
 			$billable_calls = $billable_calls->result_array();
 			$base_currency = Common_model::$global_config['system_config']['base_currency'];
@@ -455,7 +449,7 @@ class ProcessInvoice extends MX_Controller {
 		}
 	}
 	
-	function renew_product_service() {
+	function renew_product_service($accountinfo, $invoiceid) {
 		$is_apply_commission = "false";
 		$renew_deleted_flag = Common_model::$global_config['system_config']['renew_deleted_product'];
 		
@@ -466,6 +460,7 @@ class ProcessInvoice extends MX_Controller {
 		order_items.reseller_id,order_items.accountid,order_items.setup_fee,order_items.price', array(
 		"order_items.next_billing_date <=" => $this->custom_current_date,
 		"order_items.product_category <>" => "3",
+		"order_items.accountid =" => $accountinfo['id'],
 		"order_items.is_terminated" => "0",
 		"orders.payment_status <>" => "FAIL",
 		), 'order_items', 'orders.id=order_items.order_id', 'inner', '', '', '', '');
@@ -580,29 +575,6 @@ class ProcessInvoice extends MX_Controller {
 								"no_answer_vm_flag" => 1,
 								"failover_extensions" => "",
 							);
-							// release de produto por falta de saldo - REMOVIDO
-							// if ($product_info['release_no_balance'] == 0 && $produc_tinfo['product_category'] == 1) {
-							// 	if ($account_balance < $total_amt) {
-							// 		$is_process = false;
-							// 		$this->db->update("order_items", $update_order_arr, array(
-							// 			"id" => $ordervalue['id'],
-							// 		));
-							// 		$final_array['next_billing_date'] = $update_order_arr['termination_date'];
-							// 		$this->common->mail_to_users("product_release", $final_array);
-							// 		$no_account_balance_insert_arr = array(
-							// 			"cron_date" => $this->CurrentDate,
-							// 			"account_number" => $final_array['number'],
-							// 			"product_category" => $product_info['product_category'],
-							// 			"order_id" => $ordervalue['id'],
-							// 			"account_balance" => $account_balance,
-							// 			"product_total" => $total_amt,
-							// 			'message' => "Produto removido por falta de saldo",
-							// 		);
-							// 		$this->flux_log->write_log('no_get_account_product_info', json_encode($no_account_balance_insert_arr));
-							// 		//LOG
-
-							// 	}
-							// }
 							if ($is_process == true) {
 								$parentdata = $this->db_model->getSelect("*", "accounts", array(
 									"id" => $ordervalue["accountid"],
@@ -613,6 +585,7 @@ class ProcessInvoice extends MX_Controller {
 								$product_info['payment_by'] = "Account Balance";
 								$product_info['order_item_id'] = $ordervalue['order_id'];
 								$product_info['invoice_type'] = "debit";
+								$product_info['invoiceid'] = $invoiceid;
 								$product_info['is_apply_tax'] = "false";
 								$product_info['add_invoice_credit']= "false";
 								$product_info['charge_type'] = $this->common->get_field_name("code", "category", array(
@@ -632,24 +605,36 @@ class ProcessInvoice extends MX_Controller {
 
 								$final_array = array_merge($accountdata, $product_info);
 								$final_array['next_billing_date'] = $update_order_arr['next_billing_date'];
-								$last_payment_id = $this->payment->add_payments_transcation($product_info, $accountdata, $account_currency_info);
+								$last_payment_id = $this->payment->add_payments_transcation_controller($product_info, $accountdata, $account_currency_info);
 								if ($last_payment_id != '') {
 									$this->common->mail_to_users ( "product_renewed", $final_array );
 								
 								}
-
+                                if ($product_info['product_category'] == 1) {
+                                $counter_info = "SELECT id,used_seconds FROM counters WHERE  accountid = " . $ordervalue['accountid'] . " AND package_id = " . $ordervalue['order_id'] . " AND status=1 LIMIT 1";
+		                        $counter_info =$this->db->query($counter_info);
+		                        if($counter_info->num_rows > 0){
+								$counter_info = $counter_info->result_array();
+						        foreach ($counter_info as $counterkey => $countervalue) {																								
 								$this->db->update("counters", array(
-									"status" => 0,
+									"status" => 1,
 								), array(
 									"product_id" => $ordervalue['product_id'],
 									"accountid" => $ordervalue['accountid'],
+								    "package_id" => $ordervalue['order_id'],
+								    "id" => $countervalue['id'],
 								));
 								$counter_update_arr = array(
 									"product_id" => $ordervalue['product_id'],
 									"accountid" => $ordervalue['accountid'],
-									"status" => 0,
+								    "package_id" => $ordervalue['order_id'],
+								    "id" => $countervalue['id'],
+								    "status" => 1,
 								);
 								$this->flux_log->write_log('update_counter', json_encode($counter_update_arr));
+								}
+								}
+								else {
 								$counters_insert_arr = array(
 									"used_seconds" => 0,
 									"product_id" => $ordervalue['product_id'],
@@ -670,6 +655,8 @@ class ProcessInvoice extends MX_Controller {
 									"status" => 1,
 								);
 								$this->flux_log->write_log('insert_counter', json_encode($counters_log_insert_arr));
+								}
+								}
 								$this->db->update("order_items", $update_order_arr, array(
 									"id" => $ordervalue['id'],
 								));
@@ -695,7 +682,7 @@ class ProcessInvoice extends MX_Controller {
 
 					);
 					$this->flux_log->write_log('not_found_product', json_encode($no_product_insert_arr));
-					$this->PrintLogger('renew_product', $product_data);
+				$this->flux_log->write_log('renew_product', json_encode($product_data));
 
 				}
 			}
@@ -711,7 +698,289 @@ class ProcessInvoice extends MX_Controller {
 	
 	}
 
-	function product_renewal_reminder(){
+	function product_renewal_reminder($accountinfo, $invoiceid){
+		$renew_deleted_flag = Common_model::$global_config['system_config']['renew_deleted_product'];
+		if ($renew_deleted_flag == 0) {
+			$renewable_order = "SELECT  order_items.*,notify_before_day from order_items inner join invoice_conf ON invoice_conf.accountid = IF(order_items.reseller_id=0,1,order_items.reseller_id) where  order_items.next_billing_date <= DATE(DATE_ADD('".$this->CurrentDate."', INTERVAL invoice_conf.notify_before_day  DAY))";
+		
+		} 
+		else {
+		
+		$renewable_order = "SELECT  order_items.*,notify_before_day from order_items inner join invoice_conf ON invoice_conf.accountid = IF(order_items.reseller_id=0,1,order_items.reseller_id) where order_items.is_terminated =0 and   order_items.next_billing_date <= DATE(DATE_ADD('".$this->CurrentDate."', INTERVAL invoice_conf.notify_before_day  DAY))";
+		}
+	
+		$renewable_order =$this->db->query($renewable_order);
+	
+	
+		if($renewable_order->num_rows > 0){
+			$renewable_order = $renewable_order->result_array();
+			foreach($renewable_order as $orderkey => $ordervalue){
+	
+				$product_info = $this->db_model->getSelect("name,status,price,can_purchase,billing_days,billing_type,reseller_id,can_resell","products",array("id"=>$ordervalue['product_id']));
+				if($product_info->num_rows > 0){
+					$product_info = $product_info->result_array()[0];
+					$reseller_id  = ($ordervalue['reseller_id'] > 0)?$ordervalue['reseller_id']:0;
+					$account_data = $this->db_model->getSelect("*","accounts",array("id"=>$ordervalue['accountid'],"reseller_id"=> $reseller_id,"status"=>0,"deleted"=>0));
+	
+					if($account_data->num_rows > 0){
+						$account_info = $account_data->result_array()[0];
+						$final_array = array_merge($account_info,$product_info);
+	
+						$final_array['billing_date'] = $ordervalue['next_billing_date'];
+						$final_array['next_billing_date'] =($product_info['billing_days'] == 0)?gmdate('Y-m-d 23:59:59', strtotime('+10 years')):gmdate("Y-m-d 23:59:59",strtotime("+".($product_info['billing_days']-1)." days"));
+						$final_array['product_name'] = $product_info['name'];
+						if($product_info['status'] == 1 ||   $product_info['billing_type'] == 0 ){
+							$final_array['next_billing_date'] = $ordervalue['termination_date'];
+							$this->common->mail_to_users ( "product_release", $final_array );
+						}
+	
+						else if(($product_info['can_purchase'] == 1 ||$product_info['can_resell'] == 1) && $product_info['reseller_id'] == $ordervalue['reseller_id'] && $ordervalue['reseller_id'] > 0){
+								$this->common->mail_to_users ( "product_renewal_notice", $final_array );
+						}
+						else{
+							$this->common->mail_to_users ( "product_renewal_notice", $final_array );
+	
+						}
+				     }
+			  }
+		   }
+		}
+	}
+	
+	function renew_product() {
+	$is_apply_commission = "false";
+	$renew_deleted_flag = Common_model::$global_config['system_config']['renew_deleted_product'];
+	
+	$renewable_order = $this->db_model->getJionQuery('orders', 'orders.payment_status,orders.order_id as order_number,order_items.id,order_items.order_id,order_items.product_category,order_items.product_id,
+	order_items.quantity,order_items.billing_type,order_items.billing_days,order_items.free_minutes,
+	order_items.billing_date,order_items.next_billing_date,order_items.is_terminated ,order_items.termination_date,
+	order_items.termination_note,order_items.from_currency,order_items.exchange_rate,order_items.to_currency,
+	order_items.reseller_id,order_items.accountid,order_items.setup_fee,order_items.price', array(
+	"order_items.next_billing_date <=" => $this->custom_current_date,
+	"order_items.product_category <>" => "3",
+	"order_items.is_terminated" => "0",
+	"orders.payment_status <>" => "FAIL",
+	), 'order_items', 'orders.id=order_items.order_id', 'inner', '', '', '', '');
+	
+	
+	if ($renewable_order->num_rows > 0) {
+		$renewable_order = $renewable_order->result_array();
+		foreach ($renewable_order as $orderkey => $ordervalue) {
+			$orderobjArr = array();
+			$parentdata = array();
+			$parent_array = array();
+			$parent_key_arr = array();
+			$productdata = array(
+				"product_id" => $ordervalue['product_id'],
+			);
+			$productdatalog = array(
+				"product_id" => $ordervalue['product_id'],
+			);
+
+			if ($renew_deleted_flag == 0) {
+					$product_data = $this->db_model->getSelect("*", "products", array(
+						"id" => $ordervalue['product_id'],
+					));
+					
+			} else {
+					$product_data = $this->db_model->getSelect("*", "products", array(
+					"id" => $ordervalue['product_id'],
+					'is_deleted' => "0",
+					'status' => "0",
+				));
+		
+			}
+			if ($product_data->num_rows() > 0) {
+				$accountdata = $this->db_model->getSelect("*", "accounts", array(
+					"id" => $ordervalue["accountid"],
+					'deleted' => "0",
+					"status" => "0",
+				));
+				if ($accountdata->num_rows() > 0) {
+					$accountdata = $accountdata->result_array()[0];
+					$account_currency_info = $this->db_model->getSelect("*", "currency", array(
+						"id" => $accountdata['currency_id'],
+					));
+					if ($account_currency_info->num_rows > 0) {
+						$account_currency_info = (array) $account_currency_info->result_array();
+						$account_currency_info = $account_currency_info[0];
+					} else {
+						{
+							$base_currency = Common_model::$global_config['system_config']['base_currency'];
+							$account_currency_info = $this->db_model->getSelect("*", "currency", array(
+								"currency" => $base_currency,
+							));
+							$account_currency_info = (array) $account_currency_info->result_array();
+							$account_currency_info = $account_currency_info[0];
+						}
+
+					}
+					$user_product_info = $this->order->get_account_product_info($orderobjArr, (object) $accountdata, $productdata);
+					if (!empty($user_product_info) && $product_data->num_rows() > 0) {
+						$is_process = true;
+						$user_product_info->price = $ordervalue['price'];
+						$user_product_info->quantity = $ordervalue['quantity'];
+						$user_product_info->setup_fee = $ordervalue['setup_fee'];
+						$user_product_info->billing_days = $ordervalue['billing_days'];
+						$product_info = (array) $user_product_info;
+						$total_amt = ($ordervalue['price'] * $ordervalue['quantity']);
+						if ($accountdata['posttoexternal'] == 1) {
+							$account_balance = $accountdata['credit_limit'];
+						} else {
+
+							$account_balance = $accountdata['balance'];
+
+						}
+
+						$product_info['product_name'] = $product_info['name'];
+						$final_array = array_merge($accountdata, $product_info);
+						$acc_id = '';
+						$order_id = '';
+
+						$acc_id = $this->common->get_field_name("id", "accounts", array(
+							"number" => $final_array['number'],
+						));
+						$order_id = $this->common->get_field_name("order_id", "orders", array(
+							"id" => $ordervalue['order_id'],
+						));
+						$final_array['order_id'] = $order_id;
+						$final_array['next_billing_date'] = $this->common->get_field_name("next_billing_date", "order_items", array(
+							"order_id" => $ordervalue['order_id'],
+						));
+						$update_order_arr = array(
+							"is_terminated" => '1',
+							"termination_date" => $this->CurrentDate,
+							"termination_note" => "Product has been terminated",
+						);
+						$did_update_array = array(
+							"accountid" => 0,
+							"call_type" => 0,
+							"extensions" => "",
+							"always" => 0,
+							"always_destination" => "",
+							"user_busy" => 0,
+							"user_busy_destination" => "",
+							"user_not_registered" => 0,
+							"user_not_registered_destination" => "",
+							"no_answer" => 0,
+							"no_answer_destination" => "",
+							"call_type_vm_flag" => 1,
+							"failover_call_type" => 1,
+							"always_vm_flag" => 1,
+							"user_busy_vm_flag" => 1,
+							"user_not_registered_vm_flag" => 1,
+							"no_answer_vm_flag" => 1,
+							"failover_extensions" => "",
+						);							
+						if ($is_process == true) {
+							$parentdata = $this->db_model->getSelect("*", "accounts", array(
+								"id" => $ordervalue["accountid"],
+							));
+							$parentdata = $parentdata->first_row();
+
+							$product_info['payment_status'] = "PAID";
+							$product_info['payment_by'] = "Account Balance";
+							$product_info['order_item_id'] = $ordervalue['order_id'];
+							$product_info['invoice_type'] = "debit";
+							$product_info['is_apply_tax'] = "false";
+							$product_info['add_invoice_credit']= "false";
+							$product_info['charge_type'] = $this->common->get_field_name("code", "category", array(
+								"id" => $product_info['product_category'],
+							));
+							if ($product_info['charge_type'] == 'PACKAGE') {
+								$product_info['charge_type'] = 'Plano';
+							}
+							$product_info['description'] = "O " . $product_info['charge_type'] . " (" . $product_info['name'] . ") foi renovado.";
+							$to_date = gmdate ( "Y-m-".$accountdata['invoice_day']." H:i:s" );
+							$from_date = gmdate ( "Y-m-".$accountdata['invoice_day']." 23:59:59", strtotime ( $to_date . " + 1 month" ) );
+
+							$update_order_arr = array(
+								"billing_date" => $this->CurrentDate,
+								"next_billing_date" => $from_date,
+							);
+
+							$final_array = array_merge($accountdata, $product_info);
+							$final_array['next_billing_date'] = $update_order_arr['next_billing_date'];
+							$last_payment_id = $this->payment->add_payments_transcation($product_info, $accountdata, $account_currency_info);
+							if ($last_payment_id != '') {
+								$this->common->mail_to_users ( "product_renewed", $final_array );
+							
+							}
+
+							$this->db->update("counters", array(
+								"status" => 0,
+							), array(
+								"product_id" => $ordervalue['product_id'],
+								"accountid" => $ordervalue['accountid'],
+							));
+							$counter_update_arr = array(
+								"product_id" => $ordervalue['product_id'],
+								"accountid" => $ordervalue['accountid'],
+								"status" => 0,
+							);
+							$this->flux_log->write_log('update_counter', json_encode($counter_update_arr));
+							$counters_insert_arr = array(
+								"used_seconds" => 0,
+								"product_id" => $ordervalue['product_id'],
+								"accountid" => $ordervalue['accountid'],
+								"package_id" => $ordervalue['id'],
+								"type" => 1,
+								"status" => 1,
+							);
+							$this->db->insert("counters", $counters_insert_arr);
+							$counter_id = $this->db->insert_id();
+							$counters_log_insert_arr = array(
+								"used_seconds" => 0,
+								"product_id" => $ordervalue['product_id'],
+								"accountid" => $ordervalue['accountid'],
+								"package_id" => $ordervalue['id'],
+								"counter_id" => $counter_id,
+								"type" => 1,
+								"status" => 1,
+							);
+							$this->flux_log->write_log('insert_counter', json_encode($counters_log_insert_arr));
+							$this->db->update("order_items", $update_order_arr, array(
+								"id" => $ordervalue['id'],
+							));
+							$this->update_bill_date($accountdata);
+						}
+					} else {
+						$no_acc_product_insert_arr = array(
+							"cron_date" => $this->CurrentDate,
+							"account" => $accountdata,
+							"order_id" => $ordervalue['id'],
+							'message' => "Produto nao encontrado para a conta.",
+						);
+						$this->flux_log->write_log('no_get_account_product_info', json_encode($no_acc_product_insert_arr));
+					}
+
+				}
+			} 
+			else {
+				$no_product_insert_arr = array(
+					"cron_date" => $this->CurrentDate,
+					"product_id" => $productdatalog,
+					'message' => "Produto nao encontrado.",
+
+				);
+				$this->flux_log->write_log('not_found_product', json_encode($no_product_insert_arr));
+				$this->PrintLogger('renew_product', $product_data);
+
+			}
+		}
+	} else {
+		$no_renew_insert_arr = array(
+			"cron_date" => $this->CurrentDate,
+			'message' => "Nenhum pedido para renovar.",
+
+		);
+		$this->flux_log->write_log('no_renew', json_encode($no_renew_insert_arr));
+
+	}
+
+}
+
+	function product_renewal(){
 		$renew_deleted_flag = Common_model::$global_config['system_config']['renew_deleted_product'];
 		if ($renew_deleted_flag == 0) {
 			$renewable_order = "SELECT  order_items.*,notify_before_day from order_items inner join invoice_conf ON invoice_conf.accountid = IF(order_items.reseller_id=0,1,order_items.reseller_id) where  order_items.next_billing_date <= DATE(DATE_ADD('".$this->CurrentDate."', INTERVAL invoice_conf.notify_before_day  DAY))";
@@ -763,26 +1032,6 @@ class ProcessInvoice extends MX_Controller {
 	function update_bill_date($accountinfo) {
 			$this->db->where("id",$accountinfo['id']);
 			$this->db->update("accounts",array("last_bill_date" => $this->CurrentDate));
-	}
-
-	function PrintLogger($Error_flag, $Message) {
-		if ($Error_flag) {
-			if (is_array($Message)) {
-				foreach ($Message as $MessageKey => $MessageValue) {
-					if (is_array($MessageValue)) {
-						foreach ($MessageValue as $LogKey => $LogValue) {
-								$this->flux_log->write_log(''.$LogKey.'', json_encode($LogValue));
-						}
-					} else {
-							$this->flux_log->write_log(''.$MessageKey.'', json_encode($MessageValue));
-					}
-				}
-			} else {
-				if ($this->Error_flag) {
-							$this->flux_log->write_log('error_invoice', json_encode($Message));
-				}
-			}
-		}
 	}
 
 	function get_system_config() {
