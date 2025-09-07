@@ -13,10 +13,7 @@ $(document).ready(function() {
 		{display: '<?php echo gettext("Call Date"); ?>', name: 'Call Date', width: 70, sortable: true, align: 'center'},
 		{display: '<?php echo gettext("Origination"); ?>', name: 'CID Name', width: 70, sortable: true, align: 'center'},
 		{display: '<?php echo gettext("Caller IP"); ?>', name: 'IP Address', width: 75, sortable: true, align: 'center'},
-		{display: '<?php echo gettext("Customer"); ?>', name: 'Customer', width: 75, sortable: true, align: 'center'},
-		// {display: '<?php echo gettext("Org.")?><br/> <?php echo gettext("Prefix"); ?>', name: 'Org. Prefix', width: 60, sortable: true, align: 'center'},
-		// {display: '<?php echo gettext("Org.")?><br/> <?php echo gettext("Destination"); ?>', name: 'Org. Destination', width: 90, sortable: true, align: 'center'},
-		// {display: '<?php echo gettext("Org.")?><br/> <?php echo gettext("Cost"); ?>', name: 'Org. Cost', width: 80, sortable: true, align: 'center'},
+		{display: '<?php echo gettext("Customer"); ?>', name: 'Customer', width: 100, sortable: true, align: 'center'},		
 		{display: '<?php echo gettext("Outbound")?>:<br/> <?php echo gettext("Trunk"); ?>', name: 'Term. Trunk', width: 80, sortable: true, align: 'center'},
 		{display: '<?php echo gettext("Outbound")?>:<br/><?php echo gettext("Prefix"); ?>', name: 'Term. Prefix', width: 60, sortable: true, align: 'center'},
 		{display: '<?php echo gettext("Outbound")?>:<br/> <?php echo gettext("Destination"); ?>', name: 'Term. Destination', width: 80, sortable: true, align: 'center'},
@@ -28,14 +25,14 @@ $(document).ready(function() {
         {display: '<?php echo gettext("Codecs"); ?>', name: 'Codecs', width: 200, sortable: true, align: 'center'}
 		],
 	nowrap: false,
-	showToggleBtn: false,
-	sortname: "id",
-	sortorder: "asc",
+	showToggleBtn: true,
+	sortname: "created",
+	sortorder: "desc",
 	usepager: true,
 	resizable: true,
 	useRp: true,
-	rp: 500,
-	showTableToggleBtn: false,
+	rp: 25,
+	showTableToggleBtn: true,
 	width: "auto",
 	height: "auto",
 	pagetext: 'Page',
@@ -74,14 +71,14 @@ function reload_button()
 }
 </script>
 
-<script type="text/javascript">
+<!--<script type="text/javascript">
 setInterval( "refreshAjax();", 10000 ); 
 
 $(function() {
   refreshAjax = function(){$("#flex1").flexReload();
 }
 });
-</script>
+</script>-->
 
 <? endblock() ?>
 

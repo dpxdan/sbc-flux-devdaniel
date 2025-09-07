@@ -600,6 +600,7 @@ class Db_model extends CI_Model {
 		$drp_array = $drp_array->result ();
 
 		$drp_list = array ();
+		$drp_list [0] = gettext("--Select--");
 		foreach ( $drp_array as $drp_value ) {
 			$drp_list [$drp_value->{$select_params [0]}] = gettext($drp_value->{$select_params [1]});
 		}
