@@ -31,7 +31,7 @@ class Products extends MX_Controller {
 		$this->load->library('form_validation');
 		$this->load->library ( 'flux/order' );
 		$this->load->library ( 'did_lib' );
-		$this->load->library("Invoice_log");
+		$this->load->library("flux_log");
 		$this->load->model ( 'Flux_common' );
 		if ($this->session->userdata ( 'user_login' ) == FALSE)
 			redirect ( base_url () . '/flux/login' );
@@ -131,7 +131,7 @@ class Products extends MX_Controller {
 				"product_name" => $data['product_name'],
 				"product_category" => $category,
 			);
-			$this->invoice_log->write_log('products_add', json_encode($ProductDataLog));
+			$this->flux_log->write_log('products_add', json_encode($ProductDataLog));
 			$this->load->view ( 'view_product_add_'.strtolower($category), $data);
 		}else{
 			if ($this->session->userdata ( 'logintype' ) == 1 || $this->session->userdata ( 'logintype' ) == 5){
@@ -368,7 +368,11 @@ class Products extends MX_Controller {
 				
 				$data ['page_title'] = gettext ( 'Create Product' );
 				$data ['validation_errors'] = validation_errors ();
-//echo "<pre>"; print_r($data); exit;
+
+				if ($category == "Pacote"){
+					$category = "Package";
+				}
+
 				$this->load->view ( 'view_product_add_'.strtolower($category), $data);	
 	       	     }
 	       	     else{  
