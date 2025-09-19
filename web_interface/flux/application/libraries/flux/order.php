@@ -97,7 +97,34 @@ class order {
 
 		} 
 	}	
+	function get_account_info_proxy(&$orderobjArr,$account_id,$is_parent_billing=true){
+		$accountarr = array();
+		$tempkeyarr = array();
+		$select = "id,number,reseller_id,type,balance,credit_limit,invoice_day,last_bill_date,sweep_id,email,posttoexternal,currency_id,is_distributor,id_external";
+		$temparray = $this->CI->db_model->getSelect($select,"accounts",array("id_external"=>$account_id,"status"=>"0","deleted"=>"0"));
+		if($temparray->num_rows > 0){
+			$temparray = $temparray->first_row();
+
+			$accountarr[$temparray->id] = $temparray;
+			$tempkeyarr[] = $temparray->id;
+			$resellerid = $temparray->reseller_id;
+			while($resellerid > 0 && $is_parent_billing == 'true'){
+				$temparray = $this->CI->db_model->getSelect($select,"accounts",array("id"=>$resellerid,"status"=>"0","deleted"=>"0"));
+				if($temparray->num_rows > 0){
+					$temparray = $temparray->first_row();
+					$accountarr[$temparray->id] = $temparray;
+					$tempkeyarr[] = $temparray->id;
+					$resellerid = $temparray->reseller_id;
+				}
+			}
+			array_multisort($tempkeyarr, SORT_ASC, $accountarr);
+			return $orderobjArr['accounts'] = $accountarr;
+
+		}
+	}
 	function get_account_product_info(&$orderobjArr,$accountdata,$productdata){
+	    $this->CI->flux_log->write_log('get_account_product_info_productdata', json_encode($productdata));
+	    $this->CI->flux_log->write_log('get_account_product_info_accountdata', json_encode($accountdata));
 		$system_config = common_model::$global_config ['system_config'];
 		$renew_deleted = Common_model::$global_config ['system_config'] ['renew_deleted_product'];
 		if($accountdata->type == '1' && $productdata['product_category'] != 3){
