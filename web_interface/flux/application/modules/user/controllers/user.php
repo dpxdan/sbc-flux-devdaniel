@@ -340,6 +340,7 @@ class User extends MX_Controller
                     $did_arr['price'] = $this->common_model->calculate_currency($product_array['price'], '', '', true, false);
                     $did_arr['setup_fee'] = $this->common_model->calculate_currency($product_array['setup_fee'], '', '', true, false);
                     $did_arr['next_billing_date'] = ($product_array['billing_days'] == 0) ? gmdate('Y-m-d 23:59:59', strtotime('+10 years')) : gmdate("Y-m-d 23:59:59", strtotime("+" . $product_array['billing_days'] . " days"));
+                    $did_arr['create_invoice'] = "false";
                     $last_id = $this->order->confirm_order($did_arr, $accountinfo['id'], $accountinfo);
                     $final_array = array_merge($account_arr, $did_arr);
                     if ($last_id > 0) {

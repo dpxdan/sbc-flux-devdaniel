@@ -416,6 +416,7 @@ class Sip_devices extends Account {
 			$account_id =  $postdata['accountid'];
 			$created_by_accountinfo = '1';
 			$productdata['product_id'] = $product_did_id;
+			$productdata['create_invoice'] = "false";
 			$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
 			
 			$this->response ( array (

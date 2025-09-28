@@ -748,6 +748,7 @@ class Did_admin extends Account
             
             $did_arr['next_billing_date'] = $next_bill_date;
             $did_arr['payment_by'] = "Account Balance";
+            $did_arr['create_invoice'] = "false";
             $last_id = $this->order->confirm_order($did_arr, $this->accountinfo['id'], $this->accountinfo);
             $final_array = array_merge($account_arr, $did_arr);
                     if ($last_id > 0) {
@@ -832,6 +833,7 @@ class Did_admin extends Account
                 // Kinjal issue no 3808
                 $add_array['is_parent_billing'] = "false";
                 $add_array['product_id'] = $this->postdata['did_id'];
+                $add_array['create_invoice'] = "true";
                 // END
                 $order_id = $this->order->confirm_order($add_array, $this->postdata['accountid'], $this->accountinfo);
                 if ($order_id > 0) {
@@ -1007,6 +1009,7 @@ class Did_admin extends Account
                         $add_array['product_id'] = $this->postdata['did_id'];
                     }
                 }
+                    $add_array['create_invoice'] = "true";
                     $order_id = $this->order->confirm_order($add_array, $account_info['id'], $account_info);
                     if ($order_id > 0) {
                         if($this->postdata['account_id'] != ""){

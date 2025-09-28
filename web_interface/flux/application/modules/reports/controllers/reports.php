@@ -353,7 +353,7 @@ class Reports extends MX_Controller
                 $duration = ($show_seconds == 'minutes') ? ($count_all['billseconds'] > 0) ? floor($count_all['billseconds'] / 60) . ":" . sprintf('%02d', $count_all['billseconds'] % 60) : "00:00" : $count_all['billseconds'];
                 $block_duration = ($show_seconds == 'minutes') ? ($value['block_billseconds'] > 0) ? floor($value['block_billseconds'] / 60) . ":" . sprintf('%02d', $value['block_billseconds'] % 60) : "00:00" : $value['block_billseconds'];
                 $customer_array[] = array(
-                    "Grand Total",
+                    "<b>".gettext("Grand Total")."</b>",
                     "",
                     "",
                     "",
@@ -412,7 +412,7 @@ class Reports extends MX_Controller
                 $duration = ($show_seconds == 'minutes') ? ($count_all['billseconds'] > 0) ? floor($count_all['billseconds'] / 60) . ":" . sprintf('%02d', $count_all['billseconds'] % 60) : "00:00" : $count_all['billseconds'];
                 $block_duration = ($show_seconds == 'minutes') ? ($count_all['block_billseconds'] > 0) ? floor($count_all['block_billseconds'] / 60) . ":" . sprintf('%02d', $count_all['block_billseconds'] % 60) : "00:00" : $count_all['block_billseconds'];
                 $customer_array[] = array(
-                    "Grand Total",
+                    "<b>".gettext("Grand Total")."</b>",
                     "",
                     "",
                     "",

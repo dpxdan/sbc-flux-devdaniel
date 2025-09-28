@@ -122,6 +122,9 @@ class payment {
 	}
 	
 	public function add_payments_transcation_controller($payment_info,$account_info,$currency_info){ 
+	    $this->CI->flux_log->write_log('payment_info', json_encode($payment_info));
+	    $this->CI->flux_log->write_log('account_info', json_encode($account_info));
+	    $this->CI->flux_log->write_log('currency_info', json_encode($currency_info));
 		$tax_calculation = '';
 		$is_apply_tax = (isset($payment_info['is_apply_tax']) && $payment_info['is_apply_tax'] == "false")?"false":"true";
 		 if($account_info ['posttoexternal'] == 0 &&  $is_apply_tax == "true"){
@@ -162,7 +165,7 @@ class payment {
 					"reseller_id"=>$account_info ['reseller_id'],
 					"amount" => isset($tax_calculation['amount_without_tax'])?$tax_calculation['amount_without_tax']:$payment_info['price'],
 					"tax"=>isset($tax_calculation['total_tax'])?$tax_calculation['total_tax']:0,
-					'payment_method' => isset($payment_info['payment_method'])?$payment_info['payment_method']:"Account Balance",
+					'payment_method' => isset($payment_info['payment_by'])?$payment_info['payment_by']:"Account Balance",
 					'actual_amount' => $payment_info['price'],
 					"payment_fee" => isset($payment_info['payment_fee'])?$payment_info['payment_fee']:0,
 					"user_currency" =>isset($currency_info['currency'])?$currency_info['currency'] : 0,
@@ -217,7 +220,7 @@ class payment {
 		    $this->CI->flux_log->write_log('add_payments_transcation_controller', 'invoiceid_true');
 		    $this->CI->flux_log->write_log('add_payments_transcation_controller', 'linha_218');
 		    $invoiceid = $payment_info['invoiceid'];
-//		    $this->CI->flux_log->write_log('payment_info_invoiceid', json_encode($payment_info['invoiceid']));
+		    $this->CI->flux_log->write_log('payment_info_invoiceid', json_encode($payment_info['invoiceid']));
 //		    $this->CI->flux_log->write_log('payment_info', json_encode($payment_info));
 		    
 //		    $invoiceid = $this->CI->invoice->generate_invoice_proccess ($account_info,$payment_info['price'],$last_payment_id);

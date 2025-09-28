@@ -296,6 +296,7 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
                 $add_array['product_id'] = $last_id;
                 $add_array['payment_by'] = "Account Balance";
                 $add_array['charge_type'] = "DID";
+                $add_array['create_invoice'] = "false";
                 $order_id = $this->order->confirm_order($add_array, $value['accountid'], $accountinfo);
             }
         }

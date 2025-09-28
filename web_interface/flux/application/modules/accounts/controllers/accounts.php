@@ -847,6 +847,7 @@ class Accounts extends MX_Controller {
 					if ($product_info->num_rows > 0) {
 						$product_info               = $product_info->result_array()[0];
 						$product_info['product_id'] = $did_id;
+						$product_info['create_invoice'] = "true";
 						$last_id                    = $this->order->confirm_order($product_info, $accountid, $accountinfo);
 						if ($last_id != '') {
 							$this->db->where("product_id", $product_info['product_id']);
@@ -2831,6 +2832,7 @@ function admin_save($add_array = false)
 			));
 
 		$ProductData['payment_by'] = $payment_gateway;
+		$ProductData['create_invoice'] = "true";
 		if ($this->form_validation->run() == FALSE) {
 			$data['page_title'] = gettext("Assign Product");
 			$date               = gmdate('Y-m-d H:i:s');

@@ -1614,7 +1614,8 @@ class Reports_form extends common
 
                 // $recording
             ));
-        } else {
+        } 
+        else {
             $account_info = $accountinfo = $this->CI->session->userdata('accountinfo');
             $currency_id = $account_info['currency_id'];
             $currency = $this->CI->common->get_field_name('currency', 'currency', $currency_id);
@@ -1686,11 +1687,33 @@ class Reports_form extends common
                     "center"
                 ),
                 array(
+				   gettext("Carrier"),
+				   "100",
+				   "carrier_id",
+				   "",
+				   "",
+				   "",
+				   "",
+				   "true",
+				   "center"
+			   ),
+                array(
                     gettext("Duration"),
                     "70",
                     "billseconds",
                     "customer_cdr_list_search",
                     "billseconds",
+                    "convert_to_show_in",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Block Duration"),
+                    "80",
+                    "block_billseconds",
+                    "customer_cdr_list_search",
+                    "block_billseconds",
                     "convert_to_show_in",
                     "",
                     "true",
