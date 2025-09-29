@@ -96,7 +96,7 @@ class ProcessInvoice extends MX_Controller {
 					"start_date" => $this->StartDate,
 					"end_date" => $this->EndDate,
 				);
-				$this->flux_log->write_log('InvoiceWeek_day_log', json_encode($DayLog));
+				$this->flux_log->write_log('InvoiceDay_log', json_encode($DayLog));
 				$invoiceid = $this->create_invoice($accountinfo);
 				if ($invoiceid > 0) {
 					$this->bill_calls($accountinfo, $invoiceid);
@@ -126,7 +126,7 @@ class ProcessInvoice extends MX_Controller {
 						"start_date" => $this->StartDate,
 						"end_date" => $this->EndDate,
 					);
-					$this->flux_log->write_log('InvoiceWeek_week_log', json_encode($WeekLog));
+					$this->flux_log->write_log('InvoiceWeek_log', json_encode($WeekLog));
 					$invoiceid = $this->create_invoice($accountinfo);
 					if ($invoiceid > 0) {
 						$this->bill_calls($accountinfo, $invoiceid);
@@ -150,8 +150,14 @@ class ProcessInvoice extends MX_Controller {
 					$this->EndDate = $this->CurrentDate;
 				}
 				$this->EndDate = date("Y-m-d H:i:s", strtotime($this->EndDate . " -2 second"));
-				$this->flux_log->write_log('Month_CurrentDate', json_encode($this->CurrentDate));
-				$this->flux_log->write_log('Month_EndDate', json_encode($this->EndDate));
+				$MonthLog = array(
+						"accountid" => $accountinfo['id'],
+						"last_bill_date" => $accountinfo['last_bill_date'],					
+						"current_date" => $this->CurrentDate,
+						"start_date" => $this->StartDate,
+						"end_date" => $this->EndDate,
+					);
+				$this->flux_log->write_log('InvoiceMonth_log', json_encode($MonthLog));
 				$invoiceid = $this->create_invoice($accountinfo);
 				if ($invoiceid > 0) {
 					$this->bill_calls($accountinfo, $invoiceid);
@@ -275,7 +281,6 @@ class ProcessInvoice extends MX_Controller {
 					$final_array = array_merge($accountinfo, $InvoiceData);
 					$log_final_array = array_merge($accountinfo, $InvoiceData);
 					$this->flux_log->write_log('update_invoice_amount', json_encode($log_final_array));
-					$this->PrintLogger('create_invoice',$log_final_array);
 					$this->common->mail_to_users("new_invoice", $final_array);
 					$this->update_bill_date($accountinfo);
 
@@ -588,7 +593,9 @@ class ProcessInvoice extends MX_Controller {
 								$product_info['invoice_type'] = "debit";
 								$product_info['invoiceid'] = $invoiceid;
 								$product_info['is_apply_tax'] = "false";
+								$product_info['create_invoice'] = "false";
 								$product_info['add_invoice_credit']= "false";
+								$product_info['product_id'] = $product_info['id'];
 								$product_info['charge_type'] = $this->common->get_field_name("code", "category", array(
 									"id" => $product_info['product_category'],
 								));
@@ -606,7 +613,7 @@ class ProcessInvoice extends MX_Controller {
 
 								$final_array = array_merge($accountdata, $product_info);
 								$final_array['next_billing_date'] = $update_order_arr['next_billing_date'];
-								$last_payment_id = $this->payment->add_payments_transcation_controller($product_info, $accountdata, $account_currency_info);
+								$last_payment_id = $this->payment->add_payments_transcation($product_info, $accountdata, $account_currency_info);
 								if ($last_payment_id != '') {
 									$this->common->mail_to_users ( "product_renewed", $final_array );
 								
@@ -619,6 +626,7 @@ class ProcessInvoice extends MX_Controller {
 						        foreach ($counter_info as $counterkey => $countervalue) {																								
 								$this->db->update("counters", array(
 									"status" => 1,
+								"used_seconds" => 0,
 								), array(
 									"product_id" => $ordervalue['product_id'],
 									"accountid" => $ordervalue['accountid'],

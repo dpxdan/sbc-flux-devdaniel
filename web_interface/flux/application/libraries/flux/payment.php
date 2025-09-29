@@ -34,6 +34,7 @@ class payment {
 	public function add_payments_transcation($payment_info,$account_info,$currency_info){ 
 		$tax_calculation = '';
 		$is_apply_tax = (isset($payment_info['is_apply_tax']) && $payment_info['is_apply_tax'] == "false")?"false":"true";
+		$create_invoice = (isset($payment_info['create_invoice']))?$payment_info['create_invoice']:'true';
 		 if($account_info ['posttoexternal'] == 0 &&  $is_apply_tax == "true"){
 				$tax_calculation=$this->CI->common_model->calculate_taxes($account_info,$payment_info['price']);
 			  if($tax_calculation){
@@ -48,25 +49,6 @@ class payment {
 		$reseller_id = $account_info['type']== 1 ? $account_info['id'] : 0;
 		$total_amt=  isset($tax_calculation['amount_with_tax'])?$tax_calculation['amount_with_tax']:$payment_info['price'];
 		$after_balance = $account_balance - $total_amt;
-		$insert_payment_arr_log = array (
-							"accountid" => $account_info ['id'],
-							"reseller_id"=>$account_info ['reseller_id'],
-							"amount" => isset($tax_calculation['amount_without_tax'])?$tax_calculation['amount_without_tax']:$payment_info['price'],
-							"tax"=>isset($tax_calculation['total_tax'])?$tax_calculation['total_tax']:0,
-							'payment_method' => isset($payment_info['payment_by'])?$payment_info['payment_by']:"Account Balance",
-							'actual_amount' => $payment_info['price'],
-							"payment_fee" => isset($payment_info['payment_fee'])?$payment_info['payment_fee']:0,
-							"user_currency" =>isset($currency_info['currency'])?$currency_info['currency'] : 0,
-							"currency_rate" =>isset($currency_info['currencyrate'])?$currency_info['currencyrate']:0,
-							"customer_ip"=>$this->getRealIpAddr(),
-							"transaction_details"=>json_encode($payment_info),
-							"transaction_id"=> (isset($payment_info['transaction_id']) && $payment_info['transaction_id'] != '')?$payment_info['transaction_id']:crc32(uniqid()),
-							"date"=>gmdate ( 'Y-m-d H:i:s' )
-						 
-						     );
-		$this->CI->flux_log->write_log('add_payments_transcation', json_encode($insert_payment_arr_log));
-		$this->CI->flux_log->write_log('add_payments_transcation - payment_info', json_encode($payment_info));
-		
 		$insert_payment_arr = array (
 					"accountid" => $account_info ['id'],
 					"reseller_id"=>$account_info ['reseller_id'],
@@ -89,7 +71,8 @@ class payment {
 		$payment_info['invoice_type'] = isset($payment_info['invoice_type'])?$payment_info['invoice_type']:"debit";
 
 		$payment_info['add_invoice_credit'] = isset($payment_info['add_invoice_credit'])?$payment_info['add_invoice_credit']:"false";
-
+    if(isset($payment_info['create_invoice']) && $payment_info['create_invoice'] == "true") {
+    $this->CI->flux_log->write_log('create_invoice_payment', json_encode("true"));
 		if(isset($payment_info['add_invoice_credit']) && $payment_info['add_invoice_credit'] == "true"){ 
 			$invoiceid = $this->CI->invoice->generate_invoice ($account_info,$payment_info['price'],$last_payment_id);
 			$payment_info['charge_type'] = "INVPAY";
@@ -117,14 +100,24 @@ class payment {
 		else{
 			$invoiceid = $this->CI->invoice->add_invoice_details($payment_info,$account_info,$tax_calculation,$last_payment_id,$currency_info);
 		}
+		}
+		else {
+		$this->CI->flux_log->write_log('create_invoice_payment', json_encode("false"));
+		$invoiceid = $this->CI->invoice->add_invoice_details($payment_info,$account_info,$tax_calculation,$last_payment_id,$currency_info);
+		}
 
 		return $invoiceid;
 	}
 	
 	public function add_payments_transcation_controller($payment_info,$account_info,$currency_info){ 
-	    $this->CI->flux_log->write_log('payment_info', json_encode($payment_info));
-	    $this->CI->flux_log->write_log('account_info', json_encode($account_info));
-	    $this->CI->flux_log->write_log('currency_info', json_encode($currency_info));
+	    $logDataNew = [
+        'payment_info'          => $payment_info,
+        'account_info'          => $account_info,
+        'currency_info'=> $currency_info,        
+    ];
+
+    $this->CI->flux_log->write_log('add_payments_transcation_controller', json_encode($logDataNew));
+	    
 		$tax_calculation = '';
 		$is_apply_tax = (isset($payment_info['is_apply_tax']) && $payment_info['is_apply_tax'] == "false")?"false":"true";
 		 if($account_info ['posttoexternal'] == 0 &&  $is_apply_tax == "true"){
@@ -141,24 +134,6 @@ class payment {
 		$reseller_id = $account_info['type']== 1 ? $account_info['id'] : 0;
 		$total_amt=  isset($tax_calculation['amount_with_tax'])?$tax_calculation['amount_with_tax']:$payment_info['price'];
 		$after_balance = $account_balance - $total_amt;
-		$insert_payment_arr_log = array (
-							"accountid" => $account_info ['id'],
-							"reseller_id"=>$account_info ['reseller_id'],
-							"amount" => isset($tax_calculation['amount_without_tax'])?$tax_calculation['amount_without_tax']:$payment_info['price'],
-							"tax"=>isset($tax_calculation['total_tax'])?$tax_calculation['total_tax']:0,
-							'payment_method' => isset($payment_info['payment_by'])?$payment_info['payment_by']:"Account Balance",
-							'actual_amount' => $payment_info['price'],
-							"payment_fee" => isset($payment_info['payment_fee'])?$payment_info['payment_fee']:0,
-							"user_currency" =>isset($currency_info['currency'])?$currency_info['currency'] : 0,
-							"currency_rate" =>isset($currency_info['currencyrate'])?$currency_info['currencyrate']:0,
-							"customer_ip"=>$this->getRealIpAddr(),
-							"transaction_details"=>json_encode($payment_info),
-							"transaction_id"=> (isset($payment_info['transaction_id']) && $payment_info['transaction_id'] != '')?$payment_info['transaction_id']:crc32(uniqid()),
-							"date"=>gmdate ( 'Y-m-d H:i:s' )
-						 
-						     );
-		$this->CI->flux_log->write_log('add_payments_transcation_controller', json_encode($insert_payment_arr_log));
-		$this->CI->flux_log->write_log('add_payments_transcation_controller - payment_info', json_encode($payment_info));
 		
 		$insert_payment_arr = array (
 					"accountid" => $account_info ['id'],
@@ -182,6 +157,9 @@ class payment {
 		$payment_info['invoice_type'] = isset($payment_info['invoice_type'])?$payment_info['invoice_type']:"debit";
 
 		$payment_info['add_invoice_credit'] = isset($payment_info['add_invoice_credit'])?$payment_info['add_invoice_credit']:"false";
+    $create_invoice = (isset($payment_info['create_invoice']))?$payment_info['create_invoice']:'true';
+    if(isset($create_invoice) && $create_invoice == "true"){
+
         if(!isset($payment_info['invoiceid'])) {
         $this->CI->flux_log->write_log('add_payments_transcation_controller', 'invoiceid_false');
 		if(isset($payment_info['add_invoice_credit']) && $payment_info['add_invoice_credit'] == "true"){
@@ -220,23 +198,27 @@ class payment {
 		    $this->CI->flux_log->write_log('add_payments_transcation_controller', 'invoiceid_true');
 		    $this->CI->flux_log->write_log('add_payments_transcation_controller', 'linha_218');
 		    $invoiceid = $payment_info['invoiceid'];
-		    $this->CI->flux_log->write_log('payment_info_invoiceid', json_encode($payment_info['invoiceid']));
-//		    $this->CI->flux_log->write_log('payment_info', json_encode($payment_info));
-		    
-//		    $invoiceid = $this->CI->invoice->generate_invoice_proccess ($account_info,$payment_info['price'],$last_payment_id);
 			$payment_info['charge_type'] = "INVPAY";
 			$payment_info['description'] = "Payment received from ".$payment_info['payment_by']." for product ".$payment_info['name'];
 			$payment_info['invoice_type'] = "debit";
 			$payment_info['is_update_balance'] = "true";
 			$invoiceid = $this->CI->invoice->receive_payment_controller($payment_info,$account_info,$tax_calculation,$last_payment_id,$currency_info,$invoiceid);
-		    
-		    
-		    
-			//$invoiceid = $payment_info['invoiceid'];
-//			$invoiceid = $this->CI->invoice->add_invoice_details_controller($payment_info,$account_info,$tax_calculation,$last_payment_id,$currency_info);
 			$this->CI->flux_log->write_log('payment_info_linha225', json_encode($invoiceid));
 		}
+    }
+    else {
+      if(isset($payment_info['invoiceid']) && $payment_info['invoiceid'] > 0){
+      $invoiceid = $payment_info['invoiceid'];
+      } 
+      else {
+			$payment_info['charge_type'] = "INVPAY";
+			$payment_info['description'] = "Payment received from ".$payment_info['payment_by']." for product ".$payment_info['name'];
+			$payment_info['invoice_type'] = "debit";
+			$payment_info['is_update_balance'] = "true";
+			$invoiceid = $this->CI->invoice->receive_payment_controller($payment_info,$account_info,$tax_calculation,$last_payment_id,$currency_info,$invoiceid);
+}
 
+    }
 		return $invoiceid;
 	}
 	

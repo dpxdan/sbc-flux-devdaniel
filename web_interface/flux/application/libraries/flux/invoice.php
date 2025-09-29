@@ -184,6 +184,17 @@ class invoice {
 		return $invoice_id;
 	}
 	public function receive_payment_controller($product_info,$account_info,$tax_calculation='',$payment_id,$currency_info='',$invoice_id){
+	$logDataNew = [
+        'product_info'          => $product_info,
+        'account_info'          => $account_info,
+        'tax_calculation'=> $tax_calculation,
+        'payment_id'=> $payment_id,
+        'currency_info'=> $currency_info,
+        'invoice_id'=> $invoice_id,        
+    ];
+
+    $this->CI->flux_log->write_log('receive_payment_controller_lib', json_encode($logDataNew));
+		$create_invoice_details = (isset($product_info['create_invoice']))?$product_info['create_invoice']:'true';
 		$debit = "0.00";
 		$credit = "0.00";
 		$base_currency = Common_model::$global_config ['system_config'] ['base_currency'];
@@ -202,6 +213,8 @@ class invoice {
 			$credit = "0.00";
 			$after_balance = $account_balance - $total_amt;
 		}
+		if(isset($create_invoice_details) && $create_invoice_details == "true"){
+		
 		$insert_arr = array (
 				"accountid" =>$account_info['id'],
 				"description" =>trim($product_info['description']),
@@ -229,6 +242,7 @@ class invoice {
 			$balance = $this->update_balance ($total_amt, $account_info ['id'],$account_info ['posttoexternal'],$product_info['invoice_type']);
 
 		}
+		}
 		return $invoice_id;
 	}
 	public function add_invoice_details($product_info,$account_info,$tax_calculation='',$payment_id,$currency_info=''){
@@ -241,12 +255,17 @@ class invoice {
 		$account_balance = $account_info ['posttoexternal'] == 1 ? $account_info ['credit_limit'] - ($bal) : $bal;
 		$product_info['is_update_balance'] = isset($product_info['is_update_balance']) ? $product_info['is_update_balance']:"true";
 		$total_amt=$product_info['price'];
+		if(isset($product_info['invoiceid']) && $product_info['invoiceid'] == 0){		
 		if( $account_info ['posttoexternal'] == 0 && $product_info['charge_type'] != "REFILL"){
 			$invoice_id = $this->generate_invoice ($account_info,$total_amt,$payment_id);
-		}else{
+		}
+		else{
 			$invoice_id = 0;
 		}
+		} else {
+		$invoice_id = $product_info['invoiceid'];
 		
+		}
 		if($product_info['invoice_type'] == 'credit'){
 			$debit = "0.00";
 			if(isset($tax_calculation['tax']) && !empty($tax_calculation['tax'])){
@@ -255,7 +274,8 @@ class invoice {
 				$credit = isset($tax_calculation['amount_without_tax'])?$tax_calculation['amount_without_tax']:$product_info['price'];
 			}
 			$after_balance = $account_balance + $credit;
-		}else{
+		}
+		else{
 			$debit = isset($tax_calculation['amount_without_tax'])?$tax_calculation['amount_without_tax']:$product_info['price'];
 			$credit = "0.00";
 			$after_balance = $account_balance - $debit;
