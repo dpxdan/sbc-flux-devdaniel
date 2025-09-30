@@ -366,26 +366,16 @@ class common {
 		$accountinfo = $this->CI->session->userdata ( 'accountinfo' );
 		if ($did_info ['accountid'] == 0 && $did_info ['parent_id'] == 0) {
 			$status = 'Not in use';
-		} elseif ($accountinfo ['type'] != 1) {
+		} else {
 			if ($did_info ['accountid'] == 0 && $did_info ['parent_id'] > 0) {
 				$status = 'Purchase by Reseller';
 			}
 			if ($did_info ['accountid'] > 0 && $did_info ['parent_id'] == 0) {
 				$status = 'Purchase by Customer';
 			}
-		} else {
-			$where_arr = array (
-					'note' => $did_info ['number'],
-					"parent_id" => $accountinfo ['id']
-			);
-			$this->db->where ( $where );
-			$this->CI->db->select ( 'reseller_id,parent_id' );
-			$reseller_pricing = ( array ) $this->db->get ( 'reseller_pricing' )->first_row ();
-			if ($reseller_pricing ['reseller_id'] == 0 && $did_info ['accountid'] == 0 && $did_info ['parent_id'] == $accountinfo ['id']) {
-				$status = 'Not in use';
-			}
-			if ($reseller_pricing ['reseller_id'] == 0 && $did_info ['accountid'] == 0) {
-				$status = 'Not in use';
+
+			if ($did_info ['accountid'] > 0 && $did_info ['parent_id'] > 0) {
+				$status = 'Purchase by Customer in Reseller';
 			}
 		}
 		return $status;
@@ -420,8 +410,8 @@ class common {
 		if (isset ( $uri_segment [3] ) && $uri_segment [3] > 0 && empty ( $edit_value )) {
 			$field_name = $this->CI->db_model->getSelect ( "sweep_id,invoice_day", "accounts", array (
 					"id" => $uri_segment [3]
-			) );
-			$field_name = $field_name->result_array ();
+			));
+			$field_name = $field_name->result_array();
 			$select = $field_name [0] ["sweep_id"];
 			$invoice_date = $field_name [0] ["invoice_day"];
 		} else {
@@ -4055,7 +4045,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		return $contents;
 	}
 	function get_call_type_grid($select = "", $table = "" ,$did_id="") {
-		$this->CI->flux_log->write_log('get_call_type_grid', json_encode($did_id));	
 		$query = (array)$this->CI->db_model->getSelect("call_type,extensions", "dids", array("id"=>$did_id))->first_row();
 		$call_type = $query['call_type'];
 		$extensions = $query['extensions'];

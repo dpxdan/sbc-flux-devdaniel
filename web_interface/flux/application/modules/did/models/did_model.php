@@ -27,6 +27,7 @@ class DID_model extends CI_Model
     function __construct()
     {
         parent::__construct();
+        $this->load->library("flux_log");
     }
 
     function getdid_list($flag, $start = 0, $limit = 0)
@@ -41,9 +42,8 @@ class DID_model extends CI_Model
                     // HP: PBX_ADDON
                     $query = $this->db_model->select("*,id as did_id_new,product_id as id", "view_dids", $where, "number", "desc", $limit, $start);
                 } else {
-                    $query = $this->db_model->getJionQuery('dids', 'dids.province,dids.city,dids.product_id as id,dids.number,dids.status,dids.accountid,dids.country_id,dids.last_modified_date,dids.cost,dids.call_type,dids.leg_timeout,dids.maxchannels,dids.extensions,view_dids.buy_cost,view_dids.setup_fee,
-view_dids.price,view_dids.billing_type,view_dids.billing_days,
-,view_dids.product_id,view_dids.account_id', array(
+                    $query = $this->db_model->getJionQuery('dids', 'dids.province,dids.city,dids.product_id as id,dids.number,dids.status,dids.accountid,dids.country_id,dids.last_modified_date,dids.cost,dids.call_type,dids.leg_timeout,dids.maxchannels,dids.extensions,dids.init_inc,dids.inc, dids.setup,dids.monthlycost,view_dids.buy_cost,view_dids.setup_fee,view_dids.price,view_dids.billing_type,view_dids.billing_days,
+                    ,view_dids.product_id,view_dids.account_id', array(
                         'dids.status' => 0,
                         'dids.parent_id' => $accountinfo['id']
                     ), 'view_dids', 'dids.product_id=view_dids.product_id', 'inner', $limit, $start, 'DESC', 'dids.id');
@@ -52,9 +52,8 @@ view_dids.price,view_dids.billing_type,view_dids.billing_days,
                 if ($accountinfo['reseller_id'] > 0) {
                     $query = $this->db_model->countQuery("*,product_id as id", "view_dids", $where);
                 } else {
-                    $query = $this->db_model->getJionQueryCount('dids', 'dids.province,dids.city,dids.product_id as id,dids.number,dids.status,dids.accountid,dids.country_id,dids.last_modified_date,dids.cost,dids.call_type,dids.leg_timeout,dids.maxchannels,dids.extensions,view_dids.buy_cost,view_dids.setup_fee,
-view_dids.price,view_dids.billing_type,view_dids.billing_days,
-,view_dids.product_id,view_dids.account_id', array(
+                    $query = $this->db_model->getJionQueryCount('dids', 'dids.province,dids.city,dids.product_id as id,dids.number,dids.status,dids.accountid,dids.country_id,dids.last_modified_date,dids.cost,dids.call_type,dids.leg_timeout,dids.maxchannels,dids.extensions,dids.init_inc,dids.inc, dids.setup,dids.monthlycost,view_dids.buy_cost,view_dids.setup_fee,view_dids.price,view_dids.billing_type,view_dids.billing_days,
+                    ,view_dids.product_id,view_dids.account_id', array(
                         'dids.status' => 0,
                         'dids.parent_id' => $accountinfo['id']
                     ), 'view_dids', 'dids.product_id=view_dids.product_id', 'inner', $limit, $start, 'DESC', 'dids.id');

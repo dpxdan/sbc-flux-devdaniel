@@ -38,6 +38,7 @@ class DID extends MX_Controller
         $this->load->library('did_lib');
         $this->load->library('flux/order');
         $this->load->library('FLUX_Sms');
+        $this->load->library('flux_log');
 
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
@@ -1038,7 +1039,6 @@ class DID extends MX_Controller
         );
         if ($query->num_rows() > 0) {
             foreach ($query->result_array() as $row) {
-
                 $outbound_array[] = array(
                     $row['number'],
                     $this->common->get_field_name("country", "countrycode", $row['country_id']),
