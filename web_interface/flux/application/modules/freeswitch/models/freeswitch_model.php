@@ -381,6 +381,13 @@ class Freeswitch_model extends CI_Model
         return $response;
     }
 
+    function delete_freeswith_channel($id)
+    {
+        $this->db->where('uuid', $id);
+        $this->db->delete('channels');
+        return true;
+    }
+
     function check_unique_gateway_name($action, $Select, $value)
     {
         $where = array(

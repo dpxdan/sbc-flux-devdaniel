@@ -585,6 +585,7 @@ class Customer extends Account {
 				$productdata['product_id'] = $postdata['product_id'];
 				$account_id = $last_id;
 				$created_by_accountinfo = '1';
+				$productdata['create_invoice'] = "true";
 				
 				$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
 				if ($confirm_oder == ''){
@@ -743,6 +744,7 @@ class Customer extends Account {
 				$productIdsInPackage = array_column($package, 'product_id');
 				if(empty($package)){
 					$productdata['product_id'] = $postdata['product_id'];
+					$productdata['create_invoice'] = "true";
 					$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
 				}
 
@@ -761,6 +763,7 @@ class Customer extends Account {
 					}else if (!in_array($postdata['product_id'], $productIdsInPackage)){
 						
 						$productdata['product_id'] = $postdata['product_id'];
+						$productdata['create_invoice'] = "true";
 						$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
 					}
 				}
@@ -817,7 +820,7 @@ class Customer extends Account {
 		$productdata['product_id'] = $postdata['product_id'];
 		$account_id = $postdata['accountid'];
 		$created_by_accountinfo = '1';
-		
+		$productdata['create_invoice'] = "true";
 		$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
 		if ($confirm_oder == ''){
 			$this->response ( array (

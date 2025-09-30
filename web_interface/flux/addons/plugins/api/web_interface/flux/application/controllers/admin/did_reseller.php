@@ -388,6 +388,7 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
                 // Kinjal issue no 3808
                 $add_array['is_parent_billing'] = "false";
                 $add_array['product_id'] = $this->postdata['did_id'];
+                $add_array['create_invoice'] = "false";
                 $order_id = $this->order->confirm_order($add_array, $this->postdata['accountid'], $this->accountinfo);
                 if ($order_id > 0) {
                     $this->db->where("product_id", $this->postdata['did_id']);

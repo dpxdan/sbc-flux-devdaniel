@@ -178,14 +178,12 @@ class Orders extends MX_Controller
     function orders_save()
     {
         $ProductData = $this->input->post();
-        // Kinjal FLUXUPDATE-929 Start
         $ProductData_list = $this->db_model->getSelect("*", "products", array(
             "id" => $ProductData['product_id']
         ))->result_array()[0];
         if($ProductData_list != ""){
             $ProductData = array_merge($ProductData,$ProductData_list);
         }
-        // Kinjal FLUXUPDATE-929 END
         $account_id = $this->input->post('accountid');
         $accountinfo = $this->session->userdata("accountinfo");
         $data['page_title'] = gettext('Place Order');
@@ -239,6 +237,7 @@ class Orders extends MX_Controller
                 if ($account_balance >= $total_amt) {
                     $ProductData['invoice_type'] = ($ProductData['category'] == 3) ? "credit" : "debit";
                     $ProductData['next_billing_date'] = ($ProductData['billing_days'] == 0) ? gmdate('Y-m-d 23:59:59', strtotime('+10 years')) : gmdate("Y-m-d 23:59:59", strtotime("+" . ($ProductData['billing_days'] - 1) . " days"));
+                    $ProductData['create_invoice'] = "true";
                     $last_id = $this->order->confirm_order($ProductData, $account_id, $accountinfo);
                     if (! empty($customer_data) && $last_id != '' && $ProductData['email_notify'] == 1) {
                         $ProductData['payment_by'] = ($ProductData['payment_by'] == 0) ? "Account Balance" : "Account Balance";

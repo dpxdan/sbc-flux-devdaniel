@@ -148,6 +148,7 @@ class User_did extends Account
             }   
             $did_arr['next_billing_date'] = $next_bill_date;
             $did_arr['payment_by'] = "Account Balance";
+            $did_arr['create_invoice'] = "false";
             $last_id = $this->order->confirm_order($did_arr, $this->accountinfo['id'], $this->accountinfo);
             $final_array = array_merge($account_arr, $did_arr);
             if ($last_id > 0) {

@@ -344,6 +344,7 @@ class DID extends MX_Controller
                     $query = $this->db->query($query);
                     $add_array['is_parent_billing'] = 'false';
                     $add_array['payment_by'] = "Account Balance";
+                    $add_array['create_invoice'] = "false";
                     $order_id = $this->order->confirm_order($add_array, $accountinfo['id'], $accountinfo);
 
                     if ($order_id != '') {
@@ -437,6 +438,7 @@ class DID extends MX_Controller
                         $add_array['payment_by'] = "Account Balance";
                         $add_array['charge_type'] = "DID";
                         $add_array['is_update_balance'] = "true";
+                        $add_array['create_invoice'] = "false";
                         $order_id = $this->order->confirm_order($add_array, $add_array['accountid'], $accountinfo);
                         if ($order_id > 0) {
                             $this->db->where("product_id", $add_array['product_id']);

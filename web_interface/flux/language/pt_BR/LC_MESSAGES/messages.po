@@ -2351,7 +2351,7 @@ msgid "Refill Coupon"
 msgstr "Recarga de cupom"
 
 msgid "TopUp"
-msgstr "Completar"
+msgstr "Recarga"
 
 msgid "Pay with Paypal"
 msgstr "Pague com Paypal"

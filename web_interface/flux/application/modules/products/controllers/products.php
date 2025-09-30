@@ -422,6 +422,7 @@ class Products extends MX_Controller {
 				{
 					$customer_data = $this->db_model->getSelect("*","accounts",array("id"=>$account['id'],"status"=>0,"deleted"=>0,"type"=>0));
 					$productinfo['payment_by'] = "Account Balance";
+					$productinfo['create_invoice'] = "true";
 					$last_id = $this->order->confirm_order($productinfo,$account['id'],$accountinfo);
 					if($customer_data->num_rows > 0){
 						$customer_data = $customer_data->result_array()[0];
@@ -467,6 +468,7 @@ class Products extends MX_Controller {
 					$account_balance = $account['posttoexternal'] == 1 ? $account ['credit_limit'] - ($account ['balance']) : $account ['balance'];
 						if($account_balance >= $total_amt ){
 							$productinfo['payment_by'] = "Account Balance";
+							$productinfo['create_invoice'] = "true";
 							$last_id =$this->order->confirm_order($productinfo,$account['id'],$accountinfo);
 
 							if(!empty($customer_data) && isset($productinfo['email_notify'] ) && $productinfo['email_notify'] ==1  && $last_id  > 0 ){
@@ -863,6 +865,7 @@ class Products extends MX_Controller {
 			$ProductData = $this->input->post(); 
 			$account_id = $this->input->post('account_id');
 			$accountinfo = $this->session->userdata ( "accountinfo" );
+			$ProductData['create_invoice'] = "true";
 			$order_id =$this->order->confirm_order($ProductData,$account_id,$accountinfo);
 			$this->session->set_flashdata ( 'flux_errormsg', gettext('Product assigned successfully!'));
 			redirect ( base_url () . 'products/products_list/' );

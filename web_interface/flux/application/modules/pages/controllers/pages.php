@@ -262,15 +262,14 @@ class Pages extends MX_Controller {
 					$product_info['product_name'] = $this->common->get_field_name("name","products",array("id"=>$productinfo['id']));
 
 					$product_info['next_billing_date']=($productinfo['billing_days'] == 0)?gmdate('Y-m-d 23:59:59', strtotime('+10 years')):gmdate("Y-m-d 23:59:59",strtotime("+".$productinfo['billing_days']." days"));
-					$product_info['quantity'] = $quantity;	
+					$product_info['quantity'] = $quantity;
+					$product_info['create_invoice'] = "true";
 					$order_id = $this->order->confirm_order($product_info,$account_info['id'],$account_info);
 					
 					if($order_id != ""){
 						$product_info['price']=$productinfo['price'];	
 						$final_array = array_merge($account_info,$productinfo);
-						// Kinjal FLUXUPDATE-1028 Start
 						$final_array['last_id'] = $account_info['id'];
-						// Kinjal FLUXUPDATE-1028 END
 						$final_array['quantity']=$quantity;
 						$final_array['total_price']=($productinfo['setup_fee']+$productinfo['price'])*($final_array['quantity']);
 						$final_array['price']=($productinfo['setup_fee']+$productinfo['price']);

@@ -97,7 +97,40 @@ class order {
 
 		} 
 	}	
+	function get_account_info_proxy(&$orderobjArr,$account_id,$is_parent_billing=true){
+		$accountarr = array();
+		$tempkeyarr = array();
+		$select = "id,number,reseller_id,type,balance,credit_limit,invoice_day,last_bill_date,sweep_id,email,posttoexternal,currency_id,is_distributor,id_external";
+		$temparray = $this->CI->db_model->getSelect($select,"accounts",array("id_external"=>$account_id,"status"=>"0","deleted"=>"0"));
+		if($temparray->num_rows > 0){
+			$temparray = $temparray->first_row();
+
+			$accountarr[$temparray->id] = $temparray;
+			$tempkeyarr[] = $temparray->id;
+			$resellerid = $temparray->reseller_id;
+			while($resellerid > 0 && $is_parent_billing == 'true'){
+				$temparray = $this->CI->db_model->getSelect($select,"accounts",array("id"=>$resellerid,"status"=>"0","deleted"=>"0"));
+				if($temparray->num_rows > 0){
+					$temparray = $temparray->first_row();
+					$accountarr[$temparray->id] = $temparray;
+					$tempkeyarr[] = $temparray->id;
+					$resellerid = $temparray->reseller_id;
+				}
+			}
+			array_multisort($tempkeyarr, SORT_ASC, $accountarr);
+			return $orderobjArr['accounts'] = $accountarr;
+
+		}
+	}
 	function get_account_product_info(&$orderobjArr,$accountdata,$productdata){
+    $logData = [
+        'productdata'          => $productdata,
+        'accountdata'          => $accountdata,
+        ];
+
+    $this->CI->flux_log->write_log('get_account_product_info', json_encode($logData));
+	    
+	    
 		$system_config = common_model::$global_config ['system_config'];
 		$renew_deleted = Common_model::$global_config ['system_config'] ['renew_deleted_product'];
 		if($accountdata->type == '1' && $productdata['product_category'] != 3){
@@ -179,12 +212,19 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 		}
 	}
 	function confirm_order($productdata,$account_id,$created_by_accountinfo){ 
+    $logData = [
+        'productdata'          => $productdata,
+        'account_id'          => $account_id,
+        'created_by_accountinfo'=> $created_by_accountinfo,
+    ];
+    $this->CI->flux_log->write_log('confirm_order_lib', json_encode($logData));
 		$parent_array = array();
 		$parent_key_arr = array();
 		$orderobjArr = array();
 		$parent_order_id = 0;
 		$parent_commission = false;
 		$is_parent_billing = (isset($productdata['is_parent_billing']))?$productdata['is_parent_billing']:'true';
+		$create_invoice = (isset($productdata['create_invoice']))?$productdata['create_invoice']:'true';
 		$this->get_account_info($orderobjArr,$account_id,$is_parent_billing);
 		foreach($orderobjArr['accounts'] as $key => $accountdata){
 
@@ -195,6 +235,12 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 			$product_info = $this->get_account_product_info($orderobjArr,$accountdata,$productdata);
 			$orderobjArr['accounts'][$key]->product_info=$product_info;
 			if(isset($product_info->id) && $product_info->id > 0){
+      $logDataNew = [
+        'product_info'          => $product_info,
+        'accountdata'          => $accountdata,
+        'productdata'=> $productdata,        
+    ];
+     $this->CI->flux_log->write_log('confirm_order_lib_253', json_encode($logDataNew));
 				
 				$account_currency_info = $this->CI->db_model->getSelect("*","currency",array("id"=>$accountdata->currency_id));
 				if($account_currency_info->num_rows > 0){
@@ -214,6 +260,81 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 					$product_info->price= ($product_info->price * $product_info->quantity);
 					$product_info->invoice_type = ($product_info->product_category == 3) ? "credit":"debit";
 					$product_info->charge_type = $this->CI->common->get_field_name("code","category",array("id"=>$product_info->product_category)); 
+					$product_info->description= $product_info->charge_type." (".$product_info->name." X ".$product_info->quantity.") has been added.";
+					$product_info->is_apply_tax =($product_info->payment_by == "Account Balance")?"false":"true";
+          $this->CI->flux_log->write_log('create_invoice', json_encode($create_invoice));
+          if($create_invoice == "true"){ 
+          $product_info->create_invoice = "true";          $last_payment_id=$this->CI->payment->add_payments_transcation((array)$product_info,(array)$accountdata,$account_currency_info);
+					$orderobjArr['accounts'][$key]->invoiceid=$last_payment_id;
+					}
+					if($accountdata->type == 1 && !empty($parent_array)){ 
+
+						if($accountdata->reseller_id > 0){
+							$parent_array[$accountdata->reseller_id]->commission = (isset($parent_array[$accountdata->reseller_id]->commission))?$parent_array[$accountdata->reseller_id]->commission:0;
+							$parent_commission = (($parent_array[$accountdata->reseller_id]->commission*$product_info->commission)/100);
+							$parent_array[$accountdata->reseller_id]->commission = ($parent_array[$accountdata->reseller_id]->commission - $parent_commission);
+							$parent_array[$accountdata->id]->commission = $parent_commission;
+
+						}
+						else{
+							$parent_commission = (($product_info->price*$product_info->commission)/100);
+							$parent_array[$accountdata->id]->commission = $parent_commission;
+						}
+						$parent_array[$accountdata->id]->currecny_info = $account_currency_info;
+						$parent_array[$accountdata->id]->product_info = $product_info;
+						$parent_array[$accountdata->id]->order_item_id= $parent_order_id;
+						$parent_array[$accountdata->id]->product_id= $product_info->product_id;
+						$parent_array[$accountdata->id]->description= "Product (".$product_info->name.") commission has been credited";
+					}
+					if(isset($product_info->is_optin)){
+						if($product_info->is_optin == '0' && $accountdata->type == 0 && $product_info->product_category != '4'){
+							$parent_commission = true;
+						}
+				     }
+				}
+			}
+		}
+		if($parent_commission && !empty($parent_array)){ 
+			$this->product_commission($parent_array,$parent_key_arr);
+		}  
+	     	return $parent_order_id ;	
+	}
+		function confirm_order_proxy($productdata,$account_id,$created_by_accountinfo){
+		$parent_array = array();
+		$parent_key_arr = array();
+		$orderobjArr = array();
+		$parent_order_id = 0;
+		$parent_commission = false;
+		$is_parent_billing = (isset($productdata['is_parent_billing']))?$productdata['is_parent_billing']:'true';
+		$this->get_account_info_proxy($orderobjArr,$account_id,$is_parent_billing);
+		foreach($orderobjArr['accounts'] as $key => $accountdata){
+
+			if(($accountdata->is_distributor == 1 && $accountdata->type == 1) || ($accountdata->type == 0 && $accountdata->reseller_id > 0 && isset($parent_array[$accountdata->reseller_id]) && $parent_array[$accountdata->reseller_id]->is_distributor == 1)){
+				$parent_array[$accountdata->id] = $accountdata;
+				$parent_key_arr[] = $accountdata->id;
+			}
+			$product_info = $this->get_account_product_info($orderobjArr,$accountdata,$productdata);
+			$orderobjArr['accounts'][$key]->product_info=$product_info;
+			if(isset($product_info->id) && $product_info->id > 0){
+
+				$account_currency_info = $this->CI->db_model->getSelect("*","currency",array("id"=>$accountdata->currency_id));
+				if($account_currency_info->num_rows > 0){
+					$account_currency_info = (array)$account_currency_info->result_array();
+					$account_currency_info = $account_currency_info[0];
+					$orderobjArr['accounts'][$key]->currency_info=$account_currency_info;
+				}
+				$product_info->payment_status = "PAID";
+				$product_info->payment_by = $productdata['payment_by'] == 0 ? "Account Balance" : "Card";
+				$product_info->quantity = (isset($productdata['quantity']) && $productdata['quantity'] > 0 )?$productdata['quantity']:'1';
+
+				$parent_order_id = $this->generate_order($product_info,$accountdata,$created_by_accountinfo,$parent_order_id,$account_currency_info);
+
+				if($parent_order_id){
+					$product_info->order_item_id= $parent_order_id;
+					$product_info->price= ($product_info->price+$product_info->setup_fee);
+					$product_info->price= ($product_info->price * $product_info->quantity);
+					$product_info->invoice_type = ($product_info->product_category == 3) ? "credit":"debit";
+					$product_info->charge_type = $this->CI->common->get_field_name("code","category",array("id"=>$product_info->product_category));
 					$product_info->description= $product_info->charge_type." (".$product_info->name." X ".$product_info->quantity.") has been added.";
 					$product_info->is_apply_tax =($product_info->payment_by == "Account Balance")?"false":"true";
 
@@ -291,6 +412,15 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 		$this->CI->common->mail_to_users('product_commission',(array)$parent_data);
 	}
 	function generate_order($product_info,$account_info,$created_by_accountinfo,$parent_order_id,$account_currency_info){
+		$logData = [
+        'product_info'          => $product_info,
+        'account_info'          => $account_info,
+        'created_by_accountinfo'=> $created_by_accountinfo,
+        'parent_order_id'       => $parent_order_id,
+        'account_currency_info' => $account_currency_info,
+    ];
+    $this->CI->flux_log->write_log('generate_order_lib', json_encode($logData));
+    
 		$product_info->quantity = (isset($product_info->quantity) && $product_info->quantity !='' )?$product_info->quantity:1;
 		$system_config = common_model::$global_config ['system_config'];
 		$from_currency = Common_model::$global_config ['system_config'] ['base_currency'];
@@ -311,7 +441,7 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 			"ip"=>$this->getRealIpAddr()
 			);
 				
-		$this->CI->flux_log->write_log('generate_order', json_encode($order_insert_array_log));		
+		$this->CI->flux_log->write_log('generate_order_lib', json_encode($order_insert_array_log));		
 		$order_insert_array = array(
 			"order_id" =>crc32(uniqid()),
 			"parent_order_id" => $parent_order_id,
