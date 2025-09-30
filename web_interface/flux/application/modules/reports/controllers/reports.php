@@ -247,10 +247,10 @@ class Reports extends MX_Controller
             unset($action['action']);
             unset($action['advance_search']);
             if(!empty($action['callstart'][0])){
-                $action['callstart'][0]=$this->common->convert_GMT_new ( $action['callstart'][0]);
+                // $action['callstart'][0]=$this->common->convert_GMT_new ( $action['callstart'][0]);
             }
             if(!empty($action['callstart'][1])){
-                $action['callstart'][1]=$this->common->convert_GMT_new ( $action['callstart'][1]);
+                // $action['callstart'][1]=$this->common->convert_GMT_new ( $action['callstart'][1]);
             }
             unset($action['cdrs_year']);
             $this->session->set_userdata('customer_cdr_list_search', $action);
@@ -713,12 +713,12 @@ class Reports extends MX_Controller
             unset($action['advance_search']);
             $this->session->set_userdata('advance_search_date', 0);
             unset($action['cdrs_year']);
-            if(!empty($action['callstart'][0])){
-                $action['callstart'][0]=$this->common->convert_GMT_new ( $action['callstart'][0]);
-            }
-            if(!empty($action['callstart'][1])){
-                $action['callstart'][1]=$this->common->convert_GMT_new ( $action['callstart'][1]);
-            }
+            // if(!empty($action['callstart'][0])){
+            //     $action['callstart'][0]=$this->common->convert_GMT_new ( $action['callstart'][0]);
+            // }
+            // if(!empty($action['callstart'][1])){
+            //     $action['callstart'][1]=$this->common->convert_GMT_new ( $action['callstart'][1]);
+            // }
             $this->session->set_userdata('provider_cdr_list_search', $action);
         }
         if (@$ajax_search != 1) {
