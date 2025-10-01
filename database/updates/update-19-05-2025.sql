@@ -1,5 +1,5 @@
-ALTER TABLE `flux`.`cdrs` 
+ALTER TABLE `cdrs` 
 ADD COLUMN `block_billseconds` INT NOT NULL DEFAULT '0' AFTER `billseconds`;
 
-ALTER TABLE `flux`.`reseller_cdrs` 
+ALTER TABLE `reseller_cdrs` 
 ADD COLUMN `block_billseconds` INT NOT NULL DEFAULT '0' AFTER `billseconds`;

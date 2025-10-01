@@ -80,9 +80,21 @@ ALTER TABLE `cdrs` MODIFY COLUMN `country_id` int NOT NULL DEFAULT 28 AFTER `cal
 
 ALTER TABLE `cdrs` MODIFY COLUMN `end_stamp` datetime NOT NULL DEFAULT '2021-01-01 00:00:00' AFTER `country_id`;
 
+
+ALTER TABLE `cdrs_day_by_summary` MODIFY COLUMN `calldate` datetime NOT NULL DEFAULT '2021-01-01 00:00:00' AFTER `unique_date`;
+
+ALTER TABLE `cdrs_staging` ADD COLUMN `call_id_cadup` varchar(120) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL AFTER `call_request`;
+
+ALTER TABLE `cdrs_staging` MODIFY COLUMN `callstart` datetime NOT NULL DEFAULT '2021-01-01 00:00:00' AFTER `disposition`;
+
+ALTER TABLE `cdrs_staging` MODIFY COLUMN `calltype` varchar(120) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT 'Padrao' AFTER `call_direction`;
+
+ALTER TABLE `cdrs_staging` MODIFY COLUMN `end_stamp` datetime NOT NULL DEFAULT '2021-01-01 00:00:00' AFTER `country_id`;
+
+
 DELIMITER //
 
-CREATE DEFINER = `fluxuser`@`localhost` TRIGGER `cdr_records` AFTER INSERT ON `cdrs`
+CREATE DEFINER = `fluxuser`@`127.0.0.1` TRIGGER `cdr_records` AFTER INSERT ON `cdrs`
 FOR EACH ROW
 BEGIN
    INSERT INTO `cdrs_staging` (`uniqueid`, `accountid`, `type`, `sip_user`, `callerid`, `callednum`, `translated_dst`, `ct`, `billseconds`, `trunk_id`, `trunkip`, `callerip`, `disposition`, `callstart`, `debit`, `cost`, `provider_id`, `pricelist_id`, `package_id`, `pattern`, `notes`, `invoiceid`, `rate_cost`, `reseller_id`, `reseller_code`, `reseller_code_destination`, `reseller_cost`, `provider_code`, `provider_code_destination`, `provider_cost`, `provider_call_cost`, `call_direction`, `calltype`, `billmsec`, `answermsec`, `waitmsec`, `progress_mediamsec`, `flow_billmsec`, `is_recording`, `call_request`, `call_id_cadup`,`country_id`,`end_stamp`)
@@ -94,29 +106,42 @@ DELIMITER //
 CREATE DEFINER = `fluxuser`@`127.0.0.1` TRIGGER `activity_reports` AFTER INSERT ON `cdrs`
 FOR EACH ROW
 BEGIN
-    IF (NEW.calltype = 'DID' AND NEW.call_direction = 'outbound') THEN
-        INSERT INTO `activity_reports` (accountid, reseller_id, last_did_call_time, balance, credit_limit)
-        VALUES (NEW.accountid, NEW.reseller_id, NEW.callstart, (SELECT balance FROM accounts WHERE id=NEW.accountid), (SELECT credit_limit FROM accounts WHERE id=NEW.accountid))
-        ON DUPLICATE KEY UPDATE `last_did_call_time`=NEW.callstart, `balance`=VALUES(balance), `credit_limit`=VALUES(credit_limit);
-    ELSEIF (NEW.calltype != 'DID') THEN
-        INSERT INTO `activity_reports` (accountid, reseller_id, last_outbound_call_time, balance, credit_limit)
-        VALUES (NEW.accountid, NEW.reseller_id, NEW.callstart, (SELECT balance FROM accounts WHERE id=NEW.accountid), (SELECT credit_limit FROM accounts WHERE id=NEW.accountid))
-        ON DUPLICATE KEY UPDATE `last_outbound_call_time`=NEW.callstart, `balance`=VALUES(balance), `credit_limit`=VALUES(credit_limit);
+    IF NEW.calltype = 'DID' AND NEW.call_direction = 'inbound' THEN
+        INSERT INTO `activity_reports` (
+            accountid, reseller_id, last_did_call_time, balance, credit_limit
+        )
+        VALUES (
+            NEW.accountid,
+            NEW.reseller_id,
+            NEW.callstart,
+            (SELECT balance FROM accounts WHERE id = NEW.accountid),
+            (SELECT credit_limit FROM accounts WHERE id = NEW.accountid)
+        )
+        ON DUPLICATE KEY UPDATE
+            `last_did_call_time` = NEW.callstart,
+            `balance` = VALUES(balance),
+            `credit_limit` = VALUES(credit_limit);
+
+    ELSEIF NEW.calltype != 'DID' AND NEW.call_direction = 'outbound' THEN
+        INSERT INTO `activity_reports` (
+            accountid, reseller_id, last_outbound_call_time, balance, credit_limit
+        )
+        VALUES (
+            NEW.accountid,
+            NEW.reseller_id,
+            NEW.callstart,
+            (SELECT balance FROM accounts WHERE id = NEW.accountid),
+            (SELECT credit_limit FROM accounts WHERE id = NEW.accountid)
+        )
+        ON DUPLICATE KEY UPDATE
+            `last_outbound_call_time` = NEW.callstart,
+            `balance` = VALUES(balance),
+            `credit_limit` = VALUES(credit_limit);
     END IF;
 END //
 
 DELIMITER ;
 
-
-ALTER TABLE `cdrs_day_by_summary` MODIFY COLUMN `calldate` datetime NOT NULL DEFAULT '2021-01-01 00:00:00' AFTER `unique_date`;
-
-ALTER TABLE `cdrs_staging` ADD COLUMN `call_id_cadup` varchar(120) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL AFTER `call_request`;
-
-ALTER TABLE `cdrs_staging` MODIFY COLUMN `callstart` datetime NOT NULL DEFAULT '2021-01-01 00:00:00' AFTER `disposition`;
-
-ALTER TABLE `cdrs_staging` MODIFY COLUMN `calltype` varchar(120) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT 'Padrao' AFTER `call_direction`;
-
-ALTER TABLE `cdrs_staging` MODIFY COLUMN `end_stamp` datetime NOT NULL DEFAULT '2021-01-01 00:00:00' AFTER `country_id`;
 
 ALTER TABLE `dids` MODIFY COLUMN `reverse_rate` tinyint(1) NOT NULL DEFAULT 1 COMMENT '0 enable 1 for disable' AFTER `hg_type`;
 

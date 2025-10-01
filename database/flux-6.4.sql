@@ -452,7 +452,7 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'NO_AUTO_VALUE_ON_ZERO' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`fluxuser`@`localhost`*/ /*!50003 TRIGGER `cdr_records` AFTER INSERT ON `cdrs` FOR EACH ROW BEGIN
+/*!50003 CREATE*/ /*!50017 DEFINER=`fluxuser`@`127.0.0.1`*/ /*!50003 TRIGGER `cdr_records` AFTER INSERT ON `cdrs` FOR EACH ROW BEGIN
    INSERT INTO `cdrs_staging` (`uniqueid`, `accountid`, `type`, `sip_user`, `callerid`, `callednum`, `translated_dst`, `ct`, `billseconds`, `trunk_id`, `trunkip`, `callerip`, `disposition`, `callstart`, `debit`, `cost`, `provider_id`, `pricelist_id`, `package_id`, `pattern`, `notes`, `invoiceid`, `rate_cost`, `reseller_id`, `reseller_code`, `reseller_code_destination`, `reseller_cost`, `provider_code`, `provider_code_destination`, `provider_cost`, `provider_call_cost`, `call_direction`, `calltype`, `billmsec`, `answermsec`, `waitmsec`, `progress_mediamsec`, `flow_billmsec`, `is_recording`, `call_request`, `country_id`,`end_stamp`) VALUES (NEW.uniqueid, NEW.accountid, NEW.type, NEW.sip_user, NEW.callerid, NEW.callednum, NEW.translated_dst, NEW.ct, NEW.billseconds, NEW.trunk_id, NEW.trunkip, NEW.callerip, NEW.disposition, NEW.callstart, NEW.debit, NEW.cost, NEW.provider_id, NEW.pricelist_id, NEW.package_id, NEW.pattern, NEW.notes, NEW.invoiceid, NEW.rate_cost, NEW.reseller_id, NEW.reseller_code, NEW.reseller_code_destination, NEW.reseller_cost, NEW.provider_code, NEW.provider_code_destination, NEW.provider_cost, NEW.provider_call_cost, NEW.call_direction, NEW.calltype, NEW.billmsec, NEW.answermsec, NEW.waitmsec, NEW.progress_mediamsec, NEW.flow_billmsec, NEW.is_recording, NEW.call_request, NEW.country_id,NEW.end_stamp);
 END */;;
 DELIMITER ;
@@ -1577,7 +1577,7 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'NO_AUTO_VALUE_ON_ZERO' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`fluxuser`@`localhost`*/ /*!50003 TRIGGER `updateRates` AFTER UPDATE ON `pricelists` FOR EACH ROW BEGIN
+/*!50003 CREATE*/ /*!50017 DEFINER=`fluxuser`@`127.0.0.1`*/ /*!50003 TRIGGER `updateRates` AFTER UPDATE ON `pricelists` FOR EACH ROW BEGIN
    if new.status = '2'
    then
        Delete from routes where pricelist_id = new.id;
@@ -1830,7 +1830,7 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'NO_AUTO_VALUE_ON_ZERO' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`fluxuser`@`localhost`*/ /*!50003 TRIGGER `reseller_cdrs_records` AFTER INSERT ON `reseller_cdrs` FOR EACH ROW BEGIN
+/*!50003 CREATE*/ /*!50017 DEFINER=`fluxuser`@`127.0.0.1`*/ /*!50003 TRIGGER `reseller_cdrs_records` AFTER INSERT ON `reseller_cdrs` FOR EACH ROW BEGIN
    INSERT INTO `cdrs_staging` (`uniqueid`, `accountid`, `callerid`, `callednum`, `billseconds`, `disposition`, `callstart`, `debit`, `cost`, `pricelist_id`, `package_id`, `pattern`, `notes`, `calltype`, `reseller_id`, `rate_cost`, `reseller_code`, `reseller_code_destination`, `reseller_cost`, `call_direction`, `call_request`, `country_id`,`end_stamp`) VALUES ( NEW.uniqueid, NEW.accountid, NEW.callerid, NEW.callednum, NEW.billseconds, NEW.disposition, NEW.callstart, NEW.debit, NEW.cost, NEW.pricelist_id, NEW.package_id, NEW.pattern, NEW.notes, NEW.calltype, NEW.reseller_id, NEW.rate_cost, NEW.reseller_code, NEW.reseller_code_destination, NEW.reseller_cost, NEW.call_direction, NEW.call_request, NEW.country_id,NEW.end_stamp);
 END */;;
 DELIMITER ;
@@ -2301,7 +2301,7 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'NO_AUTO_VALUE_ON_ZERO' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`fluxuser`@`localhost`*/ /*!50003 TRIGGER `updateTerminationRates` AFTER UPDATE ON `trunks` FOR EACH ROW BEGIN
+/*!50003 CREATE*/ /*!50017 DEFINER=`fluxuser`@`127.0.0.1`*/ /*!50003 TRIGGER `updateTerminationRates` AFTER UPDATE ON `trunks` FOR EACH ROW BEGIN
    if new.status = '2'
    then
         Delete from outbound_routes where trunk_id = new.id;

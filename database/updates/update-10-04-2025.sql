@@ -4,7 +4,7 @@ DROP VIEW IF EXISTS view_invoices;
 
 CREATE 
     ALGORITHM = UNDEFINED 
-    DEFINER = `fluxuser`@`localhost` 
+    DEFINER = `fluxuser`@`127.0.0.1` 
     SQL SECURITY DEFINER
 VIEW `view_invoices` AS
     SELECT 
@@ -44,4 +44,4 @@ VIEW `view_invoices` AS
         (`invoice_details`.`charge_type` <> 'REFILL')
     GROUP BY `invoice_details`.`invoiceid`;
 
-    DELETE FROM `flux`.`system` WHERE (`id` = '220');
+    DELETE FROM `system` WHERE (`id` = '220');

@@ -12,7 +12,7 @@ DROP VIEW IF EXISTS `view_git_version`;
 
 CREATE 
     ALGORITHM = UNDEFINED 
-    DEFINER = `fluxuser`@`localhost` 
+    DEFINER = `fluxuser`@`127.0.0.1` 
     SQL SECURITY INVOKER
 VIEW `view_git_version` AS
     SELECT 
@@ -28,6 +28,6 @@ VIEW `view_git_version` AS
     FROM
         `git_version`;
 
-INSERT INTO `flux`.`menu_modules` (`menu_label`, `module_name`, `module_url`, `menu_title`, `menu_image`, `menu_subtitle`, `priority`) VALUES ('Updates', 'update', 'systems/update/', 'Configuration', 'TemplateManagement.png', '0', 90.3);
+INSERT INTO `menu_modules` (`menu_label`, `module_name`, `module_url`, `menu_title`, `menu_image`, `menu_subtitle`, `priority`) VALUES ('Updates', 'update', 'systems/update/', 'Configuration', 'TemplateManagement.png', '0', 90.3);
 
 UPDATE userlevels SET module_permissions = CONCAT(module_permissions, ',', (SELECT id FROM menu_modules WHERE module_name = 'update')) WHERE userlevelid = -1 AND FIND_IN_SET((SELECT id FROM menu_modules WHERE module_name = 'update'), module_permissions) = 0;

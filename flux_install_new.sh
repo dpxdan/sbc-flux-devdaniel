@@ -50,14 +50,22 @@ FLUX_DATABASE_NAME="flux"
 FLUX_DB_USER="fluxuser"
 MYSQL_CNF="/etc/mysql/mysql.cnf"
 
+mkdir -p ${FLUXLOGDIR}
+touch "$LOG_FILE"
+
 #################################
 ####  general functions #########
 #################################
 
+#Log Messages
+log_message()
+{
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
+
 #Generate random password
 genpasswd() 
 {
-        log_message "Executando função: genpasswd"
         length=$1
         digits=({1..9})
         lower=({a..z})
@@ -76,14 +84,6 @@ genpasswd()
 
 MYSQL_ROOT_PASSWORD=`echo "$(genpasswd 20)" | sed s/./*/5`
 FLUXUSER_MYSQL_PASSWORD=`echo "$(genpasswd 20)" | sed s/./*/5`
-
-mkdir -p ${FLUXLOGDIR}
-touch "$LOG_FILE"
-
-#Log Messages
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
-}
 
 #Fetch OS Distribution
 get_linux_distribution ()
@@ -237,7 +237,7 @@ license_accept ()
                 echo ""
         fi
         if [ $IS_ENTERPRISE = "False" ]; then
-                clear
+                #clear
                 echo "********************"
                 echo "License acceptance"
                 echo "********************"
@@ -369,9 +369,6 @@ normalize_mysql ()
                 cp ${FLUX_SOURCE_DIR}/misc/odbc_conf/deb_odbc.ini /etc/odbc.ini
                 mv /etc/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.old
                 cp ${FLUX_SOURCE_DIR}/config/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf                
-#                sed -i '33i wait_timeout=600' /etc/mysql/mysql.conf.d/mysqld.cnf
-#                sed -i '33i interactive_timeout = 600' /etc/mysql/mysql.conf.d/mysqld.cnf
-#                sed -i '33i sql_mode=""' /etc/mysql/mysql.conf.d/mysqld.cnf
                 systemctl restart mysql
                 systemctl enable mysql
         elif  [ ${DIST} = "CENTOS" ]; then
@@ -479,6 +476,25 @@ install_flux ()
         cp -rf ${FLUX_SOURCE_DIR}/config/flux.lua ${FLUXDIR}flux.lua
         ln -s ${FLUX_SOURCE_DIR}/web_interface/flux ${WWWDIR}
         ln -s ${FLUX_SOURCE_DIR}/freeswitch/fs ${WWWDIR}
+        mv /etc/chrony/chrony.conf /etc/chrony/chrony.old
+        cp ${FLUX_SOURCE_DIR}/config/chrony.conf /etc/chrony/chrony.conf
+        systemctl restart chrony 
+}
+
+#Install iptables
+install_iptables ()
+{
+        log_message "Executando função: install_iptables"
+        if [[ ${DIST} = "DEBIAN" || ${DIST} = "DEBIAN10" || ${DIST} = "DEBIAN11" ]]; then
+        echo "Installing iptables"
+        sudo apt-get install -y iptables
+        update-alternatives --set iptables /usr/sbin/iptables-legacy
+        update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+        elif  [ ${DIST} = "CENTOS" ]; then
+                echo "Installing iptables"
+                yum install -y iptables
+        fi
+
 }
 
 #Normalize flux installation
@@ -596,7 +612,7 @@ install_freeswitch ()
 {
         log_message "Executando função: install_freeswitch"
         if [ ${DIST} = "DEBIAN" ]; then
-                clear
+                #clear
                 echo "Installing FREESWITCH"
                 sleep 5
                 apt-get install -y gnupg2
@@ -608,7 +624,7 @@ install_freeswitch ()
                 apt-get install freeswitch-meta-all -y
                 
         elif  [ ${DIST} = "CENTOS" ]; then
-                clear
+                #clear
                 sleep 5
                 echo "Installing FREESWITCH"
                 yum install -y epel-release
@@ -713,190 +729,54 @@ install_ptbr_language()
         systemctl restart php7.3-fpm.service
 }
 
+run_database_migrations()
+{
+    log_message "Executando função: run_database_migrations"
+                                
+    # Credenciais do banco de dados
+    DB_USER="root"
+    DB_PASS="${MYSQL_ROOT_PASSWORD}"
+    DB_NAME="${FLUX_DATABASE_NAME}"
+    DB_HOST="localhost"
+
+    # Diretório de migrações (relativo a FLUX_SOURCE_DIR)
+    MIGRATIONS_DIR="${FLUX_SOURCE_DIR}/database/updates/"
+    LOG_TABLE="sql_migration_history"
+
+    # Verificar se a tabela de log de migrações existe, se não, criar
+    mysql -u "$DB_USER" -p"$DB_PASS" -h "$DB_HOST" "$DB_NAME" -N -B -e "
+    CREATE TABLE IF NOT EXISTS $LOG_TABLE (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        sql_file_name VARCHAR(255),
+        applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );"
+
+    # Loop sobre arquivos de migração pendentes
+    for FILE in $(ls "$MIGRATIONS_DIR"*.sql | sort -t '-' -k 4,4n -k 3,3n -k 2,2n); do
+        # Pegar o nome do arquivo
+        FILENAME=$(basename "$FILE")
+        
+        # Verificar se o arquivo já foi aplicado
+        QUERY=$(printf "SELECT COUNT(*) FROM %s WHERE sql_file_name = '%s';" "$LOG_TABLE" "$FILENAME")
+        APPLIED=$(mysql --user="$DB_USER" -p"$DB_PASS" --host="$DB_HOST" "$DB_NAME" -N -B -e "$QUERY")
+        
+        # Se não foi aplicado, execute
+        if [ "$APPLIED" -eq 0 ]; then
+            log_message "Applying migration: $FILENAME"
+            mysql -u "$DB_USER" -p"$DB_PASS" -h "$DB_HOST" "$DB_NAME" < "$FILE"
+            
+            # Registrar a migração no banco
+            mysql -u "$DB_USER" -p"$DB_PASS" -h "$DB_HOST" "$DB_NAME" -e "
+            INSERT INTO $LOG_TABLE (sql_file_name) VALUES ('$FILENAME');"
+                        else
+            log_message "Migration $FILENAME already applied. Skipping."
+                fi   
+    done
+}
+
 install_database_updates()
 {
-        log_message "Executando função: install_database_updates"
-        chmod +x ${FLUX_SOURCE_DIR}/migrations.sh
-        source ${FLUX_SOURCE_DIR}/migrations.sh ${MYSQL_ROOT_PASSWORD}
-}
-
-#Install Fail2ban for security
-install_fail2ban()
-{
-                log_message "Executando função: install_fail2ban"
-                read -n 1 -p "Do you want to install and configure Fail2ban ? (y/n) "
-                if [ "$REPLY"   = "y" ]; then
-                        if [ -f /etc/debian_version ] ; then
-                                DIST="DEBIAN"
-                                apt-get -y install fail2ban
-                                echo ""
-                            read -p "Enter Client's Notification email address: ${NOTIEMAIL}"
-                            NOTIEMAIL=${REPLY}
-                            echo ""
-                            read -p "Enter sender email address: ${NOTISENDEREMAIL}"
-                            NOTISENDEREMAIL=${REPLY}
-                            cd /opt/flux/misc/
-                            tar -xzvf deb_files.tar.gz
-                            mv /etc/fail2ban /tmp/
-                            cp -rf /opt/flux/misc/deb_files/fail2ban /etc/fail2ban
-
-                            sed -i -e "s/{INTF}/${INTF}/g" /etc/fail2ban/jail.local
-                            sed -i -e "s/{NOTISENDEREMAIL}/${NOTISENDEREMAIL}/g" /etc/fail2ban/jail.local
-                            sed -i -e "s/{NOTIEMAIL}/${NOTIEMAIL}/g" /etc/fail2ban/jail.local
-                                
-                        #elif  [ ${DIST} = "DEBIAN10" ]; then
-                        elif [[ $DIST = "DEBIAN10" || $DIST = "DEBIAN11" ]]; then
-                            $SLEEP 2s
-                            apt-get update -y
-                            $SLEEP 2s
-                            apt-get install fail2ban -y
-                            sleep 2s
-                            echo ""
-                            read -p "Enter Client's Notification email address: ${NOTIEMAIL}"
-                            NOTIEMAIL=${REPLY}
-                            echo ""
-                            read -p "Enter sender email address: ${NOTISENDEREMAIL}"
-                            NOTISENDEREMAIL=${REPLY}
-                            cd /usr/src
-                            #wget --no-check-certificate --max-redirect=0 https://latest.sbcdev4.flux.net.br/fail2ban_Deb.tar.gz
-                            #tar xzvf fail2ban_Deb.tar.gz
-                            mv /etc/fail2ban /tmp/
-                            cd ${FLUX_SOURCE_DIR}/misc/
-                            tar -xzvf fail2ban_deb10.tar.gz
-                            cp -rf ${FLUX_SOURCE_DIR}/misc/fail2ban_deb10 /etc/fail2ban
-                            #cp -rf /usr/src/fail2ban /etc/fail2ban
-                            #cp -rf ${FLUX_SOURCE_DIR}/misc/deb_files/fail2ban/jail.local /etc/fail2ban/jail.local
-
-                            sed -i -e "s/{INTF}/${INTF}/g" /etc/fail2ban/jail.local
-                            sed -i -e "s/{NOTISENDEREMAIL}/${NOTISENDEREMAIL}/g" /etc/fail2ban/jail.local
-                            sed -i -e "s/{NOTIEMAIL}/${NOTIEMAIL}/g" /etc/fail2ban/jail.local
-                        elif [ -f /etc/redhat-release ] ; then
-                                DIST="CENTOS"
-                                yum install -y fail2ban
-                                echo ""
-                            read -p "Enter Client's Notification email address: ${NOTIEMAIL}"
-                            NOTIEMAIL=${REPLY}
-                            echo ""
-                            read -p "Enter sender email address: ${NOTISENDEREMAIL}"
-                            NOTISENDEREMAIL=${REPLY}
-                            cd /opt/flux/misc/
-                            tar -xzvf cent_files.tar.gz
-                            mv /etc/fail2ban /tmp/
-                            cp -rf /opt/flux/misc/cent_files/fail2ban /etc/fail2ban
-
-                            sed -i -e "s/{INTF}/${INTF}/g" /etc/fail2ban/jail.local
-                            sed -i -e "s/{NOTISENDEREMAIL}/${NOTISENDEREMAIL}/g" /etc/fail2ban/jail.local
-                            sed -i -e "s/{NOTIEMAIL}/${NOTIEMAIL}/g" /etc/fail2ban/jail.local
-                                
-                        fi
-                        ################################# JAIL.CONF FILE READY ######################
-                        echo "################################################################"
-                        mkdir /var/run/fail2ban
-                        chkconfig fail2ban on
-                        systemctl restart fail2ban
-                        systemctl enable fail2ban
-                        echo "################################################################"
-                        echo "Fail2Ban for FreeSwitch & IPtables Integration completed"
-                        else
-                        echo ""
-                        echo "Fail2ban installation is aborted !"
-                fi   
-}
-
-#Install Monit for service monitoring
-install_monit() {
-    log_message "Executando função: install_monit para DIST=$DIST"
-
-    read -n 1 -p "Do you want to install and configure monit ? (y/n) " REPLY
-    echo
-    if [ "$REPLY" != "y" ]; then
-        log_message "Instalação do Monit cancelada pelo usuário."
-        return
-    fi
-
-    CONFIG_MONIT='
-#------------MySQL
-check process mysqld with pidfile /var/run/mysqld/mysqld.pid
-    start program = "/bin/systemctl start mysqld"
-    stop program = "/bin/systemctl stop mysqld"
-if failed host 127.0.0.1 port 3306 then restart
-if 5 restarts within 5 cycles then timeout
-
-#------------Fail2ban
-check process fail2ban with pidfile /var/run/fail2ban/fail2ban.pid
-    start program = "/bin/systemctl start fail2ban"
-    stop program = "/bin/systemctl stop fail2ban"
-
-# ---- FreeSWITCH ----
-check process freeswitch with pidfile /var/run/freeswitch/freeswitch.pid
-    start program = "/bin/systemctl start freeswitch"
-    stop program  = "/bin/systemctl stop freeswitch"
-
-#-------nginx----------------------
-check process nginx with pidfile /var/run/nginx.pid
-    start program = "/bin/systemctl start nginx" with timeout 30 seconds
-    stop program  = "/bin/systemctl stop nginx"
-
-#-------php-fpm----------------------
-check process php-fpm with pidfile /var/run/php-fpm/php-fpm.pid
-    start program = "/bin/systemctl start php-fpm" with timeout 30 seconds
-    stop program  = "/bin/systemctl stop php-fpm"
-
-#--------system
-check system localhost
-    if loadavg (5min) > 8 for 4 cycles then alert
-    if loadavg (15min) > 8 for 4 cycles then alert
-    if memory usage > 80% for 4 cycles then alert
-    if swap usage > 20% for 4 cycles then alert
-    if cpu usage (user) > 80% for 4 cycles then alert
-    if cpu usage (system) > 20% for 4 cycles then alert
-    if cpu usage (wait) > 20% for 4 cycles then alert
-
-check filesystem "root" with path /
-    if space usage > 80% for 1 cycles then alert
-'
-
-    configure_monit() {
-        sed -i -e 's/# set mailserver mail.bar.baz,/set mailserver localhost/g' /etc/monit/monitrc
-        sed -i -e "/# set mail-format { from: monit@foo.bar }/a set alert $EMAIL" /etc/monit/monitrc
-        sed -i -e "s/##   subject: monit alert --  \$EVENT \$SERVICE/   subject: monit alert on ${INTF} --  \$EVENT \$SERVICE/g" /etc/monit/monitrc
-        sed -i -e 's/## set mail-format {/set mail-format {/g' /etc/monit/monitrc
-        sed -i -e 's/## }/ }/g' /etc/monit/monitrc
-        echo "$CONFIG_MONIT" >> /etc/monit/monitrc
-    }
-
-    case "$DIST" in
-        "DEBIAN")
-            apt-get -y install monit
-            configure_monit
-            ;;
-        "DEBIAN10")
-            echo 'deb http://ftp.de.debian.org/debian buster-backports main' > /etc/apt/sources.list.d/buster-backports.list
-            apt-get update -y
-            apt-get install monit -y
-            configure_monit
-            ;;
-        "DEBIAN11")
-            echo 'deb http://archive.debian.org/debian bullseye-backports main' > /etc/apt/sources.list.d/bullseye-backports.list
-            apt-get update -y
-            apt-get install monit -y
-            configure_monit
-            ;;
-        "CENTOS")
-            yum install -y monit
-            rm -rf /etc/monit.d
-            rpm --force -Uvh /var/cache/yum/x86_64/7/epel/packages/monit-*.rpm
-            configure_monit
-            ;;
-        *)
-            log_message "Distribuição $DIST não suportada para instalação do Monit."
-            return 1
-            ;;
-    esac
-
-    systemctl restart monit
-    systemctl enable monit
-    log_message "Instalação e configuração do Monit concluída para DIST=$DIST"
+    run_database_migrations
 }
 
 
@@ -912,8 +792,6 @@ if [ ${DIST} = "DEBIAN" ]; then
         sed -i -e 's/rotate 12/rotate 5/g' /etc/logrotate.d/php7.3-fpm
         sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/nginx
         sed -i -e 's/rotate 52/rotate 5/g' /etc/logrotate.d/nginx
-        sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/fail2ban
-        sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/monit   
 #elif [ ${DIST} = "DEBIAN10" ]; then
 elif [[ $DIST = "DEBIAN10" || $DIST = "DEBIAN11" ]]; then
         sed -i -e 's/daily/size 30M/g' /etc/logrotate.d/rsyslog
@@ -923,8 +801,6 @@ elif [[ $DIST = "DEBIAN10" || $DIST = "DEBIAN11" ]]; then
         sed -i -e 's/rotate 12/rotate 5/g' /etc/logrotate.d/php7.3-fpm
         sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/nginx
         sed -i -e 's/rotate 52/rotate 5/g' /etc/logrotate.d/nginx
-        sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/fail2ban
-        sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/monit
 elif [ ${DIST} = "CENTOS" ]; then
         sed -i '7 i size 30M' /etc/logrotate.d/syslog
         sed -i '7 i rotate 5' /etc/logrotate.d/syslog
@@ -932,11 +808,63 @@ elif [ ${DIST} = "CENTOS" ]; then
         sed -i '2 i rotate 5' /etc/logrotate.d/php-fpm
         sed -i -e 's/daily/size 30M/g' /etc/logrotate.d/nginx
         sed -i -e 's/rotate 10/rotate 5/g' /etc/logrotate.d/nginx
-        sed -i '9 i size 30M' /etc/logrotate.d/fail2ban
-        sed -i '9 i rotate 5' /etc/logrotate.d/fail2ban
-        sed -i '2 i rotate 5' /etc/logrotate.d/monit
-        sed -i -e 's/size 100k/size 30M/g' /etc/logrotate.d/monit
 fi
+}
+
+#Install G729
+install_mod_bcg729 ()
+{
+    log_message "Executando função: install_mod_bcg729"
+
+    FREESWITCH_MOD_DIR="/usr/lib/freeswitch/mod"
+    MODULES_CONF="/etc/freeswitch/autoload_configs/modules.conf.xml"    
+
+    # Backup
+    BACKUP_DIR="/tmp/freeswitch_backup_$TIMESTAMP"
+    mkdir -p "$BACKUP_DIR"
+    
+    log_message "Criando backups..."
+    cp "$MODULES_CONF" "$BACKUP_DIR/"
+    if [ -f "${FREESWITCH_MOD_DIR}/mod_bcg729.so" ]; then
+        cp "${FREESWITCH_MOD_DIR}/mod_bcg729.so" "$BACKUP_DIR/"
+    fi
+    
+    log_message "Instalando dependências..."
+    apt update
+    apt install -y git build-essential cmake automake autoconf libtool pkg-config wget unzip libssl-dev libncurses5-dev libfreeswitch-dev
+    
+    log_message "Baixando mod_bcg729..."
+    cd /tmp
+    if [ -d "mod_bcg729" ]; then rm -rf mod_bcg729; fi
+    git clone https://github.com/xadhoom/mod_bcg729.git
+    cd mod_bcg729
+    
+    log_message "Configurando Makefile..."
+    sed -i "s|^FS_DIR=.*|FS_DIR=${FREESWITCH_MOD_DIR}|" Makefile
+    
+    log_message "Compilando mod_bcg729..."
+    make -j$(nproc)
+    
+    log_message "Instalando mod_bcg729..."
+    make install
+    
+    log_message "Atualizando modules.conf.xml de forma segura..."
+    if grep -q '<load module="mod_g729"/>' "$MODULES_CONF"; then
+        cp "$MODULES_CONF" "$BACKUP_DIR/modules.conf.xml.g729.bak"
+    
+        sed -i 's|<load module="mod_g729"/>|<!-- & -->|' "$MODULES_CONF"
+    
+        sed -i '/<load module="mod_g729"\/>/a\    <load module="mod_bcg729"/>' "$MODULES_CONF"
+    fi
+    
+    log_message "Reiniciando FreeSWITCH..."
+    if systemctl is-active --quiet freeswitch; then
+        systemctl restart freeswitch
+    else
+        log_message "FreeSWITCH não está rodando via systemd. Reinicie manualmente."
+    fi           
+    
+    log_message "Instalação do mod_bcg729 concluída com sucesso! Backups em $BACKUP_DIR"
 }
 
 #Remove all downloaded and temp files from server
@@ -966,14 +894,14 @@ start_installation ()
         install_freeswitch        
         install_php
         install_flux
+        install_iptables
         install_database
         normalize_freeswitch
         normalize_flux
         install_ptbr_language
         install_database_updates
-        install_fail2ban
-        install_monit
         logrotate_install
+        install_mod_bcg729
         clean_server
         echo "******************************************************************************************"
         echo "******************************************************************************************"

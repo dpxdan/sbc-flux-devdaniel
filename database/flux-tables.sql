@@ -1,19 +1,3 @@
-/*
- Navicat Premium Data Transfer
-
- Source Server         : Flux - Dev - root
- Source Server Type    : MySQL
- Source Server Version : 80033
- Source Host           : localhost:3306
- Source Schema         : flux-new
-
- Target Server Type    : MySQL
- Target Server Version : 80033
- File Encoding         : 65001
-
- Date: 11/05/2023 16:56:20
-*/
-
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
