@@ -121,8 +121,9 @@
                               <thead class="thead-light">
                                 <tr>
                                   <th scope="col"><?php echo gettext('Name') ?></th>
-                                  <th scope="col"><?php echo gettext('Free Minutes'); ?></th>
+                                  <th scope="col"><?php echo gettext('Available Minutes'); ?></th>
                                   <th scope="col"><?php echo gettext('Used Minutes'); ?></th>
+                                  <th scope="col"><?php echo gettext('Plan Minutes'); ?></th>
                                   <th scope="col"><?php echo gettext('Price'); ?> [<?php echo $currency;?>]</th>
                                 </tr>
                               </thead>
@@ -130,23 +131,58 @@
                               	<?php
                               		
 																	$account_data = $this->session->userdata ( "accountinfo" );
-																  // $where_arr = array ("orders.accountid"=>$account_data['id'],"order_items.is_terminated"=>'0');
-																	// $this->db->order_by("orders.order_date", "desc");
-																	// $query = $this->db_model->getJionQuery('orders', 'orders.id,orders.order_date,orders.order_id as id1,orders.payment_gateway,orders.payment_status,order_items.order_id as orderid,order_items.price,order_items.quantity,order_items.setup_fee,order_items.product_id',$where_arr, 'order_items','orders.id=order_items.order_id', 'inner',10, 0,'','');
-                                  $where_arr = array (
-                                    "accountid"=>$account_data['id'],
-                                    "is_terminated" => 0
-                                  );
-                                  $query = $this->db->get_where("packages_view", $where_arr);
+																 
+																	$this->db->select('
+																			orders.id,
+																			orders.order_date,
+																			counters.used_seconds,
+																			order_items.free_minutes,
+																			orders.order_id as orders_id,
+																			orders.payment_gateway,
+																			orders.payment_status,
+																			order_items.order_id as orderid,
+																			order_items.price,
+																			order_items.quantity,
+																			order_items.setup_fee,
+																			order_items.product_id
+																	');
+																	$this->db->from('orders');
+																	$this->db->join('order_items', 'orders.id = order_items.order_id', 'inner');
+																	$this->db->join('counters', 'orders.id = counters.package_id', 'inner');
+																	$this->db->where('orders.accountid', $account_data['id']);
+																	$this->db->where('order_items.is_terminated', '0');
+																	$this->db->where('order_items.product_category', '1');
+																	$this->db->where('counters.accountid', $account_data['id']);
+																	$this->db->order_by('orders.order_date', 'desc');
+																	$query = $this->db->get();
 																	if($query->num_rows > 0){
 																		$result_array =  $query->result_array();
 																		foreach($result_array as $key => $val){
-																			echo "<tr>";
-																			// echo "<td>".$this->common->get_field_name('name',"products",array('id'=>$val['product_id']))."</td>";
-                                      echo "<td>".$val['package_name']."</td>";
+																		echo "<td>".$this->common->get_field_name('name', "products", array('id' => $val['product_id']))."</td>";
+																		//echo "<td>".$val['order_date']."</td>";
+																		//echo "<td>".$val['id1']."</td>";
+																		
+																		//echo "<td>".$val['payment_status']."</td>";
+																		
+																		// Cálculo de minutos usados
+																		$used_minutes = floor($val['used_seconds'] / 60);
+																		
+																		// Free minutes restantes
+																		$remaining_minutes = max(0, $val['free_minutes'] - $used_minutes);
+																		
+																		// Mostrar duração formatada (mm:ss)
+																		if ($val['used_seconds'] > 0) {
+																		$minutes = floor($val['used_seconds'] / 60);
+																		$seconds = $val['used_seconds'] % 60;
+																		$duration = sprintf('%02d:%02d', $minutes, $seconds);
+																		} else {
+																		$duration = "00:00";
+																		}
+																		
+																		echo "<td>".$remaining_minutes."</td>";
+																		echo "<td>".$duration."</td>";
 											                echo "<td>".$val['free_minutes']."</td>";
-											                echo "<td>".$val['counters_used_minutes']."</td>";
-											                echo "<td>".$val['price']."</td>";
+																		echo "<td>".$this->common_model->calculate_currency_customer($val['price'])."</td>";																																													
 											                echo "</tr>";
 																		}
 																	}
@@ -179,14 +215,20 @@
                               <tbody>
                               	<?php
                               	
-                              		if(isset($productdata) && !empty($productdata)){
-                              			foreach($productdata as $key=>$val){
+                              		if(isset($didsdata) && !empty($didsdata)){
+                              			foreach($didsdata as $key=>$val){
                               				echo "<tr>";
 										                	echo "<td>".$val['number']."</td>";
 										                	echo "<td>".$val['city']."</td>";
 										                	echo "<td>".$val['maxchannels']."</td>";
 										                	echo "<td>".$val['extensions']."</td>";
-						                          echo "<td>".$val['reverse_rate'] = 0 ? gettext('Active') : gettext('Inactive')."</td>";
+										                	if($val['reverse_rate'] == 0){
+						                          	echo "<td>".gettext('Inactive')."</td>";
+						                          }
+						                          else{
+						                          	echo "<td>".gettext('Active')."</td>";
+						                          }
+//						                          echo "<td>".$val['reverse_rate'] = 0 ? gettext('Active') : gettext('Inactive')."</td>";
 						                          echo "</tr>";
                               			}
                               		}
@@ -238,7 +280,21 @@
 										                	echo "<td>".$val['callerid']."</td>";
 										                	echo "<td>".$val['callednum']."</td>";
 										                	echo "<td>".$val['notes']."</td>";
-										                	echo "<td>".$val['billseconds']."</td>";
+										    $show_seconds = (! empty($search_arr['search_in'])) ? $search_arr['search_in'] : 'minutes';
+											
+											if ($show_seconds == 'minutes') {
+												if ($val['billseconds'] > 0) {
+													$minutes = floor($val['billseconds'] / 60);
+													$seconds = $val['billseconds'] % 60;
+													$duration = sprintf('%02d:%02d', $minutes, $seconds);
+												} else {
+													$duration = "00:00";
+												}
+											} else {
+												$duration = $val['billseconds'];
+											}
+											
+											echo "<td>".$duration."</td>";
 						                          if($accountinfo['type'] =='3'){
 						                          	echo "<td>".$this->common_model->calculate_currency_customer($val ['cost'])."</td>";
 						                          }else{

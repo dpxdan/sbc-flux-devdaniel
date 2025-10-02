@@ -232,7 +232,7 @@ reseller_products.price,reseller_products.billing_type,(CASE WHEN reseller_produ
                 }else{
                     if($this->accountinfo['reseller_id'] > 0){
                         if($object_where_key != 'accountid'){
-                          $object_where_key = 'view_dids.'.$object_where_key;
+                          $object_where_key = 'view_dids_reseller.'.$object_where_key;
                         }
                     }
                     else{
@@ -248,7 +248,7 @@ reseller_products.price,reseller_products.billing_type,(CASE WHEN reseller_produ
         $this->db->where($where);
         $where['account_id'] = $this->accountinfo['id'];
          if ($this->accountinfo['reseller_id'] > 0) {
-            $purchased_did = $this->db_model->select("*,id as did_id_new,view_dids.product_id as did_id,view_dids.product_id as id,view_dids.product_id as proid,(CASE WHEN view_dids.billing_type = 2 THEN 'Monthly' ELSE view_dids.billing_days END) as billing_days", "view_dids", $where, "number", "desc", $limit, $start);
+            $purchased_did = $this->db_model->select("*,id as did_id_new,view_dids_reseller.product_id as did_id,view_dids_reseller.product_id as id,view_dids_reseller.product_id as proid,(CASE WHEN view_dids_reseller.billing_type = 2 THEN 'Monthly' ELSE view_dids_reseller.billing_days END) as billing_days", "view_dids_reseller", $where, "number", "desc", $limit, $start);
         }else {
             $purchased_did = $this->db_model->getJionQuery('dids', 'dids.product_id as proid,dids.product_id as did_id,dids.province,dids.city,dids.product_id as id,dids.number,dids.status,dids.accountid,dids.country_id,dids.last_modified_date,dids.cost,dids.call_type,dids.leg_timeout,dids.maxchannels,dids.extensions,view_dids.buy_cost,view_dids.setup_fee,
 view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THEN "Monthly" ELSE view_dids.billing_days END) as billing_days

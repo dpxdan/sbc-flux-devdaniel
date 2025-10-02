@@ -624,16 +624,16 @@ class user_model extends CI_Model
             );
             if ($flag) {
 
-                $query = $this->db_model->getJionQuery('dids', 'dids.id as did_id_new,dids.province,dids.city,view_dids.product_id as productid,view_dids.*', array(
+                $query = $this->db_model->getJionQuery('dids', 'dids.id as did_id_new,dids.province,dids.city,view_dids_reseller.product_id as productid,view_dids_reseller.*', array(
                     'dids.accountid' => $account_data['id'],
                     'buyer_accountid' => $account_data['id']
-                ), 'view_dids', 'dids.product_id=view_dids.product_id', 'inner', $limit, $start, 'DESC', 'dids.id');
+                ), 'view_dids_reseller', 'dids.product_id=view_dids_reseller.product_id', 'inner', $limit, $start, 'DESC', 'dids.id');
             } else {
 
-                $query = $this->db_model->getJionQueryCount('dids', 'dids.province,dids.city,view_dids.product_id as productid,view_dids.*', array(
+                $query = $this->db_model->getJionQueryCount('dids', 'dids.province,dids.city,view_dids_reseller.product_id as productid,view_dids_reseller.*', array(
                     'dids.accountid' => $account_data['id'],
                     'buyer_accountid' => $account_data['id']
-                ), 'view_dids', 'dids.product_id=view_dids.product_id', 'inner', '', '', '', '');
+                ), 'view_dids_reseller', 'dids.product_id=view_dids_reseller.product_id', 'inner', '', '', '', '');
             }
         } else {
             $where_arr = array(

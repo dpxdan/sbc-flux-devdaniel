@@ -201,67 +201,67 @@ class DID extends MX_Controller
                     unset($action['number']);
                 }
                 if (isset($action['country_id']) && $action['country_id'] != '') {
-                    $action['view_dids.country_id'] = $action['country_id'];
+                    $action['view_dids_reseller.country_id'] = $action['country_id'];
                     unset($action['country_id']);
                 }
                 if (isset($action['province']) && $action['province'] != '') {
-                    $action['view_dids.province'] = $action['province'];
-                    $action['view_dids.province']['view_dids.province'] = $action['province']['province'];
-                    $action['view_dids.province']['view_dids.province-string'] = $action['province']['province-string'];
+                    $action['view_dids_reseller.province'] = $action['province'];
+                    $action['view_dids_reseller.province']['view_dids_reseller.province'] = $action['province']['province'];
+                    $action['view_dids_reseller.province']['view_dids_reseller.province-string'] = $action['province']['province-string'];
                     unset($action['province']);
-                    unset($action['view_dids.province']['province']);
-                    unset($action['view_dids.province']['province-string']);
+                    unset($action['view_dids_reseller.province']['province']);
+                    unset($action['view_dids_reseller.province']['province-string']);
                 }
                 if (isset($action['city']) && $action['city'] != '') {
-                    $action['view_dids.city'] = $action['city'];
-                    $action['view_dids.city']['view_dids.city'] = $action['city']['city'];
-                    $action['view_dids.city']['view_dids.city-string'] = $action['city']['city-string'];
+                    $action['view_dids_reseller.city'] = $action['city'];
+                    $action['view_dids_reseller.city']['view_dids_reseller.city'] = $action['city']['city'];
+                    $action['view_dids_reseller.city']['view_dids_reseller.city-string'] = $action['city']['city-string'];
                     unset($action['city']);
-                    unset($action['view_dids.city']['city']);
-                    unset($action['view_dids.city']['city-string']);
+                    unset($action['view_dids_reseller.city']['city']);
+                    unset($action['view_dids_reseller.city']['city-string']);
                 }
                 if (isset($action['accountid']) && $action['accountid'] != '') {
-                    $action['view_dids.buyer_accountid'] = $action['accountid'];
+                    $action['view_dids_reseller.buyer_accountid'] = $action['accountid'];
                     unset($action['accountid']);
                 }
                 if (isset($action['cost']) && $action['cost'] != '') {
-                    $action['view_dids.cost'] = $action['cost'];
-                    $action['view_dids.cost']['view_dids.cost'] = $action['cost']['cost'];
-                    $action['view_dids.cost']['view_dids.cost-integer'] = $action['cost']['cost-integer'];
+                    $action['view_dids_reseller.cost'] = $action['cost'];
+                    $action['view_dids_reseller.cost']['view_dids_reseller.cost'] = $action['cost']['cost'];
+                    $action['view_dids_reseller.cost']['view_dids_reseller.cost-integer'] = $action['cost']['cost-integer'];
                     unset($action['cost']);
-                    unset($action['view_dids.cost']['cost']);
-                    unset($action['view_dids.cost']['cost-integer']);
+                    unset($action['view_dids_reseller.cost']['cost']);
+                    unset($action['view_dids_reseller.cost']['cost-integer']);
                 }
 
                 if (isset($action['setup']) && $action['setup'] != '') {
-                    $action['view_dids.setup_fee'] = $action['setup'];
-                    $action['view_dids.setup_fee']['view_dids.setup_fee'] = $action['setup']['setup'];
-                    $action['view_dids.setup_fee']['view_dids.setup_fee-integer'] = $action['setup']['setup-integer'];
+                    $action['view_dids_reseller.setup_fee'] = $action['setup'];
+                    $action['view_dids_reseller.setup_fee']['view_dids_reseller.setup_fee'] = $action['setup']['setup'];
+                    $action['view_dids_reseller.setup_fee']['view_dids_reseller.setup_fee-integer'] = $action['setup']['setup-integer'];
                     unset($action['setup']);
-                    unset($action['view_dids.setup_fee']['setup']);
-                    unset($action['view_dids.setup_fee']['setup-integer']);
+                    unset($action['view_dids_reseller.setup_fee']['setup']);
+                    unset($action['view_dids_reseller.setup_fee']['setup-integer']);
                 }
 
                 if (isset($action['monthlycost']) && $action['monthlycost'] != '') {
-                    $action['view_dids.price'] = $action['monthlycost'];
-                    $action['view_dids.price']['view_dids.price'] = $action['monthlycost']['monthlycost'];
-                    $action['view_dids.price']['view_dids.price-integer'] = $action['monthlycost']['monthlycost-integer'];
+                    $action['view_dids_reseller.price'] = $action['monthlycost'];
+                    $action['view_dids_reseller.price']['view_dids_reseller.price'] = $action['monthlycost']['monthlycost'];
+                    $action['view_dids_reseller.price']['view_dids_reseller.price-integer'] = $action['monthlycost']['monthlycost-integer'];
                     unset($action['monthlycost']);
-                    unset($action['view_dids.price']['price']);
-                    unset($action['view_dids.price']['price-integer']);
+                    unset($action['view_dids_reseller.price']['price']);
+                    unset($action['view_dids_reseller.price']['price-integer']);
                 }
 
                 if (isset($action['call_type']) && $action['call_type'] != '') {
-                    $action['view_dids.call_type'] = $action['call_type'];
+                    $action['view_dids_reseller.call_type'] = $action['call_type'];
                     unset($action['call_type']);
                 }
                 if (isset($action['extensions']) && $action['extensions'] != '') {
-                    $action['view_dids.extensions'] = $action['extensions'];
-                    $action['view_dids.extensions']['view_dids.extensions'] = $action['extensions']['extensions'];
-                    $action['view_dids.extensions']['view_dids.extensions-string'] = $action['extensions']['extensions-string'];
+                    $action['view_dids_reseller.extensions'] = $action['extensions'];
+                    $action['view_dids_reseller.extensions']['view_dids_reseller.extensions'] = $action['extensions']['extensions'];
+                    $action['view_dids_reseller.extensions']['view_dids_reseller.extensions-string'] = $action['extensions']['extensions-string'];
                     unset($action['extensions']);
-                    unset($action['view_dids.extensions']['extensions']);
-                    unset($action['view_dids.extensions']['extensions-string']);
+                    unset($action['view_dids_reseller.extensions']['extensions']);
+                    unset($action['view_dids_reseller.extensions']['extensions-string']);
                 }
             }
             $this->session->set_userdata('did_list_search', $action);

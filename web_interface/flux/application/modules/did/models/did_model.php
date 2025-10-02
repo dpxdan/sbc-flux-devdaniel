@@ -40,7 +40,7 @@ class DID_model extends CI_Model
             if ($flag) {
                 if ($accountinfo['reseller_id'] > 0) {
                     // HP: PBX_ADDON
-                    $query = $this->db_model->select("*,id as did_id_new,product_id as id", "view_dids", $where, "number", "desc", $limit, $start);
+                    $query = $this->db_model->select("*,id as did_id_new,product_id as id", "view_dids_reseller", $where, "number", "desc", $limit, $start);
                 } else {
                     $query = $this->db_model->getJionQuery('dids', 'dids.province,dids.city,dids.product_id as id,dids.number,dids.status,dids.accountid,dids.country_id,dids.last_modified_date,dids.cost,dids.call_type,dids.leg_timeout,dids.maxchannels,dids.extensions,dids.init_inc,dids.inc, dids.setup,dids.monthlycost,view_dids.buy_cost,view_dids.setup_fee,view_dids.price,view_dids.billing_type,view_dids.billing_days,
                     ,view_dids.product_id,view_dids.account_id', array(
@@ -50,7 +50,7 @@ class DID_model extends CI_Model
                 }
             } else {
                 if ($accountinfo['reseller_id'] > 0) {
-                    $query = $this->db_model->countQuery("*,product_id as id", "view_dids", $where);
+                    $query = $this->db_model->countQuery("*,product_id as id", "view_dids_reseller", $where);
                 } else {
                     $query = $this->db_model->getJionQueryCount('dids', 'dids.province,dids.city,dids.product_id as id,dids.number,dids.status,dids.accountid,dids.country_id,dids.last_modified_date,dids.cost,dids.call_type,dids.leg_timeout,dids.maxchannels,dids.extensions,dids.init_inc,dids.inc, dids.setup,dids.monthlycost,view_dids.buy_cost,view_dids.setup_fee,view_dids.price,view_dids.billing_type,view_dids.billing_days,
                     ,view_dids.product_id,view_dids.account_id', array(

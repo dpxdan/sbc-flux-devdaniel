@@ -61,15 +61,40 @@ class User extends MX_Controller
         $data['accountinfo'] = $account_info;
         if ($account_info['reseller_id'] > 0) {
             $where = array (
-                "account_id"=>$account_info['id'],
-                "reseller_id"=>$account_info['reseller_id']
+                "buyer_accountid"=>$account_info['id'],
+                "account_id"=>$account_info['reseller_id']
             );
-            $productdata = $this->db_model->select("*", "view_dids", $where, "id", "desc", "5", "");
-        } else {
+            $didsdata = $this->db_model->select("*", "view_dids_reseller", $where, "id", "desc", "5", "");
+        } 
+        else {
             $where = array (
                 "account_id"=>$account_info['id']
             );
-            $productdata = $this->db_model->select("*", "view_dids", $where, "id", "desc", "5", "");
+            $didsdata = $this->db_model->select("*", "view_dids", $where, "id", "desc", "5", "");
+        }
+        if ($didsdata->num_rows > 0) {
+            $data['didsdata'] = $didsdata->result_array();
+        }
+        
+                if ($account_info['reseller_id'] > 0) {
+            $where = "products.product_category IN (1,2)";
+            $this->db->where($where);
+            $productdata = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,products.buy_cost,products.commission,reseller_products.setup_fee,reseller_products.price,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
+                'reseller_products.status' => 0,
+                'products.can_purchase' => 0,
+                'products.is_deleted' => 0,
+                'reseller_products.account_id' => $account_info['reseller_id']
+            ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', '10', '', 'desc', 'products.id');
+        } 
+        else {
+            $where = "products.product_category IN (1,2)";
+            $this->db->where($where);
+            $productdata = $this->db_model->select("*", "products", array(
+                'status' => 0,
+                'can_purchase' => 0,
+                'is_deleted' => 0,
+                'reseller_id' => 0
+            ), "id", "desc", "10", "");
         }
         if ($productdata->num_rows > 0) {
             $data['productdata'] = $productdata->result_array();
@@ -2815,9 +2840,10 @@ function user_get_current_info()
     $count_all = $this->db_model->countQuery("*", "packages_view", $where);
     $result_array['product_count'] = $count_all;
     $where_cdr = array(
-        "accountid" => $account_data['id'],
-        "callstart >=" => date("Y-m-d 00:00:01"),
-        "callstart <=" => date("Y-m-d H:i:s")
+		'accountid' => $account_data['id'],
+	    'callstart >= ' =>$this->common->convert_GMT_new ( date('Y-m-d') . " 00:00:01"),
+		'callstart <=' =>$this->common->convert_GMT_new ( date("Y-m-d") . " 23:59:59"),
+		"type" => 0
     );
     $count_cdrs = $this->db_model->countQuery("*", "cdrs", $where_cdr);
     $result_array['call_count'] = $count_cdrs;
@@ -2845,7 +2871,21 @@ function user_get_current_info()
     $where_dids_count = array(
         "account_id" => $account_data['id']
     );
+    
+    if ($account_data['reseller_id'] > 0) {
+        $where_dids_count = array (
+            "buyer_accountid"=>$account_data['id'],
+            "account_id"=>$account_data['reseller_id']
+        );
+        $result_array['did_count'] = $this->db_model->countQuery("*", "view_dids_reseller", $where_dids_count);  
+    } 
+    else {
+        $where_dids_count = array (
+            "account_id"=>$account_info['id']
+        );
     $result_array['did_count'] = $this->db_model->countQuery("*", "view_dids", $where_dids_count);
+    }
+         
 
     echo json_encode($result_array);
 }

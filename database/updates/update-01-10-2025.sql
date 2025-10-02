@@ -1,0 +1,8 @@
+SET FOREIGN_KEY_CHECKS=0;
+
+DROP VIEW IF EXISTS `view_dids_reseller`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`fluxuser`@`127.0.0.1` SQL SECURITY INVOKER VIEW `view_dids_reseller` AS 
+SELECT `dids`.`id` AS `id`,`dids`.`number` AS `number`,`reseller_products`.`id` AS `reseller_product_id`,`reseller_products`.`account_id` AS `account_id`,`reseller_products`.`reseller_id` AS `reseller_id`,IF((`dids`.`parent_id`<> `reseller_products`.`account_id`),(
+SELECT `subrpro`.`account_id` FROM `reseller_products` `subrpro` WHERE (`subrpro`.`id`> `reseller_products`.`id`) ORDER BY `subrpro`.`id` LIMIT 1),`dids`.`accountid`) AS `buyer_accountid`,`dids`.`country_id` AS `country_id`,`dids`.`cost` AS `cost`,`dids`.`call_type` AS `call_type`,`dids`.`city` AS `city`,`dids`.`province` AS `province`,`dids`.`leg_timeout` AS `leg_timeout`,`dids`.`maxchannels` AS `maxchannels`,`dids`.`extensions` AS `extensions`,`reseller_products`.`buy_cost` AS `buy_cost`,`reseller_products`.`setup_fee` AS `setup_fee`,`reseller_products`.`price` AS `price`,`reseller_products`.`billing_type` AS `billing_type`,`reseller_products`.`billing_days` AS `billing_days`,`reseller_products`.`product_id` AS `product_id`,`reseller_products`.`modified_date` AS `modified_date` FROM (`reseller_products` JOIN `dids` ON ((`dids`.`product_id`=`reseller_products`.`product_id`))) WHERE (`reseller_products`.`is_optin`=0) ORDER BY `reseller_products`.`account_id`
+
+SET FOREIGN_KEY_CHECKS=1;
