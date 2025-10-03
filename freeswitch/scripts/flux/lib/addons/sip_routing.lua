@@ -84,6 +84,7 @@ function sip_device_routing(xml,destination_number,destinationinfo,callerid_arra
 			local sip_call_string = '';
 			sip_call_string = "user/"..destination_number.."@"..params:getHeader("variable_sip_to_host")..""
 			table.insert(xml, [[<action application="set" data="hangup_after_bridge=true"/>]]);
+			table.insert(xml, [[<action application="set" data="early_use_180=true"/>]]);
 			table.insert(xml, [[<action application="bridge" data="{sip_invite_params=user=LOCAL,ignore_early_media=true,sip_h_P-call_type='custom_forward',sip_h_P-Accountcode=]]..userinfo['id']..[[}[leg_timeout=]]..config['leg_timeout']..[[ ] ]]..sip_call_string..[["/>]]);
 		end
 		if notify then notify(xml,destination_number) end
@@ -107,6 +108,7 @@ function sip_device_routing(xml,destination_number,destinationinfo,callerid_arra
 		local sip_call_string = '';
 		sip_call_string = "user/"..destination_number.."@"..params:getHeader("variable_sip_to_host")..""
 		table.insert(xml, [[<action application="set" data="hangup_after_bridge=true"/>]]);
+		table.insert(xml, [[<action application="set" data="early_use_180=true"/>]]);
 		table.insert(xml, [[<action application="bridge" data="{sip_invite_params=user=LOCAL,ignore_early_media=true,sip_h_P-call_type='custom_forward',sip_h_P-Accountcode=]]..userinfo['id']..[[}[leg_timeout=]]..config['leg_timeout']..[[ ] ]]..sip_call_string..[["/>]]);
 	end
 end
