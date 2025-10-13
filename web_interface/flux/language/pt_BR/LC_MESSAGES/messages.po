@@ -7327,6 +7327,9 @@ msgstr "Código HTTP"
 msgid "API Activity Report"
 msgstr "Relatório de Atividade API"
 
+msgid "Sync CDRs Type"
+msgstr "Tipo de Sincronismo de CDRs"
+
 msgid "API Activity Logs"
 msgstr "Logs de Atividade API"
 

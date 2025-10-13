@@ -32,9 +32,8 @@ class Sync_model extends CI_Model {
      * Efficiently inserts or updates a voip_sippeers record using ON DUPLICATE KEY UPDATE.
      */
     public function replace_peer($data) {
-        $this->flux_log->write_log('info', 'replace_peer sync_model process.');
-        $this->flux_log->write_log('replace_peer_data', json_encode($data));
-        $allowed_fields = ['id', 'cliente_id', 'name', 'username', 'host', 'context', 'type', 'nat', 'qualify', 'disallow', 'allow', 'dtmfmode', 'secret', 'callerid', 'id_contrato', 'ativo', 'id_plano_sip', 'id_integracao'];
+        $this->flux_log->write_log('sync_model', 'replace_peer sync_model process.');
+        $allowed_fields = ['id', 'cliente_id', 'name', 'username', 'host', 'context', 'type', 'nat', 'qualify', 'disallow', 'allow', 'dtmfmode', 'secret', 'callerid', 'id_contrato', 'ativo', 'id_plano_sip', 'id_integracao', 'cliente_razao', 'reseller_id'];
         $filtered_data = array_intersect_key($data, array_flip($allowed_fields));
 
         if (empty($filtered_data['name']) || $filtered_data['name'] == '0') {
@@ -44,13 +43,12 @@ class Sync_model extends CI_Model {
         if (!empty($filtered_data)) {
             $this->upsert('voip_sippeers', $filtered_data);
             $device_account = $this->api_model->upsert_device($filtered_data['id']);
-            $this->flux_log->write_log('info', 'device_account_upsert_device: ' . json_encode($device_account));
             if ($device_account == false){
-            $this->flux_log->write_log('info', 'device_account false.');
+            $this->flux_log->write_log('sync_model', 'device_account false.');
             return false;
             }
             else {
-            $this->flux_log->write_log('info', 'device_account true.');
+            $this->flux_log->write_log('sync_model', 'device_account true.');
             return true;
             }
         }
@@ -60,17 +58,23 @@ class Sync_model extends CI_Model {
      * Efficiently inserts or updates a customer record.
      */
     public function replace_customer($data) {
-        $allowed_fields = ['id', 'razao', 'cnpj_cpf', 'email', 'telefone_celular', 'fone', 'contato', 'ativo', 'tipo_pessoa', 'endereco', 'bairro', 'cidade', 'cep', 'id_conta', 'data_cadastro', 'ultima_atualizacao', 'numero', 'senha', 'fantasia'];
+        $allowed_fields = ['id', 'razao', 'cnpj_cpf', 'email', 'telefone_celular', 'fone', 'contato', 'ativo', 'tipo_pessoa', 'endereco', 'bairro', 'cidade', 'cep', 'id_conta', 'data_cadastro', 'ultima_atualizacao', 'numero', 'senha', 'fantasia', 'reseller_id'];
         $filtered_data = array_intersect_key($data, array_flip($allowed_fields));
-               
-        if (isset($filtered_data['email']) && strpos($filtered_data['email'], ',') !== false) {
-
-            $emails = explode(',', $filtered_data['email']);
-            
-            $filtered_data['email'] = trim($emails[0]);
-            
-            $this->flux_log->write_log('info', "Multiple emails found for customer ID {$filtered_data['id']}. Using the first one: {$filtered_data['email']}");
-        }
+        
+        if (!empty($filtered_data['email'])) {
+		    $emails = preg_split('/[,;]+/', $filtered_data['email']);
+		    
+		    if (count($emails) > 1) {
+		        $filtered_data['email'] = trim($emails[0]);
+		        
+		        $this->flux_log->write_log(
+		            'sync_model',
+		            "Multiple emails found for customer ID {$filtered_data['id']}. Using the first one: {$filtered_data['email']}"
+		        );
+		    } else {
+		        $filtered_data['email'] = trim($emails[0]);
+		    }
+		}                 
         
          if (empty($filtered_data['fone'])) {
             $filtered_data['fone'] = $filtered_data['telefone_celular'];            
@@ -91,6 +95,7 @@ class Sync_model extends CI_Model {
      * Efficiently inserts or updates a customer contract record.
      */
     public function replace_contract($data) {
+        $this->flux_log->write_log('sync_model', 'replace_contract sync_model process.');
         $allowed_fields = ['id', 'contrato', 'data', 'data_ativacao', 'id_cliente', 'id_vd_contrato', 'status', 'ultima_atualizacao'];
         $filtered_data = array_intersect_key($data, array_flip($allowed_fields));
         if (!empty($filtered_data)) {
@@ -141,8 +146,7 @@ class Sync_model extends CI_Model {
      * @param array $data Associative array of data to insert/update.
      */
     private function upsert($table, $data) {
-        $this->flux_log->write_log('info', "upsert process. Table: {$table}");
-        $this->flux_log->write_log('upsert_data', json_encode($data));
+        $this->flux_log->write_log('sync_model', "upsert process. Table: {$table}");
         $columns = array_keys($data);
         $values = array_values($data);
         
@@ -232,14 +236,39 @@ class Sync_model extends CI_Model {
      * @return array
      */
 
-    public function get_unsent_cdrs_batch($limit) {
+    public function get_unsent_cdrs_batch($limit,$sync_cdrs_type = '1') {
+        /*
+        $sync_cdrs_type: 0 - Inbound
+        $sync_cdrs_type: 1 - Outbound
+        $sync_cdrs_type: 2 - Both
+        */
+        
+        if ($sync_cdrs_type == '0') {
         return $this->db->where('enviado_ixc', 'nao')
                         ->where('id_ligacao IS NOT NULL')
-                        ->where('tp_chamada <> "DID"')
+                        ->like('tp_chamada','DID')
+                        ->order_by('calldate desc')
+                        ->limit($limit)
+                        ->get('cdr')
+                        ->result_array();        
+        }
+        elseif ($sync_cdrs_type == '1') {
+        return $this->db->where('enviado_ixc', 'nao')
+                        ->where('id_ligacao IS NOT NULL')
+                        ->not_like('tp_chamada','DID')
+                        ->order_by('calldate desc')
+                        ->limit($limit)
+                        ->get('cdr')
+                        ->result_array();        
+        }
+        else {
+        return $this->db->where('enviado_ixc', 'nao')
+                        ->where('id_ligacao IS NOT NULL')
                         ->order_by('calldate desc')
                         ->limit($limit)
                         ->get('cdr')
                         ->result_array();
+        }
                         
     }
     
@@ -268,7 +297,7 @@ class Sync_model extends CI_Model {
         }
         return $this->db->where('enviado_ixc', 'nao')
                         ->where('id_ligacao IS NOT NULL')
-                        ->where('tp_chamada <> "DID"')
+                        ->not_like('tp_chamada','DID')
                         ->get('cdr')
                         ->result_array();
     }       

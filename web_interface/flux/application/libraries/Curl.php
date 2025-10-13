@@ -26,17 +26,18 @@ class Curl {
 
 	function __construct($url = '')
 	{
-		$this->_ci = & get_instance();
-		log_message('debug', 'cURL Class Initialized');
+		$this->CI = & get_instance ();
+		$this->CI->load->library("flux_log");
+		$this->CI->flux_log->write_log('curl_lib', 'cURL Class Initialized');
+//		log_message('debug', 'cURL Class Initialized');
 
 		if ( ! $this->is_enabled())
 		{
-			log_message('error', 'cURL Class - PHP was not built with cURL enabled. Rebuild PHP with --with-curl to use cURL.');
+			$this->CI->flux_log->write_log('curl_lib', 'cURL Class - PHP was not built with cURL enabled. Rebuild PHP with --with-curl to use cURL.');
 		}
 
 		$url AND $this->create($url);
-	}
-
+	}	
 	public function __call($method, $arguments)
 	{
 		if (in_array($method, array('simple_get', 'simple_post', 'simple_put', 'simple_delete', 'simple_patch')))
@@ -114,6 +115,7 @@ class Curl {
 
 	public function post($params = array(), $options = array())
 	{
+		$this->CI->flux_log->write_log('curl_lib', 'cURL post');
 		// If its an array (instead of a query string) then format it correctly
 		if (is_array($params))
 		{

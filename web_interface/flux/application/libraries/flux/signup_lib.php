@@ -130,6 +130,7 @@ class Signup_lib {
 		return $last_id;
 	}
 	function proxy_create_account($accountinfo){
+		$this->CI->flux_log->write_log('proxy_create_account_start', json_encode($accountinfo));
 		$current_date = gmdate("Y-m-d H:i:s");
 		$invoice_config = "1";
 		if ($accountinfo ['type'] == 1) {
@@ -171,8 +172,8 @@ class Signup_lib {
 				}
 			}
 		
-			if($sip_flag == '0' && $accountinfo['type'] != 1) {
-				$sip_profile_info = $this->_get_sip_profile();
+			if($sip_flag == 1 && $accountinfo['type'] != 1) {
+				$sip_profile_info = $this->_proxy_get_sip_profile();
 				if(!empty($sip_profile_info)){
 					$this->_proxy_create_sip_device($accountinfo,$sip_profile_info);
 				}
@@ -257,20 +258,22 @@ class Signup_lib {
 	}
 	public function _proxy_create_sip_device($accountinfo,$sip_profile_info){
 		$current_date = gmdate("Y-m-d H:i:s");
-//		$this->CI->flux_log->write_log('create_sip_device_dev', json_encode($accountinfo));
 		$this->CI->db->select ( 'id' );
 		$this->CI->db->where ( 'name', 'default' );
 		$sipprofile_result = ( array ) $this->CI->db->get ( 'sip_profiles' )->first_row ();
+		$this->CI->db->select("id,name,secret");
+		$where=array("cliente_id"=>$accountinfo['id_external']);
+		$voip_sippeers_info = (array)$this->CI->db->get_where("voip_sippeers",$where)->first_row();
 		$digits=5;
 		$random_password = rand(pow(10, $digits-1), pow(10, $digits)-1);
 		$sipdevice_array = array (
-				'username' => $accountinfo ['number'],
+				'username' => (!empty($voip_sippeers_info['name'])) ? $voip_sippeers_info['name'] : $accountinfo['number'],
 				'sip_profile_id' => $sip_profile_info ['id'],
 				"reseller_id"=>isset($accountinfo ['reseller_id']) ? $accountinfo ['reseller_id'] : '0',
 				'accountid' => isset($accountinfo ['accountid']) ? $accountinfo ['accountid'] : $accountinfo ['id'],
-				'id_sip_external' => isset($accountinfo ['id_sip_external']) ? $accountinfo ['id_sip_external'] : '0',				
+				'id_sip_external' => isset($voip_sippeers_info ['id']) ? $voip_sippeers_info ['id'] : '0',				
 				'dir_params' => json_encode(array(
-					"password"=> $this->CI->common->decode ( $accountinfo ['password'] ),
+					"password"=> (!empty($voip_sippeers_info['secret'])) ? $voip_sippeers_info['secret'] : $this->CI->common->decode ( $accountinfo ['password']),
 					'vm-enabled' => "false",
 					"vm-password"=> $random_password,
 					"vm-mailto"=> (isset($accountinfo['email']))?$accountinfo['email']:'',
@@ -279,11 +282,11 @@ class Signup_lib {
 					"vm-email-all-messages"=>"true"
 				)),
 				"dir_vars"=>json_encode(array(
-					'effective_caller_id_name' => $accountinfo ['number'],
-					'effective_caller_id_number' => $accountinfo ['number'],
+					'effective_caller_id_name' => isset($accountinfo['company_name']) ? $accountinfo['company_name'] : $accountinfo ['number'],
+					'effective_caller_id_number' => (!empty($voip_sippeers_info['name'])) ? $voip_sippeers_info['name'] : $accountinfo['number'],
 					"user_context"=>"default"
 				)),
-				'codec' => 'PCMA,PCMU',
+				'codec' => 'G729,PCMA,PCMU',
 				'status' => isset($accountinfo ['status']) ? $accountinfo ['status'] : '0',
 				'creation_date'=>$current_date,
 				'last_modified_date'=>$current_date
@@ -321,7 +324,6 @@ class Signup_lib {
 		$accountinfo['status'] =0;
 		return $accountinfo;
 	}
-
 	private function _create_invoice_conf($accountinfo){
 		if ($accountinfo ['country_id'] == NULL) {
 			$accountinfo ['country_id'] = "";
@@ -356,7 +358,6 @@ class Signup_lib {
 		$accountinfo['localization_id'] =!empty($localization_info) ? $localization_info['id'] : Common_model::$global_config ['system_config'] ['localization_id'];
 		return $accountinfo;
 	}
-
 	public function generate_receipt($accountinfo,$balance){
 			$this->CI->db->select("currency,currencyrate");
 			$currency_info = (array)$this->CI->db->get_where("currency",array("id"=>$accountinfo['currency_id']))->first_row();

@@ -36,43 +36,71 @@ class ApiSync extends CI_Controller {
      * Main orchestration method to synchronize all primary data.
      */
     public function sync() {
-        $this->flux_log->write_log('info', 'Starting full data synchronization process.');
+    $lockFile = '/tmp/api_sync.lock';
+
+    if (file_exists($lockFile)) {
+        $pid = file_get_contents($lockFile);
+        if (posix_kill((int)$pid, 0)) {
+            $this->flux_log->write_log('api_controller', "ApiSync is already running (PID $pid). Aborting.");
+            return;
+        } else {
+            unlink($lockFile);
+        }
+    }
+
+    file_put_contents($lockFile, getmypid());
+
+    $this->flux_log->write_log('sync_service', 'Starting full data synchronization process.');
+
+    try {
         $endpoints = $this->Sync_model->get_api_endpoints();
         if (empty($endpoints)) {
-            $this->flux_log->write_log('info', 'No active API endpoints found to synchronize.');
+            $this->flux_log->write_log('api_controller', 'No active API endpoints found to synchronize.');
             return;
         }
 
         foreach ($endpoints as $endpoint) {
-            $this->flux_log->write_log('info', "Syncing endpoint: " . $endpoint['endpoint_name']);
+            $this->flux_log->write_log('api_controller', "Syncing endpoint: " . $endpoint['endpoint_name']);
             $auth_string = $endpoint['endpoint_user'] . ':' . $endpoint['endpoint_password'];
             $api_url = $endpoint['endpoint_url'];
-
             $external_api_id = $endpoint['external_api_id'];
+            $reseller_id = $endpoint['reseller_id'];
+            
             
             $this->external_api_id = $external_api_id;
-            
-            $customer_ids = $this->_sync_peers($api_url, $auth_string);
+
+            $customer_ids = $this->_sync_peers($api_url, $auth_string, $reseller_id);
+
             if (empty($customer_ids)) {
-                $this->flux_log->write_log('info', 'No customers to sync for endpoint: ' . $endpoint['endpoint_name']);
+                $this->flux_log->write_log('api_controller', 'No customers to sync for endpoint: ' . $endpoint['endpoint_name']);
                 continue;
             }
             if ($customer_ids == false){
-            $this->flux_log->write_log('info', 'customer_ids false');
+            $this->flux_log->write_log('api_controller', 'customer_ids false');
             }
-            $this->_sync_customers($api_url, $auth_string, $customer_ids);
+
+            $this->_sync_customers($api_url, $auth_string, $customer_ids, $reseller_id);
             $this->_sync_device_plans($api_url, $auth_string);
         }
-        $this->flux_log->write_log('info', 'Full data synchronization finished.');
+
+        $this->flux_log->write_log('sync_service', 'Full data synchronization finished.');
+
+    } catch (Exception $e) {
+        $this->flux_log->write_log('api_controller', 'Exception during ApiSync: ' . $e->getMessage());
+    } finally {
+        if (file_exists($lockFile)) {
+            unlink($lockFile);
+        }
     }
+}
 
     /**
      * Syncs SIP peers and returns an array of unique customer IDs.
      */
-    private function _sync_peers($api_url, $auth_string) {
+    private function _sync_peers($api_url, $auth_string, $reseller_id = '0') {
         $response = $this->request_voip_sippeers($api_url, $auth_string);
         if (empty($response['registros'])) {
-            $this->flux_log->write_log('error', 'API response for voip_sippeers was empty.');
+            $this->flux_log->write_log('api_controller', 'API response for voip_sippeers was empty.');
             return [];
         }
 
@@ -81,14 +109,22 @@ class ApiSync extends CI_Controller {
         $contract_ids = array_unique(array_column($response['registros'], 'id_contrato'));
 
         foreach ($response['registros'] as $record) {
+            $record['reseller_id'] = $reseller_id;
             $data_peer = $this->Sync_model->replace_peer($record);
-            $this->flux_log->write_log('data_peer', json_encode($data_peer));
-            if ($data_peer == false){
-            $this->flux_log->write_log('sync_peer', 'false.');
+            //$this->flux_log->write_log('data_peer', json_encode($data_peer));
+            if ($data_peer == "updated"){
+            $this->flux_log->write_log('api_controller', 'sync_peer updated.');
+            } 
+            else {
+            $this->flux_log->write_log('api_controller', 'sync_peer inserted.');
+            
             }
             if (!empty($contract_ids)) {
+            //$this->flux_log->write_log('request_cliente_contrato', json_encode($contract_ids));
             $contract_response = $this->request_cliente_contrato($api_url, $auth_string, $contract_ids);
+            //$this->flux_log->write_log('request_cliente_contrato_response', json_encode($contract_response));
             if (!empty($contract_response['registros'])) {
+                $this->flux_log->write_log('api_controller', 'request_cliente_contrato_response_not_empty');
                 foreach ($contract_response['registros'] as $contract) {
                     $this->Sync_model->replace_contract($contract);
                 }
@@ -109,17 +145,19 @@ class ApiSync extends CI_Controller {
             $this->load->library('common');
             $this->common->delete_data('sip_devices', ['id_sip_external' => $record['id']]);
             $this->common->delete_data('voip_sippeers', ['id' => $record['id']]);
-            $this->flux_log->write_log('info', 'Deleted stale peer with ID: ' . $record['id']);
+            $this->flux_log->write_log('api_controller', 'Deleted stale peer with ID: ' . $record['id']);
         }
     }
 
     /**
      * Syncs customer profiles and contracts.
      */
-    private function _sync_customers($api_url, $auth_string, $customer_ids) {
+    private function _sync_customers($api_url, $auth_string, $customer_ids, $reseller_id = '0') {
+        $this->flux_log->write_log('api_controller', '_sync_customers start.');
         foreach ($customer_ids as $id) {
             $response = $this->request_cliente($api_url, $auth_string, $id);
             if (!empty($response['registros'])) {
+                $response['registros'][0]['reseller_id'] = $reseller_id;
                 $this->Sync_model->replace_customer($response['registros'][0]);
             }
         }
@@ -131,18 +169,35 @@ class ApiSync extends CI_Controller {
     private function _sync_device_plans($api_url, $auth_string) {
         $response = $this->request_voip_devices($api_url, $auth_string);
         if (empty($response['registros'])) {
-            $this->flux_log->write_log('warning', 'Could not sync SIP plans, API response was empty.');
+            $this->flux_log->write_log('api_controller', 'Could not sync SIP plans, API response was empty.');
             return;
         }
         $this->Sync_model->update_device_plans($response['registros']);
-        $this->flux_log->write_log('info', 'Successfully synced SIP plan IDs.');
+        $this->flux_log->write_log('api_controller', 'Successfully synced SIP plan IDs.');
     }
 
     /**
      * Syncs geographic data (cities and states) from the API.
      */
     public function sync_locations() {
-        $this->flux_log->write_log('info', 'Starting locations synchronization.');
+        $lockLocationsFile = '/tmp/locations_sync.lock';
+        
+        if (file_exists($lockLocationsFile)) {
+            $pid = file_get_contents($lockLocationsFile);
+            if (posix_kill((int)$pid, 0)) {
+                $this->flux_log->write_log('api_controller', "sync_locations is already running (PID $pid). Aborting.");
+                return;
+            } else {
+                unlink($lockLocationsFile);
+            }
+        }
+        
+        file_put_contents($lockLocationsFile, getmypid());
+        
+        
+        try {
+        
+        $this->flux_log->write_log('api_controller', 'Starting locations synchronization.');
         $endpoints = $this->Sync_model->get_api_endpoints();
         if (empty($endpoints)) return;
 
@@ -160,14 +215,23 @@ class ApiSync extends CI_Controller {
                 $this->Sync_model->replace_states($uf_response['registros']);
             }
         }
-        $this->flux_log->write_log('info', 'Locations synchronization finished.');
+        $this->flux_log->write_log('api_controller', 'Locations synchronization finished.');
+        }
+        catch (Exception $e) {
+                $this->flux_log->write_log('api_controller', 'Exception during ApiSync: ' . $e->getMessage());
+            } 
+            finally {
+                if (file_exists($lockLocationsFile)) {
+                    unlink($lockLocationsFile);
+                }
+            }
     }
 
     /**
      * Syncs VoIP plans between the local DB and the remote API.
      */
     public function sync_voip_plans() {
-        $this->flux_log->write_log('info', 'Starting VoIP plans synchronization.');
+        $this->flux_log->write_log('api_controller', 'Starting VoIP plans synchronization.');
         $endpoints = $this->Sync_model->get_api_endpoints();
         if (empty($endpoints)) return;
 
@@ -190,10 +254,10 @@ class ApiSync extends CI_Controller {
 				$response = $this->send_post_request($url_voip_plans, $auth_string, $payload, '');
 				$http_code = $this->curl->info['http_code'];
 				if ($http_code >= 200 && $http_code < 300) {
-                    $this->flux_log->write_log('info', 'Sent new VoIP plan to API: ' . json_encode($payload));
+                    $this->flux_log->write_log('api_controller', 'Sent new VoIP plan to API: ' . json_encode($payload));
                 }
 				else {
-					$this->flux_log->write_log('error', 'Failed to send new VoIP plan ' . json_encode($payload) . '. HTTP Code: ' . $http_code . '. Response: ' . json_encode($response));
+					$this->flux_log->write_log('api_controller', 'Failed to send new VoIP plan ' . json_encode($payload) . '. HTTP Code: ' . $http_code . '. Response: ' . json_encode($response));
 					$this->api_model->save_api_log(
 						$url_voip_plans,
 						json_encode($payload),
@@ -222,9 +286,9 @@ class ApiSync extends CI_Controller {
 				curl_close($ch_delete);
 
 				if ($http_code_delete >= 200 && $http_code_delete < 300) {
-					$this->flux_log->write_log('info', 'Deleted VoIP plan from API with IXC ID: ' . $plan_id . ' (Local ID: ' . $api_plan['id_plataforma'] . ').');
+					$this->flux_log->write_log('api_controller', 'Deleted VoIP plan from API with IXC ID: ' . $plan_id . ' (Local ID: ' . $api_plan['id_plataforma'] . ').');
 				} else {
-					$this->flux_log->write_log('error', 'Failed to delete VoIP plan from API with IXC ID: ' . $plan_id . ' (Local ID: ' . $api_plan['id_plataforma'] . '). HTTP Code: ' . $http_code_delete . '. Response: ' . json_encode($response_delete));
+					$this->flux_log->write_log('api_controller', 'Failed to delete VoIP plan from API with IXC ID: ' . $plan_id . ' (Local ID: ' . $api_plan['id_plataforma'] . '). HTTP Code: ' . $http_code_delete . '. Response: ' . json_encode($response_delete));
 					$this->api_model->save_api_log(
 						$url_delete,
 						'',
@@ -236,7 +300,7 @@ class ApiSync extends CI_Controller {
 			}
             }
         }
-        $this->flux_log->write_log('info', 'VoIP plans synchronization finished.');
+        $this->flux_log->write_log('api_controller', 'VoIP plans synchronization finished.');
     }
     
     /**
@@ -244,26 +308,42 @@ class ApiSync extends CI_Controller {
      * and sending each CDR individually to the API, as per API limitations.
      */
     public function sync_cdrs() {
-        $this->flux_log->write_log('info', 'Starting CDR synchronization (individual submission mode).');
+    $lockCDRFile = '/tmp/cdr_sync.lock';
+
+    if (file_exists($lockCDRFile)) {
+        $pid = file_get_contents($lockCDRFile);
+        if (posix_kill((int)$pid, 0)) {
+            $this->flux_log->write_log('api_controller', "sync_cdrs is already running (PID $pid). Aborting.");
+            return;
+        } else {
+            unlink($lockCDRFile);
+        }
+    }
+
+    file_put_contents($lockCDRFile, getmypid());
+
+    try {
+    $this->flux_log->write_log('api_controller', 'Starting CDR synchronization (individual submission mode).');
         $endpoints = $this->Sync_model->get_api_endpoints();
         if (empty($endpoints)) {
-            $this->flux_log->write_log('info', 'No active API endpoints for CDR sync.');
+            $this->flux_log->write_log('api_controller', 'No active API endpoints for CDR sync.');
             return;
         }
     
         foreach ($endpoints as $endpoint) {
-            $this->flux_log->write_log('info', 'Syncing CDRs for endpoint: ' . $endpoint['endpoint_name']);
+            $this->flux_log->write_log('api_controller', 'Syncing CDRs for endpoint: ' . $endpoint['endpoint_name']);
             $auth_string = $endpoint['endpoint_user'] . ':' . $endpoint['endpoint_password'];
+            $sync_cdrs_type = isset($endpoint['sync_cdrs_for']) ? $endpoint['sync_cdrs_for'] : '1';
             $url_cdr = $endpoint['endpoint_url'] . 'cdr';
             $batch_size = 200;
     
             do {
-                $unsent_cdrs = $this->Sync_model->get_unsent_cdrs_batch($batch_size);
+                $unsent_cdrs = $this->Sync_model->get_unsent_cdrs_batch($batch_size,$sync_cdrs_type);
                 if (empty($unsent_cdrs)) {
-                    $this->flux_log->write_log('info', 'No new CDRs to send for this batch.');
+                    $this->flux_log->write_log('api_controller', 'No new CDRs to send for this batch.');
                     break;
                 }    
-                $this->flux_log->write_log('info', 'Processing a batch of ' . count($unsent_cdrs) . ' CDRs for individual submission.');    
+                $this->flux_log->write_log('api_controller', 'Processing a batch of ' . count($unsent_cdrs) . ' CDRs for individual submission.');    
 
                 foreach ($unsent_cdrs as $cdr) {
                     $this->_send_cdr($url_cdr, $auth_string, $cdr);
@@ -271,8 +351,18 @@ class ApiSync extends CI_Controller {
     
             } while (count($unsent_cdrs) === $batch_size);
         }
-        $this->flux_log->write_log('info', 'CDR synchronization finished.');
+        $this->flux_log->write_log('api_controller', 'CDR synchronization finished.');  
+
+    } 
+    catch (Exception $e) {
+        $this->flux_log->write_log('api_controller', 'Exception during ApiSync: ' . $e->getMessage());
+    } 
+    finally {
+        if (file_exists($lockCDRFile)) {
+            unlink($lockCDRFile);
+        }
     }
+}
     
     /**
      * Sends a single CDR to the API and updates the local record upon success.
@@ -283,7 +373,7 @@ class ApiSync extends CI_Controller {
      */
     private function _send_cdr($url_cdr, $auth_string, $cdr) {
         if (empty($cdr['id_ligacao'])) {
-            $this->flux_log->write_log('error', 'CDR is missing id_ligacao: ' . json_encode($cdr));
+            $this->flux_log->write_log('api_controller', 'CDR is missing id_ligacao: ' . json_encode($cdr));
             return;
         }
     
@@ -310,13 +400,13 @@ class ApiSync extends CI_Controller {
             'dest_pais'   => $cdr['dest_pais']
         ];
     
-        $response = $this->send_post_request($url_cdr, $auth_string, $payload, '');
+        $response = $this->send_post_request_lib($url_cdr, $auth_string, $payload, '');
         $http_code = $this->curl->info['http_code'];
     
 
         if ($http_code >= 200 && $http_code < 300 && !empty($response['id'] )) {
             $this->Sync_model->mark_cdr_as_sent($cdr['id_ligacao'], $response['id']);
-            $this->flux_log->write_log('info', "Successfully sent CDR {$cdr['id_ligacao']}. IXC ID: {$response['id']}.");
+            $this->flux_log->write_log('api_controller', "Successfully sent CDR {$cdr['id_ligacao']}. IXC ID: {$response['id']}.");
             $response_id = isset($response['id']) ? $response['id'] : null;
             if ($response_id) {
             
@@ -341,8 +431,8 @@ class ApiSync extends CI_Controller {
 			curl_close($ch_put);
 	
 			if ($httpCodePut == 200 || $httpCodePut == 201) {
-				$this->flux_log->write_log('success', "PUT realizado com sucesso no ID {$response_id}: " . json_encode($put_payload));
-				$this->flux_log->write_log('success', "PUT Response {$response_id}: " . json_encode($response_put));
+				$this->flux_log->write_log('api_controller', "PUT realizado com sucesso no ID {$response_id}: " . json_encode($put_payload));
+				$this->flux_log->write_log('api_controller', "PUT Response {$response_id}: " . json_encode($response_put));
 			} 
 			else {
 				$this->api_model->save_api_log(
@@ -357,8 +447,9 @@ class ApiSync extends CI_Controller {
             
             }
             
-        } else {
-            $this->flux_log->write_log('error', "Failed to send CDR {$cdr['id_ligacao']}. HTTP Code: {$http_code}. Response: " . json_encode($response ));
+        } 
+        else {
+            $this->flux_log->write_log('api_controller', "Failed to send CDR {$cdr['id_ligacao']}. HTTP Code: {$http_code}. Response: " . json_encode($response ));
         }
     }
 
@@ -397,9 +488,12 @@ class ApiSync extends CI_Controller {
         return $this->send_post_request($api_url . 'view_voip_sippeers_cliente', $auth_string, ['rp' => '20000', 'qtype' => 'view_voip_sippeers_cliente.'.$qtype.'', 'query' => $external_api_id, 'oper' => ''.$oper.''], 'listar');
     }
     private function request_cliente($api_url, $auth_string, $id) {
+        $this->flux_log->write_log('api_controller', 'request_cliente process.');
         return $this->send_post_request($api_url . 'cliente', $auth_string, ['qtype' => 'cliente.id', 'query' => $id, 'oper' => '='], 'listar');
     }
     private function request_cliente_contrato($api_url, $auth_string, $id_contrato) {
+        $this->flux_log->write_log('api_controller', 'request_cliente_contrato process.');
+        //$this->flux_log->write_log('id_contrato', json_encode($id_contrato));
         return $this->send_post_request($api_url . 'cliente_contrato', $auth_string, ['qtype' => 'cliente_contrato.id', 'query' => $id_contrato, 'oper' => '='], 'listar');
     }
     private function request_voip_devices($api_url, $auth_string) {
@@ -426,7 +520,7 @@ class ApiSync extends CI_Controller {
     // UTILITY HELPERS
     // ==========================================================================   
     
-    private function send_post_request($url, $auth, $postData, $action = 'listar') {
+    private function send_post_request_lib($url, $auth, $postData, $action = 'listar') {
     
     $this->curl = new Curl();
 
@@ -473,13 +567,97 @@ class ApiSync extends CI_Controller {
     return json_decode($response, true);
 }
 
+    private function send_post_request($url, $auth, array $postData = [], $action = 'listar')
+    {
+        // Define parâmetros padrão apenas se a ação exigir
+        $default_params = [
+            'page'      => '1',
+            'rp'        => '20000',
+            'sortorder' => 'asc'
+        ];
+    
+        $final_data = ($action === '') 
+            ? $postData 
+            : array_merge($default_params, $postData);
+    
+        // Monta headers
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Basic ' . base64_encode($auth)
+        ];
+    
+        if (stripos($url, 'webservice') !== false) {
+            $headers[] = 'ixcsoft: ' . $action;
+        }
+    
+        // Inicia sessão cURL
+        $ch = curl_init($url);
+    
+        // Configura opções
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER      => $headers,
+            CURLOPT_TIMEOUT         => 30,
+            CURLOPT_SSL_VERIFYPEER  => false, // defina true se tiver CA configurado
+            CURLOPT_HTTP_VERSION    => CURL_HTTP_VERSION_1_1,
+            CURLOPT_ENCODING        => '',
+            CURLOPT_POST            => true,
+            CURLOPT_POSTFIELDS      => json_encode($final_data),
+            CURLINFO_HEADER_OUT     => true,
+        ]);
+    
+        // Executa requisição
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+    
+        // Fecha handle
+        curl_close($ch);
+    
+        // Decodifica JSON
+        $decoded = json_decode($response, true);
+        $data = [
+            'url'       => $url,
+            'payload'   => is_string($final_data) ? $final_data : json_encode($final_data),
+            'response'  => $decoded,
+            'http_code' => $http_code,            
+        ];
+        //$this->flux_log->write_log('response', json_encode($data));
+        
+        $json_error = json_last_error();
+    
+        // Loga erros HTTP, cURL ou JSON
+        if ($http_code >= 400 || $json_error !== JSON_ERROR_NONE || !empty($curl_error)) {
+            $this->api_model->save_api_log(
+                $url,
+                $final_data,
+                $response ?: $curl_error,
+                $action,
+                $http_code,
+                $json_error
+            );
+        }
+    
+        // Retorna resposta decodificada ou erro
+        if (!empty($curl_error)) {
+            return ['error' => 'cURL error: ' . $curl_error];
+        }
+    
+        if ($json_error !== JSON_ERROR_NONE) {
+            return ['error' => 'Invalid JSON response'];
+        }
+    
+        return $decoded;
+    }
+
+
     private function convert_to_brasilia($data_utc) {
         try {
             $date = new DateTime($data_utc, new DateTimeZone('UTC'));
             $date->setTimezone(new DateTimeZone('America/Sao_Paulo'));
             return $date->format('Y-m-d H:i:s');
         } catch (Exception $e) {
-            $this->flux_log->write_log('error', 'Invalid date format for conversion: ' . $data_utc);
+            $this->flux_log->write_log('api_controller', 'Invalid date format for conversion: ' . $data_utc);
             return $data_utc;
         }
     }

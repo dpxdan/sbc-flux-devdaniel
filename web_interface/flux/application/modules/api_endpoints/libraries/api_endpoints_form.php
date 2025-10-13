@@ -209,7 +209,7 @@ class api_endpoints_form
                 '',
                 'tOOL TIP',
                 ''
-            ),          
+            ),
             array(
                 gettext('Status'),
                 'status',
@@ -224,18 +224,31 @@ class api_endpoints_form
                 'set_status'
             ),
             array(
-				gettext('Cron Status'),
-				'run_cron',
-				'SELECT',
-				'',
-				'',
-				'tOOL TIP',
-				'Please Select Status',
-				'',
-				'',
-				'',
-				'set_cron_status'
-			)
+                gettext('Cron Status'),
+                'run_cron',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Select Status',
+                '',
+                '',
+                '',
+                'set_cron_status'
+            ),
+            array(
+                gettext('Sync CDRs Type'),
+                'sync_cdrs_for',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Select Status',
+                '',
+                '',
+                '',
+                'set_sync_cdrs_type'
+            )
         );
         $form[gettext('Authentication Information')] = array(
             array(
@@ -734,7 +747,7 @@ class api_endpoints_form
             '',
             '',
             '',
-            'set_authtype_drp_option' // Voc j‡ usa esse helper
+            'set_authtype_drp_option'
         ),  
         array(
             gettext('Authentication User'),
@@ -1113,7 +1126,7 @@ class api_endpoints_form
 					'size' => '20',
 					'class' => "text field medium"
 				),
-				'trim|required|xss_clean|is_unique[' . $val . ']',
+				'trim|required|xss_clean',
 				'tOOL TIP',
 				'Please Enter endpoint Name'
 			),
