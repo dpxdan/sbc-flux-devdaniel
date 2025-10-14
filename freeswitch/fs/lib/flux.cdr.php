@@ -664,18 +664,9 @@ function package_calculation($destination_number, $package_id, $duration, $call_
           else {
 						$duration = 30;
 					 }
-        $free_seconds = ($available_seconds >= $duration) ? $duration : $available_seconds;
-        $logger->log("package_free_seconds : " . $package_info['free_seconds']);
-        $logger->log("available_seconds : " . $available_seconds);
-        $logger->log("duration : " . $duration);
-        $logger->log("free_seconds : " . $free_seconds);
-        $logger->log("used_seconds : " . $counter_info ['used_seconds']);
+        $free_seconds = ($available_seconds >= $duration) ? $duration : $available_seconds;        
         $update_query = "UPDATE counters SET used_seconds = used_seconds + " . ($free_seconds) . " WHERE id = " . $counter_info ['id'];
-        $logger->log ( "Update Counters  : " . $update_query );
         $db->run ( $update_query );
-        $new_counter_info = get_counters($accountid, $package_info['package_id'], $db, $logger);
-        $new_seconds = $new_counter_info['used_seconds'];
-        $logger->log("New Counters : " . $new_seconds);
         $package_array ['package_id'] = $package_info ['package_id'];
         $package_array ['calltype'] = "Gratuita";
         break;
