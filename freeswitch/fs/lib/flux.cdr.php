@@ -644,8 +644,6 @@ function package_calculation($destination_number, $package_id, $duration, $call_
 	if (!empty($package_info_arr)) {
 		foreach($package_info_arr as $package_info){
 			$account_data = get_accounts ( $package_info["accountid"], $logger, $db );
-	$logger->log ( "applicable_for  : " . $package_info ['applicable_for']."=====call_direction:".$call_direction."===0:Inbound,1:Outbound,2:Both" );
-//			$package_info = $package_info [0];
 			if (($package_info ['applicable_for'] == "0" && $call_direction == "inbound") || ($package_info ['applicable_for'] == "1" && $call_direction == "outbound") || ($package_info ['applicable_for'] == "2")) {					
 
 				$counter_info = get_counters ( $accountid, $package_info ['package_id'], $db, $logger );
@@ -657,31 +655,30 @@ function package_calculation($destination_number, $package_id, $duration, $call_
 					$counter_info = get_counters ( $accountid, $package_info ['package_id'], $db, $logger );
 				}
 				$package_info ['free_seconds'] = $package_info ['free_minutes']*60;
-				if ($package_info ['free_seconds'] > ($counter_info ['used_seconds'])) {
+				
+				if ($package_info['free_seconds'] > $counter_info['used_seconds']) {
 					$available_seconds = $package_info ['free_seconds'] - $counter_info ['used_seconds'];
-					$logger->log ( "available_seconds  : " . $available_seconds."\n" );
-					$logger->log ( "free_minutes  : " . $package_info ['free_minutes']."\n" );
-					$logger->log ( "used_seconds  : " . $counter_info ['used_seconds']."\n" );
-					$logger->log ( "duration  : " . $duration."\n" );
-					//Convertendo a duração REAL para bloco 0/30/6
 					if ($duration > 30){
 						$duration = (ceil($duration/6)*6);
-					}else{
+           } 
+          else {
 						$duration = 30;
-					}
-					$free_seconds = ($available_seconds >= $duration) ? $duration : $available_seconds;
-	//				$duration = ($available_seconds >= $duration) ? $duration : $available_seconds;
-					$final_min = $counter_info ['used_seconds'] + $free_seconds;
-					//$final_min =  ceil($final_min/60)*60;
-					//divide o valor em segundos por 60, arredonda para cima, e multiplica por 30 (Bloco).
-					$final_min =  ceil($final_min/60)*30;
-					//$freeminutes ['free_minutes'] = ceil($freeminutes ['free_minutes']/60)*60;
-					$update_query = "UPDATE counters SET used_seconds = " . ($final_min) . " WHERE id = " . $counter_info ['id'];
-					$logger->log ( "Update Counters  : " . $update_query );
-					$db->run ( $update_query );
-					$package_array ['package_id'] = $package_info ['package_id'];
-					$package_array ['calltype'] = "Gratuita";
-					break;
+					 }
+        $free_seconds = ($available_seconds >= $duration) ? $duration : $available_seconds;
+        $logger->log("package_free_seconds : " . $package_info['free_seconds']);
+        $logger->log("available_seconds : " . $available_seconds);
+        $logger->log("duration : " . $duration);
+        $logger->log("free_seconds : " . $free_seconds);
+        $logger->log("used_seconds : " . $counter_info ['used_seconds']);
+        $update_query = "UPDATE counters SET used_seconds = used_seconds + " . ($free_seconds) . " WHERE id = " . $counter_info ['id'];
+        $logger->log ( "Update Counters  : " . $update_query );
+        $db->run ( $update_query );
+        $new_counter_info = get_counters($accountid, $package_info['package_id'], $db, $logger);
+        $new_seconds = $new_counter_info['used_seconds'];
+        $logger->log("New Counters : " . $new_seconds);
+        $package_array ['package_id'] = $package_info ['package_id'];
+        $package_array ['calltype'] = "Gratuita";
+        break;
 				}
 			}
 		}
