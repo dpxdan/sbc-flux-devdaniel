@@ -101,7 +101,7 @@ class order {
 		$accountarr = array();
 		$tempkeyarr = array();
 		$select = "id,number,reseller_id,type,balance,credit_limit,invoice_day,last_bill_date,sweep_id,email,posttoexternal,currency_id,is_distributor,id_external";
-		$temparray = $this->CI->db_model->getSelect($select,"accounts",array("id_external"=>$account_id,"status"=>"0","deleted"=>"0"));
+		$temparray = $this->CI->db_model->getSelect($select,"accounts",array("id"=>$account_id,"deleted"=>"0"));
 		if($temparray->num_rows > 0){
 			$temparray = $temparray->first_row();
 
@@ -299,7 +299,7 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 		}  
 	     	return $parent_order_id ;	
 	}
-		function confirm_order_proxy($productdata,$account_id,$created_by_accountinfo){
+	function confirm_order_proxy($productdata,$account_id,$created_by_accountinfo){
 		$parent_array = array();
 		$parent_key_arr = array();
 		$orderobjArr = array();
@@ -652,6 +652,10 @@ order_items.billing_type,order_items.billing_days,order_items.free_minutes,order
 			    elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))   
 			    {
 			      $ip=$_SERVER['HTTP_X_FORWARDED_FOR'];
+			    }
+			    elseif (!empty($_SERVER['SERVER_NAME']))   
+			    {
+			      $ip=$_SERVER['SERVER_NAME'];
 			    }
 			    else
 			    {

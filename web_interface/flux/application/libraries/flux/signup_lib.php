@@ -62,45 +62,6 @@ class Signup_lib {
 		$accountinfo=array_map('trim',$accountinfo);
 		$result = $this->CI->db->insert ( 'accounts', $accountinfo );
 		$last_id = $this->CI->db->insert_id ();
-		/*if($accountinfo['type'] ==1){
-			$system_arr[0] =array(
-				"name"=> "paypal_mode",
-				"display_name"=> "Environment",
-				"value"=> "1",
-				"field_type"=> "paypal_mode",
-				"comment"=> "Set paypal mode. Sandbox for testing",
-				"timestamp"=> "0000-00-00 00:00:00",
-				"reseller_id"=> $last_id,
-				"is_display"=> "0",
-				"group_title"=> "payment_methods",
-				"sub_group"=> "Paypal"
-			);
-			$system_arr[1] =array(
-				"name"=> "paypal_id",
-				"display_name"=> "Live Id",
-				"value"=> "your@paypal.com",
-				"field_type"=> "default_system_input",
-				"comment"=> "Set paypal live account id",
-				"timestamp"=> "0000-00-00 00:00:00",
-				"reseller_id"=> $last_id,
-				"is_display"=> "0",
-				"group_title"=> "payment_methods",
-				"sub_group"=> "Paypal"
-			);
-			$system_arr[2] =array(
-				"name"=> "paypal_status",
-				"display_name"=> "Paypal",
-				"value"=> "1",
-				"field_type"=> "enable_disable_option",
-				"comment"=> " Set enable to add paypal as payment gateway option",
-				"timestamp"=> "0000-00-00 00:00:00",
-				"reseller_id"=> $last_id,
-				"is_display"=> "0",
-				"group_title"=> "payment_methods",
-				"sub_group"=> "Paypal"
-			);
-			$this->CI->db->insert_batch('system', $system_arr);	
-		}*/
 		if($accountinfo['type'] == 0 || $accountinfo['type'] ==1 || $accountinfo['type'] ==3 || $accountinfo['type'] ==5){
 			$accountinfo['id']=$last_id;
 			if(Common_model::$global_config ['system_config'] ['balance'] > 0){
@@ -258,11 +219,11 @@ class Signup_lib {
 	}
 	public function _proxy_create_sip_device($accountinfo,$sip_profile_info){
 		$current_date = gmdate("Y-m-d H:i:s");
-		$this->CI->db->select ( 'id' );
+/*		$this->CI->db->select ( 'id' );
 		$this->CI->db->where ( 'name', 'default' );
-		$sipprofile_result = ( array ) $this->CI->db->get ( 'sip_profiles' )->first_row ();
+		$sipprofile_result = ( array ) $this->CI->db->get ( 'sip_profiles' )->first_row ();*/
 		$this->CI->db->select("id,name,secret");
-		$where=array("cliente_id"=>$accountinfo['id_external']);
+		$where=array("cliente_id"=>$accountinfo['id_external'],"id"=>$accountinfo['id_sip_external']);
 		$voip_sippeers_info = (array)$this->CI->db->get_where("voip_sippeers",$where)->first_row();
 		$digits=5;
 		$random_password = rand(pow(10, $digits-1), pow(10, $digits)-1);

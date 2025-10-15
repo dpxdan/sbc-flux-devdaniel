@@ -61,6 +61,11 @@ class Sync_model extends CI_Model {
         $allowed_fields = ['id', 'razao', 'cnpj_cpf', 'email', 'telefone_celular', 'fone', 'contato', 'ativo', 'tipo_pessoa', 'endereco', 'bairro', 'cidade', 'cep', 'id_conta', 'data_cadastro', 'ultima_atualizacao', 'numero', 'senha', 'fantasia', 'reseller_id'];
         $filtered_data = array_intersect_key($data, array_flip($allowed_fields));
         
+        if (!empty($filtered_data['cnpj_cpf'])) {
+        $filtered_data['cnpj_cpf'] = preg_replace('/[^0-9]/', '', $filtered_data['cnpj_cpf']);        
+        }
+        
+        
         if (!empty($filtered_data['email'])) {
 		    $emails = preg_split('/[,;]+/', $filtered_data['email']);
 		    
@@ -87,7 +92,9 @@ class Sync_model extends CI_Model {
         
         if (!empty($filtered_data)) {
             $this->upsert('clientes', $filtered_data);
-            $this->api_model->upsert_account($filtered_data);
+            $accountid = $this->api_model->upsert_account($filtered_data);
+            $this->flux_log->write_log('replace_customer_accountid', json_encode($accountid));
+            return $accountid;
         }
     }
 

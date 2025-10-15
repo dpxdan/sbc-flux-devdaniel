@@ -43,6 +43,7 @@ class Api_model extends CI_Model {
 		$telefone = $this->sanitize_string($customer_data['fone']);
 		$telefone_celular = $this->sanitize_string($customer_data['telefone_celular']);
 		$razaoConvert = $this->sanitize_string($customer_data['razao']);
+		$contatoConvert = $this->sanitize_string($customer_data['contato']);
 		if (!empty($customer_data['email'])) {
 		    $emails = preg_split('/[,;]+/', $customer_data['email']);
 		    
@@ -57,15 +58,17 @@ class Api_model extends CI_Model {
 		        $customer_data['email'] = trim($emails[0]);
 		    }
 		}        
-		$pin_generate = common_model::$global_config['system_config']['generate_pin'];
+    $pin_number              = '';
+		$pin_generate            = Common_model::$global_config['system_config']['generate_pin'];
 		if ($pin_generate == 0 ) {
-			$pin = (common_model::$global_config['system_config']['pinlength'] < 6) ? 6 : common_model::$global_config['system_config']['pinlength'];
-			$pin_number = $this->common->find_uniq_rendno_customer($pin, 'number', 'accounts');
+			$numberlength = common_model::$global_config['system_config']['pinlength'];
+			$numberlength = ($numberlength < 6)?6:common_model::$global_config['system_config']['pinlength'];
+			$pin_number   = rand(pow(10, $numberlength-1), pow(10, $numberlength)-1);
 		}
-        
+		$account_number = preg_replace('/[^0-9]/', '', $customer_data['cnpj_cpf']);
         $account_data = [
             'id_external'       => $customer_data['id'],
-            'number'            => preg_replace('/[^0-9]/', '', $customer_data['cnpj_cpf']),
+//        'number'            => $account_number,
             'company_name' => (!empty($customer_data['fantasia'])) ? $customer_data['fantasia'] : $customer_data['razao'],
             'first_name'        => $customer_data['razao'],
             'last_name'         => $customer_data['razao'],
@@ -88,14 +91,27 @@ class Api_model extends CI_Model {
             $this->db->where('id_external', $customer_data['id']);
             $this->db->update('accounts', $account_data);
             $this->flux_log->write_log('api_model', 'Account updated for external ID: ' . $customer_data['id']);
+        
+        $this->db->select ( 'id' );
+        $this->db->where ( 'id_external', $customer_data['id'] );
+        $accountid = ( array ) $this->db->get ( 'accounts' )->first_row ();
+                    
         } 
         else {
             $this->flux_log->write_log('api_model', 'New account creation: ' . $customer_data['id']);
+        $existing_account_number = $this->db->get_where('accounts', ['number' => $account_number])->row();    
+        if ($existing_account_number) {
+        $this->flux_log->write_log('duplicate_number', json_encode($account_number));
+        $customer_data['cnpj_cpf'] = $this->common->find_uniq_rendno_customer(10, 'number ', 'accounts');                        
+        } 
+        else {
+        $customer_data['cnpj_cpf'] = $account_number;        
+        }    
             $default_data = [
-//editar reseller_id
                 'reseller_id'       => $customer_data['reseller_id'],
                 'pricelist_id'      => common_model::$global_config['system_config']['default_signup_rategroup'] ?: 1,
                 'country_id'        => 28,
+            'number'            => $customer_data['cnpj_cpf'],
                 'currency_id'       => 16,
                 'timezone_id'       => 78,
                 'credit_limit'      => '100.000',
@@ -109,13 +125,28 @@ class Api_model extends CI_Model {
                 'notifications'     => 0,
                 'password'          => $encoded_password,
                 'pin'               => $pin_number,
-                'sip_device_flag'   => 1,
+            'sip_device_flag'   => 0,
                 'deleted'           => 0,
                 'deleted_date'      => '1000-01-01 00:00:00',
+            'id_external'       => $customer_data['id'],
+            'company_name' => (!empty($customer_data['fantasia'])) ? $customer_data['fantasia'] : $customer_data['razao'],
+            'first_name'        => $customer_data['razao'],
+            'last_name'         => $customer_data['razao'],
+            'email' => (!empty($customer_data['email'])) ? $customer_data['email'] : $customer_data['id'] . ''.$razaoConvert.'@flux.net.br',            
+            'notification_email' => (!empty($customer_data['email'])) ? $customer_data['email'] : $customer_data['id'] . ''.$razaoConvert.'@flux.net.br',
+            'telephone_1' => (!empty($telefone)) ? $telefone : '5155555555',
+            'telephone_2' => (!empty($telefone_celular)) ? $telefone_celular : '5155555555',
+            'address_1' => $customer_data['endereco'] . ', ' . $customer_data['numero'] . ' - ' . $customer_data['bairro'],
+            'city' => $this->get_city_name($customer_data['cidade']),
+            'province' => $this->get_uf_name($customer_data['cidade']),
+            'postal_code' => $customer_data['cep'],
+            'creation'          => $customer_data['data_cadastro'],
+            'status'            => ($customer_data['ativo'] == 'S') ? 0 : 1,
             ];
-            $this->signup_lib->proxy_create_account(array_merge($account_data, $default_data));
-            $this->flux_log->write_log('api_model', 'New account created for external ID: ' . $customer_data['id']);
+        $accountid = $this->signup_lib->proxy_create_account($default_data);
+        $this->flux_log->write_log('api_model', 'New account created for external ID: ' . $customer_data['id'] . ' AccountID: '.$accountid);
         }
+    return $accountid;
     }
 
     /**
@@ -163,7 +194,7 @@ class Api_model extends CI_Model {
     $username = $this->sanitize_string($device->name);
     if(!empty($username)){		    
     if ($existing_device) {
-            //$this->flux_log->write_log('existing_device', json_encode($existing_device));
+            $this->flux_log->write_log('existing_device', json_encode($existing_device));
             $sip_profile_info = $this->signup_lib->_proxy_get_sip_profile();
             $device_data = [
                 'accountid' => $account_id,
@@ -210,6 +241,7 @@ class Api_model extends CI_Model {
             'timezone_id' => '78',
             'credit_limit' => '100.00',
             'sweep_id' => '2',
+            'id_external' => $device->cliente_id,
             'posttoexternal' => '1',
             'type' => '0',
             'notifications' => '1',
@@ -267,7 +299,7 @@ class Api_model extends CI_Model {
 
         $this->db->insert("dids", $did_data);
 
-        $this->order->confirm_order_proxy(['product_id' => $product_id], $account_did_id, 1);
+        $this->order->confirm_order_proxy(['product_id' => $product_id,'payment_by' => "Account Balance"], $account_did_id, 1);
         $this->flux_log->write_log('api_model', "Created DID, Product, and Order for number: {$device->name}");
     }
 

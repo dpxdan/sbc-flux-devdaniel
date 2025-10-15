@@ -115,6 +115,12 @@ class ApiSync extends CI_Controller {
             if ($data_peer == "updated"){
             $this->flux_log->write_log('api_controller', 'sync_peer updated.');
             } 
+            else if ($data_peer == false){
+            $this->flux_log->write_log('api_controller', 'sync_peer false.');
+            } 
+            else if ($data_peer == true){
+            $this->flux_log->write_log('api_controller', 'sync_peer true.');
+            }
             else {
             $this->flux_log->write_log('api_controller', 'sync_peer inserted.');
             
