@@ -44,8 +44,9 @@ class Api_model extends CI_Model {
 		$telefone_celular = $this->sanitize_string($customer_data['telefone_celular']);
 		$razaoConvert = $this->sanitize_string($customer_data['razao']);
 		$contatoConvert = $this->sanitize_string($customer_data['contato']);
-		if (!empty($customer_data['email'])) {
-		    $emails = preg_split('/[,;]+/', $customer_data['email']);
+		$emailConvert = strtolower($customer_data['email']);
+		if (!empty($emailConvert)) {
+		    $emails = preg_split('/[,;]+/', $emailConvert);
 		    
 		    if (count($emails) > 1) {
 		        $customer_data['email'] = trim($emails[0]);
@@ -68,7 +69,6 @@ class Api_model extends CI_Model {
 		$account_number = preg_replace('/[^0-9]/', '', $customer_data['cnpj_cpf']);
         $account_data = [
             'id_external'       => $customer_data['id'],
-//        'number'            => $account_number,
             'company_name' => (!empty($customer_data['fantasia'])) ? $customer_data['fantasia'] : $customer_data['razao'],
             'first_name'        => $customer_data['razao'],
             'last_name'         => $customer_data['razao'],
@@ -161,10 +161,11 @@ class Api_model extends CI_Model {
     return false;
     } 
     else {
-    $account = $this->db->get_where('accounts', ['id_external' => $device->cliente_id])->row();
+    $account = $this->db->get_where('accounts', ['id_external' => $device->cliente_id, 'deleted' => '0'])->row();
+    
     if (!$account) {
-        $this->flux_log->write_log('api_model', "Cannot upsert device. Account not found for customer ID: {$device->cliente_id}");
-        return false;
+        $this->flux_log->write_log('api_model', "Account not found for customer ID: {$device->cliente_id}. Signaling for customer sync.");        
+        return ['needs_customer_sync' => $device->cliente_id]; 
     }
 
     $existing_device = $this->db->get_where('sip_devices', ['id_sip_external' => $device->id])->row();
@@ -226,7 +227,9 @@ class Api_model extends CI_Model {
             $this->db->where('id_sip_external', $existing_device->id_sip_external)->update('sip_devices', $device_data);
             $this->flux_log->write_log('api_model', "SIP device updated for external ID: {$device->id}");
             $this->flux_log->write_log('api_model', "SIP device name: {$device->name}");
+            if ($account) {            
             $this->_create_did_product_and_order($device, $account);
+            }
             return "updated";         
         } 
     else {        
@@ -253,7 +256,9 @@ class Api_model extends CI_Model {
             if ($sip_profile) {
                 $this->signup_lib->_proxy_create_sip_device($device_data, $sip_profile);
                 $this->flux_log->write_log('api_model', "New SIP device created for external ID: {$device->id}");
+                if ($account) {
                 $this->_create_did_product_and_order($device, $account);
+                }
                 return "inserted";
             }
         }
@@ -265,6 +270,8 @@ class Api_model extends CI_Model {
     }        
 
     private function _create_did_product_and_order($device, $account) {
+        $this->flux_log->write_log('api_model', "create_did_product_and_order start");
+        
         if ($this->db->get_where('dids', ['number' => $device->name])->num_rows() > 0) return;
 
         $product_data = [
@@ -280,10 +287,9 @@ class Api_model extends CI_Model {
         $this->db->insert("products", $product_data);
         $product_id = $this->db->insert_id();
 
-
-        $account_did_id = $this->common->get_field_name('id','accounts',array('id_external' => $device->cliente_id));
-        $account_city = $this->common->get_field_name('city','accounts',array('id_external' => $device->cliente_id));
-        $account_province = $this->common->get_field_name('province','accounts',array('id_external' => $device->cliente_id));
+        $account_did_id = $account->id;
+        $account_city = $account->city;
+        $account_province = $account->province;
 
         $did_data = [
         'number' => $device->name,

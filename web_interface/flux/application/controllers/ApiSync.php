@@ -60,7 +60,6 @@ class ApiSync extends CI_Controller {
         }
 
         foreach ($endpoints as $endpoint) {
-            $this->flux_log->write_log('api_controller', "Syncing endpoint: " . $endpoint['endpoint_name']);
             $auth_string = $endpoint['endpoint_user'] . ':' . $endpoint['endpoint_password'];
             $api_url = $endpoint['endpoint_url'];
             $external_api_id = $endpoint['external_api_id'];
@@ -76,7 +75,7 @@ class ApiSync extends CI_Controller {
                 continue;
             }
             if ($customer_ids == false){
-            $this->flux_log->write_log('api_controller', 'customer_ids false');
+                continue;
             }
 
             $this->_sync_customers($api_url, $auth_string, $customer_ids, $reseller_id);
@@ -111,29 +110,34 @@ class ApiSync extends CI_Controller {
         foreach ($response['registros'] as $record) {
             $record['reseller_id'] = $reseller_id;
             $data_peer = $this->Sync_model->replace_peer($record);
-            //$this->flux_log->write_log('data_peer', json_encode($data_peer));
-            if ($data_peer == "updated"){
-            $this->flux_log->write_log('api_controller', 'sync_peer updated.');
-            } 
-            else if ($data_peer == false){
-            $this->flux_log->write_log('api_controller', 'sync_peer false.');
-            } 
-            else if ($data_peer == true){
-            $this->flux_log->write_log('api_controller', 'sync_peer true.');
-            }
-            else {
-            $this->flux_log->write_log('api_controller', 'sync_peer inserted.');
-            
-            }
-            if (!empty($contract_ids)) {
-            //$this->flux_log->write_log('request_cliente_contrato', json_encode($contract_ids));
-            $contract_response = $this->request_cliente_contrato($api_url, $auth_string, $contract_ids);
-            //$this->flux_log->write_log('request_cliente_contrato_response', json_encode($contract_response));
+            if (!empty($record['id_contrato'])) {
+            $contract_response = $this->request_cliente_contrato($api_url, $auth_string, $record['id_contrato']);
             if (!empty($contract_response['registros'])) {
-                $this->flux_log->write_log('api_controller', 'request_cliente_contrato_response_not_empty');
                 foreach ($contract_response['registros'] as $contract) {
                     $this->Sync_model->replace_contract($contract);
                 }
+            } 
+            } 
+            if (is_array($data_peer) && isset($data_peer['needs_customer_sync'])) {
+            $customers_to_sync_immediately[] = $data_peer['needs_customer_sync'];
+            $this->flux_log->write_log('api_controller', 'Peer sync signaled immediate customer sync for ID: ' . $data_peer['needs_customer_sync']);
+            continue;
+            }
+            
+            }
+        if (!empty($customers_to_sync_immediately)) {
+            $unique_customers = array_unique($customers_to_sync_immediately);
+            $this->flux_log->write_log('api_controller', 'Starting immediate customer sync for ' . count($unique_customers) . ' IDs.');
+            $this->_sync_customers($api_url, $auth_string, $unique_customers, $reseller_id);
+            
+            foreach ($unique_customers as $customer_id) {
+                $peers_to_retry = array_filter($response['registros'], function($peer) use ($customer_id) {
+                    return $peer['cliente_id'] == $customer_id;
+                });
+                
+                foreach ($peers_to_retry as $peer) {
+                    $this->api_model->upsert_device($peer['id']);
+                    $this->flux_log->write_log('api_controller', 'Retried upsert_device for peer ID: ' . $peer['id']);
             }
             }
         }
@@ -337,7 +341,6 @@ class ApiSync extends CI_Controller {
         }
     
         foreach ($endpoints as $endpoint) {
-            $this->flux_log->write_log('api_controller', 'Syncing CDRs for endpoint: ' . $endpoint['endpoint_name']);
             $auth_string = $endpoint['endpoint_user'] . ':' . $endpoint['endpoint_password'];
             $sync_cdrs_type = isset($endpoint['sync_cdrs_for']) ? $endpoint['sync_cdrs_for'] : '1';
             $url_cdr = $endpoint['endpoint_url'] . 'cdr';
@@ -499,7 +502,6 @@ class ApiSync extends CI_Controller {
     }
     private function request_cliente_contrato($api_url, $auth_string, $id_contrato) {
         $this->flux_log->write_log('api_controller', 'request_cliente_contrato process.');
-        //$this->flux_log->write_log('id_contrato', json_encode($id_contrato));
         return $this->send_post_request($api_url . 'cliente_contrato', $auth_string, ['qtype' => 'cliente_contrato.id', 'query' => $id_contrato, 'oper' => '='], 'listar');
     }
     private function request_voip_devices($api_url, $auth_string) {
@@ -628,7 +630,6 @@ class ApiSync extends CI_Controller {
             'response'  => $decoded,
             'http_code' => $http_code,            
         ];
-        //$this->flux_log->write_log('response', json_encode($data));
         
         $json_error = json_last_error();
     

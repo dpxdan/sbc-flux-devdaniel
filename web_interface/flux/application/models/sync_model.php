@@ -43,9 +43,9 @@ class Sync_model extends CI_Model {
         if (!empty($filtered_data)) {
             $this->upsert('voip_sippeers', $filtered_data);
             $device_account = $this->api_model->upsert_device($filtered_data['id']);
-            if ($device_account == false){
-            $this->flux_log->write_log('sync_model', 'device_account false.');
-            return false;
+        
+        if (is_array($device_account) && isset($device_account['needs_customer_sync'])) {
+                return ['needs_customer_sync' => $device_account['needs_customer_sync']]; 
             }
             else {
             $this->flux_log->write_log('sync_model', 'device_account true.');
@@ -67,7 +67,8 @@ class Sync_model extends CI_Model {
         
         
         if (!empty($filtered_data['email'])) {
-		    $emails = preg_split('/[,;]+/', $filtered_data['email']);
+    $emailConvert = strtolower($filtered_data['email']);
+    $emails = preg_split('/[,;]+/', $emailConvert);
 		    
 		    if (count($emails) > 1) {
 		        $filtered_data['email'] = trim($emails[0]);
@@ -76,7 +77,8 @@ class Sync_model extends CI_Model {
 		            'sync_model',
 		            "Multiple emails found for customer ID {$filtered_data['id']}. Using the first one: {$filtered_data['email']}"
 		        );
-		    } else {
+    } 
+    else {
 		        $filtered_data['email'] = trim($emails[0]);
 		    }
 		}                 
