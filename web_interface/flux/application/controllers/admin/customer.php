@@ -43,6 +43,7 @@ class Customer extends Account {
 	
 	protected $postdata = "";
 	protected $accountinfo = "";
+	
 	function __construct() {
 		parent::__construct ();
 		$this->load->model ( 'common_model' );
@@ -113,7 +114,8 @@ class Customer extends Account {
 				'status' => false,
 				'error' => $this->lang->line ( 'error_param_missing' ) . " integer:end_limit,integer:start_limit"
 			), 400 );
-		}else{
+		}
+		else{
 			if($this->postdata['start_limit'] <= 0 || $this->postdata['end_limit'] <= 0) {
 				$this->response ( array (
 					'status' => false,
@@ -196,7 +198,8 @@ class Customer extends Account {
 						'data' => $new_array,
 						'success' => $this->lang->line( "customer_list_information" )
 					), 200 );
-				} else {
+				}
+			else {
 					$this->response ( array (
 						'total_count'=>0,
 						'data' => $new_array,
@@ -214,7 +217,8 @@ class Customer extends Account {
 				'status' => false,
 				'error' => $this->lang->line ( 'error_param_missing' ) . " integer:accountid"
 			), 400 );
-		}else{
+		}
+		else{
 			$where = array('id' => $postdata['accountid'],'deleted'=>0,'status'=>0);
 			$this->db->select('*');
 			if($this->accountinfo['type'] == -1 || $this->accountinfo['type'] == 2 || $this->accountinfo['type'] == 5 || $this->accountinfo['type'] == 6 || $this->accountinfo['type'] == 4){
@@ -298,10 +302,12 @@ class Customer extends Account {
 			$postdata = $this->postdata;
 			if($this->accountinfo ['type'] == 1){
 				$postdata['reseller_id'] = $this->accountinfo ['id'];
-			}else{
+			}
+			else{
 				if ($postdata['reseller_id'] == '' || $postdata['reseller_id'] == 0) {
 					$postdata['reseller_id'] = 0;
-				}else{
+				}
+				else{
 					if($postdata['reseller_id'] > 0){
 						$postdata['reseller_id'] = $this->common->get_field_name('id','accounts',array('id' => $postdata['reseller_id'],'type' => 1,'deleted'=> 0));
 					}

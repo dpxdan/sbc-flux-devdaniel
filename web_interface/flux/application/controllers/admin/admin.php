@@ -42,6 +42,7 @@ class Admin extends Account {
 	
 	protected $postdata = "";
 	protected $accountinfo = "";
+	
 	function __construct() {
 		parent::__construct ();
 		$this->load->model ( 'common_model' );
@@ -63,16 +64,17 @@ class Admin extends Account {
 		$this->postdata ['client_ip'] = $_SERVER['SERVER_ADDR'];
 		$this->reseller_allow = "true";
 	}
+	
 	public function index() {
 		$function = isset ( $this->postdata ['action'] ) ? $this->postdata ['action'] : '';
 		$this->api_log->write_log ( 'API URL : ',base_url()."".$_SERVER['REQUEST_URI']);
 		$this->api_log->write_log ( 'Params : ', json_encode($this->postdata) );
 		$accountid = $this->postdata ['id'];
 		$where = array('id'=>$accountid,'status'=>0);
-		if($this->accountinfo['type'] == -1 || $this->accountinfo['type'] == 2){
+		if($this->accountinfo['type'] == -1 || $this->accountinfo['type'] == 2) {
 			$this->db->where_in('type',array(2,-1));
 		}
-		else{
+		else {
 			$where = array('reseller_id' => $this->accountinfo['id'] , 'type' => 0);
 		}
 		$this->db->where($where);
@@ -95,7 +97,8 @@ class Admin extends Account {
 					'error' => $this->lang->line ( 'unknown_method' )
 				), 400 );
 			}
-		} else {
+		}
+		else {
 			$this->response ( array (
 				'status'=> false,
 				'error' => $this->lang->line ( 'unknown_method' )
@@ -109,7 +112,8 @@ class Admin extends Account {
 				'status' => false,
 				'error' => $this->lang->line ( 'error_param_missing' ) . " integer:end_limit,integer:start_limit"
 			), 400 );
-		}else{
+		}
+		else{
 			if($this->postdata['start_limit'] <= 0 || $this->postdata['end_limit'] <= 0) {
 				$this->response ( array (
 					'status' => false,
@@ -149,7 +153,8 @@ class Admin extends Account {
 			$no_of_records = (int)$limit - (int)$start;
 			if($this->accountinfo['type'] == -1 || $this->accountinfo['type'] == 2){
 				$this->db->where_in('type',array(-1,2,4));
-			}else{
+			}
+			else{
 				$where = array('reseller_id' => $this->accountinfo['id'] , 'type' => 0);
 				$this->db->where($where);
 			}
@@ -182,7 +187,8 @@ class Admin extends Account {
 						'data' => $new_array,
 						'success' => $this->lang->line( "admin_list_information" )
 					), 200 );
-				} else {
+				} 
+			else {
 					$this->response ( array (
 						'total_count'=>0,
 						'data' => $new_array,

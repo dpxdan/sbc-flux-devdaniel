@@ -154,12 +154,15 @@ class Sip_devices extends Account {
 				$decoded_pass =  $this->common->decode($sipdevice_value['dir_params']['password']);
 				//$sipdevice_value['dir_params']['password'] = $this->common->encrypt($decoded_pass);
 				$sipdevice_value['sip_profile_name'] = $this->common->get_field_name('name','sip_profiles',array('id'=>$sipdevice_value['sip_profile_id']));
-				$sipdevice_value['accountid'] = $this->common->build_concat_string('first_name,last_name,number,company_name','accounts',$sipdevice_value['accountid']); 
-				$sipdevice_value['reseller_id'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$sipdevice_value['reseller_id']); 
+				//$sipdevice_value['accountid'] = $this->common->build_concat_string('first_name,last_name,number,company_name','accounts',$sipdevice_value['accountid']); 
+				//$sipdevice_value['reseller_id'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$sipdevice_value['reseller_id']); 
 				$sipdevice_value['creation_date'] = $this->common->convert_GMT_to('','',$sipdevice_value['creation_date'],$this->accountinfo['timezone_id']);
 				$sipdevice_value['last_modified_date'] = $this->common->convert_GMT_to('','',$sipdevice_value['last_modified_date'],$this->accountinfo['timezone_id']);
 				$sipdevice_value['status'] = $sipdevice_value['status'] == '1' ? 'Inactive' : 'Active';
 				unset($sipdevice_value['call_waiting'],$sipdevice_value['sip_profile_id']);
+				if($sipdevice_value['reseller_id'] == '0'){
+				unset($sipdevice_value['reseller_id']);
+				}
 				if($this->accountinfo['type'] == '1'){
 					unset($sipdevice_value['reseller_id']);
 				}

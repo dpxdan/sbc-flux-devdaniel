@@ -154,11 +154,14 @@ class Invoices extends Account
 				if(isset($object_where_key) && $object_where_key == 'code'){
 					$this->db->like('pattern', '^'.$object_where_params['code'] );
 				}
+				if(isset($object_where_key) && $object_where_key == 'reseller_id'){
+					$this->db->where('reseller_id', $object_where_params['reseller_id'] );
+				}
 				$where[$object_where_key] = $object_where_value;
 			}
 		}
 		if(!empty($where)){
-			unset($where['destination'],$where['code'],$where['duration']);
+			unset($where['destination'],$where['code'],$where['duration'],$where['reseller_id']);
 			$this->db->like($where, $object_where_params );
 		}
 	 	if ($this->accountinfo['type'] == '1') {
@@ -222,11 +225,9 @@ class Invoices extends Account
 					), 400);
 					return;
 			}
-      if (!empty($object_where_params['reseller_id'])) {
-      $reseller_id = $object_where_params['reseller_id'];
-      $this->flux_log->write_log('reseller_id', json_encode($reseller_id));
-      }
-
+            if (!empty($object_where_params['reseller_id'])) {
+            $reseller_id = $object_where_params['reseller_id'];
+            }
 			$account_ids = [];
 			if (!empty($object_where_params['accountid'])) {
 					$account_ids = is_array($object_where_params['accountid'])
@@ -563,8 +564,6 @@ class Invoices extends Account
 			$this->db->select('*');
 		}
  		$result = $this->db->get('view_new_invoices');
-//        $count = $result -> num_rows();
-
 		$count = $result -> num_rows();
 		$reseller_invoices_info = $result->result_array();
 		foreach ($reseller_invoices_info as $key => $invoices_value) {

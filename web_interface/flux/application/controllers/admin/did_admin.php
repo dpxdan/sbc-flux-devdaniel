@@ -1,4 +1,25 @@
 <?php
+// ##############################################################################
+// Flux Telecom - Unindo pessoas e negocios
+//
+// Copyright (C) 2025 Flux Telecom
+// Daniel Paixao <daniel@flux.net.br>
+// FluxSBC Version 4.2 and above
+// License https://www.gnu.org/licenses/agpl-3.0.html
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+// ##############################################################################
 
 require APPPATH . '/controllers/common/account.php';
 
@@ -29,6 +50,7 @@ class Did_admin extends Account
         }
 
     }
+    
     public function index()
     {
         $accountid = $this->accountinfo ['id'];
@@ -61,7 +83,9 @@ class Did_admin extends Account
             ), 400 );
         }
     }
-    function _create(){
+    
+    function _create()
+    {
         if($this->form_validation->required($this->postdata['did_number']) == '') {
             $this->response(array(
                 'status' => false,
@@ -374,7 +398,6 @@ class Did_admin extends Account
         $did_add_array['product_id'] = $last_id;
         $this->db->insert("dids", $did_add_array);
         $last_id_did = $this->db->insert_id();
-        // Kinjal issue no 3808
         if ($last_id_did !='') {
             $did_info = $this->db_model->getSelect("*", "dids", array("id" => $last_id_did))->row_array();
             unset($did_info['id']);
@@ -388,7 +411,6 @@ class Did_admin extends Account
                 'data' => $did_info,
                 'success' => $this->lang->line('did_create')
             ), 200);
-        // END
         } else {
             $this->response(array(
                 'status' => false,
@@ -396,6 +418,7 @@ class Did_admin extends Account
             ), 400);
         }
     }
+    
     function _delete()
     {
         if (!isset ($this->postdata ['product_id']) || $this->postdata['product_id'] == '') {
@@ -499,6 +522,7 @@ class Did_admin extends Account
         }
         }
     }
+    
     function _list()
     {
         if (empty($this->postdata['end_limit']) || empty($this->postdata['start_limit']) ){
@@ -665,6 +689,7 @@ class Did_admin extends Account
             ), 200);
         }
     }
+    
     function _did_purchase()
     {
         if(!$this->form_validation->required($this->postdata['did_number']) ){
@@ -773,6 +798,7 @@ class Did_admin extends Account
         }
 
     }
+    
     function _assign()
     {
         if(!$this->form_validation->required($this->postdata['did_id']) ){
@@ -816,7 +842,6 @@ class Did_admin extends Account
         if($accounts_data != "" && $dids_data != ""){
             $did_id = $this->common->get_field_name("id","dids",array("product_id"=>$this->postdata['did_id']));
             $did_result = $this->did_billing_process($accounts_data, $this->postdata['accountid'], $did_id);
-            // Kinjal issue no 3808
             if($did_result[0] == "INSUFFIECIENT_BALANCE"){
                 $this->response(array(
                     'status' => false,
@@ -824,36 +849,29 @@ class Did_admin extends Account
 
                 ), 200);
             }
-            // END
             if ($did_result[0] == "SUCCESS") {
                 $add_array['invoice_type'] = "debit";
                 $add_array['payment_by'] = "Account Balance";
                 $add_array['charge_type'] = "DID";
                 $add_array['is_update_balance'] = "true";
-                // Kinjal issue no 3808
                 $add_array['is_parent_billing'] = "false";
                 $add_array['product_id'] = $this->postdata['did_id'];
                 $add_array['create_invoice'] = "true";
-                // END
                 $order_id = $this->order->confirm_order($add_array, $this->postdata['accountid'], $this->accountinfo);
                 if ($order_id > 0) {
                         $this->db->where("product_id", $this->postdata['did_id']);
                         $this->db->update("dids", array(
                             "accountid" =>$this->postdata['accountid']
                         ));
-                        // Kinjal issue no 3808
                         $this->response(array(
                             'status' => true,
                             'error' => $this->lang->line("did_assigned")
                         ), 200);
-                        // END
                 }
-                // Kinjal issue no 3808
                 $this->response(array(
                     'status' => false,
                     'error' => $this->lang->line('something_wrong')
                 ), 400);
-                // END
             }
             $this->response(array(
                     'status' => true,
@@ -867,7 +885,9 @@ class Did_admin extends Account
             ), 400);
         }
     }
-    function _assign_reseller(){
+    
+    function _assign_reseller()
+    {
         if(!$this->form_validation->required($this->postdata['did_id']) ){
               $this->response ( array (
                   'status' => false,
@@ -1056,7 +1076,9 @@ class Did_admin extends Account
         ), 400);
         }
     }
-    function _release(){
+    
+    function _release()
+    {
        if(!$this->form_validation->required($this->postdata['did_id']) ){
             $this->response ( array (
                 'status' => false,
@@ -1173,7 +1195,9 @@ class Did_admin extends Account
         ), 200);
         
     }
-    function _on_hold(){
+    
+    function _on_hold()
+    {
         if(!$this->form_validation->required($this->postdata['did_id']) ){
             $this->response ( array (
                 'status' => false,
@@ -1268,10 +1292,14 @@ class Did_admin extends Account
 
         ), 200);
     }
-    function did_release($final_array) {
+    
+    function did_release($final_array)
+    {
         $this->common->mail_to_users('product_release',$final_array);
     }
-    function did_billing_process($request_from,$accountid,$did,$skip_balance_check=false,$extra_info='') {
+    
+    function did_billing_process($request_from,$accountid,$did,$skip_balance_check=false,$extra_info='')
+    {
         $account = $this->db_model->getSelect ( "*", "accounts", array ('id' => $accountid ));
         $accountinfo = ( array ) $account->first_row ();
 
@@ -1475,7 +1503,9 @@ class Did_admin extends Account
             return array("INSUFFIECIENT_BALANCE","Insufficient fund to purchase this DID.");
         }
     }
-    function _forward(){
+    
+    function _forward()
+    {
         if($this->form_validation->required($this->postdata['did_id']) == '') {
             $this->response(array(
                 'status' => false,
@@ -1507,9 +1537,7 @@ class Did_admin extends Account
                 'error' => $this->lang->line ( 'call_type_required')
             ), 400 );
         }
-        // Kinjal issue no 3737
         if(($this->postdata ['call_type'] == "0" || $this->postdata ['call_type'] == "5")  && $this->postdata ['call_type_destination'] == "" ) {
-        // END
             $this->response ( array (
                 'status' => false,
                 'error' => $this->lang->line ( 'call_type_destination_required')
@@ -1519,7 +1547,6 @@ class Did_admin extends Account
             "package_name" => "pbx"
         ));
 
-        // Kinjal issue no 4591
         $foip_status = $this->db_model->countQuery("*", "addons", array(
             "package_name" => "foip"
         ));
@@ -1542,7 +1569,6 @@ class Did_admin extends Account
                     ), 400 );
                 }    
             }
-            // END
             if($this->postdata ['always'] == "") {
                 $this->response ( array (
                     'status' => false,
@@ -1618,7 +1644,6 @@ class Did_admin extends Account
         }
         $did_forward['call_type'] = $this->postdata['call_type'] != "" ? $this->postdata['call_type'] : $did_info['call_type'];
         if($pbx_status == '1'){
-            // Kinjal issue no 4591
             if($foip_status == '1'){
                 if(!($this->postdata ['call_type'] == '0' || $this->postdata ['call_type'] == '1' || $this->postdata ['call_type'] == '2' || $this->postdata ['call_type'] == '3' || $this->postdata ['call_type'] == '4'|| $this->postdata ['call_type'] == '5' || $this->postdata ['call_type'] == '7' || $this->postdata ['call_type'] == '8' || $this->postdata ['call_type'] == '9' || $this->postdata ['call_type'] == '10' || $this->postdata ['call_type'] == '6' || $this->postdata ['call_type'] == '11')) {
                     $this->response ( array (
@@ -1636,41 +1661,30 @@ class Did_admin extends Account
                     ), 400 );
                 }
             }
-            // END
             if($this->postdata['call_type'] == 11){
                 $time_condition_value = (array)$this->db_model->getSelect('*','time_condition',array("accountid"=>$did_info['accountid'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($time_condition_value) && $time_condition_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                  'status' => false,'success' => $this->lang->line('timecondition_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
             if($this->postdata['call_type'] == 10){
                 $ivr_value = (array)$this->db_model->getSelect('*','pbx_ivr_specification',array("accountid"=>$did_info['accountid'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($ivr_value) && $ivr_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('ivr_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
             if($this->postdata['call_type'] == 9){
                 $queue_value =(array)$this->db_model->getSelect('*','pbx_queue',array("account_id"=>$did_info['accountid'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($queue_value) && $queue_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('queue_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
             if($this->postdata['call_type'] == 8){
                 $conference_value =(array) $this->db_model->getSelect('*','pbx_conference_specification',array("accountid"=>$did_info['accountid'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($conference_value) && $conference_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('conference_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
             if($this->postdata['call_type'] == 7){
                 $ringgroup_value =(array)$this->db_model->getSelect('*','pbx_ringgroup',array("accountid"=>$did_info['accountid'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($ringgroup_value) && $ringgroup_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('ringgroup_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
         }
         if($pbx_status != '1'){
@@ -1681,10 +1695,8 @@ class Did_admin extends Account
         }
         if(($this->postdata['call_type'] == 0 || $this->postdata['call_type'] == 5) && $this->postdata['call_type_destination'] != "" && $this->postdata['call_type'] != ""){
              $sip_call_type = (array)$this->db_model->getSelect('*','sip_devices',array("accountid"=>$did_info['accountid'],'status' => 0,"username"=>$this->postdata['call_type_destination']))->first_row();
-             // Kinjal issue no 4591
               $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($sip_call_type) && $sip_call_type != "") ? $this->postdata['call_type_destination'] : $this->response(array(
               'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400)) : $did_info['extensions'];
-              // END
         }
         else{
             $did_forward['extensions'] = $this->postdata['call_type_destination'] != "" ? $this->postdata['call_type_destination'] : $did_info['extensions'];
@@ -1692,37 +1704,29 @@ class Did_admin extends Account
         if($pbx_status != '1'){
             if(($this->postdata['always'] == 0 || $this->postdata['always'] == 5) && $this->postdata['always_destination'] != "" && $this->postdata['always'] != ""){
                 $sip_always = (array)$this->db_model->getSelect('*','sip_devices',array("accountid"=>$did_info['accountid'],'status' => 0,"username"=>$this->postdata['always_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['always_destination']  = (!empty($sip_always) && $sip_always != "") ? $this->postdata['always_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400); 
-                // END
             }else{
                 $did_forward['always_destination'] = $this->postdata['always_destination'] != "" ? $this->postdata['always_destination'] : $did_info['always_destination'];
             }
             if(($this->postdata['user_busy'] == 0 || $this->postdata['user_busy'] == 5) && $this->postdata['user_busy_destination'] != "" && $this->postdata['user_busy'] != ""){
                 $sip_user_busy = $this->db_model->getSelect('*','sip_devices',array("accountid"=>$did_info['accountid'],'status' => 0,"username"=>$this->postdata['user_busy_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['user_busy_destination']  = (!empty($sip_user_busy) && $sip_user_busy != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400); 
-                // END
             }else{
                 $did_forward['user_busy_destination'] = $this->postdata['user_busy_destination'] != "" ? $this->postdata['user_busy_destination'] : $did_info['user_busy_destination'];
             }
             if(($this->postdata['user_not_registered'] == 0 || $this->postdata['user_not_registered'] == 5) && $this->postdata['user_not_registered_destination'] != "" && $this->postdata['user_not_registered_destination'] != ""){
                 $sip_user_not_registered = $this->db_model->getSelect('*','sip_devices',array("accountid"=>$did_info['accountid'],'status' => 0,"username"=>$this->postdata['user_not_registered_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['user_not_registered_destination']  = (!empty($sip_user_not_registered) && $sip_user_not_registered != "") ? $this->postdata['user_not_registered_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400); 
-                // END
             }else{
                 $did_forward['user_not_registered_destination'] = $this->postdata['user_not_registered_destination'] != "" ? $this->postdata['user_not_registered_destination'] : $did_info['user_not_registered_destination'];
             }
             if(($this->postdata['no_answer'] == 0 || $this->postdata['no_answer'] == 5) && $this->postdata['no_answer_destination'] != "" && $this->postdata['no_answer'] != ""){
                 $sip_no_answer = (array)$this->db_model->getSelect('*','sip_devices',array("accountid"=>$did_info['accountid'],'status' => 0,"username"=>$this->postdata['no_answer_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['user_not_registered_destination']  = (!empty($sip_no_answer) && $sip_no_answer != "") ? $this->postdata['no_answer_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400); 
-                // END
             }else{
                 $did_forward['no_answer_destination'] = $this->postdata['no_answer_destination'] != "" ? $this->postdata['no_answer_destination'] : $did_info['no_answer_destination'];
             }
@@ -1730,7 +1734,6 @@ class Did_admin extends Account
         $this->db->where('product_id',$this->postdata['did_id']);
         $this->db->update("dids", $did_forward);
         if (isset($did_forward) || !empty($did_forward)) {
-            // Kinjal issue no 3808
             $did_forward['call_type_destination'] = $did_forward['extensions'];
             unset($did_forward['extensions']);
             $this->response(array(
@@ -1738,7 +1741,6 @@ class Did_admin extends Account
                 'data' => $did_forward,
                 'success' => $this->lang->line('did_forward')
                 ), 200);
-            // END
             } else {
             $this->response(array(
                 'status' => false,

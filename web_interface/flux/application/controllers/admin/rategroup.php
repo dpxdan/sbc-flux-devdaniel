@@ -1,12 +1,33 @@
 	<?php
-
-//require APPPATH . '/libraries/API_Controller.php';
+// ##############################################################################
+// Flux Telecom - Unindo pessoas e negocios
+//
+// Copyright (C) 2025 Flux Telecom
+// Daniel Paixao <daniel@flux.net.br>
+// FluxSBC Version 4.2 and above
+// License https://www.gnu.org/licenses/agpl-3.0.html
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+// ##############################################################################
 require APPPATH . '/controllers/common/account.php';
 
 class Rategroup extends Account {
 	
 	protected $postdata = "";
-	function __construct() {
+	
+	function __construct()
+	{
 		parent::__construct ();
 		$this->load->model ( 'common_model' );
 		$this->load->model ( 'db_model' );
@@ -26,11 +47,11 @@ class Rategroup extends Account {
 		
 	}
 
-	public function index() {
+	public function index()
+	{
 		$function = isset ( $this->postdata ['action'] ) ? $this->postdata ['action'] : '';
 		$this->api_log->write_log ( 'API URL : ',base_url()."".$_SERVER['REQUEST_URI']);
 		$this->api_log->write_log ( 'Params : ', json_encode($this->postdata) );
-		// Kinjal issue no 4532
 		if($this->accountinfo['type'] == '-1' || $this->accountinfo['type'] == '2'){
 			$accountid = $this->postdata ['id'];
 			$type = array(-1,2);
@@ -48,7 +69,6 @@ class Rategroup extends Account {
 			), 400 );
 		}
 		$accountinfo = $this->_authorize_account ( $accountinfo,true,true);
-		// END
 		if ($function != '') {
 			$function = '_' . $function;
 			if (( int ) method_exists ( $this, $function ) > 0) {
@@ -67,8 +87,8 @@ class Rategroup extends Account {
 		}die;
 	}
 	
-	
-	function _rategroup_list(){
+	function _rategroup_list()
+	{
 		
 		if (!isset($this->postdata['start_limit']) || $this->postdata['start_limit'] == "" || !isset($this->postdata['end_limit']) || $this->postdata['end_limit'] == ""){
 			$this->response ( array (
@@ -147,7 +167,7 @@ class Rategroup extends Account {
                 "status != " => "2",
             );
 		}
-		$available_rategroups = $this->db_model->Select("id as rategroup_id,name,routing_prefix,routing_type,initially_increment,inc,markup,call_count,reseller_id,creation_date,last_modified_date,status", "pricelists", $where, "id", "ASC",$no_of_records,$start);
+		$available_rategroups = $this->db_model->Select("id as rategroup_id,name,routing_prefix,routing_type,initially_increment,inc,check_carrier,markup,call_count,reseller_id,creation_date,last_modified_date,status", "pricelists", $where, "id", "ASC",$no_of_records,$start);
 		$available_rategroup = $available_rategroups->result_array();
 		$count = $available_rategroups->num_rows();
 		if (empty($available_rategroup)) {
@@ -165,18 +185,26 @@ class Rategroup extends Account {
 			$available_rategroup[$key] = $value;
 			$available_rategroup[$key]['creation_date'] = $this->common->convert_GMT_to('','',$available_rategroup[$key]['creation_date'],$this->accountinfo['timezone_id']);
 			$available_rategroup[$key]['last_modified_date'] = $this->common->convert_GMT_to('','',$available_rategroup[$key]['last_modified_date'],$this->accountinfo['timezone_id']);
-				if ($this->accountinfo['type'] != 1) {
-					$available_rategroup[$key]['reseller_id'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$value['reseller_id']);
-				}
+			/*
+			$status_array = array( ""=>'--Select--','0' => 'LCR','1' => 'Cost','2' => 'Priority','3' => 'Percentage','4' => 'Carrier');
+		return $status_array;
+			*/
+			
 				if ($this->accountinfo['type'] != 1) {
 					if($value['routing_type'] == 0) {
 						$available_rategroup[$key]['routing_type'] = "LCR";
 					}
 					elseif ($value['routing_type'] == 1) {
-						$available_rategroup[$key]['routing_type'] = "COST";
+						$available_rategroup[$key]['routing_type'] = "Cost";
+					}
+					elseif ($value['routing_type'] == 2) {
+						$available_rategroup[$key]['routing_type'] = "Priority";
+					}
+					elseif ($value['routing_type'] == 3) {
+						$available_rategroup[$key]['routing_type'] = "Percentage";
 					}
 					else{
-						$available_rategroup[$key]['routing_type'] = "PRIORITY";
+						$available_rategroup[$key]['routing_type'] = "Carrier";
 					}
 				}
 			}
@@ -189,7 +217,8 @@ class Rategroup extends Account {
 		}
 	}
 
-	function _rategroup_delete(){
+	function _rategroup_delete()
+	{
 		if (! isset ( $this->postdata ['rategroup_id']) || $this->postdata['rategroup_id'] == '') {
 			$this->response ( array (
 				'status' => false,
@@ -231,7 +260,8 @@ class Rategroup extends Account {
 		}
 	}
 	
-	function _rategroup_create() {
+	function _rategroup_create()
+	{
 		if (!isset($this->postdata['name']) || empty($this->postdata['name'])){
 			$this->response ( array (
 				'status' => false,	

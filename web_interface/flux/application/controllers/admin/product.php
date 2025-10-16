@@ -52,7 +52,9 @@ class Product extends Account
         }
         die;
     }
-     function product_optin(){
+    
+    function product_optin()
+    {
         if($this->accountinfo['type'] == '1'){
             if(!isset ( $this->postdata ['product_id']) || $this->postdata['product_id'] == '' ) {
             $this->response ( array (
@@ -152,8 +154,8 @@ class Product extends Account
             if($object_where_value != '') { 
                 if(isset($object_where_key) && $object_where_key == 'pattern'){
                     $this->db->like('pattern', '^'.$object_where_params['pattern'].'.*');
-                }else{
-                    // Kinjal FLUXUPDATE-1259 Start
+                }
+                else{
                     if($object_where_key == 'country_id' && $object_where_value!= "" ){
                         if(!$this->form_validation->integer($object_where_value)){
                             $this->response ( array (
@@ -226,7 +228,6 @@ class Product extends Account
                             ), 400 );
                         }
                     }
-                    // Kinjal FLUXUPDATE-1259 END
                     $where[$object_where_key] = $object_where_value;
                 }
             }
@@ -261,7 +262,8 @@ class Product extends Account
                 $this->db->where($str_where);
                 $this->db->where('reseller_products.account_id', $this->accountinfo['id']);
                 $available_product = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,products.country_id,reseller_products.status as reseller_status,reseller_products.buy_cost,reseller_products.reseller_id,products.commission,reseller_products.setup_fee,reseller_products.price,reseller_products.billing_type,(CASE WHEN reseller_products.billing_type = 2 THEN "Monthly" ELSE reseller_products.billing_days END) as billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array('products.is_deleted' => 0), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', '', '', '', '');
-            } else {
+            } 
+            else {
                 $this->db->order_by("id", "DESC");
                 $where = array("is_deleted" => "0", "product_category <>" => 4);
                 $available_product = $this->db_model->select("id,name,product_category,country_id,buy_cost,reseller_id,commission,setup_fee,price,billing_type,billing_days,free_minutes,status,(CASE WHEN billing_type = 2 THEN 'Monthly' ELSE  billing_days END) as billing_days", "products", $where, "", "", '', '');
@@ -275,7 +277,8 @@ class Product extends Account
                     'data' => $available_products,
                     'error' => $this->lang->line('no_records_found')
                 ), 200);
-            } else {
+            } 
+            else {
                 foreach ($available_products as $key => $value) {
                     if ($this->accountinfo['type'] == 1) {
                         unset($value['status']);
@@ -286,7 +289,8 @@ class Product extends Account
                     $available_products[$key]['retired'] = $available_products[$key]['status'];
                     }
                     if ($this->accountinfo['type'] != 1) {
-                        $available_products[$key]['reseller_name'] = $this->common->reseller_select_value('first_name,last_name,number,company_name', 'accounts', $value['reseller_id']);
+                        //$available_products[$key]['reseller_name'] = $this->common->reseller_select_value('first_name,last_name,number,company_name', 'accounts', $value['reseller_id']);
+                        $available_products[$key]['reseller_id'] = $available_products[$key]['reseller_id'];
                         unset($available_products[$key]['last_modified_date']);
 
                     }
@@ -296,9 +300,13 @@ class Product extends Account
                     $available_products[$key]['buy_cost'] = $this->common_model->to_calculate_currency($value['buy_cost'], '', $currency_id);
                     $available_products[$key]['setup_fee'] = $this->common_model->to_calculate_currency($value['setup_fee'], '', $currency_id);
                     $available_products[$key]['price'] = $this->common_model->to_calculate_currency($value['price'], '', $currency_id);
+                    $available_products[$key]['reseller_id'] = $available_products[$key]['reseller_id'];
                     $available_products[$key]['billing_type'] = $this->common->get_renewal_type_category_list('billing_type', 'billing_type', $value['billing_type']);
-                    $available_products[$key]['retired'] = $value['status'] == 0 ? "No" : "Yes";
-                    unset($available_products[$key]['country_id'],$available_products[$key]['reseller_id']);
+                    $available_products[$key]['status'] = $value['status'] == 0 ? "Available" : "Disabled";
+                    if($available_products[$key]['reseller_id'] == '0'){
+                    unset($available_products[$key]['reseller_id']);
+                    }
+                    unset($available_products[$key]['country_id']);
                 }
                 $this->response(array(
                     'total_count' => $count,
@@ -469,7 +477,9 @@ buycost,reseller_products.price,reseller_products.billing_type,(CASE WHEN resell
             ), 400);
         }
     }
-    function product_package($postdata){
+    
+    function product_package($postdata)
+    {
         $this->postdata = $postdata;
         			if($postdata['country_id'] == '' || !isset($postdata['country_id'])){
 				$postdata['country_id'] =  $this->common->get_field_name('id','countrycode', array('country' => 'BRAZIL'));
@@ -641,7 +651,9 @@ buycost,reseller_products.price,reseller_products.billing_type,(CASE WHEN resell
         );
         return $insert_array;
     }
-    function product_refill($postdata){
+    
+    function product_refill($postdata)
+    {
         $this->postdata = $postdata;
         $insert_array = array(
             'name' => $this->postdata['product_name'],
@@ -669,7 +681,9 @@ buycost,reseller_products.price,reseller_products.billing_type,(CASE WHEN resell
         );
         return $insert_array;
     }
-    function product_validation($postdata){
+    
+    function product_validation($postdata)
+    {
         $this->postdata = $postdata;
         if (!$this->form_validation->required($this->postdata['product_name'])) {
             $this->response(array(
@@ -691,7 +705,9 @@ buycost,reseller_products.price,reseller_products.billing_type,(CASE WHEN resell
             ), 400);
         }   
     }
-    function product_did($postdata){
+    
+    function product_did($postdata)
+    {
         $this->postdata = $postdata;
         if (!$this->form_validation->numeric($this->postdata['product_name'])) {
             $this->response(array(

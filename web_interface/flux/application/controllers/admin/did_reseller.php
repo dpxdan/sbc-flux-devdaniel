@@ -372,20 +372,17 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
         if($accounts_data != "" && $dids_data != ""){
             $did_id = $this->common->get_field_name("id","dids",array("product_id"=>$this->postdata['did_id']));
             $did_result = $this->did_billing_process($accounts_data, $this->postdata['accountid'], $did_id);
-            // Kinjal issue no 3808
             if($did_result[0] ==  "INSUFFIECIENT_BALANCE"){
                 $this->response(array(
                     'status' => false,
                     'error' => $this->lang->line("insufficient_balance")
                 ), 200);
             }
-            // END
              if ($did_result[0] == "SUCCESS") {
                 $add_array['invoice_type'] = "debit";
                 $add_array['payment_by'] = "Account Balance";
                 $add_array['charge_type'] = "DID";
                 $add_array['is_update_balance'] = "true";
-                // Kinjal issue no 3808
                 $add_array['is_parent_billing'] = "false";
                 $add_array['product_id'] = $this->postdata['did_id'];
                 $add_array['create_invoice'] = "false";
@@ -401,12 +398,10 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
                     ), 200);
                 }
             }
-            // Kinjal issue no 3808
             $this->response(array(
                 'status' => false,
                 'error' => $this->lang->line('something_wrong')
             ), 400);
-            // END
         }else{
             $this->response(array(
                 'status' =>false,
@@ -910,7 +905,6 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
         }
     }
 
-    // Kinjal issue no 3625
     function _forward(){
         if($this->form_validation->required($this->postdata['did_id']) == '') {
             $this->response(array(
@@ -943,9 +937,7 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
                 'error' => $this->lang->line ( 'call_type_required')
             ), 400 );
         }
-        // Kinjal issue no 3868
         if(($this->postdata ['call_type'] == "0" || $this->postdata ['call_type'] == "5")  && $this->postdata ['call_type_destination'] == "" ) {
-        // END
             $this->response ( array (
                 'status' => false,
                 'error' => $this->lang->line ( 'call_type_destination_required')
@@ -954,7 +946,6 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
         $pbx_status = $this->db_model->countQuery("*", "addons", array(
             "package_name" => "pbx"
         ));
-        // Kinjal issue no 4591
         $foip_status = $this->db_model->countQuery("*", "addons", array(
             "package_name" => "foip"
         ));
@@ -977,7 +968,6 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
                     ), 400 );
                 }        
             }
-            // END
             if($this->postdata ['always'] == "") {
                 $this->response ( array (
                     'status' => false,
@@ -1071,7 +1061,6 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
                     ), 400 );
                 }
             }
-            // END
             if(!($this->postdata ['call_type'] == '0' || $this->postdata ['call_type'] == '1' || $this->postdata ['call_type'] == '2' || $this->postdata ['call_type'] == '3' || $this->postdata ['call_type'] == '4'|| $this->postdata ['call_type'] == '5' || $this->postdata ['call_type'] == '7' || $this->postdata ['call_type'] == '8' || $this->postdata ['call_type'] == '9' || $this->postdata ['call_type'] == '10' || $this->postdata ['call_type'] == '11')) {
                 $this->response ( array (
                     'status' => false,
@@ -1080,38 +1069,28 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
             }
             if($this->postdata['call_type'] == 11){
                 $time_condition_value =(array)$this->db_model->getSelect('*','time_condition',array("reseller_id"=>$did_info['parent_id'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($time_condition_value) && $time_condition_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                  'status' => false,'success' => $this->lang->line('timecondition_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
             if($this->postdata['call_type'] == 10){
                 $ivr_value =(array)$this->db_model->getSelect('*','pbx_ivr_specification',array("reseller_id"=>$did_info['parent_id'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($ivr_value) && $ivr_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('ivr_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
             if($this->postdata['call_type'] == 9){
                 $queue_value = (array)$this->db_model->getSelect('*','pbx_queue',array("reseller_id"=>$did_info['parent_id'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($queue_value) && $queue_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('queue_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
             if($this->postdata['call_type'] == 8){
                 $conference_value =(array) $this->db_model->getSelect('*','pbx_conference_specification',array("reseller_id"=>$did_info['parent_id'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($conference_value) && $conference_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('conference_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
             if($this->postdata['call_type'] == 7){
                 $ringgroup_value =(array) $this->db_model->getSelect('*','pbx_ringgroup',array("reseller_id"=>$did_info['parent_id'],"id"=>$this->postdata['call_type_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($ringgroup_value) && $ringgroup_value != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('ringgroup_not_found')), 400)) : $did_info['extensions'];
-                // END
             }
         }
         if($pbx_status != '1'){
@@ -1122,10 +1101,8 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
         }
         if(($this->postdata['call_type'] == 0 || $this->postdata['call_type'] == 5) && $this->postdata['call_type_destination'] != "" && $this->postdata['call_type'] != ""){
              $sip_call_type =(array) $this->db_model->getSelect('*','sip_devices',array("reseller_id"=>$did_info['parent_id'],'status' => 0,"username"=>$this->postdata['call_type_destination']))->first_row();
-              // Kinjal issue no 4591
               $did_forward['extensions']  = ($this->postdata['call_type_destination'] != "") ? ((!empty($sip_call_type) && $sip_call_type != "") ? $this->postdata['call_type_destination'] : $this->response(array(
               'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400)) : $did_info['extensions'];
-              // END
         }
         else{
             $did_forward['extensions'] = $this->postdata['call_type_destination'] != "" ? $this->postdata['call_type_destination'] : $did_info['extensions'];
@@ -1134,37 +1111,29 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
         if($pbx_status != '1'){
             if(($this->postdata['always'] == 0 || $this->postdata['always'] == 5) && $this->postdata['always_destination'] != "" && $this->postdata['always'] != ""){
                 $sip_always =(array) $this->db_model->getSelect('*','sip_devices',array("accountid"=>$did_info['accountid'],'status' => 0,"username"=>$this->postdata['always_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['always_destination']  = (!empty($sip_always) && $sip_always != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400); 
-                // END
             }else{
                 $did_forward['always_destination'] = $this->postdata['always_destination'] != "" ? $this->postdata['always_destination'] : $did_info['always_destination'];
             }
             if(($this->postdata['user_busy'] == 0 || $this->postdata['user_busy'] == 5) && $this->postdata['user_busy_destination'] != "" && $this->postdata['user_busy'] != ""){
                 $sip_user_busy =(array) $this->db_model->getSelect('*','sip_devices',array("accountid"=>$did_info['accountid'],'status' => 0,"username"=>$this->postdata['user_busy_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['user_busy_destination']  = (!empty($sip_user_busy) && $sip_user_busy != "") ? $this->postdata['call_type_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400); 
-                // END
             }else{
                 $did_forward['user_busy_destination'] = $this->postdata['user_busy_destination'] != "" ? $this->postdata['user_busy_destination'] : $did_info['user_busy_destination'];
             }
             if(($this->postdata['user_not_registered'] == 0 || $this->postdata['user_not_registered'] == 5) && $this->postdata['user_not_registered_destination'] != "" && $this->postdata['user_not_registered_destination'] != ""){
                 $sip_user_not_registered = (array)$this->db_model->getSelect('*','sip_devices',array("accountid"=>$did_info['accountid'],'status' => 0,"username"=>$this->postdata['user_not_registered_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['user_not_registered_destination']  = (!empty($sip_user_not_registered) && $sip_user_not_registered != "") ? $this->postdata['user_not_registered_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400); 
-                // END
             }else{
                 $did_forward['user_not_registered_destination'] = $this->postdata['user_not_registered_destination'] != "" ? $this->postdata['user_not_registered_destination'] : $did_info['user_not_registered_destination'];
             }
             if(($this->postdata['no_answer'] == 0 || $this->postdata['no_answer'] == 5) && $this->postdata['no_answer_destination'] != "" && $this->postdata['no_answer'] != ""){
                 $sip_no_answer =(array) $this->db_model->getSelect('*','sip_devices',array("accountid"=>$did_info['accountid'],'status' => 0,"username"=>$this->postdata['no_answer_destination']))->first_row();
-                // Kinjal issue no 4591
                 $did_forward['user_not_registered_destination']  = (!empty($sip_no_answer) && $sip_no_answer != "") ? $this->postdata['no_answer_destination'] : $this->response(array(
                 'status' => false,'success' => $this->lang->line('sip_device_not_found')), 400); 
-                // END
             }else{
                 $did_forward['no_answer_destination'] = $this->postdata['no_answer_destination'] != "" ? $this->postdata['no_answer_destination'] : $did_info['no_answer_destination'];
             }
@@ -1184,6 +1153,5 @@ view_dids.price,view_dids.billing_type,(CASE WHEN view_dids.billing_type = 2 THE
             ), 400);
         }
     }
-    // END
 }
 ?>

@@ -233,7 +233,7 @@ $config['api_ajax_only'] = FALSE;
  |	Default: FALSE
  |
  */
-$config['api_debug_log'] = TRUE;
+$config['api_debug_log'] = FALSE;
 
 
 /* End of file config.php */

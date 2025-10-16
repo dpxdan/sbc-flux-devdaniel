@@ -182,7 +182,7 @@ class Origination_rate extends Account {
 			$this->db->where($where);
 		}
 		$available_origination_rate = $this->db->limit($no_of_records, $start)
-			-> select('*')
+			-> select('id,pattern,comment,connectcost,includedseconds,cost,pricelist_id,inc,country_id,call_type,routing_type,percentage,call_count,accountid,reseller_id,status,precedence,trunk_id,init_inc,creation_date,last_modified_date')
 			->from('routes')
 			->get();
 		$count = $available_origination_rate->num_rows();
@@ -202,12 +202,15 @@ class Origination_rate extends Account {
 			$value['connectcost'] = $value['connectcost']." ". $currency ;
 			$value['cost'] = $value['cost']." ". $currency ;
 			$value['pricelist_name'] = $this->common->get_field_name('name','pricelists',array('id' => $value['pricelist_id'])) ;
-			$value['reseller_name'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$value['reseller_id']); 
+			$value['reseller_id'];
+//			$value['reseller_name'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$value['reseller_id']); 
 			$value['last_modified_date'] = $this->common->convert_GMT_to('','',$value['last_modified_date'],$this->accountinfo['timezone_id']);
 			$value['creation_date'] = $this->common->convert_GMT_to('','',$value['creation_date'],$this->accountinfo['timezone_id']);
 			$value['country_name'] = $this->common->get_field_name('country','countrycode',array('id' => $value['country_id'])) ;
 			$value['destination'] =$value['comment'];
-			unset($value['id'],$value['pattern'],$value['country_id'],$value['reseller_id'],$value['precedence'],$value['call_type'],$value['pattern'],$value['routing_type'],$value['percentage'],$value['call_count'],$value['trunk_id'],$value['accountid'],$value['comment']);
+			if($value['reseller_id'] == '0'){
+			unset($value['reseller_id']);
+      }unset($value['id'],$value['pattern'],$value['country_id'],$value['reseller_id'],$value['precedence'],$value['call_type'],$value['pattern'],$value['routing_type'],$value['percentage'],$value['call_count'],$value['trunk_id'],$value['accountid'],$value['comment']);
 			$new_array[] = $value;
 		}
 			$this->response ( array (
