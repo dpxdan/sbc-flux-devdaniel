@@ -33,7 +33,6 @@ class Call_detail_report extends Account
 		$this->load->model('common_model');
 		$this->load->library('common');
 		$this->load->model('db_model');
-		$this->load->model('common_model');
 		$this->load->model('Flux_common');
 		$this->load->library('Form_validation');
 		$this->load->library('flux/payment');
