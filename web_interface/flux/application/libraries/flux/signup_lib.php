@@ -222,7 +222,7 @@ class Signup_lib {
 /*		$this->CI->db->select ( 'id' );
 		$this->CI->db->where ( 'name', 'default' );
 		$sipprofile_result = ( array ) $this->CI->db->get ( 'sip_profiles' )->first_row ();*/
-		$this->CI->db->select("id,name,secret");
+		$this->CI->db->select("id,name,secret,cliente_razao,callerid");
 		$where=array("cliente_id"=>$accountinfo['id_external'],"id"=>$accountinfo['id_sip_external']);
 		$voip_sippeers_info = (array)$this->CI->db->get_where("voip_sippeers",$where)->first_row();
 		$digits=5;
@@ -243,8 +243,8 @@ class Signup_lib {
 					"vm-email-all-messages"=>"true"
 				)),
 				"dir_vars"=>json_encode(array(
-					'effective_caller_id_name' => isset($accountinfo['company_name']) ? $accountinfo['company_name'] : $accountinfo ['number'],
-					'effective_caller_id_number' => (!empty($voip_sippeers_info['name'])) ? $voip_sippeers_info['name'] : $accountinfo['number'],
+					'effective_caller_id_name' => isset($voip_sippeers_info['cliente_razao']) ? $voip_sippeers_info['cliente_razao'] : $accountinfo ['company_name'],
+					'effective_caller_id_number' => (!empty($voip_sippeers_info['callerid'])) ? $voip_sippeers_info['callerid'] : $$voip_sippeers_info['name'],
 					"user_context"=>"default"
 				)),
 				'codec' => 'G729,PCMA,PCMU',

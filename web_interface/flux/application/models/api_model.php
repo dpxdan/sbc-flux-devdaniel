@@ -38,8 +38,14 @@ class Api_model extends CI_Model {
     public function upsert_account($customer_data) {
     $this->flux_log->write_log('api_model', "Upsert Account Start.");
     $existing_account = $this->db->get_where('accounts', ['id_external' => $customer_data['id'], 'deleted' => '0'])->row();
+		if($customer_data['senha'] == ''){
+      $customer_data['senha'] = $this->common->generate_password();      
+      $encoded_password = $this->common->encode($customer_data['senha'] );
+      } 
+    else {
 		$password = !empty($customer_data['senha']) ? $customer_data['senha'] : $this->common->generate_password();
 		$encoded_password = $this->common->encode($password);
+      }		
 		$telefone = $this->sanitize_string($customer_data['fone']);
 		$telefone_celular = $this->sanitize_string($customer_data['telefone_celular']);
 		$razaoConvert = $this->sanitize_string($customer_data['razao']);
@@ -72,6 +78,7 @@ class Api_model extends CI_Model {
             'company_name' => (!empty($customer_data['fantasia'])) ? $customer_data['fantasia'] : $customer_data['razao'],
             'first_name'        => $customer_data['razao'],
             'last_name'         => $customer_data['razao'],
+        'password'          => $encoded_password,
 			      'email' => (!empty($customer_data['email'])) ? $customer_data['email'] : $customer_data['id'] . ''.$razaoConvert.'@flux.net.br',            
 			      'notification_email' => (!empty($customer_data['email'])) ? $customer_data['email'] : $customer_data['id'] . ''.$razaoConvert.'@flux.net.br',
             'telephone_1' => (!empty($telefone)) ? $telefone : '5155555555',
@@ -80,8 +87,8 @@ class Api_model extends CI_Model {
             'city' => $this->get_city_name($customer_data['cidade']),
             'province' => $this->get_uf_name($customer_data['cidade']),
             'postal_code' => $customer_data['cep'],
-            'reseller_id' => $customer_data['reseller_id'],
             'creation'          => $customer_data['data_cadastro'],
+        'reseller_id'       => isset($customer_data['reseller_id']) ? $customer_data['reseller_id'] : 0,        
             'status'            => ($customer_data['ativo'] == 'S') ? 0 : 1,
             'deleted'           => 0,
             'deleted_date'      => '1000-01-01 00:00:00',
@@ -108,21 +115,21 @@ class Api_model extends CI_Model {
         $customer_data['cnpj_cpf'] = $account_number;        
         }    
             $default_data = [
-                'reseller_id'       => $customer_data['reseller_id'],
+            'reseller_id'       => isset($customer_data['reseller_id']) ? $customer_data['reseller_id'] : 0,
                 'pricelist_id'      => common_model::$global_config['system_config']['default_signup_rategroup'] ?: 1,
                 'country_id'        => 28,
             'number'            => $customer_data['cnpj_cpf'],
                 'currency_id'       => 16,
                 'timezone_id'       => 78,
-                'credit_limit'      => '100.000',
-                'balance'           => '100.000',
+            'credit_limit'      => common_model::$global_config['system_config']['balance'] ?: '1000.0000',
+            'balance'           => common_model::$global_config['system_config']['balance'] ?: '1000.0000',
                 'maxchannels'       => 3,
                 'charge_per_min'    => 0,
                 'invoice_day'       => 1,
                 'posttoexternal'    => 1,
                 'sweep_id'          => 2,
                 'type'              => 0,
-                'notifications'     => 0,
+            'notifications'     => 1,
                 'password'          => $encoded_password,
                 'pin'               => $pin_number,
             'sip_device_flag'   => 0,
@@ -193,6 +200,9 @@ class Api_model extends CI_Model {
 		$account_id = $device->cliente_id;      
 		}
     $username = $this->sanitize_string($device->name);
+    if(empty($username)) {
+    $username = $this->sanitize_string($device->callerid);    
+    }
     if(!empty($username)){		    
     if ($existing_device) {
             $this->flux_log->write_log('existing_device', json_encode($existing_device));
@@ -214,7 +224,7 @@ class Api_model extends CI_Model {
                   'vm-email-all-messages'=>'false'
                 )),
                 'dir_vars'=>json_encode(array(
-                  'effective_caller_id_name' => $device->name,
+                  'effective_caller_id_name' => $device->cliente_razao,
                   'effective_caller_id_number' => $device->callerid,
                   'user_context'=>'default'
                 )),

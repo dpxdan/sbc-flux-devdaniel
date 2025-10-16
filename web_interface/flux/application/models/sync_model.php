@@ -26,6 +26,7 @@ class Sync_model extends CI_Model {
         parent::__construct();
         $this->load->model('api_model');
         $this->load->library('flux_log');
+        $this->load->library('common');
     }
 
     /**
@@ -33,25 +34,85 @@ class Sync_model extends CI_Model {
      */
     public function replace_peer($data) {
         $this->flux_log->write_log('sync_model', 'replace_peer sync_model process.');
-        $allowed_fields = ['id', 'cliente_id', 'name', 'username', 'host', 'context', 'type', 'nat', 'qualify', 'disallow', 'allow', 'dtmfmode', 'secret', 'callerid', 'id_contrato', 'ativo', 'id_plano_sip', 'id_integracao', 'cliente_razao', 'reseller_id'];
-        $filtered_data = array_intersect_key($data, array_flip($allowed_fields));
 
-        if (empty($filtered_data['name']) || $filtered_data['name'] == '0') {
-            $filtered_data['name'] = !empty($data['defaultuser']) ? $data['defaultuser'] : $data['callerid'];
+    $allowed_fields = [
+        'id', 'cliente_id', 'name', 'username', 'host', 'context', 'type', 'nat', 'qualify',
+        'disallow', 'allow', 'dtmfmode', 'secret', 'callerid', 'defaultuser', 'id_contrato',
+        'ativo', 'id_plano_sip', 'id_integracao', 'cliente_razao', 'reseller_id'
+    ];
+
+    $filtered_data = array_intersect_key($data, array_flip($allowed_fields));
+
+    $name        = trim((string)($filtered_data['name'] ?? ''));
+    $defaultuser = trim((string)($filtered_data['defaultuser'] ?? ''));
+    $callerid    = trim((string)($filtered_data['callerid'] ?? ''));
+    $secret      = trim((string)($filtered_data['secret'] ?? ''));
+    $peer_id     = $filtered_data['id'] ?? null;
+
+    $existing_peer = [];
+    if (!empty($peer_id)) {
+        $existing_peer = $this->db
+            ->select('name, defaultuser, callerid, secret')
+            ->from('voip_sippeers')
+            ->where('id', $peer_id)
+            ->get()
+            ->row_array() ?? [];
+    }
+
+    $existing_name        = trim((string)($existing_peer['name'] ?? ''));
+    $existing_defaultuser = trim((string)($existing_peer['defaultuser'] ?? ''));
+    $existing_callerid    = trim((string)($existing_peer['callerid'] ?? ''));
+    $existing_secret      = trim((string)($existing_peer['secret'] ?? ''));
+
+    $generate_random_name   = ($name === '' && $defaultuser === '' && $callerid === '' &&
+                               $existing_name === '' && $existing_defaultuser === '' && $existing_callerid === '');
+    $generate_random_secret = ($secret === '' && $existing_secret === '');
+
+  
+    if ($generate_random_name) {
+        $final_name = $this->common->find_uniq_rendno_customer(10, 'username', 'sip_devices');
+        $this->flux_log->write_log('sync_model', "Generated random peer name: {$final_name}");
+    } 
+    else {
+        $final_name = $name
+            ?: ($defaultuser
+            ?: ($callerid
+            ?: ($existing_name
+            ?: ($existing_defaultuser ?: $existing_callerid))));
+    }
+    
+    if ($generate_random_secret) {
+        $length = 10;
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $final_secret = '';
+        for ($i = 0; $i < $length; $i++) {
+            $final_secret .= $characters[rand(0, strlen($characters) - 1)];
         }
+        $this->flux_log->write_log('sync_model', "Generated random peer secret: {$final_secret}");
+        }
+    else {
+        $final_secret = $secret ?: $existing_secret;
+    }
 
-        if (!empty($filtered_data)) {
-            $this->upsert('voip_sippeers', $filtered_data);
-            $device_account = $this->api_model->upsert_device($filtered_data['id']);
+
+    $filtered_data['name']        = $final_name;
+    $filtered_data['defaultuser'] = $final_name;
+    $filtered_data['callerid']    = $final_name;
+    $filtered_data['secret']      = $final_secret;
+
+    if (!empty($filtered_data)) {
+        $this->upsert('voip_sippeers', $filtered_data);
+        $device_account = $this->api_model->upsert_device($filtered_data['id']);
         
-        if (is_array($device_account) && isset($device_account['needs_customer_sync'])) {
+        if (is_array($device_account) && !empty($device_account['needs_customer_sync'])) {
                 return ['needs_customer_sync' => $device_account['needs_customer_sync']]; 
             }
-            else {
-            $this->flux_log->write_log('sync_model', 'device_account true.');
-            return true;
+
+        $this->flux_log->write_log('sync_model', 'device_account true.');
+        return true;
             }
-        }
+
+    return false;
     }
 
     /**
