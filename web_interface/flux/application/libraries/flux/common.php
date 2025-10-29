@@ -1735,7 +1735,6 @@ class common {
 			$message = str_replace('#PRODUCT_AMOUNT#', $accountinfo['price'], $message);
 		break;
 
-	   	// Jaimin FLUXUPDATE-738
 	    case 'account_refilled':
 		$subject = str_replace('#REFILLBALANCE#', $accountinfo['refill_amount'], $subject);
 		$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
@@ -1775,10 +1774,8 @@ class common {
 				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
 		break;
 		
-        // Ashish FLUXUPDATE-748
 		case 'new_invoice':
 			$subject = str_replace('#INVOICE_NUMBER#',isset($accountinfo['invoice_number'])?$accountinfo['invoice_number']:'', $subject);
-//			function calculate_currency($amount = 0, $from_currency = '', $to_currency = '', $format_currency = true, $append_currency = true)
 			$subject = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:"", $accountinfo['currency_id'], $accountinfo['currency_id'], true,true),$subject);
 			$subject = str_replace('#INVOICE_DATE#', isset($accountinfo['generate_date'])?$accountinfo['generate_date']:"", $subject);
 			$subject = str_replace('#DUE_DATE#',isset($accountinfo['due_date'])?$accountinfo['due_date']:'', $subject);
@@ -1949,7 +1946,6 @@ class common {
 				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
             break;
 
-    		// Ashish FLUXUPDATE-743
             case 'product_release';
 
 			$product_name = (isset($accountinfo['name'])) ? $accountinfo['name'] : (isset($accountinfo['product_name'])  ? $accountinfo['product_name'] : $product_name);
@@ -1973,7 +1969,6 @@ class common {
 			$alert_template = str_replace('#NEXT_BILL_DATE#',isset($accountinfo['next_billing_date'])?$accountinfo['next_billing_date']:"", $alert_template);
 			$alert_template = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $alert_template);
             break;
-            // // Ashish FLUXUPDATE-743 End
 
             case 'product_renewal_notice';
 
@@ -2042,7 +2037,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			}
         	$reseller_id = $accountinfo['reseller_id'];
 
-      		// FLUXUPDATE-924 Start
 			if($query[0]->is_email_enable == '1')
 			{
 				$accountinfo['email']='';
@@ -2052,7 +2046,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			}else{
 				$emailstatus = 1;
 			}
-      		// FLUXUPDATE-924 END
 			if($query[0]->is_sms_enable == '1')
 			{
 				$usermobile='';
@@ -2511,7 +2504,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		return $decoded_fields['module'];
 	}
 	function email_status($select = "", $table = "", $status) {
-		// FLUXUPDATE-924 Start
 		if($status['status'] == 0){
 			$status= gettext("Sent");
 		}else if($status['status'] == 2){
@@ -2519,7 +2511,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		}else{
 			$status=gettext("Pending");
 		}
-		// FLUXUPDATE-924 END
 		return $status;
 	}
 	function email_search_status($select = '') {
@@ -2611,7 +2602,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	function enable_disable_option() {
 		$option_array = array (
 				'0' => gettext ( 'Enable' ),
-				'1' => gettext ( 'Disable' )
+				'1' => gettext ( 'Disabled' )
 		);
 		return $option_array;
 	}
@@ -2658,20 +2649,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		}
 		return $pricelist_arr;
 	}
-/*	function default_signup_login_type() {
-		$this->CI->db->select ( "id,name,login_type" );
-		$this->CI->db->where ( "reseller_id", 0 );
-		$login_type_result = $this->CI->db->get ( "permissions" )->result_array ();
-		$login_type_arr = array ();
-		$login_type_arr [0] = gettext("--Select--");
-		foreach ( $login_type_result as $result ) {
-			$login_type_arr [$result ['id']] = $result ['name'];
-			$login_type_arr [$result ['login_type']] = $result ['login_type'];
-		}
-		return $login_type_arr;
-	}
-	
-	*/
 		function default_signup_login_type(){
 		$this->CI->db->select ( "id,name" );
 		$this->CI->db->where ( "reseller_id", 0 );
@@ -3633,6 +3610,32 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 				'2' => gettext ( 'Both' ),
 		);
 		return $set_search_destination_type;		
+	}
+	function set_sync_cdrs_type($cdrs_type){
+		$set_sync_cdrs_type = array (
+				'0' => gettext ( 'Inbound' ),
+				'1' => gettext ( 'Outbound' ),
+				'2' => gettext ( 'Both' ),
+		);
+		return $set_sync_cdrs_type;		
+	}
+	function get_sync_cdrs_type($select = "", $table = "",$cdrs_type){
+		$get_sync_cdrs_type = array (
+				"" => gettext ( "--Select--" ),
+				'0' => gettext ( 'Inbound' ),
+				'1' => gettext ( 'Outbound' ),
+				'2' => gettext ( 'Both' ),
+		);
+		return $get_sync_cdrs_type[$cdrs_type];		
+	}
+	function set_search_sync_cdrs_type($cdrs_type){
+		$set_search_sync_cdrs_type = array (
+				"" => gettext ( "--Select--" ),
+				'0' => gettext ( 'Inbound' ),
+				'1' => gettext ( 'Outbound' ),
+				'2' => gettext ( 'Both' ),
+		);
+		return $set_search_sync_cdrs_type;		
 	}
 	function varification_with($status = '') {
 		$status_array = array (
