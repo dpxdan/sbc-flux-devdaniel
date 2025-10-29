@@ -30,7 +30,6 @@ class Invoices extends Account
 	function __construct()
 	{
 		parent::__construct();
-		$this->load->model('common_model');
 		$this->load->library('common');
 		$this->load->model('db_model');
 		$this->load->model('common_model');
@@ -55,10 +54,6 @@ class Invoices extends Account
 	public function index()
 	{
 		$accountid = $this->accountinfo ['id'];
-    if($this->accountinfo['type'] == '1'){
-     $this->flux_log->write_log('account_reseller', json_encode($this->accountinfo));
-			
-		}
 		if($this->accountinfo['type'] == '-1'){
 
 			$where = array('id' => $this->accountinfo['id'] , 'type' => 1);
@@ -183,7 +178,6 @@ class Invoices extends Account
             $invoices_value['debit'] = $this->common_model->calculate_currency_customer($invoices_value['debit'],$from_currency,$to_currency,true,true)." ".$to_currency;
             $invoices_value['credit'] = $this->common_model->calculate_currency_customer($invoices_value['credit'],$from_currency,$to_currency,true,true)." ".$to_currency;
             $invoices_value['invoice_total'] = $this->common_model->calculate_currency_customer($invoices_value['invoice_total'],$from_currency,$to_currency,true,true)." ".$to_currency;
-            $invoices_value['accountid'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$invoices_value['accountid']);
 			$invoicesinfo[] =$invoices_value;
 		}
     	if (!empty($invoicesinfo)) {
@@ -206,6 +200,32 @@ class Invoices extends Account
 
 	private function _customer_billing_details()
 	{
+			
+			if (empty($this->postdata['end_limit']) || empty($this->postdata['start_limit']) ){
+				if(!( $this->postdata['start_limit'] == '	0' || $this->postdata['end_limit'] == '0' )){
+					$this->response ( array (
+						'status' => false,
+						'error' => $this->lang->line ( 'error_param_missing' ) . " integer:end_limit,integer:start_limit"
+					), 400 );
+				}else{
+					$this->response ( array (
+						'status' => false,
+						'error' => $this->lang->line('number_greater_zero')
+					), 400 );
+				}
+			}
+			if(!($this->postdata['start_limit'] < $this->postdata['end_limit'])){
+				$this->response ( array (
+						'status' => false,
+						'error' => $this->lang->line('valid_start_limit')
+				), 400 );
+			}
+
+			$start = $this->postdata['start_limit']-1;
+			$limit = $this->postdata['end_limit'];
+			$no_of_records = (int)$limit - (int)$start;
+			
+			
 			$object_where_params = $this->postdata['object_where_params'];
 
 			if (empty($object_where_params['from_date']) || empty($object_where_params['to_date'])) {
@@ -235,7 +255,7 @@ class Invoices extends Account
 							: [$object_where_params['accountid']];
 			} 
 			else {
-					$rows = $this->db->select('id')->from('accounts')->where('type','0')->where('status', '0')->where('deleted', '0')->get()->result_array();
+					$rows = $this->db->select('id')->from('accounts')->where('type','0')->where('status', '0')->where('deleted', '0')->order_by('id', 'desc')->limit($no_of_records, $start)->get()->result_array();
 					$account_ids = array_column($rows, 'id');
 			}
 
@@ -261,12 +281,13 @@ class Invoices extends Account
 							$this->db->select('id, number, first_name, last_name, company_name, email,reseller_id');
 							$this->db->from('accounts');
 							$this->db->where('id', $account_id);
+							$this->db->order_by('id', 'desc');
+							$this->db->limit($no_of_records, $start);							
 							if ($this->accountinfo['type'] == '1') {
 									$this->db->where('reseller_id', $this->postdata['id']);
 							}
 							if (!empty($object_where_params['reseller_id'])) {
 							$reseller_id = $object_where_params['reseller_id'];
-							$this->flux_log->write_log('reseller_id2', json_encode($reseller_id));
 							}
 							
 							$account_query = $this->db->get();
@@ -275,13 +296,17 @@ class Invoices extends Account
 							}
 							$account_details = $account_query->row_array();
 
-							$this->db->select('oi.id, oi.product_id, p.name as product_name, oi.free_minutes, oi.price, oi.is_terminated, oi.termination_date');
+							$this->db->select('oi.id, oi.order_id, oi.product_id, p.name as product_name, oi.free_minutes, oi.price, oi.is_terminated, oi.termination_date');
 							$this->db->from('order_items as oi');
 							$this->db->join('products as p', 'oi.product_id = p.id', 'left');
+							$this->db->join('orders as o', 'oi.order_id = o.id', 'left');
 							$this->db->where('oi.accountid', $account_id);
 							$this->db->where('oi.is_terminated', '0');
 							$this->db->where('p.product_category', '1');
+							$this->db->where('o.order_date >=', $from_date_gmt);
+							$this->db->where('o.order_date <=', $to_date_gmt);
 							$this->db->where('oi.termination_date', '0000-00-00 00:00:00');
+							$this->db->order_by('oi.billing_date', 'desc');
 							$all_plans = $this->db->get()->result_array();
 
 							$total_plan_cost     = 0.0;
@@ -289,7 +314,7 @@ class Invoices extends Account
 							$plan_billing_details = [];
 
 							foreach ($all_plans as $plan) {
-									$package_id = $plan['id'];
+									$package_id = $plan['order_id'];
 									$total_plan_cost += (float)$plan['price'];
 
 									$this->db->select_sum('billseconds', 'seconds_for_this_plan');
@@ -342,9 +367,9 @@ class Invoices extends Account
 
 							$response_data = array(
 									'account_details' => $account_details,
-									'period' => array(
-											'from_date' => $object_where_params['from_date'],
-											'to_date'   => $object_where_params['to_date']
+									'usage_period' => array(
+											'from_date' => $from_date_gmt,
+											'to_date'   => $to_date_gmt
 									),
 									'billing_summary' => array(
 											'plans_total_debit'      => $this->common_model->calculate_currency_customer($total_plan_cost, $from_currency, $to_currency, true, true) . " " . $to_currency,
@@ -365,7 +390,7 @@ class Invoices extends Account
 					$this->response(array(
 							'status'  => true,
 							'data'    => $all_accounts_data,
-							'success' => $this->lang->line("invoices_list")
+							'success' => $this->lang->line("invoices_list_information")
 					), 200);
 
 			} catch (Exception $e) {
@@ -436,33 +461,35 @@ class Invoices extends Account
 				if(isset($object_where_key) && $object_where_key == 'code'){
 					$this->db->like('pattern', '^'.$object_where_params['code'] );
 				}
-				if(isset($object_where_key) && $object_where_key == 'accountid'){
-					$this->db->where('provider_id', $object_where_params['accountid'] );
+				if(isset($object_where_key) && $object_where_key == 'provider_id'){
+				$this->db->where('accountid', $object_where_params['provider_id'] );
 				}
 				$where[$object_where_key] = $object_where_value;
 			}
 		}
 		if(!empty($where)){
-			unset($where['destination'],$where['code'],$where['duration'],$where['accountid']);
-			$this->db->where($where, $object_where_params );
+			unset($where['destination'],$where['code'],$where['duration'],$where['provider_id']);
+			$this->db->like($where, $object_where_params );
 		}
-		$this->db->where('trunk_id !=', '');
+	 	if ($this->accountinfo['type'] == '1') {
+			$this->db->where('provider_id', $this->postdata['id']);
+		}
+		$this->db->where_in('generate_type',array(0,1));
 		$this->db->order_by("generate_date", "desc");
 		$this->db->limit($no_of_records, $start);
-        $this->db->select('calltype,generate_date,sip_user,call_direction,country_id,callerid,callednum,pattern,notes,billseconds,provider_call_cost,disposition,provider_id,cost');
-        $result = $this->db->get('cdrs');
+        $this->db->select('*');
+        $result = $this->db->get('view_new_invoices');
         $count = $result -> num_rows();
         $invoices_info = $result->result_array();
 		foreach ($invoices_info as $key => $invoices_value) {
-            $show_seconds = $this->postdata['object_where_params']['display_records'] == 'minutes' || $this->postdata['object_where_params']['display_records'] == 'seconds' ? $this->postdata['object_where_params']['display_records'] : 'minutes';
-            $invoices_value['duration'] = ($show_seconds == 'minutes') ? ($invoices_value['billseconds'] > 0) ? sprintf('%02d', $invoices_value['billseconds'] / 60) . ":" . sprintf('%02d', $invoices_value['billseconds'] % 60) : "00:00" : $invoices_value['billseconds'];
+
             $invoices_value['generate_date'] = $this->common->convert_GMT_to('','',$invoices_value['generate_date'],$this->accountinfo['timezone_id']);
-            $invoices_value['cost'] = $this->common_model->calculate_currency_customer($invoices_value['cost'],$from_currency,$to_currency,true,true)." ".$to_currency;
-            $invoices_value['accountid'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$invoices_value['provider_id']);
-            $invoices_value['country_id'] = $this->common->get_field_name('country','countrycode',array('id' => $invoices_value['country_id'])) ;
-            $invoices_value['destination'] = $invoices_value['notes'] ;
-            $invoices_value['code'] =  preg_replace('/[^\d+0-9]/', '',  $invoices_value['pattern']);
-            unset($invoices_value['notes'],$invoices_value['billseconds'],$invoices_value['pattern'],$invoices_value['provider_id'],$invoices_value['is_recording'],$invoices_value['provider_call_cost']);
+            $invoices_value['from_date'] = $this->common->convert_GMT_to('','',$invoices_value['from_date'],$this->accountinfo['timezone_id']);
+            $invoices_value['to_date'] = $this->common->convert_GMT_to('','',$invoices_value['to_date'],$this->accountinfo['timezone_id']);
+            $invoices_value['due_date'] = $this->common->convert_GMT_to('','',$invoices_value['due_date'],$this->accountinfo['timezone_id']);
+            $invoices_value['debit'] = $this->common_model->calculate_currency_customer($invoices_value['debit'],$from_currency,$to_currency,true,true)." ".$to_currency;
+            $invoices_value['credit'] = $this->common_model->calculate_currency_customer($invoices_value['credit'],$from_currency,$to_currency,true,true)." ".$to_currency;
+            $invoices_value['invoice_total'] = $this->common_model->calculate_currency_customer($invoices_value['invoice_total'],$from_currency,$to_currency,true,true)." ".$to_currency;
 			$invoicesinfo[] =$invoices_value;
 		}
     	if (!empty($invoicesinfo)) {
@@ -472,7 +499,8 @@ class Invoices extends Account
 				'data' => $invoicesinfo,
 				'success' => $this->lang->line( "provider_invoices_list" )
 			), 200 );
-        }else{
+        }
+      else{
 			$this->response ( array (
 				'status' => true,
 				'data' => array(),
@@ -576,7 +604,6 @@ class Invoices extends Account
             $invoices_value['generate_date'] = $this->common->convert_GMT_to('','',$invoices_value['generate_date'],$this->accountinfo['timezone_id']);
             $invoices_value['debit'] = $this->common_model->calculate_currency_customer($invoices_value['debit'],$from_currency,$to_currency,true,true)." ".$to_currency;
             $invoices_value['cost'] = $this->common_model->calculate_currency_customer($invoices_value['cost'],$from_currency,$to_currency,true,true)." ".$to_currency;
-            $invoices_value['accountid'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$invoices_value['accountid']);
             $invoices_value['country_id'] = $this->common->get_field_name('country','countrycode',array('id' => $invoices_value['country_id'])) ;
             $invoices_value['pricelist_id'] = $this->common->get_field_name('name','pricelists',array('id' => $invoices_value['pricelist_id'])) ;
             $invoices_value['trunk_id'] = $this->common->get_field_name('name','trunks',array('id' => $invoices_value['trunk_id'])) ;

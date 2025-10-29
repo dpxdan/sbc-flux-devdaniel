@@ -289,7 +289,6 @@ class Product extends Account
                     $available_products[$key]['retired'] = $available_products[$key]['status'];
                     }
                     if ($this->accountinfo['type'] != 1) {
-                        //$available_products[$key]['reseller_name'] = $this->common->reseller_select_value('first_name,last_name,number,company_name', 'accounts', $value['reseller_id']);
                         $available_products[$key]['reseller_id'] = $available_products[$key]['reseller_id'];
                         unset($available_products[$key]['last_modified_date']);
 
@@ -383,7 +382,7 @@ buycost,reseller_products.price,reseller_products.billing_type,(CASE WHEN resell
                     }
                     $optin_lists[$key] = $value;
                     if ($this->accountinfo['type'] != 1) {
-                        $optin_lists[$key]['reseller_id'] = $this->common->reseller_select_value('first_name,last_name,number,company_name', 'accounts', $value['reseller_id']);
+                        $optin_lists[$key]['reseller_id'] = $value['reseller_id'];
                         unset($optin_lists[$key]['last_modified_date']);
 
                     }

@@ -33,6 +33,7 @@ class Call_detail_report extends Account
 		$this->load->model('common_model');
 		$this->load->library('common');
 		$this->load->model('db_model');
+		$this->load->model('common_model');
 		$this->load->model('Flux_common');
 		$this->load->library('Form_validation');
 		$this->load->library('flux/payment');
@@ -116,18 +117,18 @@ class Call_detail_report extends Account
 		$object_where_params = $this->postdata['object_where_params'];
 		if(!empty($object_where_params['from_date']) || !empty($object_where_params['to_date'])  ){
 			$from_dates = DateTime::createFromFormat("Y-m-d H:i:s", $object_where_params['from_date']);
-	       	$to_dates = DateTime::createFromFormat("Y-m-d H:i:s", $object_where_params['to_date']);
-	       	if(empty($from_dates) || empty($to_dates)){
-	       		$this->response ( array (
-						'status' => false,
-						'error' => $this->lang->line('invalid_date_format')
-				), 400 );
-	       	}
-	       	else {
-	       		$object_where_params_date['callstart >='] = $this->timezone->convert_to_GMT_new ( $object_where_params['from_date'], '1' , $this->accountinfo['timezone_id']);
-				 $object_where_params_date['callstart <='] = $this->timezone->convert_to_GMT_new ( $object_where_params['to_date'], '1',$this->accountinfo['timezone_id']);
-				$this->db->where($object_where_params_date);
-	       	}
+      $to_dates = DateTime::createFromFormat("Y-m-d H:i:s", $object_where_params['to_date']);
+      if(empty($from_dates) || empty($to_dates)){
+        $this->response ( array (
+        'status' => false,
+        'error' => $this->lang->line('invalid_date_format')
+    ), 400 );
+      }
+      else {
+      $object_where_params_date['callstart >='] = $this->timezone->convert_to_GMT_new ( $object_where_params['from_date'], '1' , $this->accountinfo['timezone_id']);
+      $object_where_params_date['callstart <='] = $this->timezone->convert_to_GMT_new ( $object_where_params['to_date'], '1',$this->accountinfo['timezone_id']);
+      $this->db->where($object_where_params_date);
+      }
 		}
 		unset($object_where_params['to_date'],$object_where_params['from_date'],$object_where_params['display_records']);
 		foreach($object_where_params as $object_where_key => $object_where_value) {
@@ -147,55 +148,57 @@ class Call_detail_report extends Account
 			$this->db->like($where, $object_where_params );
 		}
 	 	if ($this->accountinfo['type'] == '1') {
-			$this->db->where('reseller_id', $this->postdata['id']);
+		$this->db->where('reseller_id', $this->postdata['id']);
 	 	}
-		
-		
-
 		$this->db->where_in('type',array(0,3));
 		$this->db->where("disposition","NORMAL_CLEARING [16]");
 		$this->db->order_by("callstart", "desc");
-		$this->db->limit($no_of_records, $start);
-        $this->db->select('callstart,sip_user,callerid,call_direction,callednum,notes,billseconds,disposition,debit,is_recording,country_id,pattern,cost,accountid,pricelist_id,calltype,trunk_id');
-        $result = $this->db->get('cdrs');
-        $count = $result -> num_rows();
-        $cdrs_info = $result->result_array();
+		$this->db->limit($no_of_records, $start);        
+
+    $this->db->select('callstart,sip_user,callerid,call_direction,callednum,notes,billseconds,disposition,debit,is_recording,country_id,pattern,cost,accountid,reseller_id,pricelist_id,calltype,trunk_id');
+    $result = $this->db->get('cdrs');
+    $count = $result -> num_rows();
+    $cdrs_info = $result->result_array();
 		foreach ($cdrs_info as $key => $cdrs_value) {
-			$sip_id_external =  $this->common->get_field_name('id_sip_external', 'sip_devices', array('username' => $cdrs_value['sip_user']));
-            $show_seconds = $this->postdata['object_where_params']['display_records'] == 'minutes' || $this->postdata['object_where_params']['display_records'] == 'seconds' ? $this->postdata['object_where_params']['display_records'] : 'minutes';
-			$cdrs_value['duration'] = $cdrs_value['billseconds'];
-			//$cdrs_value['duration'] = ($show_seconds == 'minutes') ? ($cdrs_value['billseconds'] > 0) ? sprintf('%02d', $cdrs_value['billseconds'] / 60) . ":" . sprintf('%02d', $cdrs_value['billseconds'] % 60) : "00:00" : $cdrs_value['billseconds'];
-            $cdrs_value['callstart'] = $this->common->convert_GMT_to('','',$cdrs_value['callstart'],$this->accountinfo['timezone_id']);
-            $cdrs_value['debit'] = $this->common_model->calculate_currency_customer($cdrs_value['debit'],$from_currency,$to_currency,true,true)." ".$to_currency; 
-            $cdrs_value['cost'] = $this->common_model->calculate_currency_customer($cdrs_value['cost'],$from_currency,$to_currency,true,true)." ".$to_currency; 
-            $cdrs_value['accountid'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$cdrs_value['accountid']); 
-            $cdrs_value['country_id'] = $this->common->get_field_name('country','countrycode',array('id' => $cdrs_value['country_id'])) ;
-            $cdrs_value['pricelist_id'] = $this->common->get_field_name('name','pricelists',array('id' => $cdrs_value['pricelist_id'])) ;
-            $cdrs_value['trunk_id'] = $this->common->get_field_name('name','trunks',array('id' => $cdrs_value['trunk_id'])) ;
-            $cdrs_value['destination'] = $cdrs_value['notes'] ;
-            $cdrs_value['code'] =  preg_replace('/[^\d+0-9]/', '',  $cdrs_value['pattern']);
-			$cdrs_value['id_sip_external'] = $sip_id_external;
-            if($this->accountinfo['type'] == '1'){
-            	unset($cdrs_value['calltype']);
-            }
-            unset($cdrs_value['notes'],$cdrs_value['billseconds'],$cdrs_value['pattern'],$cdrs_value['notes'],$cdrs_value['is_recording']);
-			$cdrsinfo[] =$cdrs_value;
-		}
-    	if (!empty($cdrsinfo)) {
-			$this->response ( array (
-				'status' => true,
-				'total_count' => $count,
-				'data' => $cdrsinfo,
-				'success' => $this->lang->line( "cdrs_list" )
-			), 200 );
+        $sip_id_external =  $this->common->get_field_name('id_sip_external', 'sip_devices', array('username' => $cdrs_value['sip_user']));
+        $show_seconds = $this->postdata['object_where_params']['display_records'] == 'minutes' || $this->postdata['object_where_params']['display_records'] == 'seconds' ? $this->postdata['object_where_params']['display_records'] : 'minutes';
+        $cdrs_value['duration'] = $cdrs_value['billseconds'];
+        //$cdrs_value['duration'] = ($show_seconds == 'minutes') ? ($cdrs_value['billseconds'] > 0) ? sprintf('%02d', $cdrs_value['billseconds'] / 60) . ":" . sprintf('%02d', $cdrs_value['billseconds'] % 60) : "00:00" : $cdrs_value['billseconds'];
+        $cdrs_value['callstart'] = $this->common->convert_GMT_to('','',$cdrs_value['callstart'],$this->accountinfo['timezone_id']);
+        $cdrs_value['debit'] = $this->common_model->calculate_currency_customer($cdrs_value['debit'],$from_currency,$to_currency,true,true)." ".$to_currency; 
+        $cdrs_value['cost'] = $this->common_model->calculate_currency_customer($cdrs_value['cost'],$from_currency,$to_currency,true,true)." ".$to_currency; 
+        $cdrs_value['accountid'];
+        $cdrs_value['reseller_id'];
+        $cdrs_value['country_id'] = $this->common->get_field_name('country','countrycode',array('id' => $cdrs_value['country_id'])) ;
+        $cdrs_value['pricelist_id'] = $this->common->get_field_name('name','pricelists',array('id' => $cdrs_value['pricelist_id'])) ;
+        $cdrs_value['trunk_id'] = $this->common->get_field_name('name','trunks',array('id' => $cdrs_value['trunk_id'])) ;
+        $cdrs_value['destination'] = $cdrs_value['notes'] ;
+        $cdrs_value['code'] =  preg_replace('/[^\d+0-9]/', '',  $cdrs_value['pattern']);
+        $cdrs_value['id_sip_external'] = $sip_id_external;
+        if($this->accountinfo['type'] == '1'){
+          unset($cdrs_value['calltype']);
         }
-        else {
-			$this->response ( array (
-				'status' => true,
-				'data' => array(),
-				'success' => $this->lang->line( "no_records_found" )
-			), 200 );
+        if($cdrs_value['reseller_id'] == '0'){
+        unset($cdrs_value['reseller_id']);
+        }
+        unset($cdrs_value['notes'],$cdrs_value['billseconds'],$cdrs_value['pattern'],$cdrs_value['notes'],$cdrs_value['is_recording']);
+			  $cdrsinfo[] =$cdrs_value;
 		}
+    if (!empty($cdrsinfo)) {
+    $this->response ( array (
+      'status' => true,
+      'total_count' => $count,
+      'data' => $cdrsinfo,
+      'success' => $this->lang->line( "cdrs_list" )
+    ), 200 );
+      }
+    else {
+    $this->response ( array (
+      'status' => true,
+      'data' => array(),
+      'success' => $this->lang->line( "no_records_found" )
+    ), 200 );
+  }
 	}
 
 	private function _provider_cdrs()
@@ -264,38 +267,38 @@ class Call_detail_report extends Account
 		}
 		$this->db->where('trunk_id !=', '');
 		$this->db->order_by("callstart", "desc");
-		$this->db->limit($no_of_records, $start);
-       $this->db->select('calltype,callstart,sip_user,call_direction,country_id,callerid,callednum,pattern,notes,billseconds,provider_call_cost,disposition,provider_id,cost');
-        $result = $this->db->get('cdrs');
-        $count = $result -> num_rows();
-        $cdrs_info = $result->result_array();
+		$this->db->limit($no_of_records, $start);  
+
+    $this->db->select('calltype,callstart,sip_user,call_direction,country_id,callerid,callednum,pattern,notes,billseconds,provider_call_cost,disposition,provider_id,cost');
+    $result = $this->db->get('cdrs');
+    $count = $result -> num_rows();
+    $cdrs_info = $result->result_array();
 		foreach ($cdrs_info as $key => $cdrs_value) { 
             $show_seconds = $this->postdata['object_where_params']['display_records'] == 'minutes' || $this->postdata['object_where_params']['display_records'] == 'seconds' ? $this->postdata['object_where_params']['display_records'] : 'minutes';
             $cdrs_value['duration'] = ($show_seconds == 'minutes') ? ($cdrs_value['billseconds'] > 0) ? sprintf('%02d', $cdrs_value['billseconds'] / 60) . ":" . sprintf('%02d', $cdrs_value['billseconds'] % 60) : "00:00" : $cdrs_value['billseconds'];
             $cdrs_value['callstart'] = $this->common->convert_GMT_to('','',$cdrs_value['callstart'],$this->accountinfo['timezone_id']);
             $cdrs_value['cost'] = $this->common_model->calculate_currency_customer($cdrs_value['cost'],$from_currency,$to_currency,true,true)." ".$to_currency; 
-            $cdrs_value['accountid'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$cdrs_value['provider_id']); 
             $cdrs_value['country_id'] = $this->common->get_field_name('country','countrycode',array('id' => $cdrs_value['country_id'])) ;
             $cdrs_value['destination'] = $cdrs_value['notes'] ;
             $cdrs_value['code'] =  preg_replace('/[^\d+0-9]/', '',  $cdrs_value['pattern']);
             unset($cdrs_value['notes'],$cdrs_value['billseconds'],$cdrs_value['pattern'],$cdrs_value['provider_id'],$cdrs_value['is_recording'],$cdrs_value['provider_call_cost']);
-			$cdrsinfo[] =$cdrs_value;
+			      $cdrsinfo[] =$cdrs_value;
 		}
-    	if (!empty($cdrsinfo)) {
-			$this->response ( array (
-				'status' => true,
-				'total_count' => $count,
-				'data' => $cdrsinfo,
-				'success' => $this->lang->line( "provider_cdrs_list" )
-			), 200 );
-        }
-        else {
-			$this->response ( array (
-				'status' => true,
-				'data' => array(),
-				'success' => $this->lang->line( "no_records_found" )
-			), 200 );
-		}
+    if (!empty($cdrsinfo)) {
+    $this->response ( array (
+      'status' => true,
+      'total_count' => $count,
+      'data' => $cdrsinfo,
+      'success' => $this->lang->line( "provider_cdrs_list" )
+    ), 200 );
+      }
+    else {
+    $this->response ( array (
+      'status' => true,
+      'data' => array(),
+      'success' => $this->lang->line( "no_records_found" )
+    ), 200 );
+  }
 	}
 	
 	private function _reseller_cdrs_list()
@@ -383,15 +386,14 @@ class Call_detail_report extends Account
 			$this->db->select('callstart,callerid,callednum,notes,billseconds,debit,cost,disposition,calltype');
 		}
  		$result = $this->db->get('reseller_cdrs');       
-        $count = $result -> num_rows();
-        $reseller_cdrs_info = $result->result_array();
+    $count = $result -> num_rows();
+    $reseller_cdrs_info = $result->result_array();
 		foreach ($reseller_cdrs_info as $key => $cdrs_value) {  
             $show_seconds = $this->postdata['object_where_params']['display_records'] == 'minutes' || $this->postdata['object_where_params']['display_records'] == 'seconds' ? $this->postdata['object_where_params']['display_records'] : 'minutes';
             $cdrs_value['duration'] = ($show_seconds == 'minutes') ? ($cdrs_value['billseconds'] > 0) ? sprintf('%02d', $cdrs_value['billseconds'] / 60) . ":" . sprintf('%02d', $cdrs_value['billseconds'] % 60) : "00:00" : $cdrs_value['billseconds'];
             $cdrs_value['callstart'] = $this->common->convert_GMT_to('','',$cdrs_value['callstart'],$this->accountinfo['timezone_id']);
             $cdrs_value['debit'] = $this->common_model->calculate_currency_customer($cdrs_value['debit'],$from_currency,$to_currency,true,true)." ".$to_currency; 
             $cdrs_value['cost'] = $this->common_model->calculate_currency_customer($cdrs_value['cost'],$from_currency,$to_currency,true,true)." ".$to_currency; 
-            $cdrs_value['accountid'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$cdrs_value['accountid']); 
             $cdrs_value['country_id'] = $this->common->get_field_name('country','countrycode',array('id' => $cdrs_value['country_id'])) ;
             $cdrs_value['pricelist_id'] = $this->common->get_field_name('name','pricelists',array('id' => $cdrs_value['pricelist_id'])) ;
             $cdrs_value['trunk_id'] = $this->common->get_field_name('name','trunks',array('id' => $cdrs_value['trunk_id'])) ;
@@ -399,8 +401,9 @@ class Call_detail_report extends Account
             $cdrs_value['code'] =  preg_replace('/[^\d+0-9]/', '',  $cdrs_value['pattern']);
             if( $this->postdata['action'] == 'reseller_cdrs_list'){
             unset($cdrs_value['cost'],$cdrs_value['accountid'],$cdrs_value['country_id'],$cdrs_value['trunk_id'],$cdrs_value['pricelist_id'],$cdrs_value['code']);
-            }            unset($cdrs_value['notes'],$cdrs_value['billseconds'],$cdrs_value['pattern'],$cdrs_value['notes'],$cdrs_value['is_recording']);
-			$cdrsinfo[] =$cdrs_value;
+            }
+            unset($cdrs_value['notes'],$cdrs_value['billseconds'],$cdrs_value['pattern'],$cdrs_value['notes'],$cdrs_value['is_recording']);
+			      $cdrsinfo[] =$cdrs_value;
 		}
     	if (!empty($cdrsinfo)) {
 			$this->response ( array (
@@ -410,7 +413,7 @@ class Call_detail_report extends Account
 				'success' => $this->lang->line( "cdrs_list" )
 			), 200 );
         }
-        else {
+      else {
 			$this->response ( array (
 				'status' => true,
 				'data' => array(),

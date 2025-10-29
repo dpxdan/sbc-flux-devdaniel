@@ -203,7 +203,6 @@ class Origination_rate extends Account {
 			$value['cost'] = $value['cost']." ". $currency ;
 			$value['pricelist_name'] = $this->common->get_field_name('name','pricelists',array('id' => $value['pricelist_id'])) ;
 			$value['reseller_id'];
-//			$value['reseller_name'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$value['reseller_id']); 
 			$value['last_modified_date'] = $this->common->convert_GMT_to('','',$value['last_modified_date'],$this->accountinfo['timezone_id']);
 			$value['creation_date'] = $this->common->convert_GMT_to('','',$value['creation_date'],$this->accountinfo['timezone_id']);
 			$value['country_name'] = $this->common->get_field_name('country','countrycode',array('id' => $value['country_id'])) ;

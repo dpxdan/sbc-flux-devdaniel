@@ -7,7 +7,6 @@ class User_sip_device extends Account
 	function __construct()
 	{
 		parent::__construct();
-		$this->load->model('common_model');
 		$this->load->library('common');
 		$this->load->model('db_model');
 		$this->load->model('common_model');
@@ -103,21 +102,16 @@ class User_sip_device extends Account
 		$count = $query->num_rows();
 		$sipdevice_info = $query->result_array();
 		foreach ($sipdevice_info as $key => $sipdevice_value) {
-			// Kinjal issue no 3846
 			$dir_params = json_decode($sipdevice_value['dir_params'], true);
 			$sipdevice_value['password'] = $this->common->decode($dir_params['password']);
 			$dir_vars = json_decode($sipdevice_value['dir_vars'], true);
-			// END
-			$sipdevice_value['accountid'] = $this->common->build_concat_string('first_name,last_name,number,company_name','accounts',$sipdevice_value['accountid']);
 			$sipdevice_value['caller_name'] = $dir_vars['effective_caller_id_name'];
 			$sipdevice_value['caller_number'] = $dir_vars['effective_caller_id_number'];
 			$sipdevice_value['status'] = $sipdevice_value['status'] == '1' ? 'Inactive' : 'Active';
 			$sipdevice_value['voice_mail'] =  $dir_params['vm-enabled'];
 			$sipdevice_value['creation_date'] = $this->common->convert_GMT_to('','',$sipdevice_value['creation_date'],$this->accountinfo['timezone_id']);
 			$sipdevice_value['last_modified_date'] = $this->common->convert_GMT_to('','',$sipdevice_value['last_modified_date'],$this->accountinfo['timezone_id']);
-			// Kinjal issue no 3846
 			unset($sipdevice_value['call_waiting'],$sipdevice_value['accountid'],$sipdevice_value['reseller_id'],$dir_params,$sipdevice_value['dir_params'] ,$sipdevice_value['sip_profile_id'],$dir_params,$sipdevice_value['dir_vars']);
-			// END
 			$sipdeviceinfo[] =$sipdevice_value;
 		}
 		
@@ -230,7 +224,6 @@ class User_sip_device extends Account
 		$final_array['id'] = $postdata['accountid'];
 		$final_array['last_id'] = $last_id;
 		$this->common->mail_to_users($template_name,$final_array);	
-		// END
 		unset($sipdevice_array['id'],$sipdevice_array['call_waiting'],$sipdevice_array['reseller_id'],$sipdevice_array['accountid']);
 		$sipdevice_array['dir_params'] = json_decode($sipdevice_array['dir_params'],true);
 		$decoded_pass =  $this->common->decode($sipdevice_array['dir_params']['password']);
@@ -306,11 +299,9 @@ class User_sip_device extends Account
 			);
 			$this->db->where ( 'id', $this->postdata ['sipdevice_id'] );
 			$this->db->update ( 'sip_devices', $update_array );
-			// Kinjal issue no 4071
 			$update_array['dir_params'] = json_decode($update_array['dir_params'],true);
 			$decoded_pass = $this->common->decode($update_array['dir_params']['password']);
 			$update_array['dir_params']['password'] = $this->common->encrypt($decoded_pass);
-			// END
 			$this->response ( array (
 				'status'=>true,
 				'data' => $update_array,
@@ -397,9 +388,7 @@ class User_sip_device extends Account
 	        }else{
 	        	$dir_params = json_decode($sipdeviceinfo['dir_params'],true);
 	        	$dir_vars = json_decode($sipdeviceinfo['dir_vars'],true);
-	        	// Kinjal issue no 3846
 	        	$sipdeviceinfo['password'] = $this->common->decode($dir_params['password']);
-	        	// END
 	        	$sipdeviceinfo['vm-enabled'] = $dir_params['vm-enabled'];
 	        	$sipdeviceinfo['effective_caller_id_name'] = $dir_vars['effective_caller_id_name'];
 	        	$sipdeviceinfo['effective_caller_id_number'] = $dir_vars['effective_caller_id_number'];

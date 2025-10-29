@@ -109,10 +109,11 @@ class Ip_map extends Account {
 			foreach ($query as $key => $value) {
 				$value['ipmap_id'] = $value['id'];
 				$value['ipmap_name'] = $value['name'];
-				$value['accountid'] = $this->common->build_concat_string('first_name,last_name,number,company_name','accounts',$value['accountid']); 
-				$value['reseller_id'] = $this->common->reseller_select_value('first_name,last_name,number,company_name','accounts',$value['reseller_id']); 
 				$value['created_date'] = $this->common->convert_GMT_to('','',$value['created_date'],$this->accountinfo['timezone_id']);
 				$value['last_modified_date'] = $this->common->convert_GMT_to('','',$value['last_modified_date'],$this->accountinfo['timezone_id']);
+				if($value['reseller_id'] == '0'){
+				unset($value['reseller_id']);
+				}
 				unset($value['id'],$value['name'],$value['context']);
 				$new_array[] = $value;
 			}

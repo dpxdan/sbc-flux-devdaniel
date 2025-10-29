@@ -173,11 +173,6 @@ class Customer extends Account {
 					$value['first_name'] = $value['first_name'];
 					$value['last_name'] = $value['last_name'];
 					$value['company_name'] = $value['company_name'];
-//					$value['telephone'] = $value['telephone_1'];
-//					$value['address'] = $value['address_1'];
-//					$value['postal_code'] = $value['postal_code'];
-//					$value['province'] = $value['province'];
-//					$value['city'] = $value['city'];
 					$value['country'] = $this->common->get_field_name('nicename','countrycode',array('id' => $value['country_id']));
 					$value['reseller_id'] = $value['reseller_id'] != null ? $value['reseller_id'] : '0';
 					$value['pricelist_id'] = $this->common->get_field_name('name','pricelists',array('id' => $value['pricelist_id']));
