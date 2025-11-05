@@ -1806,6 +1806,37 @@ class Product_form {
 		}
 		return $buttons_json;
 		}
+	function build_grid_buttons_reseller() {
+		if($this->CI->session->userdata ( 'logintype' ) == 1 || $this->CI->session->userdata ( 'logintype' ) == 5){
+			$buttons_json = json_encode ( array (
+				array (
+					gettext ( "Delete" ),
+					"btn btn-line-danger",
+					"fa fa-times-circle fa-lg",
+					"button_action",
+					"/products/products_delete_multiple/",
+					"",
+					"",
+					"delete"
+					)
+				) );
+		}
+		else{
+			$buttons_json = json_encode ( array (
+				array (
+					gettext ( "Create" ),
+						"btn btn-line-warning btn",
+						"fa fa-plus-circle fa-lg",
+						"button_action",
+						"/products/products_add/",
+						"",
+						"",
+						"create"
+					)
+			) );
+		}
+		return $buttons_json;
+		}
 	function build_pattern_list_for_customer($productid) {
 		$grid_field_arr = json_encode ( array (
 				array (

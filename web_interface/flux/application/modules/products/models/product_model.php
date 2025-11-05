@@ -83,7 +83,9 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 			$this->db->where($temp_where);
 			$tmp_where = "(reseller_products.status = 0 OR reseller_products.status =1)";
 			$this->db->where($tmp_where);
-			$str_where = "(products.status = 0 OR reseller_products.is_owner=0)";
+			$rst_where = "(products.status = 0 OR products.status = 1)";
+			$this->db->where($rst_where);			
+			$str_where = "(reseller_products.is_owner=1 OR reseller_products.is_owner=0)";
 			$this->db->where($str_where);
 			$this->db->where('reseller_products.account_id',$accountinfo['id']);
 			
@@ -91,7 +93,8 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 				if ($flag) {
 					if (isset ( $_GET ['sortname'] ) && $_GET ['sortname'] != 'undefined') {
 						$this->db->order_by ( $_GET ['sortname'], ($_GET ['sortorder'] == 'undefined') ? 'desc' : $_GET ['sortorder'] );
-					} else {
+					} 
+					else {
 						$this->db->order_by("products.id","DESC");
 					}
 					$query = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,products.country_id,reseller_products.status as reseller_status,reseller_products.buy_cost,reseller_products.reseller_id,products.commission,reseller_products.setup_fee,reseller_products.price,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array('products.is_deleted'=>0), 'reseller_products','products.id=reseller_products.product_id', 'inner', $limit , $start,'','');
@@ -379,7 +382,7 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 					"free_minutes"=>$product_info['free_minutes'],
 					"billing_type"=>$product_info['billing_type'],
 					"billing_days"=>$product_info['billing_days'],
-					"status"=>0,
+					"status"=>$add_array['status'],
 					"is_optin"=>0,
 					"is_owner"=>1,
 					"modified_date"=>gmdate("Y-m-d H:i:s")

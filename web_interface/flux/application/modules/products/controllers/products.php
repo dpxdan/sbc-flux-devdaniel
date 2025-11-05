@@ -51,11 +51,11 @@ class Products extends MX_Controller {
 			$categoryinfo_arr = $categoryinfo->result_array()[0]['id']; 
 			if($categoryinfo->num_rows > 0 && $categoryinfo_arr['id'] != ''){ 
 				$where_arr['where'] =$this->db->where("id IN (".$categoryinfo_arr.")",NULL, false);
-				$this->ProductCategory = $this->db_model->build_dropdown("id,name,code", "category", "",$where_arr);
+				$this->ProductCategory = $this->db_model->build_dropdown_products("id,name,code", "category", "",$where_arr);
 			}
 		}
 		else{
-			$this->ProductCategory = $this->db_model->build_dropdown("id,name,code,description", "category", "", "");
+			$this->ProductCategory = $this->db_model->build_dropdown_products("id,name,code,description", "category", "", "");
 		}
 	}
 	function products_list() { 

@@ -1131,13 +1131,23 @@ class Systems extends MX_Controller
     function languages_set_default(){
         $this->db->where("name", 'default_language');
         $query = $this->db->get("system");
-        if($query->num_rows() > 0){
-            $this->db->where("name","default_language");
-            $this->db->set('value', $this->input->post('name'));
-            $this->db->update('system');
-        }else{
+        if($query->num_rows() > 0){                                   
+        $lang_update = array(       				
+						"display_name"=>'Default Language',
+						"group_title"=>'global',
+						"sub_group"=>'General',
+						"is_display"=>1,
+						"value"=>$this->input->post('name')
+						);	
+		$this->db->where('name','default_language');
+		$this->db->update("system",$lang_update);
+        }
+        else{
             $data=array(
                 "name"=>"default_language",
+                "display_name"=>'Default Language',
+				"group_title"=>'global',
+				"sub_group"=>'General',
                 "value"=>$this->input->post('name'), 
                 "is_display"=>1 
             );

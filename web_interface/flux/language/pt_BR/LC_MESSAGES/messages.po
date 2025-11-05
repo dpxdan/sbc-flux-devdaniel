@@ -34,6 +34,9 @@ msgstr "Dias válidos da conta"
 msgid "Account Verification By"
 msgstr "Verificação de conta por"
 
+msgid "Renew Deleted Products"
+msgstr "Renovação de Produtos Removidos"
+
 msgid "Accounts"
 msgstr "Contas"
 
@@ -228,6 +231,9 @@ msgstr "Status da Chamada"
 
 msgid "Call Summary Reports"
 msgstr "Relatórios de resumo de chamadas"
+
+msgid "Low Balance Reports"
+msgstr "Relatórios de Saldo Baixo"
 
 msgid "Call Timeout"
 msgstr "Tempo Limite da Chamada"
@@ -487,14 +493,20 @@ msgstr "Lista de Moedas"
 msgid "Customer"
 msgstr "Cliente"
 
+msgid "CDRs Report"
+msgstr "Relatorio de CDRs"
+
 msgid "Customer CDRs Report"
-msgstr "Relatório de CDRs do cliente"
+msgstr "Relatorio de CDRs do Cliente"
+
+msgid "Customer CDRs"
+msgstr "CDRs do Cliente"
 
 msgid "Customer Summary"
 msgstr "Resumo do cliente"
 
 msgid "Customer Summary Report"
-msgstr "Relatório de Resumo do Cliente"
+msgstr "Relatorio de Resumo do Cliente"
 
 msgid "Customers"
 msgstr "Clientes"
@@ -614,6 +626,9 @@ msgid "Enable"
 msgstr "Habilitado"
 
 msgid "Disabled"
+msgstr "Desabilitado"
+
+msgid "Disable"
 msgstr "Desabilitado"
 
 msgid "Enable Signup"
@@ -746,7 +761,7 @@ msgid "Grace Time"
 msgstr "Tempo Gratuito"
 
 msgid "Grand Total"
-msgstr "Total"
+msgstr "Total Geral"
 
 msgid "Group By"
 msgstr "Agrupado por"
@@ -893,7 +908,7 @@ msgid "Live"
 msgstr "Tempo Real"
 
 msgid "Live Call Report"
-msgstr "Relatório de Chamada Tempo Real"
+msgstr "Relatorio de Chamada Tempo Real"
 
 msgid "Live Id"
 msgstr "ID API"
@@ -1018,8 +1033,8 @@ msgstr "Número"
 msgid "Number Type"
 msgstr "Tipo de número"
 
-msgid " of "
-msgstr ""
+msgid "of"
+msgstr "de"
 
 msgid "Opensips"
 msgstr "Servidor Flux"
@@ -1046,7 +1061,7 @@ msgid "Opensource"
 msgstr "Código aberto"
 
 msgid "Order"
-msgstr "PEDIDO"
+msgstr "Pedido"
 
 msgid "Order Amount"
 msgstr "Valor do pedido"
@@ -1080,9 +1095,6 @@ msgstr "Envio de Fax"
 
 msgid "Outstanding Amount INR"
 msgstr "Valor Pendente INR"
-
-msgid "Page"
-msgstr "Página"
 
 msgid "Problem to delete records"
 msgstr "Falha ao deletar"
@@ -1204,8 +1216,11 @@ msgstr "Fornecedor"
 msgid "Provider Outbound Report"
 msgstr "Relatório de saída do Fornecedor"
 
+msgid "Provider Summary"
+msgstr "Resumo do fornecedor"
+
 msgid "Provider Summary Report"
-msgstr "Relatório de resumo do Fornecedor"
+msgstr "Relatorio de Resumo do Fornecedor"
 
 msgid "Province"
 msgstr "Estado"
@@ -1313,7 +1328,7 @@ msgid "Resellers"
 msgstr "Revendedores"
 
 msgid "Resellers CDRs Report"
-msgstr "Relatório de CDRs de revendedores"
+msgstr "Relatorio de CDRs de Revendedores"
 
 msgid "Resend Mail"
 msgstr "Reenviar e-mail"
@@ -1376,10 +1391,10 @@ msgid "Settings"
 msgstr "Definições"
 
 msgid "Setup Fee"
-msgstr "Taxa criada"
+msgstr "Taxa de instalação"
 
 msgid "Signup"
-msgstr "Padrão"
+msgstr "Inscrever-se"
 
 msgid "SIP Devices"
 msgstr "Dispositivos SIP"
@@ -1433,7 +1448,7 @@ msgid "Status"
 msgstr "Status"
 
 msgid "Strip"
-msgstr "faixa"
+msgstr "Faixa"
 
 msgid "Strong"
 msgstr "Forte"
@@ -1515,6 +1530,9 @@ msgstr "Hoje"
 
 msgid "Top 10 Accounts"
 msgstr "10 principais contas"
+
+msgid "Top 10 Call Types"
+msgstr "10 principais Tipo de Chamadas"
 
 msgid "Top 10 Destinations"
 msgstr "10 principais destinos"
@@ -1946,7 +1964,7 @@ msgid "Sandbox publishable key"
 msgstr "Chave publicável da sandbox"
 
 msgid "Version 4.0 Enterprise"
-msgstr ""
+msgstr "Versão 6.4"
 
 msgid "Powered by"
 msgstr "Distribuído por"
@@ -1959,9 +1977,6 @@ msgstr "Você deve selecionar um campo de seu"
 
 msgid "Records with duplicate account number an"
 msgstr "Registros com número de conta duplicado e"
-
-msgid "of"
-msgstr "de"
 
 msgid "Account Import Error"
 msgstr "Erro de importação de conta"
@@ -2005,8 +2020,8 @@ msgstr "Subtotal"
 msgid "Total Due"
 msgstr "Total Devido"
 
-msgid "Once you confirm the invoice, you will n"
-msgstr ""
+msgid "Once you confirm the invoice you will no longer able to update it again"
+msgstr "Depois de confirmar a fatura você não poderá mais atualizá-la novamente"
 
 msgid "Note"
 msgstr "NOTA"
@@ -2143,8 +2158,8 @@ msgstr "Não é possível transferir fundos para clientes pós-pagos"
 msgid "Access Denied! unable transfer fund to t"
 msgstr "Acesso negado! incapaz de transferir fundos para t"
 
-msgid "You can not transfer fund in same account"
-msgstr ""
+msgid "You can not transfer fund in same account."
+msgstr "Você não pode transferir fundos na mesma conta."
 
 msgid "You can only transfer fund in same level"
 msgstr "Você só pode transferir fundos no mesmo nível"
@@ -2320,6 +2335,9 @@ msgstr "Senha SMTP"
 msgid "Are you sure want to remove logo?"
 msgstr "Tem certeza que deseja remover o logotipo?"
 
+msgid "Are you sure want to remove icon?"
+msgstr "Tem certeza que deseja remover o ícone?"
+
 msgid "The IP field must contain a unique value"
 msgstr "O campo IP deve conter um valor único"
 
@@ -2462,7 +2480,7 @@ msgid "Product removed successfully!"
 msgstr "Produto removido com sucesso!"
 
 msgid "Product optin successfully!"
-msgstr "Autorização do produto com sucesso!"
+msgstr "Ativação do produto realizada com sucesso!"
 
 msgid "Edit Info"
 msgstr "Editar informação"
@@ -2501,10 +2519,10 @@ msgid "Name already exist in system."
 msgstr "O nome já existe no sistema."
 
 msgid "Callbarring Settings Updated Successfull"
-msgstr "Configurações de barra de chamada atualizadas com sucesso"
+msgstr "Configurações de bloqueio atualizadas com sucesso"
 
-msgid "allbarring Settings Added Successfully!"
-msgstr "Configurações allbarring adicionadas com sucesso!"
+msgid "Callbarring Settings Added Successfully!"
+msgstr "Configurações de bloqueio adicionadas com sucesso!"
 
 msgid "Call Barring Removed Successfully!"
 msgstr "Bloqueio de chamadas removido com sucesso!"
@@ -2528,7 +2546,7 @@ msgid "Import Package Codes:"
 msgstr "Códigos de pacote de importação:"
 
 msgid "Code, Destination."
-msgstr ""
+msgstr "Código de Destino."
 
 msgid "Records Imported Successfully:"
 msgstr "Registros importados com sucesso:"
@@ -2596,6 +2614,12 @@ msgstr "Gateway removido com sucesso!"
 msgid "setting updated successfully!"
 msgstr "configuração atualizada com sucesso!"
 
+msgid "Settings updated sucessfully!"
+msgstr "Configurações atualizadas com sucesso!"
+
+msgid "Signup Settings updated sucessfully!"
+msgstr "Configurações de inscrição atualizadas com sucesso!"
+
 msgid "Template Updated Successfully!"
 msgstr "Modelo atualizado com sucesso!"
 
@@ -2626,6 +2650,9 @@ msgstr "Comprar"
 msgid "Available DIDs"
 msgstr "DIDs disponíveis"
 
+msgid "Available DID"
+msgstr "DIDs disponíveis"
+
 msgid "New IP"
 msgstr "Novo IP"
 
@@ -2654,7 +2681,7 @@ msgid "Pay with Account"
 msgstr "Pague com conta"
 
 msgid "Please wait, your order is being processed and you will be redirected to the paypal website."
-msgstr ""
+msgstr "Aguarde, seu pedido está sendo processado e você será redirecionado para o site do paypal."
 
 msgid "Coupon Number:"
 msgstr "Número do cupom:"
@@ -2722,6 +2749,9 @@ msgstr "Sábado"
 msgid "Registered SIP Devices"
 msgstr "Dispositivos Registrados"
 
+msgid "Live Call Graph"
+msgstr "Gráfico de Chamadas Ativas"
+
 msgid "Monthly"
 msgstr "Por mês"
 
@@ -2756,10 +2786,10 @@ msgid "Accessnumber Removed Successfully!"
 msgstr "Número de acesso removido com sucesso!"
 
 msgid "Invalid file format : Only CSV file allows to import records(Can't import empty file)"
-msgstr ""
+msgstr "Formato de arquivo inválido: somente arquivo CSV permite importar registros (não é possível importar arquivo vazio)"
 
 msgid "Access Number,Country"
-msgstr ""
+msgstr "Número de Acesso,País"
 
 msgid "Please Select File."
 msgstr "Selecione o arquivo."
@@ -2847,6 +2877,9 @@ msgstr "Revendedor atualizado com sucesso!"
 
 msgid "Reseller added successfully!"
 msgstr "Revendedor adicionado com sucesso!"
+
+msgid "Reseller Added Successfully!"
+msgstr "Revendedor Adicionado com Sucesso!"
 
 msgid "Updated successfully!"
 msgstr "Atualizado com sucesso!"
@@ -2999,7 +3032,7 @@ msgid "Logo only allows file types of JPG and JPEG."
 msgstr "O logotipo permite apenas os tipos de arquivo JPG e JPEG."
 
 msgid "Favicon only allows file types of ICO, PNG, JPG and JPEG."
-msgstr ""
+msgstr "Favicon só permite tipos de arquivo ICO, PNG, JPG e JPEG."
 
 msgid "Please upload 16 * 16 size of favicon."
 msgstr "Carregue o tamanho 16 * 16 do favicon."
@@ -3020,7 +3053,7 @@ msgid "To date should not be greater than current date."
 msgstr "Até a data não deve ser posterior à data atual."
 
 msgid "Invoice generation completed."
-msgstr "Geração de fatura concluída."
+msgstr "Criação de fatura concluída."
 
 msgid "No data found"
 msgstr "Nenhum dado encontrado"
@@ -3077,7 +3110,7 @@ msgid "Ratedeck removed successfully!"
 msgstr "Avaliação removida com sucesso!"
 
 msgid "Code,Destination,Province/State,City,Status"
-msgstr ""
+msgstr "Código, Destino, Província/Estado, Cidade, Status"
 
 msgid "Duplicate Ratedeck Number found from import file."
 msgstr "Número do cheque nominal duplicado encontrado no arquivo de importação."
@@ -3188,7 +3221,7 @@ msgid "Method"
 msgstr "Método"
 
 msgid "Once you confirm the invoice, you will no longer able to update it again."
-msgstr ""
+msgstr "Depois de confirmar a fatura, você não poderá mais atualizá-la novamente."
 
 msgid "Payment Gateway Permission"
 msgstr "Permissão de gateway de pagamento"
@@ -3277,9 +3310,6 @@ msgstr "Nenhum pacote disponível para este país."
 msgid "You can only transfer fund in same level account."
 msgstr "Você só pode transferir fundos na conta do mesmo nível."
 
-msgid "You can not transfer fund in same account."
-msgstr "Você não pode transferir fundos na mesma conta."
-
 msgid "Monthly Fee"
 msgstr "Taxa mensal"
 
@@ -3356,13 +3386,13 @@ msgid "January"
 msgstr "Janeiro"
 
 msgid "February"
-msgstr "fevereiro"
+msgstr "Fevereiro"
 
 msgid "March"
 msgstr "Março"
 
 msgid "April"
-msgstr "abril"
+msgstr "Abril"
 
 msgid "May"
 msgstr "Maio"
@@ -3371,25 +3401,25 @@ msgid "June"
 msgstr "Junho"
 
 msgid "July"
-msgstr "julho"
+msgstr "Julho"
 
 msgid "August"
-msgstr "agosto"
+msgstr "Agosto"
 
 msgid "September"
-msgstr "setembro"
+msgstr "Setembro"
 
 msgid "October"
 msgstr "Outubro"
 
 msgid "November"
-msgstr "novembro"
+msgstr "Novembro"
 
 msgid "December"
-msgstr "dezembro"
+msgstr "Dezembro"
 
 msgid "Doesn't Contain"
-msgstr ""
+msgstr "Não contém"
 
 msgid "Greater Than"
 msgstr "Maior que"
@@ -3413,13 +3443,13 @@ msgid "Decrease By"
 msgstr "Diminuir em"
 
 msgid "Community"
-msgstr ""
+msgstr "Comunidade"
 
 msgid "You must either select a field from your file OR provide a default value for the following fields:"
 msgstr "Você deve selecionar um campo de seu arquivo OU fornecer um valor padrão para os seguintes campos:"
 
 msgid "Account Number,Password,First Name,Last Name,Company,Phone,Mobile,Email,Address,city,Province/State,Zip/Postal Code,Number Translation,Out Callerid Translation,In Callerid Translation,Concurrent Calls,CPS,Balance,Credit Limit,SIP Username,SIP Password"
-msgstr ""
+msgstr "Número da conta, senha, nome, sobrenome, empresa, telefone, celular, e-mail, endereço, cidade, província/estado, CEP/código postal, tradução de número, tradução de callerid de saída, tradução de callerid de entrada, chamadas simultâneas, CPS, saldo, limite de crédito, nome de usuário SIP, senha SIP"
 
 msgid "Note : Records with duplicate account number and email will be ignored."
 msgstr "Nota: Registros com número de conta e e-mail duplicados serão ignorados."
@@ -3473,10 +3503,10 @@ msgid "Account Number Length"
 msgstr "Comprimento do número da conta"
 
 msgid "DID (CLI Match, If not matched then use random allocated DID)"
-msgstr ""
+msgstr "DID (correspondência CLI, se não corresponder, use DID alocado aleatoriamente)"
 
 msgid "Caller Id (CLI Match, If not matched then use random allocated Caller Id)"
-msgstr ""
+msgstr "ID do chamador (correspondência CLI, se não corresponder, use o ID do chamador alocado aleatoriamente)"
 
 msgid "Use NON-CLI Rate Group (If CLI not match with DID)"
 msgstr "Usar grupo de tarifas NÃO CLI (se CLI não corresponder a DID)"
@@ -4724,7 +4754,7 @@ msgid "This Username or Email is not valid."
 msgstr "Este nome de usuário ou e-mail não é válido."
 
 msgid "FLUX - A Smart TelePhony Platform"
-msgstr ""
+msgstr "Flux Telecom - Unindo pessoas e negocios"
 
 msgid "Forgot Password"
 msgstr "Esqueceu a senha"
@@ -4772,16 +4802,16 @@ msgid "Password is Required"
 msgstr "Senha requerida"
 
 msgid "Please Check Your account is deleted or inactive from admin side, please contact to your administrator"
-msgstr ""
+msgstr "Verifique se sua conta foi excluída ou inativa do lado do administrador. Entre em contato com seu administrador"
 
 msgid "Please do not use default or less secure password for your account!! You must change password from"
-msgstr "Por favor"
+msgstr "Por favor, não use senha padrão ou menos segura para sua conta!! Você deve alterar a senha de"
 
 msgid "HERE"
 msgstr "AQUI"
 
 msgid "Login unsuccessful. Please make sure you entered the correct username and password, and that your account is active"
-msgstr ""
+msgstr "Login malsucedido. Certifique-se de inserir o nome de usuário e a senha corretos e de que sua conta esteja ativa"
 
 msgid "Please enter Username/email and Password."
 msgstr "Digite o nome de usuário / e-mail e a senha."
@@ -4796,7 +4826,7 @@ msgid "Please Enter Password"
 msgstr "Por favor"
 
 msgid "Password must be at least 8 characters and must contain at least one lower case letter, one upper case letter and one digit"
-msgstr ""
+msgstr "A senha deve ter pelo menos 8 caracteres e conter pelo menos uma letra minúscula, uma letra maiúscula e um dígito"
 
 msgid "Please Enter Confirm Password"
 msgstr "Digite a senha de confirmação"
@@ -4847,10 +4877,10 @@ msgid "Note:"
 msgstr "Observação:"
 
 msgid "Please make sure do not refresh the page or don't go back"
-msgstr ""
+msgstr "Por favor, certifique-se de não atualizar a página ou não voltar"
 
 msgid "Login unsuccessful. Please make sure you entered the correct username and password, and that your account is active."
-msgstr ""
+msgstr "Login malsucedido. Certifique-se de inserir o nome de usuário e a senha corretos e de que sua conta esteja ativa."
 
 msgid "Your account has been created successfully!"
 msgstr "Sua conta foi criada com sucesso!"
@@ -4862,7 +4892,7 @@ msgid "Link is Expire Please Try Again"
 msgstr "O link expirou"
 
 msgid "Sorry, we cannot process for singup at this time."
-msgstr ""
+msgstr "Desculpe, não podemos processar o registro neste momento."
 
 msgid "Please contact administrator for more information"
 msgstr "Entre em contato com o administrador para obter mais informações"
@@ -4886,7 +4916,7 @@ msgid "Please enter a valid email address"
 msgstr "Por favor insira um endereço de e-mail válido"
 
 msgid "Please make sure you entered the correct username and password, and that your account is active."
-msgstr ""
+msgstr "Certifique-se de inserir o nome de usuário e a senha corretos e de que sua conta esteja ativa."
 
 msgid "Company Name"
 msgstr "nome da empresa"
@@ -4907,10 +4937,10 @@ msgid "Download"
 msgstr "Download"
 
 msgid "True"
-msgstr "VERDADEIRO"
+msgstr "Verdadeiro"
 
 msgid "False"
-msgstr "FALSO"
+msgstr "Falso"
 
 msgid "--Select Type--"
 msgstr "--Selecione o tipo--"
@@ -4934,7 +4964,7 @@ msgid "Speed Dial Number Added Successfully"
 msgstr "Número de discagem rápida adicionado com sucesso"
 
 msgid "Are you sure want to confirm this invoice ? once you confirm it, can not able to edit invoice again."
-msgstr ""
+msgstr "Tem certeza de que deseja confirmar esta fatura? depois de confirmar, não será possível editar a fatura novamente."
 
 msgid "DIDs already purchased by someone."
 msgstr "DIDs já comprados por alguém."
@@ -5068,6 +5098,9 @@ msgstr "Pago"
 msgid "No Records"
 msgstr "Não há registros"
 
+msgid "Page"
+msgstr "Página"
+
 msgid "Please select from date"
 msgstr "Por favor selecione a partir da data"
 
@@ -5103,9 +5136,6 @@ msgstr "refill_coupon"
 
 msgid "Edit Calltype"
 msgstr "Editar Tipo de Chamada"
-
-msgid "Invoice generation completed ."
-msgstr ""
 
 msgid "No data found."
 msgstr "Nenhum dado encontrado."
@@ -5245,9 +5275,6 @@ msgstr "CORTAR"
 msgid "Edit Localization"
 msgstr "Editar localização"
 
-msgid "Callbarring Settings Added Successfully!"
-msgstr "Configurações de barra de chamadas adicionadas com sucesso!"
-
 msgid "Edit Call Barring"
 msgstr "Editar bloqueio de chamadas"
 
@@ -5356,8 +5383,8 @@ msgstr "Tem certeza de que deseja confirmar esta fatura? depois de confirmar"
 msgid "can not able to edit invoice again."
 msgstr "não pode editar a fatura novamente."
 
-msgid "Maximum Logo upload size is 1MB"
-msgstr "O tamanho máximo de upload do logotipo é 1 MB"
+msgid "Maximum Logo upload size is 1MB."
+msgstr "O tamanho máximo de upload do logotipo é 1 MB."
 
 msgid "Please enter number"
 msgstr "Por favor insira o número"
@@ -6926,13 +6953,19 @@ msgid "Last Pay Date"
 msgstr "Última data de pagamento"
 
 msgid "Buy DIDs"
-msgstr "Compre DIDs"
-
-msgid "Buy"
 msgstr "Comprar DIDs"
 
+msgid "Buy DID"
+msgstr "Comprar DID"
+
+msgid "Buy"
+msgstr "Comprar"
+
 msgid "Purchased DID"
-msgstr "Comprou DID"
+msgstr "DID Comprado"
+
+msgid "Purchased DIDs"
+msgstr "DIDs Comprados"
 
 msgid "DID Information"
 msgstr "Informação DID"
@@ -6992,7 +7025,7 @@ msgid "Japanese"
 msgstr "japonês"
 
 msgid "Portuguese"
-msgstr "Português"
+msgstr "Portugues"
 
 msgid "Romanian"
 msgstr "romena"
@@ -7303,6 +7336,9 @@ msgstr "segundos"
 msgid "Response Headers"
 msgstr "Cabeçalhos da Resposta"
 
+msgid "Request Headers"
+msgstr "Cabeçalhos Enviados"
+
 msgid "Response Body"
 msgstr "Corpo da Resposta"
 
@@ -7365,3 +7401,120 @@ msgstr "Limite de Crédito Disponível"
 
 msgid "Reload the sip profile to reflect the changes applied in Flux SBC."
 msgstr "Realize o re-carregamento do perfil sip para refletir as alterações aplicadas no Flux SBC."
+
+msgid "Please check your customers calls are running or not. if running then may be customer balance goes in negative!"
+msgstr "Verifique se as chamadas dos seus clientes estão em andamento ou não. Se estiverem em andamento, o saldo do cliente pode ficar negativo!"
+
+msgid "FluxSBC work best with JavaScript enabled"
+msgstr "O FluxSBC funciona melhor com JavaScript habilitado"
+
+msgid "Are you sure about the applied config changed? This will affect how the calls will be accepted and handled by Flux SBC. Please note: If the switch is currently having live calls, the reload will not reflect the applied changes in Flux SBC."
+msgstr "Tem certeza de que a configuração aplicada foi alterada? Isso afetará a forma como as chamadas serão aceitas e tratadas pelo Flux SBC. Observação: se o switch estiver com chamadas ativas, a recarga não refletirá as alterações aplicadas no Flux SBC."
+
+msgid "Request to reload the sip profile to reflect the applied changes in Flux SBC."
+msgstr "Realize o re-carregamento do perfil sip para refletir as alterações aplicadas no Flux SBC."
+
+msgid "CPU Usage"
+msgstr "Uso de CPU"
+
+msgid "Kernel Version"
+msgstr "Versão do Kernel"
+
+msgid "Memory Usage"
+msgstr "Uso de Memória"
+
+msgid "Static hostname"
+msgstr "Hostname do Servidor"
+
+msgid "Architecture"
+msgstr "Arquitetura"
+
+msgid "Shared"
+msgstr "Compatilhada"
+
+msgid "Available"
+msgstr "Disponível"
+
+msgid "Free"
+msgstr "Livre"
+
+msgid "Operating System"
+msgstr "Sistema Operacional"
+
+msgid "Hard Disk Usage"
+msgstr "Uso de Disco"
+
+msgid "Up Time"
+msgstr "Tempo de Atividade"
+
+msgid "CPU Cores"
+msgstr "Cores CPU"
+
+msgid "Swap"
+msgstr "Memória de Troca"
+
+msgid "Memory"
+msgstr "Memória"
+
+msgid "Plan Minutes"
+msgstr "Minutos do Plano"
+
+msgid "Total Number of Product"
+msgstr "Número Total do Produto"
+
+msgid "outbound"
+msgstr "Saída"
+
+msgid "inbound"
+msgstr "Entrada"
+
+msgid "NORMAL_CLEARING [16]"
+msgstr "Completada"
+
+msgid "ORIGINATOR_CANCEL [487]"
+msgstr "Cancelada"
+
+msgid "TERMINATION_RATE_NOT_FOUND [31]"
+msgstr "Sem Tarifa Terminação"
+
+msgid "ORIGINATION_RATE_NOT_FOUND [31]"
+msgstr "Sem Tarifa Originação"
+
+msgid "Updated Successfully!"
+msgstr "Atualizado com Sucesso!"
+
+msgid "Removed Successfully!"
+msgstr "Removido com Sucesso!"
+
+msgid "Domains"
+msgstr "Domínios"
+
+msgid "Registered Gateways"
+msgstr "Gateways Registrados"
+
+msgid "Voice Broadcast"
+msgstr "Disparos de Voz"
+
+msgid "API"
+msgstr "Integrações"
+
+msgid "Number of time IVR should play in call"
+msgstr "Número de vezes que o IVR deve ser reproduzido na chamada"
+
+msgid "OR"
+msgstr "Ou"
+
+msgid "Invoice Block Billseconds"
+msgstr "Duração em bloco"
+
+msgid "Use block billseconds on invoices"
+msgstr "Usar duração em bloco na fatura"
+
+msgid "PAID"
+msgstr "Pago"
+
+msgid "Automated Reports"
+msgstr "Relatórios Automatizados"
+
+msgid "Create API Endpoint"
+msgstr "Criar Integração API"

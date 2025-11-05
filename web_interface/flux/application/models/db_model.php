@@ -606,7 +606,49 @@ class Db_model extends CI_Model {
 		}
 		return $drp_list;
 	}
+	function build_dropdown_products($select, $table, $id_where = '', $id_value = '') { 
+		$select_params = explode ( ',', $select );
+		$where = '';
+		if (isset ( $id_value ["type"] ) && $id_value ["type"] == "GLOBAL") {
+			$where = "type IN ('0','3')";
+			$this->db->where ( $where );
+			unset ( $id_value ["type"] );
+		}
 
+		if ($id_where != '' && $id_value != '') {   
+			if ($id_where == 'group_by') {  
+				$this->db->group_by ( $id_value );
+			} else if ($id_where == "where_arr") { 
+				$logintype = $this->session->userdata ( 'logintype' );
+				if (($logintype == 1 || $logintype == 5) && $id_where == 'where_arr' && $this->db->field_exists ( 'reseller_id', $table )) {
+					if($table != 'taxes'){
+						$id_value ['reseller_id'] = $this->session->userdata ["accountinfo"] ['id'];
+					}
+				}
+				$where = $id_value;
+
+			} else { 
+				$logintype = $this->session->userdata ( 'logintype' );
+				if (($logintype == 1 || $logintype == 5) && $id_where == 'reseller_id') {
+					$account_data = $this->session->userdata ( "accountinfo" );
+					$id_value = $account_data ['id'];
+				}
+				$where = array (
+						$id_where => $id_value
+				);
+			}
+		}
+
+		$drp_array = $this->getSelect ( $select, $table, $where );
+		$drp_array = $drp_array->result ();
+
+		$drp_list = array ();
+//		$drp_list [0] = gettext("--Select--");
+		foreach ( $drp_array as $drp_value ) {
+			$drp_list [$drp_value->{$select_params [0]}] = gettext($drp_value->{$select_params [1]});
+		}
+		return $drp_list;
+	}
 	function build_concat_dropdown_timezone($select, $table, $id_where = '', $id_value = '') {
 		$select_params = explode ( ',', $select );
 		if (isset ( $select_params [3] )) {
@@ -1523,8 +1565,14 @@ class Db_model extends CI_Model {
 		$drp_array = $this->getSelect ( $select, $table, $where );
 		$drp_array = $drp_array->result ();
 		$drp_list = array ();
-		foreach ( $drp_array as $drp_value ) {
+		/*foreach ( $drp_array as $drp_value ) {
 			$drp_list [$drp_value->{$select_params [0]}] = ucwords(strtolower(gettext($drp_value->{$select_params [1]})));
+		}*/
+		
+		foreach ( $drp_array as $drp_value ) {
+    $label = gettext($drp_value->{$select_params[1]});
+    $label = mb_convert_case($label, MB_CASE_TITLE, 'UTF-8');
+    $drp_list[$drp_value->{$select_params[0]}] = $label;
 		}
 		return $drp_list;
 	}
