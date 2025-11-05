@@ -1,5 +1,16 @@
 <?php include(FCPATH.'application/views/popup_header.php'); ?>
 <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/flexigrid.css" type="text/css">
+
+<style>
+  #api_response_result {
+      height: 500px;
+      overflow-y: auto;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+  }
+</style>
+
 <script type="text/javascript">
   $(document).ready(function(){
     $(".breadcrumb li a").removeAttr("data-ripple");
@@ -115,7 +126,7 @@
           <br/><br/>
         </form>
 
-        <div id="api_response_result" class="mt-4 p-3 border rounded bg-light"></div>
+        <div id="api_response_result" class="mt-4 p-3"></div>
       </div>
     </section>
   </div>
@@ -130,7 +141,6 @@
     }
     function addIXCHeader() {
       const endpointUrl = '<?php echo $endpoint_info["endpoint_url"]; ?>';
-      console.log('Endpoint URL:', endpointUrl);
       const HeaderIXCSet = $('input[name="headers[key][]"]').filter(function () {
         return $(this).val().toLowerCase() === 'ixcsoft';
       }).length > 0;

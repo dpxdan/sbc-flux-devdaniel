@@ -206,9 +206,9 @@ class api_endpoints_form
                     'size' => '50',
                     'class' => "text field small"
                 ),
-                '',
+                'required|xss_clean',
                 'tOOL TIP',
-                ''
+                'Please Enter Endpoint External ID'
             ),
             array(
                 gettext('Status'),
@@ -361,8 +361,10 @@ class api_endpoints_form
                     'partner_name',
                     'api_partners',
                     'build_dropdown_country_camel',
-                    '',
-                    ''
+                    'where_arr',
+                    array(
+                      "status"      => "0",                      
+                    ),
                 ),
                 array(
                     gettext('Status'),
@@ -2432,7 +2434,7 @@ class api_endpoints_form
                 "center"
             ),
             array(
-                gettext("Created At"),
+                gettext("Creation Date"),
                     "130",
                     "created_at",
                     "created_at",
