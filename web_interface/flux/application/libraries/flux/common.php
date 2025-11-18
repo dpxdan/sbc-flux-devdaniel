@@ -3729,7 +3729,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	}
 	function get_did_billing_type($select="",$table= "",$product_id= ""){
 		$billing_type = $this->get_field_name("billing_type","products",array("id"=>$product_id));
-		return $billing_type = ($billing_type == 0) ?"One Time" :"Reccuring";
+		return $billing_type = ($billing_type == 1) ? gettext ( 'One Time' ) : gettext ( 'Recurring' );
 	}
 	function get_localization($select = "", $table = "", $type = '') {
 

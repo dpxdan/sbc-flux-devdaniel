@@ -158,18 +158,14 @@ if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logi
 
 <section class="slice color-three pb-4">
 	<div class="w-section inverse p-0">
-
+<?php if(($logintype==1) &&  (isset($permissioninfo['did']['did_list']['purchase'])  and $permissioninfo['did']['did_list']['purchase'] == 0)) { ?>
 		<form method="POST"
 			action="<?php echo base_url(); ?>did/did_available_list/"
 			enctype="multipart/form-data" id="">
-				<?php
-
-if (($permissioninfo['login_type'] == '1' or $permissioninfo['login_type'] == '2' or $permissioninfo['login_type'] == '4')) {
-        ?>
 				<input type="submit" class="btn btn-info mb-4" name="purchase_did"
 				value=<?php echo gettext("Buy DIDs")?> id="buy_did">    
-				<?php } ?>
 				</form>
+				<?php } ?>
 		<div class="card col-md-12 pb-4">
 			<!--<form method="POST" action="" enctype="multipart/form-data" id="">-->
 			<table id="did_grid" align="left" style="display: none;"></table>
@@ -177,6 +173,7 @@ if (($permissioninfo['login_type'] == '1' or $permissioninfo['login_type'] == '2
 			<!-- </form>-->
 		</div>
 	</div>
+	
 </section>
 <? endblock() ?>
 <? end_extend() ?>

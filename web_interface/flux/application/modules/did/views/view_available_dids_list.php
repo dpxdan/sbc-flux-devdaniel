@@ -112,7 +112,7 @@ if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logi
 				<div>
 				<input type="button" class="btn btn-line-warning"
 					onclick="return redirect_page('/did/did_list/')"
-					name="purchase_did" value="Purchased DID" id="purchase_did">
+					name="purchase_did" value="<?php echo gettext('Purchased DIDs');?>" id="purchase_did">					
 			</div>    
 			<?php } ?>
 			
