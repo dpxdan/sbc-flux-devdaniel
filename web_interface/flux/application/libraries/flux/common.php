@@ -884,6 +884,27 @@ class common {
 		}
 		return $status_array;
 	}
+	function get_status_optin($select = "", $table = "", $status) {
+		if ($select != 'export') {
+			$status_tab = $this->encode ( $table );
+			$status ['table'] = "'" . $status_tab . "'";
+			if ($status ['reseller_status'] == 0) {
+				$status_array = '<label class="switch">
+				  <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id=switch' . $status ['id'] . ' value=' . $status ['reseller_status'] . ' onclick="javascript:processForm2(' . $status ['id'] . ',' . $status ['table'] . ')" checked>
+				  <span class="slider round"></span>
+				</label>';
+
+			} else {
+				$status_array = '<label class="switch">
+				  <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id=switch' . $status ['id'] . ' value=' . $status ['reseller_status'] . ' onclick="javascript:processForm2(' . $status ['id'] . ',' . $status ['table'] . ')">
+				  <span class="slider round"></span>
+				</label>';
+			}
+		} else {
+			return ($status == 0) ? "Active" : "Inactive";
+		}
+		return $status_array;
+	}
 	function get_email_status($select = "", $table = "", $email_status) {
 		
 		if ($select != 'export') {

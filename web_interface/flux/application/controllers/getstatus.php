@@ -25,6 +25,7 @@ class Getstatus extends MX_Controller {
 		parent::__construct ();
 		$this->load->model ( "db_model" );
 		$this->load->library ( "flux/common" );
+		$this->load->library('flux_log');
 	}
 	function reload_freeswitch($command, $server_host = "") {
                 $response = '';
@@ -39,15 +40,116 @@ class Getstatus extends MX_Controller {
                 }
                 return $response;
         }
+	
 	function customer_list_status($id) {
+    if ($this->session->userdata('user_login') == TRUE) {
+
+        $post_data = $this->input->post();
+
+        if (isset($post_data['table']) && $post_data['table'] != "") {
+
+            $post_data['table'] = $this->common->decode($post_data['table']);
+
+            $data['status'] = $post_data['status'] == 'true' ? 0 : 1;
+            $status = $post_data['status'] == 'true' ? 0 : 1;
+            $last_modified_date = gmdate('Y-m-d H:i:s');
+
+            if ($post_data['table'] == 'accounts') {
+                $where = array('id' => $post_data['id']);
+                $account_data = (array) $this->db_model
+                    ->getSelect("*", "accounts", $where)
+                    ->first_row();
+            }
+
+            if ($post_data['table'] == 'products') {
+                $this->db->update(
+                    'dids',
+                    $data,
+                    array("product_id" => $post_data['id'])
+                );
+            }
+
+            if ($post_data['table'] == 'dids') {
+                $this->db->update(
+                    'dids',
+                    $data,
+                    array("product_id" => $post_data['id'])
+                );
+                $this->db->update(
+                    'products',
+                    $data,
+                    array("id" => $post_data['id'])
+                );
+            }
+
+            if ($post_data['table'] == 'reseller_products') {
+                $this->db->update(
+                    'reseller_products',
+                    $data,
+                    array("product_id" => $post_data['id'])
+                );
+            }
+
+            $result =
+                $post_data['table'] == 'accounts' && $post_data['id'] == 1 ? null :
+                ($post_data['table'] == 'dids' ||
+                $post_data['table'] == 'accounts' ||
+                $post_data['table'] == 'calltype'
+                    ? $this->db->update(
+                        $post_data['table'],
+                        $data,
+                        array("id" => $post_data['id'])
+                    )
+                    : ($post_data['table'] == 'localization' ||
+                    $post_data['table'] == 'call_barring'
+                        ? $this->db->update(
+                            $post_data['table'],
+                            array(
+                                'status' => $status,
+                                'modified_date' => $last_modified_date
+                            ),
+                            array("id" => $post_data['id'])
+                        )
+                        : ($post_data['table'] == 'department'
+                            ? $this->db->update(
+                                $post_data['table'],
+                                array('status' => $status),
+                                array("id" => $post_data['id'])
+                            )
+                            : $this->db->update(
+                                $post_data['table'],
+                                array(
+                                    'status' => $status,
+                                    'last_modified_date' => $last_modified_date
+                                ),
+                                array("id" => $post_data['id'])
+                            ))));
+
+            if ($post_data['table'] == "ip_map") {
+                $this->load->library('freeswitch_lib');
+                $command = "api reloadacl";
+                $response = $this->reload_freeswitch($command);
+            }
+
+            echo TRUE;
+        } else {
+            $this->session->set_flashdata('flux_notification', 'Permission Denied!');
+            redirect(base_url() . 'dashboard/');
+        }
+
+    } else {
+        redirect(base_url() . 'dashboard/');
+    }
+}
+	
+	function reseller_list_status($id) {
 
 		if ($this->session->userdata ( 'user_login' ) == TRUE) {
 		$post_data = $this->input->post ();
 			if(isset($post_data['table']) && $post_data['table']!=""){
 			$post_data ['table'] = $this->common->decode ( $post_data ['table'] );
-			
-			$data ['status'] = $post_data ['status'] == 'true' ? 0 : 1;
-			$status=$post_data ['status'] == 'true' ? 0 : 1;
+			$data ['reseller_status'] = $post_data ['reseller_status'] == 'true' ? 0 : 1;
+			$status=$post_data ['reseller_status'] == 'true' ? 0 : 1;
 			$last_modified_date= gmdate ( 'Y-m-d H:i:s' );
 			if ($post_data ['table'] == 'accounts') {
 				$where = array (
@@ -75,11 +177,10 @@ class Getstatus extends MX_Controller {
 					$this->db->update ( 'products', $data, array (
 						"id" => $post_data ['id'] 
 				) );
-			}
-			// FLUXUPDATE-923 Start
+			}			
 			$result = $post_data ['table'] == 'accounts' && $post_data ['id'] == 1 ? null : $post_data ['table'] == 'dids' || $post_data ['table'] == 'accounts' || $post_data ['table'] == 'calltype' ? $this->db->update ( $post_data ['table'], $data, array ("id" => $post_data ['id']) ):$post_data ['table'] == 'localization' || $post_data ['table'] == 'call_barring' ? $this->db->update ( $post_data ['table'],array('status'=>$status,'modified_date'=>$last_modified_date), array ("id" => $post_data ['id']) ):  $post_data ['table'] == 'department' ? $this->db->update ( $post_data ['table'],array('status'=>$status), array ("id" => $post_data ['id'])) :
-				 $this->db->update ( $post_data ['table'],array('status'=>$status,'last_modified_date'=>$last_modified_date), array ("id" => $post_data ['id']) );
-			// FLUXUPDATE-923 END
+      $this->db->update ( $post_data ['table'],array('status'=>$status,'last_modified_date'=>$last_modified_date), array ("id" => $post_data ['id']) );
+			
 			if ($post_data ['table'] == "ip_map") {
 							$this->load->library ( 'freeswitch_lib' );
 							$command = "api reloadacl";
@@ -91,7 +192,8 @@ class Getstatus extends MX_Controller {
 				$this->session->set_flashdata ( 'flux_notification','Permission Denied!');
 				redirect ( base_url () . 'dashboard/' );
 			}
-		}else{
+		}
+		else{
 			redirect ( base_url () . 'dashboard/' );
 		}
 	}

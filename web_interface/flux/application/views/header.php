@@ -77,9 +77,20 @@
 	      type:"POST",
 	      url:url,
 	      data:{"status":status,"id":id,"table":table},
-			//~ success:function(data){ alert(data);
+	  });
+	}
 	
-		//~ }
+	function processForm2(id,table) {
+	  var url="<?php echo base_url(); ?>getstatus/"+id; 
+
+	  var reseller_status='false';
+	  if($('#switch'+id).is(':checked')){
+		reseller_status='true';
+	  } 
+	  $.ajax({
+	      type:"POST",
+	      url:url,
+	      data:{"reseller_status":reseller_status,"id":id,"table":table},
 	  });
 	}
 	
