@@ -53,7 +53,7 @@ msgid "Action Type"
 msgstr "Tipo de acão"
 
 msgid "Add"
-msgstr "ADICIONAR"
+msgstr "Adicionar"
 
 msgid "Add Country"
 msgstr "Adicionar País"
@@ -353,7 +353,7 @@ msgid "Commission"
 msgstr "Comissão"
 
 msgid "Commission Rate"
-msgstr "Taxa de comissão"
+msgstr "Taxa de Comissão"
 
 msgid "Commission Reports"
 msgstr "Relatórios de Comissão"
@@ -522,9 +522,6 @@ msgstr "Data"
 
 msgid "Debit"
 msgstr "Débito"
-
-msgid "Debug"
-msgstr "Debug"
 
 msgid "Decimal Points"
 msgstr "Pontos decimais"
@@ -927,6 +924,18 @@ msgstr "Número local"
 
 msgid "Local Numbers"
 msgstr "Números Locais"
+
+msgid "Create Local Number"
+msgstr "Criar Número Local"
+
+msgid "Edit Local Number"
+msgstr "Editar Número Local"
+
+msgid "Destination Name"
+msgstr "Nome do Destino"
+
+msgid "Destination Number"
+msgstr "Número do Destino"
 
 msgid "Locale code"
 msgstr "Código local"
@@ -1793,7 +1802,7 @@ msgid "New Rate Group Name"
 msgstr "Novo nome do grupo de tarifas"
 
 msgid "Duplicate Rate Group Information"
-msgstr "Informações duplicadas do Grupo de Tarifas"
+msgstr "Informações sobre o Grupo de Tarifas duplicado"
 
 msgid "Import Origination Rates"
 msgstr "Importar Tarifas de Originação"
@@ -2860,7 +2869,7 @@ msgstr "Recarga"
 msgid "Refill Process"
 msgstr "Processo de Recarga"
 
-msgid "​Refill information"
+msgid "Refill information"
 msgstr "Informações da Recarga"
 
 msgid "Post charge applied successfully."
@@ -2880,12 +2889,6 @@ msgstr "Revendedor adicionado com sucesso!"
 
 msgid "Reseller Added Successfully!"
 msgstr "Revendedor Adicionado com Sucesso!"
-
-msgid "Updated successfully!"
-msgstr "Atualizado com sucesso!"
-
-msgid "Added Successfully!"
-msgstr "adicionado com sucesso!"
 
 msgid "Customer batch updated successfully!"
 msgstr "Lote do cliente atualizado com sucesso!"
@@ -7480,12 +7483,6 @@ msgstr "Sem Tarifa Terminação"
 msgid "ORIGINATION_RATE_NOT_FOUND [31]"
 msgstr "Sem Tarifa Originação"
 
-msgid "Updated Successfully!"
-msgstr "Atualizado com Sucesso!"
-
-msgid "Removed Successfully!"
-msgstr "Removido com Sucesso!"
-
 msgid "Domains"
 msgstr "Domínios"
 
@@ -7518,3 +7515,93 @@ msgstr "Relatórios Automatizados"
 
 msgid "Create API Endpoint"
 msgstr "Criar Integração API"
+
+msgid "Duplicated"
+msgstr "Duplicado"
+
+msgid "Duplicated Successfully!"
+msgstr "Duplicado com Sucesso!"
+
+msgid "Updated Successfully!"
+msgstr "Atualizado com Sucesso!"
+
+msgid "Removed Successfully!"
+msgstr "Removido com Sucesso!"
+
+msgid "Updated successfully!"
+msgstr "Atualizado com sucesso!"
+
+msgid "Added Successfully!"
+msgstr "Adicionado com Sucesso!"
+
+msgid "Auto Answer"
+msgstr "Auto Atendimento"
+
+msgid "Last Bill Date"
+msgstr "Última Data de Cobrança"
+
+msgid "Personalized Rates"
+msgstr "Tarifas Personalizadas"
+
+msgid "Create Personalized Rate"
+msgstr "Criar Tarifa Personalizada"
+
+msgid "Edit Personalized Rate"
+msgstr "Editar Tarifa Personalizada"
+
+msgid "Personalized Rate"
+msgstr "Tarifa Personalizada"
+
+msgid "Personalized Rates Batch Updated Successfully!"
+msgstr "Lote de Tarifas Personalizadas Atualizado com Sucesso!"
+
+msgid "Delete Search Record"
+msgstr "Excluir Registro de Pesquisa"
+
+msgid "Check Ported Numbers"
+msgstr "Verificar Números Portados"
+
+msgid "Debug"
+msgstr "Depuração Web"
+
+msgid "Switch Debug"
+msgstr "Depuração FluxSBC"
+
+msgid "Voice Broadcast Port"
+msgstr "Porta SIP para Disparo de Voz"
+
+msgid "Voice Broadcast Host"
+msgstr "Host SIP para Disparo de Voz"
+
+msgid "Voice Broadcasts"
+msgstr "Disparos de Voz"
+
+msgid "Prefix Ported Numbers"
+msgstr "Prefixo para Números Portados"
+
+msgid "Enter prefix for ported numbers."
+msgstr "Insira o prefixo para números portados."
+
+msgid "Remote ID"
+msgstr "ID Chamador"
+
+msgid "Refresh Time"
+msgstr "Tempo de Atualização"
+
+msgid "Days"
+msgstr "Dias"
+
+msgid "Purchase Order"
+msgstr "Contratar Produto"
+
+msgid "Refill"
+msgstr "Recarga"
+
+msgid "Renew Date"
+msgstr "Data da Renovação"
+
+msgid "Order Status"
+msgstr "Status do Pedido"
+
+msgid "Next Billing Date"
+msgstr "Próxima Data de Cobrança"
