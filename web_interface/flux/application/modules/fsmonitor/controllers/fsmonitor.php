@@ -50,13 +50,11 @@ class Fsmonitor extends CI_Controller {
 	$query = $this->db_model->getSelect("*", "freeswich_servers", "");
         $data['fs_data'] = $query->result_array();
 
-
-        // echo "string";die();
 	$this->load->view('view_authentication_key',$data);
     }
     function opensips_devices(){
 	$data['username'] = $this->session->userdata('user_name');
-	$data['page_title'] = "FluxSBC Devices";
+	$data['page_title'] = gettext('SIP Devices');
 	$query = $this->db_model->getSelect("*", "freeswich_servers", "");
         $data['fs_data'] = $query->result_array();
 	$this->load->view('view_opensips_extension_report',$data);
