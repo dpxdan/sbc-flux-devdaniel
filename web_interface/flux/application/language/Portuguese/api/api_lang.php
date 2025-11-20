@@ -949,4 +949,7 @@ $lang['ipsetting_add_not_allowed'] = 'IP Settings create not allowed';
 $lang['did_numeric'] = 'The DID name must contain only numbers.';
 $lang['numeric_product_name'] = 'The Product name must contain only numbers.';
 $lang['invalid_connectcost'] = 'Invalid Connection Cost';
+$lang['invoices_list_information'] = "Customer Invoices List Information";
+$lang['orders_list'] = 'Orders List Successfully';
+$lang['read_order'] = "Read Order Details";
 ?>

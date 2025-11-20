@@ -456,7 +456,7 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 
 		$this->CI->db->insert("orders",$order_insert_array);
 		$last_id = $this->CI->db->insert_id();
-
+    if ($product_info->product_category != '4') {
 		$counters_insert_array = array(
 			"product_id" =>$product_info->id,
 			"package_id" => $last_id,
@@ -476,6 +476,7 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 			"type"=>$created_by_accountinfo['id']
 			);		
 		$this->CI->flux_log->write_log('counters_insert_array_log', json_encode($counters_insert_array_log));
+    }
 		
 		 $order_item_array_log = array(
 			"order_id" =>$last_id,

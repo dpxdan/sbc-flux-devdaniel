@@ -4,6 +4,7 @@ require APPPATH . '/controllers/common/account.php';
 class Orders extends Account
 {
 	protected $postdata = "";
+	
 	function __construct()
 	{
 		parent::__construct();
@@ -26,50 +27,47 @@ class Orders extends Account
 			$this->postdata[$key] = $this->_xss_clean($value, TRUE);
 		}
 	}
+	
 	public function index()
 	{
-		$accountid = $this->postdata ['id'];
-		if($this->accountinfo['type'] == '1'){
-			$where = array('id' => $this->accountinfo['id'] , 'type' => 1);
-		}
-		else{
-			$type = array(-1,2);
-			$where = array('id'=>$accountid,'deleted'=>0,'status'=>0);
-		}
-		$this->db->where($where);
-		$this->db->where_in('type',$type);
-		$accountinfo = (array)$this->db->get('accounts')->first_row();
-		if(empty($accountinfo) || !isset($accountinfo)){
-			$this->response ( array (
-				'status'  => false,
-				'error'   => $this->lang->line ( 'account_not_found' )
-			), 400 );
-		}
-		$accountinfo = $this->_authorize_account ( $accountinfo,true,true);
-		$function = isset ( $this->postdata ['action'] ) ? $this->postdata ['action'] : '';
-		if ($function != '') {
-			$function = '_' . $function;
-			if (( int ) method_exists ( $this, $function ) > 0) {
-				$this->$function ();
-			} 
-			else {
-				$this->response ( array (
-					'status' => false,
-					'error' => $this->lang->line ( 'unknown_method' )
-				), 400 );
-			}
-		} else {
-			$this->response ( array (
-				'status'=> false,
-				'error' => $this->lang->line ( 'unknown_method' )
-			), 400 );
-		}
+	    $accountid = $this->accountinfo ['id'];
+	    $where = array('id'=>$accountid,'deleted'=>0,'status'=>0);
+	    $this->db->where($where);
+	    $accountinfo = (array)$this->db->get('accounts')->first_row();
+	
+	    if(empty($accountinfo) || !isset($accountinfo)){
+	        $this->response ( array (
+	            'status'  => false,
+	            'error'   => $this->lang->line ( 'account_not_found' )
+	        ), 400 );
+	    }
+	    $accountinfo = $this->_authorize_account ( $accountinfo,true,true);
+	    $function = isset ( $this->postdata ['action'] ) ? $this->postdata ['action'] : '';
+	    if ($function != '') {
+	        $function = '_' . $function;
+	        if (( int ) method_exists ( $this, $function ) > 0) {
+	            $this->$function ();
+	        } else {
+	            $this->response ( array (
+	                'status' => false,
+	                'error' => $this->lang->line ( 'unknown_method' )
+	            ), 400 );
+	        }
+	    } else {
+	        $this->response ( array (
+	            'status'=> false,
+	            'error' => $this->lang->line ( 'unknown_method' )
+	        ), 400 );
+	    }
 	}
 	
-	private function _reseller_orders_list(){
-		$this->_orders_list();
+	private function _reseller_list()
+	{
+		$this->_list();
 	}
-	private function _orders_list(){
+	
+	private function _list()
+	{
 		if (empty($this->postdata['end_limit']) || empty($this->postdata['start_limit']) ){
 			if(!( $this->postdata['start_limit'] == '	0' || $this->postdata['end_limit'] == '0' )){
 				$this->response ( array (
@@ -166,7 +164,8 @@ class Orders extends Account
 				'data' => $ordersinfo,
 				'success' => $this->lang->line( "orders_list" )
 			), 200 );
-        }else{
+        }
+        else{
 			$this->response ( array (
 				'status' => true,
 				'data' => array(),
@@ -174,4 +173,68 @@ class Orders extends Account
 			), 200 );
 		}
 	}
+	
+	function _read()
+	{
+		$postdata = $this->postdata;
+		$object_where_params = $this->postdata['object_where_params'];
+		if (empty($object_where_params['order_id']) || !isset($object_where_params['order_id'])) {
+			$this->response ( array (
+				'status' => false,
+				'error' => $this->lang->line ( 'error_param_missing' ) . " integer:order_id"
+			), 400 );
+		}
+		else{
+			
+			$where = array('id' => $object_where_params['order_id']);
+			$this->db->limit(1, '');
+			$this->db->select('id,order_id,order_date,billing_date,next_billing_date,termination_date,order_status,reseller_id,accountid,company,product_type,product_name,product_id,includedseconds,is_terminated,order_price,product_price');			
+			$this->db->where($where);
+			$result = $this->db->get('view_status_pedidos');
+			$orderinfo = $result->result_array();
+			$new_array = array();
+	       	if(empty($orderinfo)){
+				$this->response ( array (
+					'status'  => false,
+					'error'   => $this->lang->line ( 'order_not_found' )
+				), 400 );
+	        }
+						
+			foreach ($orderinfo as $key => $value) {
+			$value['id'] = $value['id'];
+			$value['order_item_id'] = $value['order_id'];
+			$value['order_date'] = $value['order_date'];
+			$value['billing_date'] = $value['billing_date'];
+			$value['next_billing_date'] = $value['next_billing_date'];
+			$value['termination_date'] = $value['termination_date'];
+			$value['order_status'] = $value['order_status'];
+			$value['reseller_id'] = $value['reseller_id'];						
+			$value['accountid'] = $value['accountid'];
+			$value['company'] = $value['company'];
+			$value['product_type'] = $value['product_type'];
+			$value['product_name'] = $value['product_name'];
+			$value['product_id'] = $value['product_id'];						
+			$value['includedseconds'] = $value['includedseconds'];
+			$value['is_terminated'] = $value['is_terminated'] == '0' ? 'Active' : 'Inactive'  ;
+			$value['order_price'] = $value['order_price'];
+			$value['product_price'] = $value['product_price'];
+			if($value['reseller_id'] == '0'){
+			unset($value['reseller_id']);
+            }
+            if($value['product_type'] == 'DID'){
+			unset($value['includedseconds']);
+            }
+            if($value['termination_date'] == '0000-00-00 00:00:00'){
+			unset($value['termination_date'],$value['is_terminated']);
+            }
+			$new_array[] = $value;
+		}
+			$this->response ( array (
+				'status' => true,
+				'data' => $new_array,
+				'success' => $this->lang->line( "read_order" )
+			), 200 );			
+		}
+	}
+		
 }

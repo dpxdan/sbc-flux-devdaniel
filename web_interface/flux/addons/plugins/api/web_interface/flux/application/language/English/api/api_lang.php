@@ -1,6 +1,5 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 //Main Menu
-
 $lang['ipmap_insert'] = 'IP map Data Inserted successfully.';
 $lang['reseller_not_found'] = "Your reseller account is either Inactive or not found. Please check information.";
 $lang['enter_name'] = 'Please enter name';
@@ -20,14 +19,12 @@ $lang['callerid_insert'] = 'Caller ID Data Insert sucessfully.';
 $lang['callerid_not_found'] = 'Callerid not found.';
 $lang['callerid_delete'] = 'Caller ID deleted successfully';
 $lang['callerid_update'] = 'Caller ID updated successfully';
-
 $lang['valid_start_limit'] = 'Please set valid limit';
 $lang['require_end_limit'] = 'Required end limit';
 $lang['valid_reseller_type'] = 'Please set valid reseller type';
 $lang['require_reseller_type'] = 'Required reseller type';
 $lang['enter_currency'] = "Please enter valid currency.";
 $lang['required_product_category'] = "Required Product Category.";
-
 $lang['set_valid_destination_1'] = 'Please set valid destination_1';
 $lang['set_valid_destination_2'] = 'Please set valid destination_2';
 $lang['set_valid_destination_3'] = 'Please set valid destination_3';
@@ -35,8 +32,6 @@ $lang['set_valid_destination_4'] = 'Please set valid destination_4';
 $lang['set_valid_destination_5'] = 'Please set valid destination_5';
 $lang['set_valid_destination'] = 'Please set valid destination';
 $lang['duplicate_or'] = 'Duplicate Origination rate';
-
-
 $lang['valid_delay'] = 'Only numeric, between 0 to 100 and non-empty values are allowed. Enter delay value correctly.';
 $lang['valid_timeout'] = 'Only numeric, between 0 to 100 and non-empty values are allowed. Enter time_out value correctly.';
 $lang['valid_timeout_1'] = 'Only numeric, between 0 to 100 and non-empty values are allowed. Enter time_out_1 value correctly.';
@@ -47,15 +42,11 @@ $lang['valid_timeout_5'] = 'Only numeric, between 0 to 100 and non-empty values 
 $lang['table_not_exists'] = 'Table name you had entered is not exists';
 $lang['enter_valid_values'] = 'Enter Valid values.Only zero or one is allowed';
 $lang['did_purchased_already'] = 'That DID is already purchased.';
-
 $lang['enter_call_forwarding_destination'] = "Required call forwarding destination number as your extension_call_forward is 1.";
 $lang['enter_on_busy_destination'] = "Required on busy destination number as your extension_on_busy is 1";
 $lang['enter_no_answer_destination'] = "Required no_answer_destination number as your extension_no_answer is 1";
 $lang['enter_not_register_destination'] = "Required not_register_destination number as your extension_not_register is 1";
-
 $lang['user_must_admin'] = "User must be admin..!";
-
-//vishwa start//
 $lang['empty_sip_account_details'] = 'No sip device find with this username.';
 $lang['no_sip_device_found'] = 'No sip device found';
 $lang['account_already_deleted'] = 'Account is already deleted please contact admin.';
@@ -65,7 +56,6 @@ $lang['not_allow_to_add_coins'] = 'Sorry,You are not allow to add coins.';
 $lang['no_coin_found'] = 'Opps!! No coin data found please try after some time';
 $lang['account_refill'] = 'Account refill successfully.'; 
 $lang['coins_not_sufficient'] = 'Coins are not sufficient for the refill.';
-
 $lang['no_refill_product'] = 'No refill product found!';
 $lang['did_deleted'] = 'Did deleted successfully';
 $lang['no_dids_found'] = 'No DIDs found for this account.';
@@ -77,7 +67,6 @@ $lang['enter_device_type'] = 'Please enter device type.';
 $lang['enter_device_id'] = 'Please enter device id.';
 $lang['enter_unique_agent_dial_number'] = 'Please Enter unique and correct Agent dial number.';
 $lang['something_wrong_try_again'] = 'Something went wrong, Please try again later.';
-
 $lang['enter_coupon_number'] = 'Please enter coupon number';
 $lang['account_is_inactive'] = 'Your account is inactive or deleted / expired ! Please contact to administrator';
 $lang['enter_amount'] = 'Please enter amount';
@@ -98,7 +87,6 @@ $lang['account_not_exists'] = 'This account does not exist! Please try another a
 $lang['contact_admin'] = 'Please contact Administrator.';
 $lang['refill_already_used'] = 'This refill coupon is already used.';
 $lang['refill_coupon_not_found'] = 'This refill coupon number is not found.';
-
 $lang['email_already_used'] = 'Email is already in used. Please contact to administrator.';
 $lang['account_already_created'] = 'Account is already created. Please contact to administrator.';
 $lang['select_country'] = 'Please select country';
@@ -123,16 +111,11 @@ $lang['valid_number_otp'] = 'Please pass the valid number for sending OTP.';
 $lang['valid_details'] = 'Please enter valid details.';
 $lang['valid_parameter'] = 'Please pass the valid parameters.';
 $lang['device_in-active'] = 'SIP device is in-active please contact administrator';
-
 $lang['valid_type'] = 'Please set valid account type';
 $lang['valid_reseller_id'] = "Please enter valid reseller id.";
 $lang['enter_postal_code'] = "Please enter valid zip code.";
 $lang['enter_valid_telephone'] = "Please enter valid telephone number.";
 $lang['valid_tax_id'] = "Please enter valid tax number.";
-
-
-//vishwa end//
-
 $lang['error_disable_signup'] = 'Something went wrong!!. Please contact to administrator.';
 $lang['error_login_information'] = 'Username / Password is incorrect.';
 $lang['error_invalid_key'] = 'Invalid key found.';
@@ -147,33 +130,27 @@ $lang['error_email_unique'] = 'Try different email address.';
 $lang['error_number_unique'] = 'The number field must contain a unique value.';
 $lang['unknown_method'] = 'Unknown method.'; 
 $lang['number_greater_zero'] = 'Number must be greater than zero.';
-
 $lang['account_update_success'] = "Account information updated successfully."; 
 $lang['account_already_updated'] = "Account information already updated.";
 $lang['no_records_found'] = "No record(s) found.";
 $lang['number_update_not_allowed'] = "Number update is not allowed.";
 $lang['is_distributor_update_not_allowed'] = "Is_distributer update is not allowed.";
-
 $lang['sip2sip_calls'] = "This is a sip2sip call";
 $lang['did_calls'] = "This is a DID call";
 $lang['standard_calls'] = "This is a standard call";
-
 $lang['logged_out'] = "You are logged out from the account.";
 $lang['incorrect_old_password'] = "Your old password is incorrect. Please enter correct password.";
 $lang['password_changed'] = "Your password has been changed successfully.";
 $lang['invalid_email_format'] = "Invalid Email Format.";
-
 $lang['signup_status'] = "Signup feature has been disabled. Please contact Administrator.";
 $lang['signup_account_exist'] = "Your account is already existing in system.";
 $lang['account_signup_success'] = "Thanks for signup with us. We have sent you activation link to activate the account.";
 $lang['forgot_password_account_not_found'] = "Your account is either Inactive or not found. Please recheck information.";
 $lang['account_forgot_password_success'] = "We have sent you activation link to reset account password.";
-
 $lang['refill_success'] = "Your account has been recharged successfully.";
 $lang['refill_coupon_not_found'] = "Sorry, we are unable to find coupon number. Please enter correct coupon number.";
 $lang['refill_coupon_used'] = "Your coupon number has already been used.";
 $lang['refill_payment_description'] = "Recharge using Refill coupon,Refill coupon No. ";
-
 $lang['payment_paypal_date'] = "Payment made by Paypal on date ";
 $lang['payment_refill_coupon_date'] = "Payment made by refill coupon on date ";
 $lang['payment_inapp_date'] = "Payment made by IOS Inapp on date ";
@@ -181,19 +158,17 @@ $lang['payment_unable_to_process'] = "Sorry, we are unable to process your payme
 $lang['ios_callkit_push_message'] =  "Please receive incoming call.";
 $lang['sipdevice_not_found'] = "Your sip device is either inactive or not found. Please recheck information.";
 $lang['sipdevice_error_status'] = 'Your sip device is inactive. Please contact administrator.';
-/*sonal*/
 $lang['did_buy_success'] =  "Your DID is purchased successfully";
 $lang['did_purchase_error'] =  "This DID is already purchased by someone.";
 $lang['wrong_msg'] =  "Something is wrong.please check your information";
 $lang['insufficient_balance'] =  "Insufficient balance please check your balance";
 $lang['terminate_order_success'] =  "Your order terminated successfully.";
 $lang['already_terminated'] =  "Product Already terminated";
-$lang['order_not_found'] =  "Sorry,We are unable to find order.";
+$lang['order_not_found'] =  "Sorry, we are unable to find order.";
 $lang['empty_terminated_product_list'] = "Sorry,You have no any terminated products";
 $lang['empty_purchased_product_list'] = "You have not purchased any products";
 $lang['empty_available_product_list'] = "Please check later. We will add more products soon.";
 $lang['empty_order_list'] = "You have not any order with selected product";
-/*bhargav code*/
 $lang['active_products_info'] = "Please pass the product_id";
 $lang['api_orders_details'] = "Please pass the order_id";
 $lang['api_purchase'] = "Sorry,We are unable to get product details !!!";
@@ -205,9 +180,6 @@ $lang['sipdevice_created'] = "Sip device created successfully";
 $lang['coins_add'] = "coins added successfully..";
 $lang['sipdevice_cant_create'] = "Sorry,Sip device can not be created";
 $lang['otp_expire_time'] = 'Last OTP is not expired yet.';
-/*sonal*/
-
-//vishwa use in controllers/admin/customer.php
 $lang['customer_list_information'] = "Customer List Information";
 $lang['admin_list_information'] = "Admin List Information";
 $lang['reseller_list_information'] = "Reseller List Information";
@@ -293,8 +265,6 @@ $lang['valid_loss_less_routing'] = "Enter valid loss less routing";
 $lang['valid_cli_pricelist_id'] = "Enter valid cli pricelist id.";
 $lang['valid_non_cli_pricelist_id'] = "Enter valid non-cli pricelist id.";
 $lang['percentage_required'] = "Percentage is required.";
-
-//Jaykishan use in controllers/admin/customer.php
 $lang['enter_amount'] = "Please enter valid amount.";
 $lang['enter_queue_name'] = "Enter Queue name";
 $lang['enter_recording_name'] = "Enter Recording name";
@@ -335,7 +305,6 @@ $lang['enter_balance'] = "Enter Balance correctly.";
 $lang['enter_credit_limit'] = "Enter Credit limit correctly.";
 $lang['enter_charge_per_min'] = "Enter charge per minute correctly.";
 $lang['enter_maxchannels'] = "Enter maxchannels correctly.";
-
 $lang['enter_includedseconds'] = "Enter includedseconds correctly.";
 $lang['enter_cps'] = "Enter cps correctly.";
 $lang['enter_valid_price'] = "Please enter valid price.";
@@ -417,7 +386,6 @@ $lang['authmail_create'] = "Authmail created successfully";
 $lang['authmail_not_found'] = "Authmail not found";
 $lang['active_sip_device'] = 'Your Sip device is active currently';
 $lang['alert_thresold_update'] = 'Alert Thresold updated successfully';
-//Riya issue no 2872 API Rate group Management.
 $lang['rategroup_delete'] = 'Rategroup deleted successfully';
 $lang['rategroup_not_found'] = 'Rategroup not found';
 $lang['name_required'] = 'The name field is required';
@@ -433,8 +401,6 @@ $lang['markup_valdation'] = 'The Markup(%) field must contain a number less than
 $lang['markup_valdation_numeric'] = 'The Markup(%) Field must contain only numbers';
 $lang['rategroup_list_information'] = "Rategroup List Information";
 $lang['min_markup'] = 'The Markup (%) field must contain a number greater than -1.';
-//end
-
 $lang['require_reseller_id'] = "Please enter account id.";
 $lang['posttoexternal_update_not_allowed'] = "You cannot update customer type.";
 $lang['require_reseller_id'] = "Please enter account id.";
@@ -484,8 +450,6 @@ $lang['or_list_information'] = 'Origination Rate List Information ';
 $lang['rates_list_information'] = 'Rates List Information ';
 $lang['required_date'] = 'Required Date';
 $lang['rates_list_information'] = 'Rates List Information ';
-
-//Riya issue no 3014 API create product module APIs.
 $lang['product_read'] = 'Product read successfully';
 $lang['product_list_information'] = 'Product List Information';
 $lang['price_required'] = 'The Price Field is required';
@@ -554,7 +518,6 @@ $lang['pattern_not_found'] = 'Code not found.';
 $lang['product_delete'] = 'Product deleted successfully';
 $lang['product_optin'] = 'Product optin successfully';
 $lang['product_already_optin'] = 'Product is already optin';
-//end
 $lang['required_date'] = 'Required Date';
 $lang['required_account_number'] = 'Required Account Number';
 $lang['required_amount'] = 'Required Amount';
@@ -571,12 +534,9 @@ $lang['valid_ratedeck_id'] = 'Please Enter Valid Ratedeck ID';
 $lang['valid_ipmap_id'] = 'Invalid IP Map ID';
 $lang['valid_origination_id'] = "Invalid Origination Rate ID";
 $lang['valid_sip_id'] = "Invalid SIP Device ID.";
-//Riya issue no 3071 APIs:- Develop Orders api for customer login with documentation.
 $lang['numeric_product_quantity'] = 'The Quantity field must contain only numbers.';
 $lang['integer_product_quantity'] = 'The Quantity must contains only integers';
 $lang['product_purchase_successfully'] ='Product Purchased Successfully !';
-//end
-
 $lang['required_pin'] = 'Please Enter Pin';
 $lang['valid_pin'] = 'Please Enter valid pin';
 $lang['pin_updated'] = 'Pin updated successfully';
@@ -588,9 +548,7 @@ $lang['invalid_caller_number'] = 'Invalid Caller Number';
 $lang['account_not_found'] = 'Account Not Found';
 $lang['alert_thresold_read'] = 'Read Customer Alert Thresold Details';
 $lang['incorrect_old_new_password'] = 'Password and Confirm Password are not matched';
-// Kinjal issue no 3691
 $lang['old_pass_new_pass'] = 'Old password and new password should not same';
-// END
 $lang['required_old_pass'] = 'Required old password';
 $lang['required_pass'] = 'Required password';
 $lang['required_confirm_password'] = 'Required confirm password';
@@ -605,7 +563,6 @@ $lang['update_speed_dial'] = 'Update speed dial successfully';
 $lang['insert_speed_dial'] = 'Speed Dial Added Successfully';
 $lang['notifications_history_list'] = 'Notifications List Successfully';
 $lang['product_summary_list'] = "Product Summary List Information";
-
 $lang['country_list_successfully'] = 'Country List Information';
 $lang['currency_list_successfully'] = 'Currency List Information';
 $lang['required_termination_id'] = "Required Termination Rate ID";
@@ -625,7 +582,6 @@ $lang['country_list_successfully'] = 'Country List Information';
 $lang['currency_list_successfully'] = 'Currency List Information';
 $lang['termination_rate_batch_update'] = "Termination Rate batch updated successfully.";
 $lang['invalid_product_category'] = "Invalid Product Category.";
-
 $lang['invalid_is_terminated'] = 'Invalid Status ';
 $lang['gateway_list_information'] = 'Gateway List Information ';
 $lang['required_gateway'] = 'Required Gateway ID';
@@ -710,7 +666,6 @@ $lang['duplicate_iso'] = 'ISO must contain a unique value';
 $lang['invalid_iso'] = 'ISO must contain a 2 characters';
 $lang['country_update'] = "Country updated successfully.";
 $lang['duplicate_tax_name'] = 'Duplicate Tax Name';
-
 $lang['trunk_list_information'] = 'Trunk List Information ';
 $lang['invalid_currency'] = 'Invalid Currency ID';
 $lang['currency_read_information'] = "Read Currency Details.";
@@ -759,7 +714,6 @@ $lang['required_sip_profile_value_name'] = 'Required SIP Profile Value Name';
 $lang['required_sip_profile_value'] = 'Required SIP Profile Value';
 $lang['sip_profile_values_created'] = 'SIP Profile values created successfully';
 $lang['sip_profile_value_not_found'] = 'SIP Profile value not found';
-//Riya issue no 3124 APIs:- Develop my order, order details and terminate api for customer login with documentation.
 $lang['order_not_found'] = "Order not Found.";
 $lang['order_list_information'] = 'Order List Information';
 $lang['order_detail_info'] = 'Order Detail List Information';
@@ -767,7 +721,6 @@ $lang['order_id_required'] = 'Order number Field is Required';
 $lang['numeric_order_number'] = 'The Order number field must contain only numbers.';
 $lang['already_terminated'] = 'Sorry, Your Order is already Terminated.';
 $lang['order_terminated_successfully'] = 'Order Terminated Successfully';
-//end
 $lang['required_localization_id'] = 'Required Localization ID';
 $lang['localization_read_information'] = "Read Localization Details.";
 $lang['valid_localization_id'] = "Enter valid Localization id.";
@@ -825,7 +778,6 @@ $lang['accessnumber_update'] = "Access Number updated successfully.";
 $lang['accessnumber_delete'] = "Access Number deleted successfully.";
 $lang['accessnumber_not_found'] = "Access Number Not Found";
 $lang['role_list_successfully'] = 'Role List Information';
-//Riya issue no 3224 APIs:- Develop DID module apis with documentation.
 $lang['did_list_info'] = 'DID List Information';
 $lang['did_number_required'] = 'DID number Field is Required';
 $lang['country_id_numeric'] = 'The country Id Field must contain only numbers.';
@@ -836,7 +788,6 @@ $lang['did_batch_update'] = 'DID Batch Updated Successfully.';
 $lang['call_type'] = 'Call Type Field is Required.';
 $lang['did_repurchase'] = 'DID Re-Purchased Successfully.';
 $lang['call_type_numeric'] = 'The Call Type Field must contain only numbers.';
-//end
 $lang['update_provider_success'] = "Update Provider Successfully.";
 $lang['create_provider_success'] = "Created Provider Successfully.";
 $lang['order_list_successfully'] = 'Order List Information';
@@ -859,8 +810,6 @@ $lang['invalid_username'] = 'Invalid Username';
 $lang['signup_successful'] = 'Your account created successfully and account details sent to your registered email address';
 $lang['account_blocked'] = 'Your account has been temporarily blocked.Please contact your system administrator for more information';
 $lang['resend_otp_successfully'] = 'OTP Resend Successfully';
-
-//Riya issue no 3257 APIs:- Develop DIDs module api for Admin with documentation.
 $lang['monthly_fee_required'] = 'Monthly Fee Field is Required';
 $lang['did_id_required'] = 'DID id Field is Required';
 $lang['accountid_required'] = 'Accountid Field is Required';
@@ -875,13 +824,10 @@ $lang['integer_call_timeout'] = 'The Call Timeout must contains only integers';
 $lang['required_recording_id'] = 'Required Recording ID';
 $lang['invalid_recording_id'] = 'Invalid Recording ID';
 $lang['recording_read'] = 'Recording Read Successfully';
-// Kinjal issue no 3311 APIs: Develop Queue module api for admin, reseller and customer login with documentation.
 $lang['queue_list_successfully'] = 'Queue List Information';
 $lang['required_queue_id'] = 'Required Queue ID';
 $lang['invalid_queue_id'] = 'Invalid Queue ID';
 $lang['queue_read'] = 'Queue Read Successfully';
-// END
-
 $lang['enter_valid_posttoexternal'] = 'You can not update Account Type';
 $lang['conference_profile_list_successfully'] = 'Conference Profile List Information';
 $lang['conference_list_successfully'] = 'Conference List Information';
@@ -892,7 +838,6 @@ $lang['conference_read'] = 'Conference Read Successfully';
 $lang['enter_conference_name'] = "Enter Conference name";
 $lang['invalid_conference_pin'] = "Invalid Pin Number";
 $lang['invalid_profile_id'] = "Invalid Profile ID";
-
 $lang['otp_expired'] = "One Time Password is Wrong Please try again Or One Time Password expire Please Resend";
 $lang['account_already_exist'] = "Account already exist";
 $lang['pickupgroup_list_successfully'] = 'Pickup Group List Information';
@@ -904,7 +849,6 @@ $lang['required_pickupgroup_name'] = "Required Pickup Group Name";
 $lang['pickupgroup_create'] = 'Pickup Group created successfully.';
 $lang['pickupgroup_update'] = 'Pickup Group updated successfully.';
 $lang['pickupgroup_delete'] = 'Pickup Group deleted successfully.';
-
 $lang['ringgroup_list_information'] = 'Ring Group Information';
 $lang['required_ringgroup_id'] = 'Required Ring Group ID';
 $lang['invalid_ringgroup_id'] = 'Invalid Ring Group ID';
@@ -945,8 +889,6 @@ $lang['large_end_month_days'] = "End Month day should be large";
 $lang['large_end_year'] = "End Year should be large";
 $lang['duplicate_priority'] = "Duplicate Priority";
 $lang['system_list'] = 'System List Information';
-
-// Kinjal issue no 3256 APIs: develop FOIP addon module api for admin login and customer login with documentation.
 $lang['auth_email_list_information'] = "Auth Email List Information";
 $lang['require_auth_email_id'] = "Required Auth Email id.";
 $lang['invalid_auth_email_id'] = "Invalid Auth Email id.";
@@ -962,22 +904,14 @@ $lang['invalid_fax_number'] = "Invalid Fax Number.";
 $lang['required_file'] = "Please select File.";
 $lang['invalid_fax_type'] = "Invalid Faxer Type.";
 $lang['fax_insuficient_balance'] = "Insuficient balance.";
-// END
-
-//Riya issue no 3349 APIs:- Develop order module api for Admin and Reseller login with documentation.
 $lang['numeric_reseller_id'] = 'The Reseller Id Field must contain only numbers.';
 $lang['integer_email_notify'] = 'The Email Notify must contains only integers';
-//end
-
-//Riya issue no 3374 APIs: Develop topup api for reseller and customer login with documentation.
 $lang['topup_list_info'] = 'Topup List Information.';
 $lang['topup_not_found'] = 'Topup Not Found.';
 $lang['insufficient_balance_error'] = "Insufficient balance to assign product !";
-//end
 $lang['fund_transfer_not_allowed'] = "You can only transfer fund in same level account";
 $lang['already_logged_out'] = "You are already logged out. Please login again";
 $lang['permission_not_found'] = 'Permission not found';
-// Kinjal issue no 3624
 $lang['did_id_numeric'] = 'The DID Id Field must contain only numbers.';
 $lang['call_type_destination_required'] = 'The Call Type Destination field is required.';
 $lang['always_destination_required'] = 'The Always Destination field is required.';
@@ -1001,23 +935,12 @@ $lang['invalid_call_type'] = "Invalid Call Type.";
 $lang['invalid_user_busy'] = "Invalid User Busy Parameter.";
 $lang['invalid_user_not_registered'] = "Invalid User Not Registered Parameter.";
 $lang['invalid_no_answer_destination'] = "Invalid No Answer Destination Parameter.";
-// END
-
-// Kinjal issue no 3808
 $lang['duplicate_sip_device'] = 'Duplicate SIP Device Number';
 $lang['pbx_not_installed'] = 'PBX Addon is not installed, Please contact to administrator';
 $lang['did_optin'] = 'DID optin successfully';
-// END
-
-// Kinjal issue no 3837
 $lang['did_not_optin'] = 'DID is not optin by reseller.';
-// END
-// Kinjal issue no 3968
 $lang['foip_not_installed'] = 'FOIP Addon is not installed, Please contact to administrator';
-// END
-// Kinjal issue no 4421
 $lang['fax_status_information'] = "Faxer Status Information.";
-// END
 $lang['required_base_url'] = 'Please Enter Base URL';
 $lang['token_not_found'] = 'Token Not Found';
 $lang['valid_product_id'] = 'Please enter valid product ID';
@@ -1025,4 +948,6 @@ $lang['ipsetting_add_not_allowed'] = 'IP Settings create not allowed';
 $lang['did_numeric'] = 'The DID name must contain only numbers.';
 $lang['numeric_product_name'] = 'The Product name must contain only numbers.';
 $lang['invalid_connectcost'] = 'Invalid Connection Cost';
+$lang['invoices_list_information'] = "Customer Invoices List Information";
+$lang['read_order'] = "Read Order Details";
 ?>
