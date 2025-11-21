@@ -15,6 +15,7 @@ class Orders extends Account
 		$this->load->library('flux_log');
 		$this->load->library('Form_validation');
 		$this->load->library('flux/payment');
+		$this->load->library ( 'flux/order' );
 		$rawinfo = $this->post();
 		$this->accountinfo = $this->get_account_info(); 
 		if($this->accountinfo['type'] != '-1'  && $this->accountinfo ['type'] != '2'  && $this->accountinfo ['type'] != '1' ){
@@ -174,7 +175,7 @@ class Orders extends Account
 		}
 	}
 	
-	function _read()
+	private function _read()
 	{
 		$postdata = $this->postdata;
 		$object_where_params = $this->postdata['object_where_params'];
@@ -236,5 +237,136 @@ class Orders extends Account
 			), 200 );			
 		}
 	}
+	
+	private function _create()
+    {
+        $postdata = $this->postdata;
+        $object_where_params = $this->postdata['object_where_params'];
+        if (empty($object_where_params['product_id']) || !isset($object_where_params['product_id']) || empty($object_where_params['accountid']) || !isset($object_where_params['accountid'])) {
+			$this->response ( array (
+				'status' => false,
+				'error' => $this->lang->line ( 'error_param_missing' ) . " integer:product_id:account_id"
+			), 400 );
+		}
+		else {
+        $where = array('id' => $object_where_params['product_id'], 'status' => 0);
+        $this->db->select('id as product_id,name as product_name,product_category as category,price,free_minutes,setup_fee,billing_type,billing_days,commission,reseller_id');
+        $this->db->where($where);
+        $result = $this->db->get('products');
+        $ProductData = $result->result_array();
+        
+        if($ProductData == ""){
+            $this->response ( array (
+                'status' => false,
+                'error' => $this->lang->line ('product_not_found') ), 400 );            
+        }
+        else {        
+        $ProductData_list = $this->db_model->getSelect("*", "products", array(
+            "id" => $object_where_params['product_id']
+        ))->result_array()[0];
+        }
+        if($ProductData_list != ""){
+            $ProductData = array_merge($ProductData,$ProductData_list);
+        }
+        $account_id = $object_where_params['accountid'];
+        $accountinfo = $this->accountinfo;        
+        if (! empty($ProductData) && isset($ProductData)) {
+                $customer_data = array();
+                $customer_data = $this->db_model->getSelect("*", "accounts", array(
+                    "id" => $object_where_params['accountid'],
+                    "status" => 0,
+                    "deleted" => 0,
+                    "type" => 0
+                ));
+                if ($customer_data->num_rows > 0) {
+                    $customer_data = $customer_data->result_array()[0];
+                }
+		        $quantity = (isset($object_where_params['quantity']) && $object_where_params['quantity'] > 1)?$object_where_params['quantity']:1;
+                $total_amt = (($ProductData_list['price'] + $ProductData_list['setup_fee']) * $quantity);
+
+                $account_balance = $customer_data['posttoexternal'] == 1 ? $customer_data['credit_limit'] + ($customer_data['balance']) : $customer_data['balance'];
+                if ($account_balance >= $total_amt) {
+                    $ProductData['invoice_type'] = ($ProductData_list['product_category'] == 3) ? "credit" : "debit";
+                    $ProductData['next_billing_date'] = ($ProductData_list['billing_days'] == 0) ? gmdate('Y-m-d 23:59:59', strtotime('+10 years')) : gmdate("Y-m-d 23:59:59", strtotime("+" . ($ProductData_list['billing_days'] - 1) . " days"));
+                    $ProductData['create_invoice'] = "true";
+                    $ProductData['product_id'] = $object_where_params['product_id'];
+                    $ProductData['payment_by'] = 0;
+                    $last_id = $this->order->confirm_order($ProductData, $account_id, $accountinfo);
+                    if (! empty($customer_data) && $last_id != '' && $customer_data['notifications'] == 0) {
+                        $ProductData['payment_by'] = ($ProductData['payment_by'] == 0) ? "Account Balance" : "Account Balance";
+                        $ProductData['category'] = $this->common->get_field_name("name", "category", array(
+                            "id" => $ProductData_list['product_category']
+                        ));                        
+                        $final_array = array_merge($customer_data, $ProductData_list);
+                       $final_array['quantity'] = (isset($ProductData['quantity']) && $ProductData['quantity'] > 1)?$ProductData['quantity']:1;
+                        $final_array['price'] = ($ProductData['setup_fee'] + $ProductData['price']);
+                        $final_array['total_price'] = ($ProductData['setup_fee'] + $ProductData['price']) * (isset($ProductData['quantity']) ? $ProductData['quantity'] : 1);
+                        $final_array['total_price_amount'] = ($ProductData['setup_fee'] + $ProductData['price']);
+                        $final_array['category_name'] = $ProductData['category'];
+			            $final_array['name'] = $ProductData_list['name'];
+			            $final_array['payment_by'] = $ProductData['payment_by'];
+			            $final_array['next_billing_date'] = ($ProductData_list['billing_days'] == 0) ? gmdate('Y-m-d 23:59:59', strtotime('+10 years')) : gmdate("Y-m-d 23:59:59", strtotime("+" . ($ProductData_list['billing_days'] - 1) . " days"));
+			            $final_array['id'] = $account_id;
+                        $this->common->mail_to_users('product_purchase', $final_array);
+                    }
+                    $orderinfo = $this->db_model->getSelect("*",'view_status_pedidos', array('id' => $last_id))->row_array();
+                    $where = array('id' => $last_id);
+					$this->db->limit(1, '');
+					$this->db->select('id,order_id as order_item_id,order_date,billing_date,next_billing_date,termination_date,order_status,reseller_id,accountid,company,product_type,product_name,product_id,includedseconds,is_terminated,order_price,product_price');			
+					$this->db->where($where);
+					$result = $this->db->get('view_status_pedidos');
+					$orderinfo = $result->result_array();
+					$new_array = array();
+                   
+                    foreach ($orderinfo as $key => $value) {
+					$value['id'] = $value['id'];
+					$value['order_item_id'] = $value['order_item_id'];
+					$value['order_date'] = $value['order_date'];
+					$value['billing_date'] = $value['billing_date'];
+					$value['next_billing_date'] = $value['next_billing_date'];
+					$value['termination_date'] = $value['termination_date'];
+					$value['order_status'] = $value['order_status'];
+					$value['reseller_id'] = $value['reseller_id'];						
+					$value['accountid'] = $value['accountid'];
+					$value['company'] = $value['company'];
+					$value['product_type'] = $value['product_type'];
+					$value['product_name'] = $value['product_name'];
+					$value['product_id'] = $value['product_id'];						
+					$value['includedseconds'] = $value['includedseconds'];
+					$value['is_terminated'] = $value['is_terminated'] == '0' ? 'Active' : 'Inactive'  ;
+					$value['order_price'] = $value['order_price'];
+					$value['product_price'] = $value['product_price'];
+					if($value['reseller_id'] == '0'){
+					unset($value['reseller_id']);
+					}
+					if($value['product_type'] == 'DID'){
+					unset($value['includedseconds']);
+					}
+					if($value['termination_date'] == '0000-00-00 00:00:00'){
+					unset($value['termination_date'],$value['is_terminated']);
+					}
+					$new_array[] = $value;
+				}
+					$this->response ( array (
+						'status' => true,
+						'id'   => $last_id,
+						'data' => $new_array,
+						'success' => $this->lang->line( "create_order_success" )
+					), 200 );	
+
+                } 
+                else {                    
+			    $this->response ( array (
+				'status' => false,
+				'error' => $this->lang->line ('insufficient_balance') ), 400 );                                                                    
+                }
+            } 
+        else {
+				$this->response ( array (
+				'status' => false,
+				'error' => $this->lang->line ('product_not_found') ), 400 );            
+				}
+            }
+        }
 		
 }

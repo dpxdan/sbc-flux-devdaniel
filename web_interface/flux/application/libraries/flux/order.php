@@ -40,6 +40,7 @@ class order {
 		$this->get_account_info($orderobjArr,$account_id);
 		$system_config = common_model::$global_config ['system_config'];
 		$renew_deleted = Common_model::$global_config ['system_config'] ['renew_deleted_product'];
+		$create_invoice = (isset($productarr['create_invoice']))?$productarr['create_invoice']:'false';
 		foreach($orderobjArr['accounts'] as $key => $accountdata){
 			if($productarr['product_category'] == 3){
 			
@@ -64,7 +65,7 @@ class order {
 				$product_info->payment_status = "PENDING";
 				$product_info->payment_by = $productarr['payment_by'] == 0 ? "paypal" : "card";
 				$product_info->quantity = $productarr['quantity'];
-
+				$product_info->create_invoice = $create_invoice;				
 				$parent_order_id = $this->generate_order($product_info,$accountdata,(array)$accountdata,$parent_order_id,$account_currency_info);
 
 
@@ -456,11 +457,13 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 
 		$this->CI->db->insert("orders",$order_insert_array);
 		$last_id = $this->CI->db->insert_id();
-    if ($product_info->product_category != '4') {
+    if ($product_info->product_category == '1') {
 		$counters_insert_array = array(
 			"product_id" =>$product_info->id,
 			"package_id" => $last_id,
 			"accountid"=>$account_info->id,
+			"used_seconds" => 0,
+			"status" => 1,
 			"type"=>$created_by_accountinfo['id']
 		);		
 		
