@@ -409,12 +409,6 @@ class Orders extends Account
 					'success' =>  $this->lang->line ('enter_valid_order_id')  
 				), 400 );
 			}
-			if($this->accountinfo['type'] == 1){
-				$this->db->where_in('order_id',$postdata['order_id']);
-			}
-			else{
-				$this->db->where_in('order_id',$postdata['order_id']);
-			}
 			$orderinfo = $this->db->get('order_items')->result_array();
 			if(empty($orderinfo)){
 			$this->response ( array (
@@ -423,11 +417,12 @@ class Orders extends Account
 			), 400 );
 			}
 			else {
+			$termination_date = $this->common->convert_GMT_to('','',gmdate('Y-m-d H:i:s'),$this->accountinfo['timezone_id']);
 			$this->common->update_data ( "order_items", array (
 					"order_id" => $postdata['order_id']
 			), array (
 					"is_terminated" => 1,
-					'termination_date'=>gmdate('Y-m-d H:i:s'),
+					'termination_date'=>$termination_date,
 					'termination_note'=>'Product has been released'
 			) );
 			$this->common->update_data ( "counters", array (
@@ -435,8 +430,13 @@ class Orders extends Account
 			), array (
 					"status" => 0
 			) );								
+			$order_array = array(
+				"order_id" => $postdata['order_id'],
+				"termination_date" => $termination_date
+			);							
 			$this->response ( array (
 				'status'=> true,
+				'data' => $order_array,
 				'success' => $this->lang->line('order_deleted') 
 			), 200 );
 			}
