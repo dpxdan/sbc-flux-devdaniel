@@ -972,6 +972,8 @@ $lang['did_numeric'] = 'The DID name must contain only numbers.';
 $lang['numeric_product_name'] = 'The Product name must contain only numbers.';
 $lang['invalid_connectcost'] = 'Invalid Connection Cost';
 $lang['invoices_list_information'] = "Customer Invoices List Information";
+$lang['orders_list'] = "Orders List Information";
 $lang['read_order'] = "Read Order Details";
 $lang['create_order_success'] = 'Created Order Successfully.';
+$lang['order_deleted'] = 'Order Terminated Successfully.';
 ?>

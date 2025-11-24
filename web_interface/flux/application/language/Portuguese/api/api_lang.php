@@ -953,4 +953,5 @@ $lang['invoices_list_information'] = "Customer Invoices List Information";
 $lang['orders_list'] = 'Orders List Successfully';
 $lang['read_order'] = "Read Order Details";
 $lang['create_order_success'] = 'Created Order Successfully.';
+$lang['order_deleted'] = 'Order Terminated Successfully.';
 ?>
