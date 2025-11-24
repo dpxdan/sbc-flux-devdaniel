@@ -118,25 +118,43 @@ class Orders extends Account
 			if($object_where_value != '') {	
 				if(isset($object_where_key['accountid']) || $object_where_key == 'accountid'){
 					$this->db->where('orders.accountid', $object_where_value);
-				}else{
+				}
+				if(isset($object_where_key['id']) || $object_where_key == 'id'){
+					$this->db->where('orders.id', $object_where_value);
+				}
+				if(isset($object_where_key['order_id']) || $object_where_key == 'order_id'){
+					$this->db->where('orders.id', $object_where_value);
+				}
+				if(isset($object_where_key['order_number']) || $object_where_key == 'order_number'){
+					$this->db->where('orders.order_id', $object_where_value);
+				}
+				if(isset($object_where_key['category_name']) || $object_where_key == 'category_name'){
+					$this->db->where('category.name', $object_where_value);
+				}
+				if(isset($object_where_key['product_name']) || $object_where_key == 'product_name'){
+					$this->db->where('products.name', $object_where_value);
+				}
+				if(isset($object_where_key['setup_fee']) || $object_where_key == 'setup_fee'){
+					$this->db->where('order_items.setup_fee', $object_where_value);
+				}
+				if(isset($object_where_key['price']) || $object_where_key == 'price'){
+					$this->db->where('order_items.price', $object_where_value);
+				}
+				if(isset($object_where_key['reseller_id']) || $object_where_key == 'reseller_id'){
+					$this->db->where('order_items.reseller_id', $object_where_value);
+				}
+				else{
 					$where[$object_where_key] = $object_where_value;
-				}
-				if(isset($object_where_key) && $object_where_key == 'subject'){
-					$like_array['subject like'] = $object_where_params['subject'].'%';
-				}
-				if(isset($object_where_key) && $object_where_key == 'body'){
-					$like_array['body like'] = $object_where_params['body'].'%';
 				}
 			}
 		}
 		if(!empty($where)) {
-			unset($where['subject'],$where['body']); 
+		    unset($where['accountid'],$where['id'],$where['order_id'],$where['category_name'],$where['product_name'],$where['setup_fee'],$where['price']);	
 			$this->db->where($where);
 		}
 		if(!empty($like_array)) {
 			$this->db->where($like_array); 
 		}
-		$this->db->order_by('id',DESC);
 		if($this->accountinfo['type'] == '1' && $this->postdata['action'] != 'reseller_orders_list'){
 			$this->db->where('reseller_id', $this->postdata['id']); 
 		}
@@ -144,18 +162,24 @@ class Orders extends Account
 			$this->db->where('accountid', $this->postdata['id']); 
 		}
 
-					$this->db->select('orders.id,orders.order_id ,orders.order_date,orders.payment_gateway,(CASE WHEN order_items.`is_terminated`=0 THEN CONCAT("Ativo") ELSE CONCAT("Inativo") END) AS order_status,orders.payment_status,orders.reseller_id,orders.accountid,order_items.billing_date,order_items.termination_date,order_items.next_billing_date,order_items.product_id,order_items.setup_fee,order_items.price,products.name as product_name,category.name as category_name');
+					$this->db->select('orders.id,orders.order_id as order_number,orders.order_date,orders.payment_gateway,(CASE WHEN order_items.`is_terminated`=0 THEN CONCAT("Ativo") ELSE CONCAT("Inativo") END) AS order_status,orders.payment_status,orders.reseller_id,orders.accountid,order_items.billing_date,order_items.termination_date,order_items.next_billing_date,order_items.product_id,order_items.setup_fee,order_items.price,products.name as product_name,category.name as category_name');
 					$this->db->join('order_items', 'order_items.order_id = orders.id', 'inner');
 					$this->db->join('products', 'products.id = order_items.product_id', 'left');
 					$this->db->join('category', 'category.id = products.product_category', 'left');
 					$this->db->order_by('order_items.billing_date', 'desc');
 					$result = $this->db->get('orders');
-					$count = $result -> num_rows();
+					if (empty($result)) {
+			         $this->response ( array (
+						'status' => true,
+						'success' => $this->lang->line( "no_records_found" )
+					), 200 );
+					}
+					else {		
 					$orders_info = $result->result_array();
-
+					$count = $result->num_rows();
+}
 		foreach ($orders_info as $key => $orders_value) {
 			$orders_value['billing_date'] = $this->timezone->convert_to_GMT_new($orders_value['billing_date'],'1',$this->accountinfo['timezone_id']);
-			unset($orders_value['reseller_id'],$orders_value['accountid'],$orders_value['id']);
 			$ordersinfo[] =$orders_value;
 		}
     	if (!empty($ordersinfo)) {
@@ -189,7 +213,7 @@ class Orders extends Account
 			
 			$where = array('id' => $object_where_params['order_id']);
 			$this->db->limit(1, '');
-			$this->db->select('id,order_id,order_date,billing_date,next_billing_date,termination_date,order_status,reseller_id,accountid,company,product_type,product_name,product_id,includedseconds,is_terminated,order_price,product_price');			
+			$this->db->select('id,order_id as order_number,order_date,billing_date,next_billing_date,termination_date,order_status,reseller_id,accountid,company,product_type,product_name,product_id,includedseconds,is_terminated,order_price,product_price');			
 			$this->db->where($where);
 			$result = $this->db->get('view_status_pedidos');
 			$orderinfo = $result->result_array();
@@ -203,7 +227,7 @@ class Orders extends Account
 						
 			foreach ($orderinfo as $key => $value) {
 			$value['id'] = $value['id'];
-			$value['order_item_id'] = $value['order_id'];
+			$value['order_number'] = $value['order_number'];
 			$value['order_date'] = $value['order_date'];
 			$value['billing_date'] = $value['billing_date'];
 			$value['next_billing_date'] = $value['next_billing_date'];
@@ -368,5 +392,56 @@ class Orders extends Account
 				}
             }
         }
+		
+	private function _delete()
+	{
+		$postdata = $this->postdata;
+		if($this->form_validation->required($postdata['order_id'] ) == ''){
+			$this->response ( array (
+				'status' => false,
+				'error' => $this->lang->line ( 'enter_order_id' ) 
+			), 400 );
+		}
+		else{
+			if(!$this->form_validation->numeric_with_comma($postdata['order_id'])){
+				$this->response ( array (
+					'status' => false,
+					'success' =>  $this->lang->line ('enter_valid_order_id')  
+				), 400 );
+			}
+			if($this->accountinfo['type'] == 1){
+				$this->db->where_in('order_id',$postdata['order_id']);
+			}
+			else{
+				$this->db->where_in('order_id',$postdata['order_id']);
+			}
+			$orderinfo = $this->db->get('order_items')->result_array();
+			if(empty($orderinfo)){
+			$this->response ( array (
+				'status'  => false,
+				'error'   => $this->lang->line ( 'order_not_found' )
+			), 400 );
+			}
+			else {
+			$this->common->update_data ( "order_items", array (
+					"order_id" => $postdata['order_id']
+			), array (
+					"is_terminated" => 1,
+					'termination_date'=>gmdate('Y-m-d H:i:s'),
+					'termination_note'=>'Product has been released'
+			) );
+			$this->common->update_data ( "counters", array (
+					"package_id" => $postdata['order_id']
+			), array (
+					"status" => 0
+			) );								
+			$this->response ( array (
+				'status'=> true,
+				'success' => $this->lang->line('order_deleted') 
+			), 200 );
+			}
+		}
+	}     
+    
 		
 }
