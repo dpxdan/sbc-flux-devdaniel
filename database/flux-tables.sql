@@ -130,22 +130,6 @@ CREATE TABLE `complete`  (
   INDEX `complete10`(`a10`, `hostname`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
--- ----------------------------
--- Table structure for counters_trigger
--- ----------------------------
-DROP TABLE IF EXISTS `counters_trigger`;
-CREATE TABLE `counters_trigger`  (
-  `id` int(0) NOT NULL AUTO_INCREMENT,
-  `product_id` int(0) NOT NULL DEFAULT 0,
-  `package_id` int(0) NOT NULL DEFAULT 0,
-  `accountid` int(0) NOT NULL DEFAULT 0,
-  `used_seconds` int(0) NOT NULL DEFAULT 0,
-  `status` tinyint(1) NOT NULL DEFAULT 1,
-  `type` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `package_id`(`product_id`) USING BTREE,
-  INDEX `accountid`(`accountid`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci;
 
 -- ----------------------------
 -- Table structure for db_data
@@ -350,47 +334,6 @@ CREATE TABLE `local_number_destination`  (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci;
 
--- ----------------------------
--- Table structure for log_cron
--- ----------------------------
-DROP TABLE IF EXISTS `log_cron`;
-CREATE TABLE `log_cron`  (
-  `id` int(0) NOT NULL AUTO_INCREMENT,
-  `accountid` int(0) NULL DEFAULT NULL,
-  `invoiceid` int(0) NULL DEFAULT NULL,
-  `date` datetime(0) NULL DEFAULT NULL,
-  `log` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `query` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
-
--- ----------------------------
--- Table structure for order_items_trigger
--- ----------------------------
-DROP TABLE IF EXISTS `order_items_trigger`;
-CREATE TABLE `order_items_trigger`  (
-  `id` int(0) NOT NULL AUTO_INCREMENT,
-  `order_id` int(0) NOT NULL,
-  `product_category` int(0) NOT NULL,
-  `product_id` int(0) NOT NULL,
-  `quantity` int(0) NOT NULL DEFAULT 1,
-  `price` decimal(10, 5) NOT NULL DEFAULT 0.00000,
-  `setup_fee` decimal(10, 5) NOT NULL DEFAULT 0.00000,
-  `billing_type` int(0) NOT NULL,
-  `billing_days` int(0) NOT NULL DEFAULT 0,
-  `free_minutes` int(0) NOT NULL DEFAULT 0,
-  `accountid` int(0) NOT NULL,
-  `reseller_id` int(0) NOT NULL,
-  `billing_date` datetime(0) NOT NULL,
-  `next_billing_date` datetime(0) NOT NULL,
-  `is_terminated` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0 FOR NO AND 1 FOR YES',
-  `termination_date` datetime(0) NOT NULL,
-  `termination_note` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `from_currency` varchar(3) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `exchange_rate` decimal(10, 5) NOT NULL DEFAULT 1.00000,
-  `to_currency` varchar(3) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci;
 
 -- ----------------------------
 -- Table structure for pbx_conference_specification
@@ -466,48 +409,6 @@ CREATE TABLE `permissions_types`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci;
 
 -- ----------------------------
--- Table structure for permissionsv6
--- ----------------------------
-DROP TABLE IF EXISTS `permissionsv6`;
-CREATE TABLE `permissionsv6`  (
-  `id` int(0) NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `reseller_id` int(0) NOT NULL DEFAULT 0,
-  `description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `login_type` tinyint(1) NOT NULL DEFAULT 0,
-  `permissions` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `edit_permissions` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `creation_date` datetime(0) NOT NULL,
-  `modification_date` datetime(0) NOT NULL DEFAULT '1000-01-01 00:00:00',
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci;
-
--- ----------------------------
--- Table structure for query_planos
--- ----------------------------
-DROP TABLE IF EXISTS `query_planos`;
-CREATE TABLE `query_planos`  (
-  `id_pedido` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `id_cliente` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `empresa` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `dia_fatura` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `ultima_cobranca` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `id_produto` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `produto` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `pedido_dias` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `produto_dias` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `minutos_gratuitos_pedido` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `minutos_gratuitos_produto` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `status_pedido` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `data_encerramento` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `valor_pedido` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `valor_produto` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `tipo_produto` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `status_produto` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `produto_removido` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
-
--- ----------------------------
 -- Table structure for recovery
 -- ----------------------------
 DROP TABLE IF EXISTS `recovery`;
@@ -542,45 +443,6 @@ CREATE TABLE `registrations`  (
   INDEX `regindex1`(`reg_user`, `realm`, `hostname`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
--- ----------------------------
--- Table structure for roles_and_permission_v1
--- ----------------------------
-DROP TABLE IF EXISTS `roles_and_permission_v1`;
-CREATE TABLE `roles_and_permission_v1`  (
-  `id` int(0) NOT NULL AUTO_INCREMENT,
-  `login_type` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0:Admin,1:Reseller',
-  `permission_type` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0:Main,1:Edit',
-  `menu_name` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `module_name` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `sub_module_name` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `module_url` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `display_name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `permissions` mediumtext CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `status` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0:Active,1:Inactive',
-  `creation_date` datetime(0) NOT NULL DEFAULT '1000-01-01 00:00:00',
-  `priority` decimal(10, 5) NOT NULL DEFAULT 0.00000,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci;
-
--- ----------------------------
--- Table structure for roles_and_permission_v6
--- ----------------------------
-DROP TABLE IF EXISTS `roles_and_permission_v6`;
-CREATE TABLE `roles_and_permission_v6`  (
-  `id` int(0) NOT NULL AUTO_INCREMENT,
-  `login_type` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0:Admin,1:Reseller',
-  `permission_type` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0:Main,1:Edit',
-  `menu_name` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `module_name` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `sub_module_name` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `module_url` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `display_name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `permissions` mediumtext CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `status` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0:Active,1:Inactive',
-  `creation_date` datetime(0) NOT NULL DEFAULT '1000-01-01 00:00:00',
-  `priority` decimal(10, 5) NOT NULL DEFAULT 0.00000,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci;
 
 -- ----------------------------
 -- Table structure for sip_authentication
@@ -899,28 +761,5 @@ CREATE TABLE `time_condition`  (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci;
 
--- ----------------------------
--- Table structure for userlevels_permissions
--- ----------------------------
-DROP TABLE IF EXISTS `userlevels_permissions`;
-CREATE TABLE `userlevels_permissions`  (
-  `userlevelid` int(0) NOT NULL,
-  `userlevelname` varchar(15) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `module_permissions` varchar(2000) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT '',
-  PRIMARY KEY (`userlevelid`) USING BTREE,
-  INDEX `userlevelname`(`userlevelname`) USING BTREE,
-  INDEX `module_permissions`(`module_permissions`(1024)) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci;
-
--- ----------------------------
--- Triggers structure for table order_items_trigger
--- ----------------------------
-DROP TRIGGER IF EXISTS `Order1Trigger`;
-delimiter ;;
-CREATE DEFINER = `fluxuser`@`127.0.0.1` TRIGGER `Order1Trigger` AFTER INSERT ON `order_items_trigger` FOR EACH ROW begin
-   insert into counters_trigger(product_id,package_id,accountid,used_seconds,status,type) values (new.product_id,new.order_id, new.accountid,0,1,1);
-    end
-;;
-delimiter ;
 
 SET FOREIGN_KEY_CHECKS = 1;
