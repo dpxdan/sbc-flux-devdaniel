@@ -1302,7 +1302,7 @@ CREATE TABLE `menu_modules` (
   `menu_subtitle` varchar(20) NOT NULL,
   `priority` float NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=562 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
