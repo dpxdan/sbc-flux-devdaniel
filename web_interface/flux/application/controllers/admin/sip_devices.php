@@ -591,7 +591,7 @@ class Sip_devices extends Account {
 				"status" => isset($postdata['status'])?$postdata['status']:$sipdeviceinfo['status'],
 				"username" => !empty($postdata['number']) ? $postdata['number'] : $sipdeviceinfo['username'],
 				'dir_params' => json_encode(array(
-					"password" => $postdata['password'],
+					"password" => isset($postdata['password']) && !empty($postdata['password']) ? $postdata['password'] :$vars_new['password'],
 					"vm-enabled" => isset($postdata['voice_mail']) && !empty($postdata['voice_mail']) ? $postdata['voice_mail']:$vars_new['vm-enabled'],
 					"vm-password" => isset($postdata['voicemail_password']) && !empty($postdata['voicemail_password']) ?$postdata['voicemail_password']:$vars_new['vm-password'],
 					"vm-mailto" => isset($postdata['mailto']) && !empty($postdata['mailto']) ? $postdata['mailto'] :$vars_new['vm-mailto'],
@@ -607,11 +607,9 @@ class Sip_devices extends Account {
 			);
 			$this->db->where ( 'id', $this->postdata ['sipdevice_id'] );
 			$this->db->update ( 'sip_devices', $update_array );
-			// Kinjal issue no 4071
 			$update_array['dir_params'] = json_decode($update_array['dir_params'],true);
 			$decoded_pass = $this->common->decode($update_array['dir_params']['password']);
 			$update_array['dir_params']['password'] = $this->common->encrypt($decoded_pass);
-			// END
 			$this->response ( array (
 				'status'=>true,
 				'data' => $update_array,
@@ -638,9 +636,7 @@ class Sip_devices extends Account {
 	        	$dir_params = json_decode($sipdeviceinfo['dir_params'],true);
 				$this->api_log->write_log ( 'DIR Params : ', json_encode($dir_params));
 	        	$dir_vars = json_decode($sipdeviceinfo['dir_vars'],true);
-	        	// Kinjal issue no 3846
 	        	$sipdeviceinfo['password'] = $dir_params['password'];
-	        	// END
 	        	$sipdeviceinfo['vm-enabled'] = $dir_params['vm-enabled'];
 	        	$sipdeviceinfo['effective_caller_id_name'] = $dir_vars['effective_caller_id_name'];
 	        	$sipdeviceinfo['effective_caller_id_number'] = $dir_vars['effective_caller_id_number'];
