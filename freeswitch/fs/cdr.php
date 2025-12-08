@@ -55,6 +55,11 @@ $db = new db ();
 $lib = new lib ();
 $config = $lib->get_configurations ( $db );
 
+$cdrDir = rtrim($config['cdr_log_dir'] ?? '/var/log/freeswitch/json_cdr', '/') . '/';
+
+$doneDir  = $cdrDir . 'json_cdr_done/';
+$errorDir = $cdrDir . 'json_cdr_error/';
+
 // Set default decimal points
 $decimal_points = ($config ['decimal_points'] <= 0) ? 2 : $config ['decimal_points'];
 
@@ -100,5 +105,47 @@ if (isset ( $_SERVER ["CONTENT_TYPE"] ) && $_SERVER ["CONTENT_TYPE"] == "applica
 			include_once("lib/addons/flux.fraud_detection.php");
 			if(function_exists('custom_fraud_hook')){custom_fraud_hook($data, $db, $fslogger, $decimal_points,$config,$process_data);}
 	}
+}
+else {
+$batchSize = 50;
+$fslogger->log ("cdr_file start");
+
+while (true) {
+    $files = glob($cdrDir . "*.json");
+    if (empty($files)) {
+        $fslogger->log ("files empty");
+        sleep(1);
+        continue;
+    }
+
+    $batch = array_slice($files, 0, $batchSize);
+
+    foreach ($batch as $file) {
+        $json = json_decode(file_get_contents($file), true);
+        if (!$json) {
+            $fslogger->log ("no json");
+            rename($file, $errorDir . basename($file));
+            continue;
+        } 
+        else {        
+        $fslogger->log ("cdr_file call function process_file_cdr");
+        $fslogger->log("cdr_json ".$file.": " . json_encode($json));
+        $process_data=process_file_cdr ( $json, $db, $logger, $decimal_points,$config );
+        $fslogger->log("process_data OK: " . json_encode($process_data));
+        if ($process_data) {
+            rename($file, $doneDir . basename($file));
+            $fslogger->log ("file moved: " . $doneDir . basename($file));
+        } 
+        else {
+            rename($file, $errorDir . basename($file));
+            $fslogger->log ("file error moved: " . $errorDir . basename($file));
+        }
+        
+        }
+    }
+    
+    break;
+
+}
 }
 ?>

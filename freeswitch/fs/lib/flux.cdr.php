@@ -335,6 +335,240 @@ function process_cdr($data, $db, $logger, $decimal_points, $config) {
 	return get_defined_vars();
 }
 
+function process_file_cdr($data, $db, $logger, $decimal_points, $config) {
+	$logger->log ("process_file_cdr start");
+	$origination_rate = array ();
+	$termination_rate = array ();
+	
+	$dataVariable = $data ['variables'];
+	if ($dataVariable ['callstart'] == ""){return;}
+	
+	$dataCallflow = $data ['callflow'];
+	
+	$accountid = isset ( $dataVariable ['account_id'] ) ? $dataVariable ['account_id'] : '0';
+/*	if($accountid == '' || $accountid == '0'){
+		return true;
+	}*/
+	$dataVariable ['origination_call_type'] = 0;
+	$checkCadup = isset ( $dataVariable ['check_cadup'] ) ? $dataVariable ['check_cadup'] : '0';
+	
+	$idCadup = isset ( $dataVariable ['idCadup'] ) ? $dataVariable ['idCadup'] : '0';
+	$carrier_id = isset ( $dataVariable ['carrier_id'] ) ? $dataVariable ['carrier_id'] : '0';
+	$nomeLocalidade = isset ( $dataVariable ['nomeLocalidade'] ) ? $dataVariable ['nomeLocalidade'] : '0';
+	$nomePrestadora = isset ( $dataVariable ['nomePrestadora'] ) ? $dataVariable ['nomePrestadora'] : '0';
+	$areaLocal = isset ( $dataVariable ['areaLocal'] ) ? $dataVariable ['areaLocal'] : '0';
+	$tipo = isset ( $dataVariable ['tipo'] ) ? $dataVariable ['tipo'] : '0';
+	$prefixo = isset ( $dataVariable ['prefixo'] ) ? $dataVariable ['prefixo'] : '0';
+	$codArea = isset ( $dataVariable ['codArea'] ) ? $dataVariable ['codArea'] : '0';
+	$uf = isset ( $dataVariable ['uf'] ) ? $dataVariable ['uf'] : '0';
+	$rn1 = isset ( $dataVariable ['rn1'] ) ? $dataVariable ['rn1'] : '0';
+	$force_trunk_flag = isset ( $dataVariable ['force_trunk_flag'] ) ? $dataVariable ['force_trunk_flag'] : '0';
+	$rate_flag = isset ( $dataVariable ['rate_flag'] ) ? $dataVariable ['rate_flag'] : '0';
+	
+	
+	$dataVariable ['effective_caller_id_name'] = (isset ( $dataVariable ['effective_caller_id_name'] )) ? $dataVariable ['effective_caller_id_name'] : $dataCallflow ['caller_profile'] ['caller_id_name'];
+	$dataVariable ['effective_caller_id_number'] = (isset ( $dataVariable ['effective_caller_id_number'] )) ? $dataVariable ['effective_caller_id_number'] : $dataCallflow ['caller_profile'] ['caller_id_number'];
+	
+	if ($dataVariable ['billsec'] == 0 && $dataVariable ['hangup_cause'] == 'NORMAL_CLEARING') {
+		$hangup_cause = isset ( $dataVariable ['last_bridge_hangup_cause'] ) ? $dataVariable ['last_bridge_hangup_cause'] : $dataVariable ['hangup_cause'];
+	} 
+	else {
+		$hangup_cause = $dataVariable ['hangup_cause'];
+	}
+
+	if ($dataVariable ['error_cdr'] == '1') {
+		$hangup_cause = (isset ( $dataVariable ['error_cdr'] )) ? $dataVariable ['last_bridge_hangup_cause'] : (isset ( $dataVariable ['last_bridge_hangup_cause'] ) ? $dataVariable ['last_bridge_hangup_cause'] : $dataVariable ['hangup_cause']);
+	}
+	
+	if ($hangup_cause == "NORMAL_UNSPECIFIED" && $dataVariable ['billsec'] > 0) {
+		$hangup_cause = "NORMAL_CLEARING";
+	}
+	
+	if ($hangup_cause == "NONE") {
+		$hangup_cause = $dataVariable ['current_application_data'];
+	}
+	
+	$dataVariable ['hangup_cause'] = $hangup_cause;
+	
+	
+	$account_type = (isset ( $dataVariable ['entity_id'] )) ? $dataVariable ['entity_id'] : '0';
+	$parentid = isset ( $dataVariable ['parent_id'] ) ? $dataVariable ['parent_id'] : '0';
+	$parent_cost = 0;
+	$cost = 0;
+	$idCadup = 0;
+	$carrier_id = 0;
+	$rn1 = 0;
+	$actual_call_direction = $dataVariable ['call_direction'];
+	$actual_duration = $dataVariable ['billsec'];
+	$dataVariable ['calltype'] = isset ( $dataVariable ['calltype'] ) ? $dataVariable ['calltype'] : "Padrao";
+	$actual_calltype = $dataVariable ['calltype'];
+	
+	if (isset ( $dataVariable ['origination_rates'] )){
+		$origination_rate = normalize_origination_rate ( $dataVariable ['origination_rates'],$logger );
+		}
+	if (isset ( $dataVariable ['termination_rates'] )){
+		$termination_rate = normalize_rate ( $dataVariable ['termination_rates'] );
+	}
+	if (isset ( $dataVariable ['origination_rates_did'] )){
+		$origination_rates_did = normalize_rate ( $dataVariable ['origination_rates_did'] );
+	}
+	$dataVariable ['origination_call_type'] = 0;
+	$dataVariable ['origination_call_type'] = (isset($origination_rate[$accountid]['CT']) && $origination_rate[$accountid]['CT'] != '')?$origination_rate[$accountid]['CT']:0;
+
+
+	if($dataVariable['routing_type'] == 4){
+            $routing_type=$dataVariable['routing_type'];
+            $dataVariable['rate_flag'] == 4;
+            $termination_rate_group=$origination_rate[$accountid]['RATEGROUP'];
+            $carrier_route_id= $termination_rate['CARRIER_ROUTE_ID'];
+            $carrier_id= $termination_rate['CARRIER_ID'];
+            $query = "update carrier_routing SET call_count = call_count+1 where id =".$carrier_route_id;
+            $rate_termination = $db->run($query);
+        }
+	if($actual_duration > 0 || $dataVariable['hangup_cause'] == 'NORMAL_CLEARING' || $dataVariable['hangup_cause'] == 'SUCCESS' || $dataVariable['hangup_cause']  == 'ALLOTTED_TIMEOUT' || $dataVariable['hangup_cause'] == 'USER_BUSY' || $dataVariable['hangup_cause']  == 'INTERWORKING'){
+		if (isset($dataVariable ['did_rate']) || $dataVariable['did_rate'] > 0) {
+		$rate_group= $dataVariable['did_rate'];
+		$carrier_rate_id= $dataVariable['did_rate'];
+		$dataVariable['force_trunk_flag'] = $dataVariable['did_rate'];
+		}
+		if($dataVariable['force_trunk_flag'] > 0 ){
+			$route_query = "update routes SET call_count = call_count+1 where id =".$dataVariable['force_trunk_flag'];
+			$route_user = $db->run($route_query);
+			if($dataVariable['rate_flag'] == 4){
+				$rate_group=$origination_rate[$accountid]['RATEGROUP'];
+				$carrier_rate_id= $termination_rate['ID'];
+				$query = "update pricelists SET call_count = call_count+1 where id =".$rate_group;
+				$rate_user = $db->run($query);
+			}
+		}
+		else{
+			if($dataVariable['rate_flag'] == 4){
+				$rate_group=$origination_rate[$accountid]['RATEGROUP'];
+				$carrier_rate_id= $termination_rate['ID'];
+				$query = "update pricelists SET call_count = call_count+1 where id =".$rate_group;
+				$rate_user = $db->run($query);
+			}
+			elseif($dataVariable['rate_flag'] == 3){
+				$rate_group=$origination_rate[$accountid]['RATEGROUP'];
+				$query = "update pricelists SET call_count = call_count-1 where id =".$rate_group;
+				$rate_user = $db->run($query);
+			}
+		}
+		
+		$trunk_id= $termination_rate['TRUNK'];
+		$carrier_rate_id= $termination_rate['ID'];
+		if($trunk_id > 0) {
+		if($dataVariable['force_trunk_flag'] > 0){
+			$trunk_query = "update routing SET call_count = call_count+1 where trunk_id=".$trunk_id;
+		}
+		else{
+			 if($dataVariable['rate_flag'] == 3){
+				$trunk_query = "update routing SET call_count = call_count+1 where trunk_id=".$trunk_id." and pricelist_id =".$rate_group;
+			 }
+			 else{
+				$trunk_query = "update routing SET call_count = call_count-1 where trunk_id=".$trunk_id." and pricelist_id =".$rate_group;
+		}
+		}
+		$trunk__user = $db->run($trunk_query);
+		}
+	}		
+			
+
+	
+	if (isset ( $dataVariable ['call_type_custom'] ) && $dataVariable ['call_type_custom'] == "DID-REVERSE"){
+		$dataVariable ['type'] = $dataVariable ['call_type_custom'];
+		$termination_rate ['PROVIDER'] = $dataVariable ['provider_id'];
+	}
+
+	$addon_prefix = "";
+	if(isset($dataVariable ['calltype']) && $dataVariable ['calltype'] != ""){
+		$addon_prefix = "_".$dataVariable ['calltype'];
+	}
+	$call_custom_function= 'custom_process_hook'.$addon_prefix;		
+	if(function_exists($call_custom_function)){
+		$return_array = $call_custom_function($actual_calltype,$dataVariable,$accountid,$check_type,$logger,$db);
+		if(!empty($return_array)){	
+			$accountid = isset($return_array['accountid'])?$return_array['accountid']:$accountid;
+		}
+	}
+
+	if ($actual_duration > 0 && isset($dataVariable ['package_id']) && $dataVariable ['package_id'] > 0 ) {
+		$logger->log ( "LINE 456");
+		$package_array = package_calculation ( $dataVariable ['effective_destination_number'], $dataVariable ['package_id'], $actual_duration, $dataVariable ['call_direction'], $accountid,$dataVariable, $db, $logger );
+		if (! empty ( $package_array )) {
+			$dataVariable ['calltype'] = "Gratuita";
+			$dataVariable ['package_id'] = $package_array ['package_id'];
+		}
+	}
+	
+	$debit = calc_cost ( $dataVariable, $origination_rate [$accountid], $logger, $decimal_points, $config);
+	
+	$block_duration = calc_block_duration( $dataVariable, $origination_rate [$accountid], $logger, $config);
+
+	$provider_cost = calc_cost ( $dataVariable, $termination_rate, $logger, $decimal_points, $config);
+	
+	$parent_cost = ($parentid > 0) ? calc_cost ( $dataVariable, $origination_rate [$parentid], $logger, $decimal_points, $config) : $provider_cost;
+	
+	$cost = ($parent_cost > 0) ? $parent_cost : $provider_cost;
+	
+	$cdr_string = get_cdr_string ( $dataVariable, $accountid, $account_type, $actual_duration, $termination_rate, $origination_rate, $provider_cost, $parentid, $debit, $cost, $block_duration, $logger, $db );
+
+	
+	$query = "INSERT INTO cdrs (uniqueid,accountid,type,callerid,callednum,billseconds,trunk_id,trunkip,callerip,disposition,callstart,debit,cost,provider_id,pricelist_id,package_id,pattern,notes,rate_cost,reseller_id,reseller_code,reseller_code_destination,reseller_cost,provider_code,provider_code_destination,provider_cost,provider_call_cost,call_direction,calltype,call_request,country_id,sip_user,carrier_id,call_id_cadup,ct,end_stamp,block_billseconds)  values ($cdr_string)";
+
+	$db->run ( $query );
+	
+	if ($debit > 0 && $dataVariable ['calltype'] != "Gratuita") {
+		update_balance ( $accountid, $debit, 0, $logger, $db, $config,$dataVariable );
+	}
+	
+	if ($parent_cost > 0) {
+		update_balance ( $termination_rate ['PROVIDER'], ($parent_cost * - 1), 3, $logger, $db, $config,$dataVariable );
+	}
+	
+	$flag_parent = false;
+	insert_parent_data ( $dataVariable, $actual_calltype, $parentid, $origination_rate, $actual_duration, $provider_cost, $flag_parent, $logger, $db, $decimal_points, $config,$trunk_id );
+	
+	
+	$receiver_parentid = 0;
+	if (isset ( $dataVariable ['call_type_custom'] ) && $dataVariable ['call_type_custom'] != "DID-REVERSE"){
+		if (isset ( $dataVariable ['receiver_accid'] ) && $dataVariable ['receiver_accid'] != "") {
+			
+			
+			$dataVariable ['call_direction'] = "inbound";
+			if($dataVariable ['calltype'] == 'DID')
+			$dataVariable ['calltype'] = "DID";
+        	$dataVariable ['origination_call_type'] = $dataVariable ['call_type_rate'];
+			if ($actual_duration > 0 && isset($dataVariable ['package_id']) && $dataVariable ['package_id'] > 0) {
+				$logger->log ( "LINE 503");
+				$package_array = package_calculation ( $dataVariable ['effective_destination_number'], $dataVariable ['package_id'], $actual_duration, $dataVariable ['call_direction'], $accountid,$dataVariable, $db, $logger );
+				if (! empty ( $package_array )) {
+					$dataVariable ['calltype'] = "Gratuita";
+					$dataVariable ['package_id'] = $package_array ['package_id'];
+				}
+			}
+			if (isset ( $dataVariable ['caller_did_account_id'] )) {
+				$dataVariable ['receiver_accid'] = $dataVariable ['caller_did_account_id'];
+				$dataVariable ['call_direction'] = "outbound";
+				$dataVariable ['effective_destination_number'] = $dataVariable ['sip_to_user'];
+				unset ( $termination_rate );
+				unset ( $provider_cost );
+			}
+			
+			$receiver_carddata = get_accounts ( $dataVariable ['receiver_accid'], $logger, $db );
+			$receiver_parentid = $receiver_carddata ['reseller_id'];
+			
+			insert_extra_receiver_entry ( $dataVariable, $origination_rate, $termination_rate, $account_type, $actual_duration, $provider_cost, $receiver_parentid, $flag_parent, $dataVariable ['receiver_accid'], $logger, $db, $decimal_points, $config,$trunk_id, $block_duration);
+			$flag_parent = true;
+			$dataVariable ['uuid'] = $dataVariable ['uuid'] . $dataVariable ['calltype'] . "_" . $receiver_parentid;
+			
+			insert_parent_data ( $dataVariable, $actual_calltype, $receiver_parentid, $origination_rate, $actual_duration, $provider_cost, $flag_parent, $logger, $db, $decimal_points, $config );
+		}	
+	}
+    $logger->log ("process_file_cdr end");
+    return 'cdr_ends';
+}
+
 // Insert parent resellers cdr
 /**
  *
