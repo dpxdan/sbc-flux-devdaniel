@@ -380,16 +380,10 @@ normalize_mysql ()
                 sed -i '26i sql-mode=""' /etc/my.cnf
                 systemctl restart mysqld
                 systemctl enable mysqld
-        #elif  [ ${DIST} = "DEBIAN10" ]; then
         elif [[ $DIST = "DEBIAN10" || $DIST = "DEBIAN11" ]]; then
                 cp ${FLUX_SOURCE_DIR}/misc/odbc_conf/deb_odbc.ini /etc/odbc.ini
                 mv /etc/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.old
                 cp ${FLUX_SOURCE_DIR}/config/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf   
-                #sed -i '28i wait_timeout=600' /etc/mysql/conf.d/mysql.cnf
-                #sed -i '28i interactive_timeout = 600' /etc/mysql/conf.d/mysql.cnf
-                #sed -i '28i sql_mode=""' /etc/mysql/conf.d/mysql.cnf
-		            #sed -i '33i log_bin_trust_function_creators = 1' /etc/mysql/conf.d/mysql.cnf
-                #sed -i '28i [mysqld]' /etc/mysql/conf.d/mysql.cnf
                 systemctl restart mysql
                 systemctl enable mysql
         fi
@@ -554,12 +548,17 @@ normalize_flux ()
                 sed -i "s/memory_limit = 128M/memory_limit = 512M/" /etc/php.ini
                 systemctl restart php-fpm
                 CRONPATH='/var/spool/cron/flux'
-        #elif  [ ${DIST} = "DEBIAN10" ]; then
         elif [[ $DIST = "DEBIAN10" || $DIST = "DEBIAN11" ]]; then
 		        sudo apt-get install -y locales-all python3-certbot-nginx python3-certbot
                 /bin/cp /usr/src/ioncube/ioncube_loader_lin_7.3.so /usr/lib/php/20180731/
                 echo "zend_extension = /usr/lib/php/20180731/ioncube_loader_lin_7.3.so" | tee /etc/php/7.3/fpm/conf.d/00-ioncube.ini
                 echo "zend_extension = /usr/lib/php/20180731/ioncube_loader_lin_7.3.so" | tee /etc/php/7.3/cli/conf.d/00-ioncube.ini
+                mv /etc/nginx/nginx.conf /etc/nginx/nginx.old
+                cp ${FLUX_SOURCE_DIR}/web_interface/nginx/deb_nginx.conf /etc/nginx/nginx.conf                
+                mv /etc/php/7.3/fpm/pool.d/www.conf /etc/php/7.3/fpm/pool.d/www.old
+                cp ${FLUX_SOURCE_DIR}/web_interface/nginx/deb_www.conf /etc/php/7.3/fpm/pool.d/www.conf                
+                systemctl restart nginx
+                systemctl restart php7.3-fpm
                 iptables -A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
                 iptables -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
                 certbot -m suporte@flux.net.br --nginx -d ${FLUX_HOST_DOMAIN_NAME} --agree-tos -n --no-redirect certonly -q
@@ -567,9 +566,9 @@ normalize_flux ()
                 sed "s@ssl_certificate[ \t]*/etc/nginx/ssl/nginx.crt;@ssl_certificate /etc/letsencrypt/live/${FLUX_HOST_DOMAIN_NAME}/fullchain.pem;@g" -i /etc/nginx/conf.d/flux.conf
                 sed "s@ssl_certificate_key[ \t]*/etc/nginx/ssl/nginx.key;@ssl_certificate_key /etc/letsencrypt/live/${FLUX_HOST_DOMAIN_NAME}/privkey.pem;@g" -i /etc/nginx/conf.d/flux.conf
                 sed -i "s#server_name _#server_name ${FLUX_HOST_DOMAIN_NAME}#g" /etc/nginx/conf.d/flux.conf                
-                systemctl start nginx
+                systemctl restart nginx
                 systemctl enable nginx
-                systemctl start php7.3-fpm
+                systemctl restart php7.3-fpm
                 systemctl enable php7.3-fpm
                 chown -Rf root.root ${FLUXDIR}
                 chown -Rf www-data.www-data ${FLUXLOGDIR}
@@ -632,7 +631,6 @@ install_freeswitch ()
                 apt-get update && apt-get install -y freeswitch-meta-all
                 echo "FREESWITCH installed successfully. . ."
 
-        #elif  [ ${DIST} = "DEBIAN10" ]; then
         elif [[ $DIST = "DEBIAN10" || $DIST = "DEBIAN11" ]]; then
                 echo "Installing FREESWITCH"
                 sleep 6s
@@ -679,7 +677,6 @@ normalize_freeswitch ()
                 chmod -Rf 755 ${WWWDIR}/fs
                 /bin/systemctl restart freeswitch
                 /bin/systemctl enable freeswitch
-        #elif  [ ${DIST} = "DEBIAN10" ]; then
         elif [[ $DIST = "DEBIAN10" || $DIST = "DEBIAN11" ]]; then
                 cp -rf ${FLUX_SOURCE_DIR}/web_interface/nginx/deb_fs.conf /etc/nginx/conf.d/fs.conf
                 chown -Rf root.root ${WWWDIR}/fs

@@ -3729,7 +3729,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	}
 	function get_did_billing_type($select="",$table= "",$product_id= ""){
 		$billing_type = $this->get_field_name("billing_type","products",array("id"=>$product_id));
-		return $billing_type = ($billing_type == 1) ? gettext ( 'One Time' ) : gettext ( 'Recurring' );
+		return $billing_type = ($billing_type == 0) ? gettext ( 'One Time' ) : gettext ( 'Recurring' );
 	}
 	function get_localization($select = "", $table = "", $type = '') {
 
@@ -4374,6 +4374,13 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 				'0' => gettext ( 'InProgress' ),
 				'1' => gettext ( 'Pending' ),
 				'2' => gettext ( 'Completed' )
+		);
+		return $status_array;
+	}
+	function set_cdr_file_mode($status = '') {
+		$status_array = array (
+				'file' => gettext ( 'File' ),
+				'url' => gettext ( 'URL' )
 		);
 		return $status_array;
 	}

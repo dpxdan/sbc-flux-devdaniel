@@ -68,6 +68,8 @@ $route['apisync-locations'] = 'ApiSync/sync_locations';
 $route['apisync-plans'] = 'ApiSync/sync_voip_plans';
 $route['apisync-cdrs'] = 'ApiSync/sync_cdrs';
 
+$route['cdr_mode'] = "Cdr_config/index";
+$route['cdr_mode/setMode'] = "Cdr_config/setMode";
 
 $route['feedback'] = "feedback/index";
 

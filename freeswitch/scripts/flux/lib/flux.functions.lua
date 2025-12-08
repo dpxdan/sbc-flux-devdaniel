@@ -252,15 +252,20 @@ function doauthorization(field_type,accountcode,call_direction,destination_numbe
 end
 
 function check_local_number(destination_number, callerid_number)
-	if string.len(destination_number) == 8  and callerid_number then
-		Logger.notice("[CHECK_LOCAL_NUMBER] Local Call: "..destination_number)
-		local cn_callerid_number = string.sub(callerid_number, 1, 2)
-		Logger.notice("[CHECK_LOCAL_NUMBER] CN of Caller Number: "..cn_callerid_number)
-		destination_number = cn_callerid_number .. destination_number
-		Logger.notice("[CHECK_LOCAL_NUMBER] Formatted Number: "..destination_number)
-	end
+    if is_valid_did(destination_number) then
+        Logger.notice("[CHECK_LOCAL_NUMBER] DID Number: " .. destination_number)
+        return destination_number
+    end
+    
+    if string.len(destination_number) == 8 and callerid_number then
+        Logger.notice("[CHECK_LOCAL_NUMBER] Local Call: " .. destination_number)
+        local cn_callerid_number = string.sub(callerid_number, 1, 2)
+        Logger.notice("[CHECK_LOCAL_NUMBER] CN of Caller Number: " .. cn_callerid_number)
+        destination_number = cn_callerid_number .. destination_number
+        Logger.notice("[CHECK_LOCAL_NUMBER] Formatted Number: " .. destination_number)
+    end
 
-	return destination_number
+    return destination_number
 end
 
 -- Get balance from account info 
@@ -930,4 +935,15 @@ function get_sip_codec(sip_user_name)
 	else
 		return sip_codec_for_outbound['sip_codec'];
 	end
+end
+
+function is_valid_did(num)
+    local check = nil
+    Logger.notice("[IS_VALID_DID] num :" .. num)
+    local query = "SELECT id FROM "..TBL_DIDS.." WHERE number=\"" .. num .. "\" LIMIT 1"
+    Logger.warning("[IS_VALID_DID] Query :" .. query)
+    dbh:query(query, function(u)
+        check = u
+    end)
+    return check ~= nil
 end
