@@ -797,19 +797,13 @@ if [ ${DIST} = "DEBIAN" ]; then
         sed -i -e 's/daily/size 30M/g' /etc/logrotate.d/rsyslog
         sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/rsyslog
         sed -i -e 's/rotate 7/rotate 5/g' /etc/logrotate.d/rsyslog
-        sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/php7.3-fpm
-        sed -i -e 's/rotate 12/rotate 5/g' /etc/logrotate.d/php7.3-fpm
-        sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/nginx
-        sed -i -e 's/rotate 52/rotate 5/g' /etc/logrotate.d/nginx
+        cp -rf ${FLUX_SOURCE_DIR}/config/logrotate.d/* /etc/logrotate.d/
 #elif [ ${DIST} = "DEBIAN10" ]; then
 elif [[ $DIST = "DEBIAN10" || $DIST = "DEBIAN11" ]]; then
         sed -i -e 's/daily/size 30M/g' /etc/logrotate.d/rsyslog
         sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/rsyslog
         sed -i -e 's/rotate 7/rotate 5/g' /etc/logrotate.d/rsyslog
-        sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/php7.3-fpm
-        sed -i -e 's/rotate 12/rotate 5/g' /etc/logrotate.d/php7.3-fpm
-        sed -i -e 's/weekly/size 30M/g' /etc/logrotate.d/nginx
-        sed -i -e 's/rotate 52/rotate 5/g' /etc/logrotate.d/nginx
+        cp -rf ${FLUX_SOURCE_DIR}/config/logrotate.d/* /etc/logrotate.d/
 elif [ ${DIST} = "CENTOS" ]; then
         sed -i '7 i size 30M' /etc/logrotate.d/syslog
         sed -i '7 i rotate 5' /etc/logrotate.d/syslog
@@ -818,6 +812,8 @@ elif [ ${DIST} = "CENTOS" ]; then
         sed -i -e 's/daily/size 30M/g' /etc/logrotate.d/nginx
         sed -i -e 's/rotate 10/rotate 5/g' /etc/logrotate.d/nginx
 fi
+        /usr/sbin/logrotate -f /etc/logrotate.conf
+        log_message "instalação logrotate concluída com sucesso!"
 }
 
 #Install G729
