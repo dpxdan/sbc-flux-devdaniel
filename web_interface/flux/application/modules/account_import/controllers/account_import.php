@@ -457,9 +457,7 @@ class Account_import extends MX_Controller
             }
         }
 
-        $localization_id = Common_model::$global_config['system_config']['localization_id'];
         $localization_result = $this->db->get_where('localization', array(
-            "id" => $localization_id,
             "status" => 0
         ))->result_array();
 
@@ -524,7 +522,6 @@ class Account_import extends MX_Controller
             if ($value == "localization_id") {
                 $localization_value = isset($add_array[$value]) ? $add_array[$value] : Common_model::$global_config['system_config']['localization_id'];
                 if($localization_value == 0){
-                    $localization_array = "";
                     $custom_array[$value] =form_dropdown($params_arr, $localization_array, $localization_value);
                 }else{
                     $custom_array[$value] = form_dropdown($params_arr, $localization_array, $localization_value);
