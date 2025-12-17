@@ -340,7 +340,7 @@ class Reports_form extends common
                     '',
                     '',
                     '',
-                    'set_calltype_report'
+                    'set_calltype_new'
                 ),
                 array(
                     gettext('Select Year'),
@@ -1019,7 +1019,7 @@ class Reports_form extends common
                 '',
                 '',
                 '',
-                'set_calltype_report'
+                'set_calltype_new'
             ),
             array(
                 gettext('Select Year'),
@@ -1329,7 +1329,7 @@ class Reports_form extends common
                 '',
                 '',
                 '',
-                'set_calltype_report'
+                'set_calltype_new'
             ),
             array(
                 gettext('Select Year'),
