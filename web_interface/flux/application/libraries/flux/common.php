@@ -4128,10 +4128,10 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$account_res = ( array ) $this->CI->db->get_where ( "accounts", $where )->first_row ();
 		
 		if ($account_res ['type'] == 0) {
-			$return_value .= " <span title='Edit'> </span>" . '<div class="col-md-12 p-0"><span class="badge badge-success float-left mr-2 mt-1" title="Customer">'.gettext("Customer").'</span>';
+			$return_value .= " <span title='".gettext("Edit")."' </span>" . '<div class="col-md-12 p-0"><span class="badge badge-success float-left mr-2 mt-1" title="'.gettext("Customer").'">'.gettext("Customer").'</span>';
 		}
 		if ($account_res ['type'] == 3) {
-			$return_value .= " <span title='Edit'> </span>" . '<div class="col-md-12 p-0"><span class="badge badge-primary float-left mr-2 mt-1" title="Provider">'.gettext("Provider").'</span>';
+			$return_value .= " <span title='".gettext("Edit")."' </span>" . '<div class="col-md-12 p-0"><span class="badge badge-primary float-left mr-2 mt-1" title="'.gettext("Provider").'">'.gettext("Provider").'</span>';
 		}
 		if ($account_res ['posttoexternal'] == 0 || $account_res ['posttoexternal'] == 1) {
 			$return_value .= "<span class='badge badge-dark float-left ml-1 mt-1'>".$this->get_account_type ( "", "", $account_res ['posttoexternal'] ) ."</span></div>"; 
