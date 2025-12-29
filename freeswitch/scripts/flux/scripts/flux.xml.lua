@@ -183,7 +183,85 @@ function freeswitch_xml_outbound(xml,destination_number,outbound_info,callerid_a
 		-----------------------------------
 		
 	end
+	
+if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] ~= '') then 
+		Logger.notice("caller_id_type: ".. outbound_info['caller_id_type']);
+		Logger.notice("caller_id_number: ".. outbound_info['caller_id_number']);		
+		if (outbound_info['caller_id_type'] == 'single') then
+		table.insert(xml, [[<action application="set" data="effective_caller_id_number=]]..outbound_info['caller_id_number']..[["/>]])
+		table.insert(xml, [[<action application="export" data="effective_caller_id_number=]]..outbound_info['caller_id_number']..[["/>]])
+		table.insert(xml, [[<action application="set" data="effective_caller_id_name=]]..outbound_info['caller_id_number']..[["/>]])
+		table.insert(xml, [[<action application="export" data="effective_caller_id_name=]]..outbound_info['caller_id_number']..[["/>]])
+		table.insert(xml, [[<action application="set" data="original_caller_id_number=]]..outbound_info['caller_id_number']..[["/>]])
+		table.insert(xml, [[<action application="export" data="original_caller_id_number=]]..outbound_info['caller_id_number']..[["/>]])
+		table.insert(xml, [[<action application="set" data="original_caller_id_name=]]..outbound_info['caller_id_number']..[["/>]])
+		table.insert(xml, [[<action application="export" data="original_caller_id_name=]]..outbound_info['caller_id_number']..[["/>]])
+		elseif (outbound_info['caller_id_type'] == 'multiple') then
+			    Logger.notice("caller_id_type: multiple")
+			    local caller_ids = split_cid(outbound_info['caller_id_number'], ",")
+			
+			    if #caller_ids > 0 then
+			        math.randomseed(os.time())
+			        local random_index = math.random(1, #caller_ids)
+			        local selected_caller_id = caller_ids[random_index]
+			
+			        Logger.notice("Caller ID Multiple Set: " .. selected_caller_id)
+			
+			        table.insert(xml, [[<action application="set" data="effective_caller_id_number=]] ..
+			            selected_caller_id .. [["/>]])
+			        table.insert(xml, [[<action application="export" data="effective_caller_id_number=]] ..
+			            selected_caller_id .. [["/>]])
+			        table.insert(xml, [[<action application="set" data="effective_caller_id_name=]] ..
+			            selected_caller_id .. [["/>]])
+			        table.insert(xml, [[<action application="export" data="effective_caller_id_name=]] ..
+			            selected_caller_id .. [["/>]])
+			        table.insert(xml, [[<action application="set" data="original_caller_id_number=]] ..
+			            selected_caller_id .. [["/>]])
+			        table.insert(xml, [[<action application="export" data="original_caller_id_number=]] ..
+			            selected_caller_id .. [["/>]])
+			        table.insert(xml, [[<action application="set" data="original_caller_id_name=]] ..
+			            selected_caller_id .. [["/>]])
+			        table.insert(xml, [[<action application="export" data="original_caller_id_name=]] ..
+			            selected_caller_id .. [["/>]])			        
+			    else
+			        Logger.error("Invalid Caller ID")
+			    end
+			
+		elseif (outbound_info['caller_id_type'] == 'range') then
+		    Logger.notice("caller_id_type: range")
+		
+		    local selected_caller_id = generate_caller_id_from_range(outbound_info['caller_id_number'])
+		
+		    if selected_caller_id then
+		        Logger.notice("Caller ID Range Set: " .. selected_caller_id)
+		
+		        table.insert(xml, [[<action application="set" data="effective_caller_id_number=]] ..
+		            selected_caller_id .. [["/>]])
+		        table.insert(xml, [[<action application="export" data="effective_caller_id_number=]] ..
+		            selected_caller_id .. [["/>]])
+		        table.insert(xml, [[<action application="set" data="effective_caller_id_name=]] ..
+		            selected_caller_id .. [["/>]])
+		        table.insert(xml, [[<action application="export" data="effective_caller_id_name=]] ..
+		            selected_caller_id .. [["/>]])
+		        table.insert(xml, [[<action application="set" data="original_caller_id_number=]] ..
+		            selected_caller_id .. [["/>]])
+		        table.insert(xml, [[<action application="export" data="original_caller_id_number=]] ..
+		            selected_caller_id .. [["/>]])
+		        table.insert(xml, [[<action application="set" data="original_caller_id_name=]] ..
+		            selected_caller_id .. [["/>]])
+		        table.insert(xml, [[<action application="export" data="original_caller_id_name=]] ..
+		            selected_caller_id .. [["/>]])
+		    else
+		        Logger.error("Invalid Caller ID Range: " ..
+		            tostring(outbound_info['caller_id_number']))
+		    end
+		end
+		table.insert(xml, [[<action application="set" data="caller_id_type=]]..outbound_info['caller_id_type']..[["/>]])
+		table.insert(xml, [[<action application="export" data="caller_id_type=]]..outbound_info['caller_id_type']..[["/>]])			        
+    else	
 	xml = freeswitch_xml_callerid(xml,callerid_array)
+	end
+	
 	if(outbound_info['prepend'] ~= '' or outbound_info['strip'] ~= '') then
 
         if (outbound_info['prepend'] == '') then 
@@ -587,12 +665,20 @@ function freeswitch_xml_local(xml,destination_number,destinationinfo,callerid_ar
 end
 
 -- Set callerid to override in calls
+
 function freeswitch_xml_callerid(xml,calleridinfo)
         if (calleridinfo['cid_name'] ~= '' and calleridinfo['cid_name'] ~= '<null>')  then
-                table.insert(xml, [[<action application="set" data="effective_caller_id_name=]]..calleridinfo['cid_name']..[["/>]]);
+		table.insert(xml, [[<action application="set" data="effective_caller_id_name=]]..calleridinfo['cid_name']..[["/>]]);
+		table.insert(xml, [[<action application="export" data="effective_caller_id_name=]]..calleridinfo['cid_name']..[["/>]])
+		table.insert(xml, [[<action application="set" data="original_caller_id_name=]]..calleridinfo['cid_name']..[["/>]])
+		table.insert(xml, [[<action application="export" data="original_caller_id_name=]]..calleridinfo['cid_name']..[["/>]])
+
         end
         if (calleridinfo['cid_number'] ~= '' and calleridinfo['cid_number'] ~= '<null>')  then
-                table.insert(xml, [[<action application="set" data="effective_caller_id_number=]]..calleridinfo['cid_number']..[["/>]]);
+		table.insert(xml, [[<action application="set" data="effective_caller_id_number=]]..calleridinfo['cid_number']..[["/>]]);
+		table.insert(xml, [[<action application="export" data="effective_caller_id_number=]]..calleridinfo['cid_number']..[["/>]])
+		table.insert(xml, [[<action application="set" data="original_caller_id_number=]]..calleridinfo['cid_number']..[["/>]])
+		table.insert(xml, [[<action application="export" data="original_caller_id_number=]]..calleridinfo['cid_number']..[["/>]])
         end
         return xml
 end

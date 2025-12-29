@@ -340,7 +340,6 @@ class Freeswitch extends MX_Controller
                 }
             }
         }
-        // FLUXUPDATE-943 Kinjal END
         foreach ($query as $key => $value) {
             $checkbox = array(
                 '<input type="checkbox" name="chkAll" id=' . $value['id'] . ' class="ace chkRefNos" onclick="clickchkbox(' . $value['id'] . ')" value=' . $value['id'] . '><lable class="lbl"></lable>'
@@ -352,12 +351,10 @@ class Freeswitch extends MX_Controller
             } else {
                 $voicemail_enabled = '<img src=' . $path_false . ' style="height:20px;width:20px;" title="Disable">';
             }
-            // FLUXUPDATE-943 Start
             $live_status = "<i class='fa fa-circle' style='color: #FF3131'></i>";
             if (in_array($value['username'],$new_array)) {
                 $live_status = "<i class='fa fa-circle' style='color: #00FF00'></i>";
             }
-            // FLUXUPDATE-943 END
             $account_data = $this->session->userdata("accountinfo");
             $reseller_ids = $value['reseller_id'];
             if ($reseller_ids == 0) {
@@ -367,13 +364,11 @@ class Freeswitch extends MX_Controller
                     '0' => $reseller_ids
                 ));
             }
-            // FLUXUPDATE-943 Start
             $edit_permission=$value['username'];
             if ((isset($permissioninfo['freeswitch']['fssipdevices']['edit']) && $permissioninfo['freeswitch']['fssipdevices']['edit'] == 0 or $permissioninfo['login_type'] == '-1' )) {
                 $base_url = base_url().'freeswitch/fssipdevices_edit/'.$value['id'];
                 $edit_permission="<span style='margin-right:8px' id='live_status_".$value['username']."'>".$live_status."</span><a href='/freeswitch/fssipdevices_edit/" . $value['id'] . "' style='cursor:pointer;color:#3b3280' rel='facebox_medium' title='".gettext('User Name')."'>" . $value['username'] . "</a>";
             }
-            // FLUXUPDATE-943 END
             $current_row = array(
                 $checkbox,
                 $edit_permission,
@@ -717,7 +712,6 @@ class Freeswitch extends MX_Controller
     function fsgateway_json()
     {
         $json_data = array();
-        // FLUXUPDATE-943 Kinjal Start
         $new_array = array();
         $command = "api sofia xmlstatus gateway"; 
         $response = $this->freeswitch_model->reload_freeswitch($command,$id);
@@ -733,7 +727,6 @@ class Freeswitch extends MX_Controller
                 array_push($new_array, $response_arr['gateway']['name']);
            }
         }
-        // FLUXUPDATE-943 Kinjal END
 
         $count_all = $this->freeswitch_model->get_gateway_list(false);
         $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
@@ -741,9 +734,7 @@ class Freeswitch extends MX_Controller
         $gateway_data = array();
         $query = $this->freeswitch_model->get_gateway_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
         $gateway_result = array();
-        // Kinjal FLUXUPDATE-943 Start
         $live_status = "<i class='fa fa-circle' style='color: #FF3131'></i>";
-        // Kinjal FLUXUPDATE-943 END
         if ($query->num_rows() > 0) {
             $query = $query->result_array();
             foreach ($query as $key => $query_value) {
@@ -751,7 +742,6 @@ class Freeswitch extends MX_Controller
                 $tmp = null;
                 foreach ($query_value as $gateway_key => $gateway_val) {
                     if ($gateway_key != "gateway_data") {
-                        // Kinjal FLUXUPDATE-943 Start
                         if($gateway_key == "name"){
                             if (in_array($query_value['name'],$new_array)) {
                                 $live_status = "<i class='fa fa-circle hello' style='color: #00FF00'></i>";
@@ -764,8 +754,8 @@ class Freeswitch extends MX_Controller
                         }else{
                             $gateway_data[$gateway_key] = $gateway_val;
                         }
-                        // Kinjal FLUXUPDATE-943 END
-                    } else {
+                    } 
+                    else {
                         $tmp = (array) json_decode($gateway_val);
                     }
                 }
@@ -783,6 +773,7 @@ class Freeswitch extends MX_Controller
         $data['flag'] = 'create';
         $data['page_title'] = gettext('Create Gateway');
         $data['form'] = $this->form->build_form($this->freeswitch_form->get_gateway_form_fields(), '');
+        $data ['cid_from'] = 1;
         $this->load->view('view_fsgateway_add', $data);
     }
 
@@ -798,13 +789,24 @@ class Freeswitch extends MX_Controller
         foreach ($query as $key => $query_value) {
             foreach ($query_value as $gateway_key => $gatewau_val) {
                 $gateway_data["status"] = isset($query_value["status"]) ? $query_value["status"] : "";
+                $gateway_data["caller_id_type"] = isset($query_value["caller_id_type"]) ? $query_value["caller_id_type"] : "";
+                $gateway_data["caller_id_number"] = isset($query_value["caller_id_number"]) ? $query_value["caller_id_number"] : "";
                 if ($gateway_key != "gateway_data") {
                     $gateway_data[$gateway_key] = $gatewau_val;
-                } else if ($gateway_key == "status") {
+                } 
+                else if ($gateway_key == "status") {
                     $gateway_data[$gateway_key] = $gatewau_val;
-                } else if ($gateway_key == "dialplan_variable") {
+                }
+                else if ($gateway_key == "caller_id_type") {
                     $gateway_data[$gateway_key] = $gatewau_val;
-                } else {
+                }
+                else if ($gateway_key == "caller_id_number") {
+                    $gateway_data[$gateway_key] = $gatewau_val;
+                } 
+                else if ($gateway_key == "dialplan_variable") {
+                    $gateway_data[$gateway_key] = $gatewau_val;
+                } 
+                else {
                     $tmp = (array) json_decode($gatewau_val);
                     $gateway_result = array_merge($gateway_data, $tmp);
                 }
@@ -812,10 +814,21 @@ class Freeswitch extends MX_Controller
         }
         if (! empty($gateway_data['dialplan_variable']) && $gateway_data['dialplan_variable'] != '') {
             $gateway_result['dialplan_variable'] = $gateway_data['dialplan_variable'];
-        } else {
+        } 
+        else {
             $gateway_result['dialplan_variable'] = '';
         }
         $data['form'] = $this->form->build_form($this->freeswitch_form->get_gateway_form_fields(), $gateway_result);
+        
+        $gateway_data_new = $this->common->get_field_name ('gateway_data', 'gateways', $where);
+        $gateway_data_new_decode = json_decode($gateway_data_new, true);
+        $gateway_data_new_edit = $gateway_data_new_decode['caller-id-in-from'];
+        if(isset($gateway_data_new_edit) && $gateway_data_new_edit === 'true'){
+        	$data ['cid_from'] = 1;		
+        	} 
+        else{
+        	$data ['cid_from'] = 0;
+        }
         $this->load->view('view_fsgateway_add', $data);
     }
 
@@ -826,22 +839,31 @@ class Freeswitch extends MX_Controller
         $insert_arr = array();
         $gateway_arr = array();
         $insert_arr['dialplan_variable'] = "";
-        // Kinjal FLUXUPDATE-943 Start
         $mod_sofia = "api reload mod_sofia";
-        // Kinjal FLUXUPDATE-943 END
         foreach ($gateway_data as $key => $gateway_value) {
             if ($gateway_value != "") {
                 if ($key == "sip_profile_id") {
                     $insert_arr['sip_profile_id'] = $gateway_data["sip_profile_id"];
-                } else if ($key == "name") {
+                }
+                else if ($key == "name") {
                     $insert_arr['name'] = $gateway_data["name"];
-                } else if ($key == "sip_profile_id") {
+                } 
+                else if ($key == "sip_profile_id") {
                     $insert_arr['sip_profile_id'] = $gateway_data["sip_profile_id"];
-                } else if ($key == "dialplan_variable") {
+                }
+                else if ($key == "dialplan_variable") {
                     $insert_arr['dialplan_variable'] = $gateway_data["dialplan_variable"];
-                } else if ($key == "status") {
+                }
+                else if ($key == "status") {
                     $insert_arr[$key] = $gateway_data["status"];
-                } else {
+                }
+                else if ($key == "caller_id_type") {
+                    $insert_arr[$key] = $gateway_data["caller_id_type"];
+                }
+                else if ($key == "caller_id_number") {
+                    $insert_arr[$key] = $gateway_data["caller_id_number"];
+                }
+                else {
                     if ($key == "proxy" || $key == "outbound-proxy" || $key == "register-proxy") {
                         $gateway_value = str_replace(" ", "", $gateway_value);
                         $gateway_arr[$key] = $gateway_value;
@@ -883,7 +905,14 @@ class Freeswitch extends MX_Controller
                     ));
                     exit();
                 }
-
+				if(isset($gateway_data['caller-id-in-from']) && $gateway_data['caller-id-in-from'] === 'false'){
+				$insert_arr['caller_id_type'] = '';
+				$insert_arr['caller_id_number'] = '';
+				}                
+                if ($gateway_data['caller_id_type'] == '') {
+                $insert_arr['caller_id_type'] = '';
+                $insert_arr['caller_id_number'] = '';
+                }
                 $insert_arr['last_modified_date'] = gmdate('Y-m-d H:i:s');
                 $this->db->select('name,sip_profile_id');
                 $old_gateway_info = (array) $this->db->get_where('gateways', array(
@@ -906,15 +935,11 @@ class Freeswitch extends MX_Controller
                     $this->freeswitch_model->reload_freeswitch($cmd, $sip_ip);
                     $cmd2 = "api sofia profile " . $sip_profile_info['name'] . " rescan reloadacl reloadxml";
                     $this->freeswitch_model->reload_freeswitch($cmd2, $sip_ip);
-                    // Kinjal FLUXUPDATE-943 Start
                     $this->freeswitch_model->reload_freeswitch($mod_sofia);
-                    // Kinjal FLUXUPDATE-943 END
                 }
-                // Kinjal FLUXUPDATE-943 Start
                 sleep(1);
-                // Kinjal FLUXUPDATE-943 END
                 echo json_encode(array(
-                    "SUCCESS" => ucfirst($insert_arr['name']) . gettext("Gateway Updated Successfully!")
+                    "SUCCESS" => gettext("Gateway ") . ucfirst($insert_arr['name']) . " " . gettext("Updated Successfully!")
                 ));
                 exit();
             }
@@ -1118,7 +1143,7 @@ class Freeswitch extends MX_Controller
         function fsserver_delete($id)
         {
             $this->freeswitch_model->fsserver_delete($id);
-            $this->session->set_flashdata('astpp_notification', gettext('Flux Server Removed Successfully!'));
+            $this->session->set_flashdata('flux_notification', gettext('Flux Server Removed Successfully!'));
             redirect(base_url() . 'freeswitch/fsserver_list/');
             exit();
         }

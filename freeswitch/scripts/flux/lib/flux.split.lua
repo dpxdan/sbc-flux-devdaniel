@@ -13,6 +13,20 @@ function split_new(str, sep, plain)
   return res
 end
 
+function split_cid(str, delimiter)
+    local result = {}
+    if not str or str == '' then
+        return result
+    end
+
+    for match in (str .. delimiter):gmatch("(.-)" .. delimiter) do
+        match = match:match("^%s*(.-)%s*$")
+        table.insert(result, match)
+    end
+
+    return result
+end
+
 function split_first(str, sep, plain)
   local e, e2 = string.find(str, sep, nil, plain)
   if e then

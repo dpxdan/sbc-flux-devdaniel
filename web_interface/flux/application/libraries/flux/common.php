@@ -4384,4 +4384,13 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		);
 		return $status_array;
 	}
+	function set_caller_id_type_option($option = "") {
+		$status_array = array (
+		        '' => gettext ( '--Select--' ),
+				'single' => gettext ( 'Single' ),				
+				'multiple' => gettext ( 'Multiple' ),
+				'range' => gettext ( 'Range' )
+		);
+		return $status_array;
+	}
 }

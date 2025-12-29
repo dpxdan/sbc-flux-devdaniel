@@ -39,6 +39,45 @@ function split(str, pat)
    return t
 end 
 
+function generate_caller_id_from_range(range_str)
+    if not range_str then
+        return nil
+    end
+
+    local base, max_range = range_str:match("^(%d+):(%d+)$")
+    if not base or not max_range then
+        return nil
+    end
+
+    local base_length = #base
+    if base_length ~= 10 and base_length ~= 11 then
+        return nil
+    end
+
+    local suffix_length = 4
+
+    local prefix = base:sub(1, base_length - suffix_length)
+    local base_suffix = tonumber(base:sub(-suffix_length))
+
+    max_range = tonumber(max_range)
+
+    if not base_suffix or not max_range or max_range < base_suffix or max_range > 9999 then
+        return nil
+    end
+
+    if not _G.__caller_id_seeded then
+        math.randomseed(os.time() + math.random(1000))
+        _G.__caller_id_seeded = true
+    end
+
+    local random_suffix = math.random(base_suffix, max_range)
+    local formatted_suffix = string.format("%0" .. suffix_length .. "d", random_suffix)
+
+    local caller_id = prefix .. formatted_suffix
+    return caller_id
+end
+
+
 function explode2(div,str)
     if (div=='') then return false end
     local pos,arr = 0,{}

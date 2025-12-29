@@ -17,6 +17,10 @@ $tooltip_data = array(
 
 	"gateway_form_caller-id-in-from" => "Whether to replace the invite from user with the channel's caller-id",
 
+	"gateway_form_caller_id_type" => "Caller ID Type",
+			
+	"gateway_form_caller_id_number" => "Format according to the selected type:</br><b>Single</b>: a single number only.</br><b>Multiple</b>: numbers separated by commas.</br><b>Range</b>: initial_number:0000",
+
 	"gateway_form_status" => "Status of gateway",
 	/*End*/
 

@@ -44,6 +44,8 @@ dofile(script_path.."lib/flux.db.lua");
 -- Call database connection
 db_connect()
 
+dofile(script_path.."lib/flux.split.lua");
+
 -- Include common functions file 
 dofile(script_path.."lib/flux.functions.lua");
 config = load_conf()

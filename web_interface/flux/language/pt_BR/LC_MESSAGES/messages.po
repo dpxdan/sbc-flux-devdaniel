@@ -263,7 +263,7 @@ msgid "Caller Number"
 msgstr "Número do chamador"
 
 msgid "Caller-Id-In-From"
-msgstr "Caller-Id-In-From"
+msgstr "Caller ID no From"
 
 msgid "Calling Card"
 msgstr "Cartão Pré-Pago"
@@ -788,7 +788,7 @@ msgid "Import"
 msgstr "Importar"
 
 msgid "Import Customers"
-msgstr "Clientes Importados"
+msgstr "Importar Clientes"
 
 msgid "Import with field map"
 msgstr "Importar com mapa de campo"
@@ -971,7 +971,7 @@ msgid "Markup"
 msgstr "Taxa adicional"
 
 msgid "Mass Create"
-msgstr "Criação em lote"
+msgstr "Criação em Lote"
 
 msgid "Mass Email"
 msgstr "Email em lote"
@@ -1817,7 +1817,7 @@ msgid "Import Ratedeck"
 msgstr "Importar verificação nominal"
 
 msgid "Optional Information"
-msgstr "informação opcional"
+msgstr "Informação Opcional"
 
 msgid "From- Domain"
 msgstr "Domínio de origem"
@@ -1835,13 +1835,13 @@ msgid "Ping"
 msgstr "Ping"
 
 msgid "Contact Params"
-msgstr "Contact Params"
+msgstr "Parâmetros de Contato"
 
 msgid "Retry-Seconds"
-msgstr "Tentar novamente em segundos"
+msgstr "Intervalo entre Registros com Falha"
 
 msgid "Register-Proxy"
-msgstr "Proxy de registro"
+msgstr "Proxy de Registro"
 
 msgid "Channel"
 msgstr "Canal"
@@ -3269,7 +3269,7 @@ msgid "Caller-ID-A-Form"
 msgstr "Formulário de identificação de chamadas"
 
 msgid "Expire Seconds"
-msgstr "Expire Seconds"
+msgstr "Tempo entre Registros"
 
 msgid "Termination Date"
 msgstr "Data de finalização"
@@ -5183,7 +5183,7 @@ msgid "CALLTYPE"
 msgstr "CALLTYPE"
 
 msgid "Outbound-Proxy"
-msgstr "Outbound-Proxy"
+msgstr "Proxy de Saída"
 
 msgid "Edit Trunk"
 msgstr "Editar Rota"
@@ -5375,7 +5375,7 @@ msgid "Problem In Add Patterns to account."
 msgstr "Problema em adicionar regras à conta."
 
 msgid "Please Enter Switch command"
-msgstr "Por favor"
+msgstr "Insira o Comando"
 
 msgid "are you sure to delete?"
 msgstr "Você tem certeza que quer deletar?"
@@ -6731,7 +6731,7 @@ msgid "Realm"
 msgstr "Dominio"
 
 msgid "Reg-Transport"
-msgstr "Reg-Transport"
+msgstr "Protocolo de Registro (UDP/TCP/TLS)"
 
 msgid "Failover"
 msgstr "Transbordo"
@@ -7605,3 +7605,69 @@ msgstr "Status do Pedido"
 
 msgid "Next Billing Date"
 msgstr "Próxima Data de Cobrança"
+
+msgid "Please Select Payment Method"
+msgstr "Selecione a Forma de Pagamento"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Switch Host"
+msgstr "FluxSBC"
+
+msgid "User Name"
+msgstr "Usuário"
+
+msgid "Call In"
+msgstr "Chamadas Entrada"
+
+msgid "Call Out"
+msgstr "Chamadas Saída"
+
+msgid "Fail Call In"
+msgstr "Chamadas Entrada Falha"
+
+msgid "Fail Call Out"
+msgstr "Chamadas Saída Falha"
+
+msgid "State"
+msgstr "Estado Registro"
+
+msgid "Switch CLI"
+msgstr "FluxSBC CLI"
+
+msgid "FluxSBC Servers"
+msgstr "Servidores FluxSBC"
+
+msgid "Edit Ring Group"
+msgstr "Editar Grupo de Busca"
+
+msgid "Timeout (Seconds)"
+msgstr "Tempo Limite (Segundos)"
+
+msgid "Ring group updated successfully!"
+msgstr "Grupo de Busca atualizado com sucesso!"
+
+msgid "Ring group added successfully!"
+msgstr "Grupo de Busca adicionado com sucesso!"
+
+msgid "CDR Mode"
+msgstr "Configuração de CDR"
+
+msgid "Caller-Id-Type"
+msgstr "Tipo de Caller ID"
+
+msgid "Single"
+msgstr "Único"
+
+msgid "Range"
+msgstr "Faixa"
+
+msgid "Multiple"
+msgstr "Múltiplo"
+
+msgid "Custom"
+msgstr "Personalizado"
+
+msgid "Ping Time"
+msgstr "Intervalo de Ping"

@@ -39,10 +39,19 @@ if (isset($validation_errors)) {
 	</div>
 </div>
 
-<script type="text/javascript" language="javascript">
+<script type="text/javascript">
 $(document).ready(function() {
     $("input[type='hidden']").parents('li.form-group').addClass("d-none");
     $("textarea").parents('li.form-group').addClass("h-auto");
-  
+    var cid_from = <?php echo (int) $cid_from; ?>;
+    if (cid_from === 0) {
+        $("#caller_id_type")
+            .parents('li.form-group')
+            .addClass("d-none");
+        $("#caller_id_number")
+            .parents('li.form-group')
+            .addClass("d-none");
+    }
+
 });
 </script>

@@ -1346,9 +1346,7 @@ class Freeswitch_form extends common
                     "true",
                     "center"
                 ),
-                // Jaimin FLUXUPDATE-984
                  $action_array,
-                // End
                 array(
                     gettext("Action"),
                     "107",
@@ -1429,6 +1427,39 @@ class Freeswitch_form extends common
 
     function get_gateway_form_fields()
     {
+    
+    $CI =& get_instance();
+    
+    $caller_id_type = $CI->input->post('caller_id_type');
+    
+    if (empty($caller_id_type) && !empty($_REQUEST['caller_id_type'])) {
+        $caller_id_type = $_REQUEST['caller_id_type'];
+    }
+
+    switch ($caller_id_type) {
+    
+        case 'single':
+            $caller_id_rule = 'trim|xss_clean|required|regex_match[/^[1-9][0-9]*$/]';
+            $caller_id_tip = 'Informe apenas um número.';
+            break;
+    
+        case 'multiple':
+            $caller_id_rule = 'trim|xss_clean|required|regex_match[/^[1-9][0-9]*(,[1-9][0-9]*)*$/]';
+            $caller_id_tip = 'Use números separados por vírgula.';
+            break;
+    
+        case 'range':
+            $caller_id_rule = 'trim|xss_clean|required|regex_match[/^[1-9][0-9]*:[0-9]{4}$/]';
+            $caller_id_tip = 'Formato: numero_inicial:0000';
+            break;
+    
+        default:
+            $caller_id_rule = 'trim|xss_clean';
+            $caller_id_tip = 'Número de caller id.';
+    }
+    
+    
+    
         $form['forms'] = array(
             base_url() . 'freeswitch/fsgateway_save/',
             array(
@@ -1544,6 +1575,7 @@ class Freeswitch_form extends common
             array(
                 gettext('Caller-Id-In-From'),
                 array(
+                    'id' => 'caller-id-in-from',
                     'name' => 'caller-id-in-from',
                     'class' => 'add_settings'
                 ),
@@ -1556,6 +1588,36 @@ class Freeswitch_form extends common
                 '',
                 '',
                 'set_sip_config_option'
+            ),
+            array(
+                gettext('Caller-Id-Type'),
+                array(
+                    'id' => 'caller_id_type',
+                    'name' => 'caller_id_type',
+                    'class' => 'add_settings'
+                ),
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                '',
+                '',
+                '',
+                '',
+                'set_caller_id_type_option'
+            ),
+            array(
+                gettext('Caller Id Number'),
+                'INPUT',
+                array(
+                    'id' => 'caller_id_number',
+                    'name' => 'caller_id_number',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                $caller_id_rule,
+                'tOOL TIP',
+                ''
             ),
             array(
                 gettext('Status'),
@@ -1673,7 +1735,7 @@ class Freeswitch_form extends common
                 ''
             ),
             array(
-                gettext('Ping'),
+                gettext('Ping Time'),
                 'INPUT',
                 array(
                     'name' => 'ping',
