@@ -1435,30 +1435,36 @@ class Freeswitch_form extends common
     if (empty($caller_id_type) && !empty($_REQUEST['caller_id_type'])) {
         $caller_id_type = $_REQUEST['caller_id_type'];
     }
-
+    
     switch ($caller_id_type) {
     
         case 'single':
-            $caller_id_rule = 'trim|xss_clean|required|regex_match[/^[1-9][0-9]*$/]';
-            $caller_id_tip = 'Informe apenas um número.';
+            $caller_id_rule = 'trim|required|regex_match[/^[1-9]\d{9,10}$/]';
+            $caller_id_tip  = gettext(
+                'Enter a single phone number with area code. Use 10 digits for landline or 11 digits for mobile.'
+            );
             break;
     
         case 'multiple':
-            $caller_id_rule = 'trim|xss_clean|required|regex_match[/^[1-9][0-9]*(,[1-9][0-9]*)*$/]';
-            $caller_id_tip = 'Use números separados por vírgula.';
+            $caller_id_rule = 'trim|required|regex_match[/^[1-9]\d{9,10}(,[1-9]\d{9,10})*$/]';
+            $caller_id_tip  = gettext(
+                'Enter one or more phone numbers with area code, separated by commas, without spaces.'
+            );
             break;
     
         case 'range':
-            $caller_id_rule = 'trim|xss_clean|required|regex_match[/^[1-9][0-9]*:[0-9]{4}$/]';
-            $caller_id_tip = 'Formato: numero_inicial:0000';
+            $caller_id_rule = 'trim|required|regex_match[/^[1-9]\d{9,10}:\d{4}$/]';
+            $caller_id_tip  = gettext(
+                'Enter a phone number with area code, followed by ":" and four digits to define the range.'
+            );
             break;
     
         default:
-            $caller_id_rule = 'trim|xss_clean';
-            $caller_id_tip = 'Número de caller id.';
+            $caller_id_rule = 'trim';
+            $caller_id_tip  = gettext(
+                'Enter the caller ID number.'
+            );
     }
-    
-    
     
         $form['forms'] = array(
             base_url() . 'freeswitch/fsgateway_save/',
@@ -1594,7 +1600,8 @@ class Freeswitch_form extends common
                 array(
                     'id' => 'caller_id_type',
                     'name' => 'caller_id_type',
-                    'class' => 'add_settings'
+                    'class' => 'add_settings',
+                    'onchange' => 'updateCallerIdTip(this.value)'
                 ),
                 'SELECT',
                 '',
@@ -1618,7 +1625,7 @@ class Freeswitch_form extends common
                 $caller_id_rule,
                 'tOOL TIP',
                 ''
-            ),
+            ),            
             array(
                 gettext('Status'),
                 'status',

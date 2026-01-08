@@ -61,6 +61,12 @@ $tooltip_data = array(
 
 	"fsserver_form_freeswitch_port" => "Porta do Freeswitch.",
 
+	"fsserver_form_cdrtype" => "CDR Type",
+	
+	"fsserver_form_freeswitch_cdr_log_dir" => "CDR Log Dir",
+	
+	"fsserver_form_freeswitch_cdr_url" => "CDR Log URL",
+
 	/*Create Sip Devices*/
 	"sipdevices_form_fs_username" => "Nome de usuário da extensão SIP.",
 

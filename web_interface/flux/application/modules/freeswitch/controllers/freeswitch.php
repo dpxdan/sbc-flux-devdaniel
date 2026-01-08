@@ -880,6 +880,46 @@ class Freeswitch extends MX_Controller
 
         if ($gateway_data['id'] != '') {
             $data['page_title'] = gettext('Edit Gateway Details');
+            $caller_id_type = $gateway_data["caller_id_type"];
+            
+            switch ($caller_id_type) {
+            
+                case 'single':
+                    $this->form_validation->set_message(
+                        'regex_match',
+                        gettext(
+                            'The field %s must contain a phone number with area code, using 10 or 11 digits (e.g. 5145001010 or 51956661010).'
+                        )
+                    );
+                    break;
+            
+                case 'multiple':
+                    $this->form_validation->set_message(
+                        'regex_match',
+                        gettext(
+                            'The field %s must contain phone numbers with area code (10 or 11 digits), separated by commas (e.g. 5145001010,51956661010).'
+                        )
+                    );
+                    break;
+            
+                case 'range':
+                    $this->form_validation->set_message(
+                        'regex_match',
+                        gettext(
+                            'The field %s must contain a phone number with area code (10 or 11 digits), followed by ":" and 4 more digits (e.g. 5145001010:9090 or 51955001010:9999).'
+                        )
+                    );
+                    break;
+            
+                default:
+                    $this->form_validation->set_message(
+                        'regex_match',
+                        gettext(
+                            'The field %s is not in the expected format.'
+                        )
+                    );
+            }
+            
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
                 echo $data['validation_errors'];
@@ -939,7 +979,7 @@ class Freeswitch extends MX_Controller
                 }
                 sleep(1);
                 echo json_encode(array(
-                    "SUCCESS" => gettext("Gateway ") . ucfirst($insert_arr['name']) . " " . gettext("Updated Successfully!")
+                    "SUCCESS" => ucfirst($insert_arr['name']) . gettext("Gateway Updated Successfully!")
                 ));
                 exit();
             }
