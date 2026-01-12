@@ -682,13 +682,13 @@ function get_carrier_rates(destination_number,number_loop_str,ratecard_id,rate_c
 	Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] trunk_id:" .. trunk_id)
 	if(tonumber(routing_type)<=3) then
 		Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type default:" .. routing_type)
-		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,GW.caller_id_type,GW.caller_id_number,TK.tech, TK.dialed_modify as failover_route,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
+		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,GW.caller_id_type,GW.caller_id_number,TK.tech, TK.dialed_modify as failover_route,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TK.check_carrier,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	elseif(routing_type == 4) then
 		Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type 4 Carrier:" .. routing_type)
-		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,GW.caller_id_type,GW.caller_id_number,TK.dialed_modify as failover_route,TK.tech,TK.carrier_id,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
+		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,GW.caller_id_type,GW.caller_id_number,TK.dialed_modify as failover_route,TK.tech,TK.carrier_id,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TK.check_carrier,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.call_type,TR.comment,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM (select * from "..TBL_TERMINATION_RATES.." order by LENGTH (pattern) DESC) as TR, "..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	else
 		Logger.notice("[FUNCTIONS] [GET_CARRIER_RATES_TRUNKS] routing_type :" .. routing_type)
-		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,GW.caller_id_type,GW.caller_id_number,TK.tech, TK.dialed_modify as failover_route,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.comment,TR.call_type,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM "..TBL_TERMINATION_RATES.." as TR,"..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
+		query = "SELECT TK.id as trunk_id,TK.name as trunk_name,TK.sip_cid_type,TK.codec,GW.name as path,GW.dialplan_variable,GW.caller_id_type,GW.caller_id_number,TK.tech, TK.dialed_modify as failover_route,TK.provider_id,TR.init_inc,TK.status,TK.maxchannels,TK.cps,TK.leg_timeout,TK.check_carrier,TR.pattern,TR.id as outbound_route_id,TR.connectcost,TR.comment,TR.call_type,TR.includedseconds,TR.cost,TR.inc,TR.prepend,TR.strip,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id) as path1,(select name from "..TBL_GATEWAYS.." where status=0 AND id = TK.failover_gateway_id1) as path2 FROM "..TBL_TERMINATION_RATES.." as TR,"..TBL_TRUNKS.." as TK,"..TBL_GATEWAYS.." as GW WHERE GW.status=0 AND GW.id= TK.gateway_id AND TK.status=0 AND TK.id= TR.trunk_id AND "..number_loop_str.." AND TR.status = 0 "
 	end
 	if(rate_carrier_id and rate_carrier_id ~= nil and tonumber(rate_carrier_id) ~= 0) then
 		if(tonumber(rate_carrier_id) == 0 and tonumber(routing_type) <= 3) then
@@ -935,6 +935,30 @@ function get_sip_codec(sip_user_name)
 	else
 		return sip_codec_for_outbound['sip_codec'];
 	end
+end
+
+function get_ported_number(check_number)
+	local query = "SELECT * FROM "..TBL_PORTABILIDADE.." WHERE subscription_version_tn = '"..destination_number.."' limit 1";
+	Logger.notice("[GET_PORTED_NUMBER] Query :" .. query)
+
+	local ported_number_for_outbound;
+	assert (dbh:query(query, function(u)
+		ported_number_for_outbound = u;
+	end))
+	if(ported_number_for_outbound == nil)then
+		return "";
+	else
+		return ported_number_for_outbound;
+	end
+end
+
+function get_ported_number_old(destination_number)
+        local query = "SELECT * FROM "..TBL_PORTABILIDADE.." WHERE subscription_version_tn = '"..destination_number.."' limit 1";
+        Logger.notice("[GET_PORTED_NUMBER] Query :" .. query)
+		assert (dbh:query(query, function(u)
+			check_ported_info = u;	 
+		end))
+		return check_ported_info;
 end
 
 function is_valid_did(num)

@@ -224,7 +224,7 @@ if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] 
 			        table.insert(xml, [[<action application="export" data="original_caller_id_name=]] ..
 			            selected_caller_id .. [["/>]])			        
 			    else
-			        Logger.error("Invalid Caller ID")
+			        Logger.notice("Invalid Caller ID")
 			    end
 			
 		elseif (outbound_info['caller_id_type'] == 'range') then
@@ -252,8 +252,7 @@ if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] 
 		        table.insert(xml, [[<action application="export" data="original_caller_id_name=]] ..
 		            selected_caller_id .. [["/>]])
 		    else
-		        Logger.error("Invalid Caller ID Range: " ..
-		            tostring(outbound_info['caller_id_number']))
+		        Logger.notice("Invalid Caller ID Range: " ..tostring(outbound_info['caller_id_number']))
 		    end
 		end
 		table.insert(xml, [[<action application="set" data="caller_id_type=]]..outbound_info['caller_id_type']..[["/>]])
@@ -290,7 +289,30 @@ if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] 
 		call_count = outbound_info['call_count']
 		carrier_name = outbound_info['carrier_name']
 		carrier_route_id = carrier_info['carrier_route_id']
+		check_carrier = outbound_info['check_carrier']
 						
+		if(outbound_info['check_carrier'] == 'caller_id' ) then
+		caller_carrier_id = outbound_info['caller_carrier_id'];
+		caller_idCadup = outbound_info['caller_idCadup'];
+		check_carrier = 'caller_id';          
+		elseif(outbound_info['check_carrier'] == 'destination_number' ) then
+		check_carrier = 'destination_number';
+		caller_carrier_id = 0;
+		caller_idCadup = 0;
+		elseif(outbound_info['check_carrier'] == 'both' ) then
+        caller_carrier_id = outbound_info['caller_carrier_id'];
+		caller_idCadup = outbound_info['caller_idCadup'];		
+		check_carrier = 'both';         
+		else
+		caller_carrier_id = 0;
+		caller_idCadup = 0;
+		carrier_id = 0;
+		idCadup = 0;
+		check_carrier = 'none';
+		end	
+		
+		
+					
 	
 		Logger.debug("idCadup : "..idCadup)
 		Logger.debug("carrier_id : "..carrier_id)
@@ -306,11 +328,20 @@ if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] 
 		Logger.debug("codArea : "..codArea)
 		Logger.debug("uf : "..uf)
 		Logger.debug("rn1 : "..rn1)
+		Logger.debug("check_carrier : "..check_carrier)
+		
+		Logger.debug("caller_carrier_id : "..caller_carrier_id)
+		Logger.debug("caller_idCadup : "..caller_idCadup)
+		
+		
+		
 		table.insert(xml, [[<action application="export" data="idCadup=]]..idCadup..[["/>]]);
+		table.insert(xml, [[<action application="export" data="caller_idCadup=]]..caller_idCadup..[["/>]]);
 		table.insert(xml, [[<action application="set" data="check_cadup=true"/>]]);
 		table.insert(xml, [[<action application="export" data="routing_type=4"/>]]);
 		table.insert(xml, [[<action application="export" data="rate_flag=4"/>]]);
 		table.insert(xml, [[<action application="export" data="carrier_id=]]..carrier_id..[["/>]]);
+		table.insert(xml, [[<action application="export" data="caller_carrier_id=]]..caller_carrier_id..[["/>]]);
 		table.insert(xml, [[<action application="export" data="nomeLocalidade=]]..nomeLocalidade..[["/>]]);
 		table.insert(xml, [[<action application="export" data="nomePrestadora=]]..nomePrestadora..[["/>]]);
 		table.insert(xml, [[<action application="export" data="areaLocal=]]..areaLocal..[["/>]]);
@@ -323,6 +354,7 @@ if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] 
 		table.insert(xml, [[<action application="export" data="carrier_route_id=]]..carrier_route_id..[["/>]]);
 		table.insert(xml, [[<action application="export" data="carrier_rn1=]]..carrier_rn1..[["/>]]);
 		table.insert(xml, [[<action application="export" data="carrier_name=]]..carrier_name..[["/>]]);
+		table.insert(xml, [[<action application="export" data="check_carrier=]]..check_carrier..[["/>]]);
 		
 		table.insert(xml, [[<action application="export" data="provider_id=]]..outbound_info['provider_id']..[["/>]]);
 		table.insert(xml, [[<action application="export" data="call_type_custom=]]..tipo..[["/>]]);

@@ -251,6 +251,11 @@ class common {
 						"status" => 0
 					);
 				}
+				if($select == 'carrier_name'){
+					$where = array (
+						"carrier_id" => $where['id']
+					);
+				}
 			}
 		}
 		$field_name = $this->CI->db_model->getSelect ( $select, $table, $where );
@@ -542,6 +547,13 @@ class common {
 		return $status_array;
 	}
 	function set_carrier($status = '') {
+			$status_array = array (
+					'0' => gettext ( 'No' ),
+					'1' => gettext ( 'Yes' )
+			);
+			return $status_array;
+	}
+	function set_autoanswer($status = '') {
 			$status_array = array (
 					'0' => gettext ( 'No' ),
 					'1' => gettext ( 'Yes' )
@@ -857,6 +869,15 @@ class common {
 		$status_array = array (
 				'0' => gettext ( 'No' ),
 				'1' => gettext ( 'Yes' )
+		);
+		return $status_array;
+	}
+	function set_status_carrier($status = '') {
+		$status_array = array (
+				'none' => gettext ( 'None' ),
+				'caller_id' => gettext ( 'Caller ID' ),
+				'destination_number' => gettext ( 'Destination Number' ),
+				'both' => gettext ( 'Both' )
 		);
 		return $status_array;
 	}
@@ -2089,7 +2110,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		
 
     }
-  function emailFunction($from, $to, $subject, $message,$alert_template="",$usermobile="",$sms_message, $company_name = "", $attachment = "", $account_id, $reseller_id,$sip_user_name='',$callkit_token='',$status_code='',$type,$emailstatus = '',$cc_email_ids = '') {
+    function emailFunction($from, $to, $subject, $message,$alert_template="",$usermobile="",$sms_message, $company_name = "", $attachment = "", $account_id, $reseller_id,$sip_user_name='',$callkit_token='',$status_code='',$type,$emailstatus = '',$cc_email_ids = '') {
 
     			    $sms_message = '';
 					$alert_template = '';
@@ -2168,11 +2189,9 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			return $this->CI->timezone->display_GMT ( $date, 1, $timezone_id );
 		}
 	}
-
 	function convert_GMT_to_noChange($select = "", $table = "", $date, $timezone_id = '') {
 		return $date;
 	}
-
 	function convert_GMT($date) { 
 		return $this->CI->timezone->convert_to_GMT ($date );
 	}
@@ -2670,7 +2689,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		}
 		return $pricelist_arr;
 	}
-		function default_signup_login_type(){
+	function default_signup_login_type(){
 		$this->CI->db->select ( "id,name" );
 		$this->CI->db->where ( "reseller_id", 0 );
 		$login_type_result = $this->CI->db->get ( "permissions" )->result_array ();
@@ -2681,8 +2700,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		}
 		return $login_type_dropdown;
 	}
-	
-	
 	function outbound_fax() {
 		$status_array = array (
 				'0' => gettext ( 'Enable' ),
@@ -2810,6 +2827,8 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			$status_array=array_merge($status_array,$trunk);
 			$calltype=array('calltype'=>gettext("Call Type"));
 			$status_array=array_merge($status_array,$calltype);
+			$carrier=array('carrier_id'=>gettext("Carrier"));
+			$status_array=array_merge($status_array,$carrier);
 		}
 		return $status_array;
 	}
@@ -2817,6 +2836,15 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$status_array = array (
 				'' => gettext ( "--Select--" ),
 				'provider_id' => gettext ( 'Account' ),
+				'trunk_id' => gettext ( "Trunks" ),
+				'pattern' => gettext ( 'Code' ),
+		);
+		return $status_array;
+	}
+	function set_summarycarrier_groupby($status = '') {
+		$status_array = array (
+				'' => gettext ( "--Select--" ),
+				'carrier_id' => gettext ( 'Carrier' ),
 				'trunk_id' => gettext ( "Trunks" ),
 				'pattern' => gettext ( 'Code' ),
 		);
@@ -3293,11 +3321,11 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	function get_sipinfo_array(){
 		return array("Random"=>"Random");
 	}
-  function default_system_type() {
+    function default_system_type() {
         $option_array = array('0' => gettext('Half Year'), '1' => gettext('Year'));
         return $option_array;
     }
-  function set_year_dropdown($type = '') {
+    function set_year_dropdown($type = '') {
 	if($type != ''){
 		$type = $type."_archive";
 	}
@@ -3315,7 +3343,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
         }
         return $status_array;
     }
-  function get_did_destination($select = "", $table = "", $id){ 
+    function get_did_destination($select = "", $table = "", $id){ 
 		$name='';
 		if($this->CI->db->table_exists('pbx_ringgroup') && $this->CI->db->table_exists('tbl_conference_specification') && $this->CI->db->table_exists('tbl_ivr_specification')) {
 			$accountinfo = $this->CI->session->userdata ( 'accountinfo' );
@@ -3359,7 +3387,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$reseller_id = $accountinfo['type'] == 1 || $accountinfo['type'] ==5 ?  $accountinfo['id']: 0 ;
         	return $this->CI->db_model->build_dropdown('id,name', 'sms_pricelists',array("status"=>0,"reseller_id"=>$reseller_id));
     	}
-  function pin_generate($size = '', $field = '', $tablename = ''){
+    function pin_generate($size = '', $field = '', $tablename = ''){
 		if ($tablename != '') {
 			$accounttype_array = array ();
 			$uname = rand ( pow ( 10, $size - 1 ), pow ( 10, $size ) - 1 );
@@ -3402,7 +3430,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			}
 				return $drp_value;
 		}
-  function get_reseller_info_company_profile(){
+    function get_reseller_info_company_profile(){
 		$accountinfo = $this->CI->session->userdata ( 'accountinfo' );
 		$logintype = $this->CI->session->userdata('logintype');
 		if($logintype == 1)
@@ -4119,7 +4147,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$drop_down .= '</select>';
 		return $drop_down;
   }
-  function ipsettigs_account_number_icon($select = "", $table = "", $number) {
+    function ipsettigs_account_number_icon($select = "", $table = "", $number) {
 		$return_value = '';
 		$where = array (
 				'number' => $number
@@ -4262,7 +4290,16 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	function get_sip_cid_type($select = "", $table = "", $value) {
 		$data=array("none"=>"None","rpid"=>"Remote-Party-ID","pid"=>" P-Asserted-Identity");
 		return  $data[$value] ;
-	} 
+	} 	
+	function get_check_cadup_type($select = "", $table = "", $value) {
+		$data = array (
+				'none' => gettext ( 'None' ),
+				'caller_id' => gettext ( 'Caller ID' ),
+				'destination_number' => gettext ( 'Destination Number' ),
+				'both' => gettext ( 'Both' )
+		);
+		return $data[$value];
+	}
 	function encrypt( $string, $action = 'e' ) {
         $secret_key =  config_item('api_decipher_auth_token');
  		$secret_key = $secret_key != "" ? $secret_key : "YPPFWnaYBUmuINDsUsfnpceeJgGrGwFQ";
@@ -4280,7 +4317,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
         }
         return $output;
     }
-  function get_field_name_country_camel($select, $table, $where) {
+    function get_field_name_country_camel($select, $table, $where) {
 		$timezone_name = $where;
 		if (is_array ( $where )) {
 			$where = $where;
@@ -4365,7 +4402,18 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		return $status;
 	}
 	function set_routetype_new($status = '') {	
-		$status_array = array( ""=>'--Select--','0' => 'LCR','1' => 'Cost','2' => 'Priority','3' => 'Percentage','4' => 'Carrier');
+		$status_array = array(
+			'' => gettext('--Select--'),
+			'0' => gettext('LCR'),
+			'1' => gettext('Cost'),
+			'2' => gettext('Priority'),
+			'3' => gettext('Percentage'),
+			'4' => gettext('Carrier')
+		);
+		
+		
+		
+//		$status_array = array( ""=>'--Select--','0' => 'LCR','1' => 'Cost','2' => 'Priority','3' => 'Percentage','4' => 'Carrier');
 		return $status_array;
 	}
 	function set_voice_broadcast_status($status) {
@@ -4376,6 +4424,9 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 				'2' => gettext ( 'Completed' )
 		);
 		return $status_array;
+	}
+	function get_order_status($select = "", $table = "", $status) {
+		return ($status == 1) ? "Inactive" : "Active";
 	}
 	function set_cdr_file_mode($status = '') {
 		$status_array = array (

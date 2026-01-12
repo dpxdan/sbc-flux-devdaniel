@@ -511,12 +511,10 @@ class Form {
 				$display_in = $fields_array ['display_in'];
 				unset ( $fields_array ['display_in'] );
 			}
-			// Kinjal FLUXUPDATE-978 Start
 			if (isset ($fields_array ['button_subscribe'])) {
 				$button_subscribe=$fields_array ['button_subscribe'];
 				unset ($fields_array ['button_subscribe']);
 			}
-			// Kinjal FLUXUPDATE-978 END
 		}
 		$i = 1;
 		foreach ( $fields_array as $fieldset_key => $form_fileds ) {
@@ -585,13 +583,11 @@ class Form {
 		}
 		$form_contents .= '<div class="col-12 p-4">';
 		$form_contents .= form_button ( $cancel );
-		// Kinjal FLUXUPDATE-978 Start
 		if (isset ($button_subscribe) && $button_subscribe !='') {
 			if($button_subscribe['mode'] == 'popup'){
 				$form_contents.=form_button($button_subscribe);
 			}
 		}
-		// Kinjal FLUXUPDATE-978 END
 		$form_contents .= form_button ( $save );
 		if (! empty ( $display_in )) {
 			$form_contents .= "<div class='col-md-5 float-right'>";

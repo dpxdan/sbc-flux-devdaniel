@@ -238,7 +238,7 @@ class trunk_form extends common
                 'tOOL TIP',
                 ''
             ),
-            array (
+            array(
 				gettext ( 'Carriers' ),
                 'carrier_id',
                 'SELECT',
@@ -255,7 +255,20 @@ class trunk_form extends common
                     "carrier_rn1 >" => "0"
                 )
             ),
-              array(
+            array(
+                gettext('Check Cadup'),
+                'check_carrier',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Select Carrier Check',
+                '',
+                '',
+                '',
+                'set_status_carrier'
+            ),
+            array(
                 gettext('Failover'),
                 'dialed_modify',
                 'SELECT',
@@ -268,26 +281,6 @@ class trunk_form extends common
                 '',
                 'set_status_failover'
             ),
-            /*array (
-				gettext ( 'Carriers' ),
-				array (
-					'name'=>'carrier_id',
-					'id'=>'carrierid_search_drp',
-
-				),
-				'SELECT',
-				'',
-				'',
-				'tOOL TIP',
-				'Please Enter account number',
-				'id',
-				'carrier_name,carrier_rn1',
-				'carrier_routing',
-				'build_concat_select_dropdown',
-				'',
-				''
-		),*/
-
             array(
                 gettext('Status'),
                 'status',
@@ -547,6 +540,17 @@ class trunk_form extends common
                 "carrier_name,carrier_rn1",
                 "carrier_routing",
                 "build_concat_carrier",
+                "",
+                "true",
+                "center"
+            ),
+            array(
+                gettext("Check Cadup"),
+                "130",
+                "check_carrier",
+                "check_carrier",
+                "trunks",
+                "get_check_cadup_type",
                 "",
                 "true",
                 "center"

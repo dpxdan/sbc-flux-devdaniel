@@ -7672,6 +7672,24 @@ msgstr "Personalizado"
 msgid "Ping Time"
 msgstr "Intervalo de Ping"
 
+msgid "Portabilidade"
+msgstr "Portabilidade"
+
+msgid "Portabilidade DB Host"
+msgstr "Portabilidade DB Host"
+
+msgid "Portabilidade DB Name"
+msgstr "Nome do banco de dados de portabilidade"
+
+msgid "Portabilidade DB Pass"
+msgstr "Portabilidade DB Pass"
+
+msgid "Portabilidade DB User"
+msgstr "Portabilidade do usuário do banco de dados"
+
+msgid "Check Cadup"
+msgstr "Consultar Cadup"
+
 msgid "The field %s must contain a phone number with area code, using 10 or 11 digits (e.g. 5145001010 or 51956661010)."
 msgstr "O campo %s deve conter um telefone com DDD, com 10 ou 11 dígitos (ex.: 5145001010 ou 51956661010)."
 
