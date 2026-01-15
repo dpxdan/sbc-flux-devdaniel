@@ -154,7 +154,8 @@ function freeswitch_xml_footer(xml)
 end
 
 -- Dialplan for outbound calls
-function freeswitch_xml_outbound(xml,destination_number,outbound_info,callerid_array,rate_group_id,old_trunk_id,force_outbound_routes,rategroup_type,livecall_data)
+function freeswitch_xml_outbound(xml,destination_number,outbound_info,callerid_array,rate_group_id,old_trunk_id,force_outbound_routes,rategroup_type,call_type_custom,rate_routing_type,livecall_data)
+
 
 	local tr_localization_tunk=nil
 	tr_localization_tunk = get_localization(outbound_info['trunk_id'],'Trunk')
@@ -184,7 +185,7 @@ function freeswitch_xml_outbound(xml,destination_number,outbound_info,callerid_a
 		
 	end
 	
-if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] ~= '') then 
+    if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] ~= '') then 
 		Logger.notice("caller_id_type: ".. outbound_info['caller_id_type']);
 		Logger.notice("caller_id_number: ".. outbound_info['caller_id_number']);		
 		if (outbound_info['caller_id_type'] == 'single') then
@@ -274,6 +275,11 @@ if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] 
 
 		temp_destination_number = do_number_translation(outbound_info['strip'].."/"..outbound_info['prepend'],temp_destination_number)
 	end
+	if(rate_routing_type ~= '' and rate_routing_type ~= nil) then
+    routing_type = rate_routing_type
+    else
+    routing_type = 1
+	end
     if (outbound_info ~= nil and tonumber(outbound_info['rn1']) ~=nil and tonumber(carrier_info['rn1']) > 0) then
 		idCadup = outbound_info['idCadup']
 		carrier_id = carrier_info['carrier_id']
@@ -336,9 +342,7 @@ if (outbound_info['caller_id_type'] ~= '' and outbound_info['caller_id_number'] 
         table.insert(xml, [[<action application="set" data="rate_flag=]]..outbound_info['outbound_route_id']..[["/>]]);
         table.insert(xml, [[<action application="export" data="idCadup=0"/>]]);
         table.insert(xml, [[<action application="set" data="check_cadup=false"/>]]);
-        table.insert(xml, [[<action application="export" data="routing_type=1"/>]]);
-        
---        table.insert(xml, [[<action application="export" data="rate_flag=1"/>]]);
+        table.insert(xml, [[<action application="export" data="routing_type=]]..routing_type..[["/>]]);        
     end
 	xml_termination_rates= "ID:"..outbound_info['outbound_route_id'].."|CODE:"..outbound_info['pattern'].."|DESTINATION:"..outbound_info['comment'].."|CONNECTIONCOST:"..outbound_info['connectcost'].."|INCLUDEDSECONDS:"..outbound_info['includedseconds'].."|IDCADUP:"..outbound_info['idCadup'].."|COST:"..outbound_info['cost'].."|CARRIER_ROUTE_ID:"..carrier_route_id.."|CARRIER_ID:"..carrier_id.."|INC:"..outbound_info['inc'].."|INITIALBLOCK:"..outbound_info['init_inc'].."|TRUNK:"..outbound_info['trunk_id'].."|PROVIDER:"..outbound_info['provider_id'];
 	if(params:getHeader("variable_sip_h_P-Voice_broadcast") == 'true')then

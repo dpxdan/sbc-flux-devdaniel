@@ -758,7 +758,7 @@ if (userinfo ~= nil) then
 				rate_carrier_id = user_rates['trunk_id']
 				check_carrier = 0
 				user_rates['check_carrier'] = 0
-				user_rates['routing_type'] = 1
+--				user_rates['routing_type'] = 1
 			end
 
 		else
@@ -768,7 +768,7 @@ if (userinfo ~= nil) then
 			rate_carrier_id = user_rates['trunk_id']
 			check_carrier = 0
 			user_rates['check_carrier'] = 0
-			user_rates['routing_type'] = 1
+--			user_rates['routing_type'] = 1
 		end
 		-- Get termination rates
 		Logger.info("[DIALPLAN] User Rate RN1 : ".. user_rates['rn1'])
