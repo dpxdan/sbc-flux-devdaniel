@@ -559,6 +559,9 @@ function custom_inbound_2(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 			did_local_chan = ",absolute_codec_string=".."^^:"..sip_codec:gsub("%,", ":")
 		end
 	end
+	if (tonumber(userinfo['localization_id']) > 0 and or_localization and or_localization['number_originate'] ~= nil) then     
+		destination_number = do_number_translation(or_localization['number_originate'],destination_number)
+	end
 	table.insert(xml, [[<action application="bridge" data="[leg_timeout=]]..didinfo['leg_timeout']..did_local_chan..[[]sofia/${sofia_profile_name}/]]..destination_number..[[@]]..didinfo['extensions']..[["/>]]);
 	return xml;
 end
