@@ -33,8 +33,6 @@ INSERT INTO `roles_and_permission` (`id`, `login_type`, `permission_type`, `menu
 
 UPDATE userlevels SET module_permissions = concat( module_permissions, ',', (  SELECT max( id ) FROM menu_modules WHERE module_url = 'activity_report/activityReport/' ) ) WHERE userlevelid = -1;
 
-UPDATE userlevels SET module_permissions = concat( module_permissions, ',', (  SELECT max( id ) FROM menu_modules WHERE module_url = 'fsmonitor/sip_devices/' ) ) WHERE userlevelid IN (-1, 2);
-
 
 DELIMITER ;;
 /*!50003 CREATE*/ /*!50017 DEFINER=`fluxuser`@`127.0.0.1`*/ /*!50003 TRIGGER `activity_reports` AFTER INSERT ON `cdrs` FOR EACH ROW BEGIN
@@ -137,10 +135,6 @@ INSERT INTO `roles_and_permission` (`menu_name`, `module_name`, `module_url`, `d
 
 INSERT INTO `roles_and_permission` (`login_type`, `permission_type`, `menu_name`, `module_name`, `module_url`, `display_name`, `permissions`, `status`, `creation_date`, `priority`) VALUES ('0', '0', 'carriers', 'trunk', 'trunk_list', 'Trunks', '[\"main\",\"list\",\"create\",\"edit\",\"delete\",\"search\"]', '0', '2019-01-25 09:01:03', '2.26000');
 
-UPDATE `userlevels` SET `module_permissions` = '1,2,4,5,3,8,9,13,14,15,16,17,18,19,20,21,22,25,26,27,28,7,29,45,38,39,40,41,42,43,44,48,49,51,53,54,55,66,68,69,77,78,79,80,81,83,84,85,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,177,178,179,180,149,184,185,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,221,226,227,228,229,230,231,232,233,234,235,236,237,238,243,244,245,246,247,248,249,250,251,252,253,254,255,256,269,270,275,276,277,278,279,280,281,282,283,284,285,286,287,288,289,290,291,292,293,294,295,296,297,298,299,300,301,302,303,304,305,306,307,308,309,310,311,312,313,314,315,316,317,318,319,320,321,322,323,324,325,326,327,328,329,330,331,332,333,334,335,336,337,338,339,340,341,342,551,552,553,554,556,557,558,415,559,560,561,562,563,564' WHERE (`userlevelid` = '-1');
-
-UPDATE `userlevels` SET `module_permissions` = '1,2,3,4,5,7,8,9,13,14,15,16,17,18,19,20,21,22,25,26,27,28,29,38,40,41,42,43,44,45,65,93,94,97,100,101,104,107,108,111,114,115,118,123,124,125,131,132,135,140,141,142,148,149,152,157,158,159,165,166,167,149,229,230,231,232,233,234,235,236,237,238,275,276,306,307,376,377,390,391,506,507,578,579,580,581,582,583,592,593,626,627,91,92,561,153,154,155,150,200,151,89,556,559,563,564' WHERE (`userlevelid` = '2');
-
 DELETE FROM `permissions_types`;
 
 INSERT INTO `permissions_types` (`permission_type_code`, `permission_name`, `reseller_id`, `status`) VALUES ('0', 'User', '0', '0');
@@ -150,6 +144,9 @@ INSERT INTO `menu_modules` (`menu_label`, `module_name`, `module_url`, `menu_tit
 
 INSERT INTO `menu_modules` (`menu_label`, `module_name`, `module_url`, `menu_title`, `menu_image`, `priority`)
  VALUES ('Registered SIP Devices', 'user', 'fsmonitor/sip_devices/', 'My Account', 'freeswitch.png', '100.6');
+
+UPDATE userlevels SET module_permissions = concat( module_permissions, ',', (  SELECT max( id ) FROM menu_modules WHERE module_url = 'fsmonitor/sip_devices/' AND module_name = 'sip') ) WHERE userlevelid IN (-1, 2);
+
 
 DELETE FROM `permissions`;
 
