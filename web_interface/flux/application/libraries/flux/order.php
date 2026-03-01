@@ -328,7 +328,7 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 				$product_info->payment_by = $productdata['payment_by'] == 0 ? "Account Balance" : "Card";
 				$product_info->quantity = (isset($productdata['quantity']) && $productdata['quantity'] > 0 )?$productdata['quantity']:'1';
 
-				$parent_order_id = $this->generate_order($product_info,$accountdata,$created_by_accountinfo,$parent_order_id,$account_currency_info);
+				$parent_order_id = $this->generate_order_proxy($product_info,$accountdata,$created_by_accountinfo,$parent_order_id,$account_currency_info);
 
 				if($parent_order_id){
 					$product_info->order_item_id= $parent_order_id;
@@ -477,6 +477,124 @@ $product_info = $this->CI->db_model->getJionQuery('products', 'products.id,produ
 			"package_id" => $last_id,
 			"accountid"=>$account_info->id,
 			"type"=>$created_by_accountinfo['id']
+			);		
+		$this->CI->flux_log->write_log('counters_insert_array_log', json_encode($counters_insert_array_log));
+    }
+		
+		 $order_item_array_log = array(
+			"order_id" =>$last_id,
+			"product_category" =>$product_info->product_category,
+			"product_id" =>$product_info->id,
+			"quantity"=>$product_info->quantity,
+			"price"=>($product_info->quantity*$product_info->price),
+			"setup_fee"=>($product_info->quantity*$product_info->setup_fee),
+			"billing_type"=>$product_info->billing_type,
+			"billing_days"=>$product_info->billing_days,
+			"free_minutes"=>$product_info->free_minutes,
+			"accountid"=>$account_info->id,
+			"reseller_id"=>$account_info->reseller_id,
+			"billing_date"=>gmdate("Y-m-d 00:00:01"),
+			"next_billing_date"=>($product_info->billing_days == 0)?gmdate('Y-m-'.$account_info->invoice_day.' 23:59:59', strtotime('+1 month')):gmdate("Y-m-".$account_info->invoice_day." 23:59:59",strtotime("+".($product_info->billing_days-1)." days")),
+			"is_terminated"=>0,
+			"termination_date"=>"",
+			"from_currency"=>$from_currency,
+			"exchange_rate"=>$account_currency_info['currencyrate'],
+			"to_currency"=>$account_currency_info['currency']
+		);
+		$this->CI->flux_log->write_log('create_order_item', json_encode($order_item_array_log));
+			
+		$order_item_array = array(
+			"order_id" =>$last_id,
+			"product_category" =>$product_info->product_category,
+			"product_id" =>$product_info->id,
+			"quantity"=>$product_info->quantity,
+			"price"=>($product_info->quantity*$product_info->price),
+			"setup_fee"=>($product_info->quantity*$product_info->setup_fee),
+			"billing_type"=>$product_info->billing_type,
+			"billing_days"=>$product_info->billing_days,
+			"free_minutes"=>$product_info->free_minutes,
+			"accountid"=>$account_info->id,
+			"reseller_id"=>$account_info->reseller_id,
+			"billing_date"=>gmdate("Y-m-d 00:00:01"),
+			"next_billing_date"=>($product_info->billing_days == 0)?gmdate('Y-m-'.$account_info->invoice_day.' 23:59:59', strtotime('+1 month')):gmdate("Y-m-".$account_info->invoice_day." 23:59:59",strtotime("+".($product_info->billing_days-1)." days")),
+			"is_terminated"=>0,
+			"termination_date"=>"",
+			"from_currency"=>$from_currency,
+			"exchange_rate"=>$account_currency_info['currencyrate'],
+			"to_currency"=>$account_currency_info['currency']
+		);
+					
+	    $this->CI->db->insert("order_items",$order_item_array);
+	    $order_item_id = $this->CI->db->insert_id();
+	    return $last_id;
+	}
+	function generate_order_proxy($product_info,$account_info,$created_by_accountinfo,$parent_order_id,$account_currency_info){
+		$logData = [
+        'product_info'          => $product_info,
+        'account_info'          => $account_info,
+        'created_by_accountinfo'=> $created_by_accountinfo,
+        'parent_order_id'       => $parent_order_id,
+        'account_currency_info' => $account_currency_info,
+    ];
+    $this->CI->flux_log->write_log('generate_order_proxy_lib', json_encode($logData));
+    
+		$product_info->quantity = (isset($product_info->quantity) && $product_info->quantity !='' )?$product_info->quantity:1;
+		$system_config = common_model::$global_config ['system_config'];
+		$from_currency = Common_model::$global_config ['system_config'] ['base_currency'];
+		$system_config = common_model::$global_config ['system_config'];
+		$renew_deleted = Common_model::$global_config ['system_config'] ['renew_deleted_product'];
+		
+		$created_by_accountinfo = (isset($created_by_accountinfo))?$created_by_accountinfo:'1';
+		
+		$order_insert_array_log = array(
+		    "library" => 'order',
+		    "function" => 'generate_order_proxy',
+			"order_id" =>crc32(uniqid()),
+			"parent_order_id" => $parent_order_id,
+			"order_date"=>gmdate("Y-m-d H:i:s"),
+			"order_generated_by"=>$created_by_accountinfo,
+			"payment_gateway"=>$product_info->payment_by,
+			"payment_status"=>$product_info->payment_status,
+			"accountid"=>$account_info->id,
+			"reseller_id"=>$account_info->reseller_id,
+			"ip"=>$this->getRealIpAddr()
+			);
+				
+		$this->CI->flux_log->write_log('generate_order_proxy_lib', json_encode($order_insert_array_log));		
+		$order_insert_array = array(
+			"order_id" =>crc32(uniqid()),
+			"parent_order_id" => $parent_order_id,
+			"order_date"=>gmdate("Y-m-d H:i:s"),
+			"order_generated_by"=>$created_by_accountinfo,
+			"payment_gateway"=>$product_info->payment_by,
+			"payment_status"=>$product_info->payment_status,
+			"accountid"=>$account_info->id,
+			"reseller_id"=>$account_info->reseller_id,
+			"ip"=>$this->getRealIpAddr()
+		);
+
+		$this->CI->db->insert("orders",$order_insert_array);
+		$last_id = $this->CI->db->insert_id();
+    if ($product_info->product_category == '1') {
+		$counters_insert_array = array(
+			"product_id" =>$product_info->id,
+			"package_id" => $last_id,
+			"accountid"=>$account_info->id,
+			"used_seconds" => 0,
+			"status" => 1,
+			"type"=>$created_by_accountinfo
+		);		
+		
+		$this->CI->db->insert("counters",$counters_insert_array);
+		$counter_id = $this->CI->db->insert_id();
+		
+
+        $counters_insert_array_log = array(
+			"id" => $counter_id,
+			"product_id" =>$product_info->id,
+			"package_id" => $last_id,
+			"accountid"=>$account_info->id,
+			"type"=>$created_by_accountinfo
 			);		
 		$this->CI->flux_log->write_log('counters_insert_array_log', json_encode($counters_insert_array_log));
     }

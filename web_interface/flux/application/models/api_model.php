@@ -291,6 +291,7 @@ class Api_model extends CI_Model {
         'status' => 0,
         'can_purchase' => 0,
         'billing_type' => 1,
+        'billing_days' => 30,
         'creation_date' => gmdate("Y-m-d H:i:s"),
         'last_modified_date' => gmdate("Y-m-d H:i:s")
         ];
