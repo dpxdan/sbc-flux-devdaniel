@@ -303,8 +303,8 @@ class Invoices extends Account
 							$this->db->where('oi.accountid', $account_id);
 							$this->db->where('oi.is_terminated', '0');
 							$this->db->where('p.product_category', '1');
-							$this->db->where('o.order_date >=', $from_date_gmt);
-							$this->db->where('o.order_date <=', $to_date_gmt);
+							$this->db->where('oi.billing_date >=', $from_date_gmt);
+//							$this->db->where('o.order_date <=', $to_date_gmt);
 							$this->db->where('oi.termination_date', '0000-00-00 00:00:00');
 							$this->db->order_by('oi.billing_date', 'desc');
 							$all_plans = $this->db->get()->result_array();
