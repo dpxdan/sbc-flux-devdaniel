@@ -28,7 +28,7 @@ class Feedback extends MX_Controller {
 		$data ['account_info'] = $this->session->userdata ['accountinfo'];
 		$data ['username'] = $this->session->userdata ( 'user_name' );
 		$data ['page_title'] = "Feedback";
-		$this->load->view ( 'view_feedback', $data );
+		$this->load->view ( 'view_newmail', $data );
 	}
 	function customer_feedback_result($flag = FALSE) {
 		if ($flag) {

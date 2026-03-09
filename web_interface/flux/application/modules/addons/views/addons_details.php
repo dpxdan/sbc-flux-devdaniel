@@ -34,14 +34,15 @@ function install_addon(){
 									</div>
 									<div class="col py-3 pr-3 pl-0">
 										<div class="card-body px-3 py-0">
-											<h3 class="text-dark card-title fw4"><?php echo $addon_name;?>
+											<h3 class="text-dark card-title fw4"><?php echo gettext($addon_name);?>
 												<?php if($license == 'Commercial') { ?>
 													<span id="Enterprise" class="badge badge-warning Enterprise" style="font-size:9px">Commercial</span>
 												<?php }?>
 											</h3>
 											<p class="card-text m-0"><?php echo $description;?></p>
+											<br/>
 											<p class="py-2 m-0"><?php echo gettext("By"); ?> <strong
-													class="text-secondary addon_strong"><?php echo $author;?></strong>
+													class="text-secondary addon_title"><?php echo $author;?></strong>
 											</p>
 
 											<div class="float-right col-6 pr-0">                                      
@@ -71,7 +72,7 @@ function install_addon(){
 												if (isset($request_uri) && $request_uri[3]=='Enterprise') {?>
 														<a href="<?= base_url() ?>addons/addons_enterprise_license/<?= $type."/".$package_name ?>/install/<?= $new_version."/".$old_version ?>" class="btn btn-info btn-block" rel="facebox" ><?php echo $btn_text; ?></a> 
 													<?php }else{?>
-															<a href="<?= base_url() ?>addons/addons_install/<?= $type."/".$package_name ?>/install/<?= $new_version."/".$old_version ?>" class="btn btn-info btn-block" onclick='return install_addon()'>Install</a> 
+															<a href="<?= base_url() ?>addons/addons_install/<?= $type."/".$package_name ?>/install/<?= $new_version."/".$old_version ?>" class="btn btn-info btn-block" onclick='return install_addon()'><?php echo gettext("Install"); ?></a> 
 												 <?php }
 									
 

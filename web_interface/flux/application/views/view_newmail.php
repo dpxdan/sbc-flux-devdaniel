@@ -1,6 +1,24 @@
 
  <link href="<?= base_url() ?>assets/css/popup.css" rel="stylesheet" type="text/css">
  <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/popup/custom.js"></script>
+      <link href="<?= base_url() ?>assets/css/checkbox.css" rel="stylesheet"/>
+     <link href="<?= base_url() ?>assets/css/bootstrap.min.css" rel="stylesheet"/>
+     <!-- Google Font -->
+       <link href="https://fonts.googleapis.com/css?family=Montserrat:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet"> 
+     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/bootstrap-select.css"/>
+     <link href="<?= base_url() ?>assets/css/sidebar_style.css" rel="stylesheet" type="text/css"/>
+     <link href="<?php echo base_url(); ?>/assets/css/jquery.datetimepicker.min.css" rel="stylesheet" />
+     <link rel="stylesheet" media="all" type="text/css" href="<?php echo base_url(); ?>/assets/css/tabcontent.css"/>
+     <link href="<?= base_url() ?>assets/fonts/font-awesome-4.7.0/css/font-awesome.css" rel="stylesheet"/>
+     <link href="<?= base_url() ?>assets/css/global-style.css" rel="stylesheet" type="text/css"/>
+     <link href="<?php echo base_url(); ?>assets/css/facebox.css" rel="stylesheet" media="all" />	
+     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/flexigrid.css" type="text/css"/>
+     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css" rel="stylesheet">
+     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/animate.css" type="text/css"/>
+     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/style.css" type="text/css"/>
+     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/sticky_menu.css" type="text/css"/>
+     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/global-style.css" type="text/css"/>
+     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/com-style.css" type="text/css"/>
 <script type="text/javascript">
 
 function validateForm(){

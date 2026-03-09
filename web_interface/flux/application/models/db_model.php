@@ -1647,6 +1647,57 @@ class Db_model extends CI_Model {
 		}
 		return $drp_list;
 	}
+	
+	function build_concat_dropdown_parent($select, $table, $id_where = '', $id_value = '') {
+        $account_data = $this->session->userdata("accountinfo");
+        $this->flux_log->write_log ('build_search', json_encode($table));
+        $this->flux_log->write_log ('build_search', json_encode($select));
+        $this->flux_log->write_log ('build_search', json_encode($id_where));
+        $this->flux_log->write_log ('build_search', json_encode($account_data['type']));
+        
+		$where=array();
+		if($account_data['type'] == -1 || $account_data['type'] == 2){
+			$where = array('type' =>'0','status'=>'0','deleted'=>'0');
+		}
+        $select_params = explode(',', $select);
+        $select_params = explode(',', $select);
+        if (isset($select_params[3])) {
+            $cnt_str = " $select_params[1],' ',$select_params[2],' ','(',$select_params[3],')' ";
+        } else {
+            $cnt_str = " $select_params[1],' (',$select_params[2],')' ";
+        }
+        $select = $select_params[0] . ", concat($cnt_str) as $select_params[1] ";
+        $logintype = $this->session->userdata('logintype');
+        if (($logintype == 1 || $logintype == 5) && $id_where == 'where_arr') {
+		
+            $id_value = $account_data['id'];
+			$where = array('parent_id'=>$id_value,'type' =>'1','status'=>'0','deleted'=>'0');
+		
+        }
+        $drp_array = $this->getSelect($select, $table, $where);
+        $drp_array = $drp_array->result();
+        $drp_list = array();
+
+	if (($logintype == 1 || $logintype == 5) && $select_params[1] == 'first_name' && $select_params[2] == 'last_name') {
+		$this->db->where('id', $id_value);
+		$parent_drp = $this->getSelect('*', $table, '')->row_array();
+		$drp_list[$parent_drp['id']] = isset($parent_drp['company_name']) && $parent_drp['company_name'] != '' ? $parent_drp['company_name'] . '('.$parent_drp['number'].' )' : $parent_drp['first_name'] . ' ' . $parent_drp['last_name'] . ' ' .'('.$parent_drp['number'] .')';
+	}
+        foreach ($drp_array as $drp_value) {
+        	if($select_params[1] == 'first_name' && $select_params[2] == 'last_name'){
+				$company_info = (array)$this->db->get_where($table,array("id"=>$drp_value->id))->first_row();
+				if (!empty($company_info['company_name'])) {
+					$drp_value->first_name = $company_info['company_name'] . '('.$company_info['number'].' )';
+				}else{
+					$drp_value->first_name = $company_info['first_name'] . ' ' . $company_info['last_name'] . ' ' .'('.$company_info['number'] .')';
+				}
+			}else{
+				$drp_value->first_name = $company_info['first_name'] . ' ' . $company_info['last_name'] . ' ' .'('.$company_info['number'] .')';
+			}
+            $drp_list[$drp_value->{$select_params [0]}] = $drp_value->{$select_params[1]};
+        }
+        return $drp_list;
+	}
 }
 
 ?>

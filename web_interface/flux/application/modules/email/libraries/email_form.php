@@ -101,7 +101,6 @@ class Email_form extends common
                 'tOOL TIP',
                 ''
             ),
-
             array(
                 gettext('Status'),
                 'status',
@@ -241,7 +240,7 @@ class Email_form extends common
         );
         $form['button_save'] = array(
             'name' => 'action',
-            'content' => gettext('Sent'),
+            'content' => gettext('Resend Mail'),
             'value' => 'save',
             'id' => 'button',
             'type' => 'submit',

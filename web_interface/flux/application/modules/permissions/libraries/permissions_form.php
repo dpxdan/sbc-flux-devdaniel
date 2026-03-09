@@ -162,17 +162,6 @@ class permissions_form
                 "true",
                 "center"
             ),
-     array (
-     		gettext ( "Type" ),
-     		"80",
-     		"permission_name",
-     		"",
-     		"",
-     		"",
-     		"",
-     		"true",
-     		"center" 
-     ),
             array(
                 gettext("Created Date"),
                 "80",
@@ -212,7 +201,7 @@ class permissions_form
                         "mode" => "single"
                     )
                 ),
-                "false"
+                "true"
             )
         ));
         return $grid_field_arr;

@@ -210,16 +210,16 @@ $("#gateway_grid").flexigrid({
     method: 'GET',
     dataType: 'json',
 	colModel : [
-		{display: 'Gateway Name', name: 'name', width: 120, sortable: false, align: 'center'},
-                {display: 'Proxy', name: 'proxy', width: 150, sortable: false, align: 'center'},
-                {display: 'User Name', name: 'username', width: 120, sortable: false, align: 'center'},
-                {display: 'Call In', name: 'call-in', width: 120, sortable: false, align: 'center'},
-                {display: 'Call Out', name: 'call-out', width: 120, sortable: false, align: 'center'},
-                {display: 'Fail Call In', name: 'fail-call-in', width: 120, sortable: false, align: 'center'},
-                {display: 'Fail Call Out', name: 'fail-call-out', width: 120, sortable: false, align: 'center'},
-		{display: 'Status', name: 'status', width:80, sortable: false, align: 'center'},
-		{display: 'State', name: 'state', width: 150, sortable: false, align: 'center'},
-                {display: 'Action', name: 'action', width: 150, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Gateway Name"); ?>', name: 'name', width: 120, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Proxy"); ?>', name: 'proxy', width: 150, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("User Name"); ?>', name: 'username', width: 120, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Call In"); ?>', name: 'call-in', width: 120, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Call Out"); ?>', name: 'call-out', width: 120, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Fail Call In"); ?>', name: 'fail-call-in', width: 120, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Fail Call Out"); ?>', name: 'fail-call-out', width: 120, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Status"); ?>', name: 'status', width:80, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("State"); ?>', name: 'state', width: 150, sortable: false, align: 'center'},
+        {display: '<?php echo gettext("Action"); ?>', name: 'action', width: 150, sortable: false, align: 'center'},
 		],
 	/*buttons : [
 		{name: ' ', bclass: 'reload', onpress : reload_button}	
@@ -235,11 +235,12 @@ $("#gateway_grid").flexigrid({
 	showTableToggleBtn: false,
 	width: "auto",
 	height: "auto",
-	pagetext: 'Page',
-	outof: 'of',
-	nomsg: 'No items',
-	procmsg: 'Processing, please wait ...',
-	pagestat: 'Displaying {from} to {to} of {total} items',
+	pagetext: '<?php echo gettext("Page"); ?>',
+	outof: '<?php echo gettext("of"); ?>',
+	nomsg: '<?php echo gettext("No Records"); ?>',
+	procmsg: '<?php echo gettext("Processing, please wait ..."); ?>',
+	pagestat: '<?php echo sprintf(_("Displaying %s to %s of %s items"), "{from}", "{to}", "{total}"); ?>',
+
 	onSuccess: function(data){
 	$('a[rel*=facebox]').facebox({
 		    loadingImage : '<?php echo base_url();?>/assets/images/loading.gif',
@@ -248,7 +249,7 @@ $("#gateway_grid").flexigrid({
 
 	},
 	onError: function(){
-	    alert('Sorry, we are unable to connect to freeswitch!!!');
+	    alert('<?php echo gettext("Sorry, we are unable to connect to FluxSBC!"); ?>');
 	}
 });
   $("#host_id").change(function(){
@@ -267,61 +268,7 @@ function myFunction() {
 <?=$page_title?>
 <? endblock() ?>
 <? startblock('content') ?>
-<section class="slice color-three mb-4">
-	<div class="w-section inverse p-0">
-		<div class="col-md-12">      
-			<div class="row">
-				<div id="floating-label" class="card col-md-12 px-0 pb-4">
-					<h3 class="bg-secondary text-light p-2 rounded-top">Gateways</h3>
-					<form method="POST" action="" enctype="multipart/form-data" id="ListForm1" name="extension">    
-						<div class="col-md-6 form-group">
-							<label class="col-md-12 control-label p-0">Switch Host </label>
-							<select class="col-md-12 form-control form-control-lg selectpicker"  name="host_id" id="host_id" onchange="this.form.submit()">
-								<option value="0">--All--</option>
-								<?php
-								foreach($fs_data as $name) { ?>
-								<option value="<?= $name['id'] ?>"<?php if(isset($_POST['host_id']) && ($name['id'] == $_POST['host_id']))echo 'selected';?>><?= $name['freeswitch_host'] ?></option>
-								<?php
-								} ?>
-							</select>
-						</div>
 
-						<div class="col-md-5 float-right text-right">
-							<label class="search_label col-md-5 text-right">Refresh Time:</label>
-							<select class="col-md-6 form-control form-control-lg selectpicker"  name="second_reload" id="second_reload" onchange="this.form.submit()" >
-								<?php
-	    		//for($i=5;$i<=300;$i+=5) {
-								if($_POST['second_reload'] == ''){
-									?>
-									<option value="15" <?php if(isset($result['value']) && (15 == $result['value']))echo 'selected';?>>15 Second</option>
-									<option value="30" <?php if(isset($result['value']) && (30 == $result['value']))echo 'selected';?>>30 Second</option>
-									<option value="60" <?php if(isset($result['value']) && (60 == $result['value']))echo 'selected';?>>1 minute</option>
-									<option value="120" <?php if(isset($result['value']) && (120 == $result['value']))echo 'selected';?>>2 Minute</option>
-									<option value="180" <?php if(isset($result['value']) && (180 == $result['value']))echo 'selected';?>>3 Minute</option>
-									<!-- <option value="<?php echo $i; ?>"<?php if(isset($result['value']) && ($i == $result['value']))echo 'selected';?>><?php echo $i; ?> Second</option> -->
-									<?php
-								}
-								else{
-									?>
-									<option value="15" <?php if(isset($_POST['second_reload']) && (15 == $_POST['second_reload']))echo 'selected';?>>15 Second</option>
-									<option value="30" <?php if(isset($_POST['second_reload']) && (30 == $_POST['second_reload']))echo 'selected';?>>30 Second</option>
-									<option value="60" <?php if(isset($_POST['second_reload']) && (60 == $_POST['second_reload']))echo 'selected';?>>1 Minute</option>
-									<option value="120" <?php if(isset($_POST['second_reload']) && (120 == $_POST['second_reload']))echo 'selected';?>>2 Minute</option>
-									<option value="180" <?php if(isset($_POST['second_reload']) && (180 == $_POST['second_reload']))echo 'selected';?>>3 Minute</option>
-
-									<!-- <option value="<?php echo $i; ?>"<?php if(isset($_POST['second_reload']) && ($i == $_POST['second_reload']))echo 'selected';?>><?php echo $i; ?> Second</option> -->
-
-									<?php
-								}
-				    	      // } ?>
-				    	  </select>
-				    	</div>
-				    </form>
-				</div>
-			</div>  
-		</div>
-	</div>
-</section>
 
 <section class="slice color-three">
 	<div class="w-section inverse p-0">

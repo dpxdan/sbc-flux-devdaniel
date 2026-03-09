@@ -65,7 +65,8 @@ $CUSTOMEREDIT_ARRAY=array (
 		"Invoices" => "accounts/customer_invoices/",
 		"Refill Report" => "accounts/customer_refillreport/",
 		"CDRs"=>"accounts/customer_cdrs/",
-		"Emails" => "accounts/customer_emailhistory/",
+		"Emails History" => "accounts/customer_emailhistory/",
+		"Emails" => "accounts/customer_emails/",
 );
 $RESELLERPROFILE_ARRAY=array (
 		"My Profile" => "user/user_myprofile/",
@@ -99,6 +100,7 @@ $CUSTOMERPROFILE_ARRAY=array (
 		"Speed Dial"=>"user/user_speeddial/",
 		"Alert Threshold"=>"user/user_alert_threshold/",
 		"Change Password"=>"user/user_change_password/",
+		"Caller IDs"=>"user/user_animap_list/",
 		"My Order" => "user/user_products_list/"
 );
 

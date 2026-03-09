@@ -256,6 +256,12 @@ class Accounts extends MX_Controller {
 			$add_array    = $this->input->post();
 			$current_date = gmdate("Y-m-d H:i:s");
 
+			// RMS: se canais estiverem como "Ilimitado", garantimos um valor alto em maxchannels
+			if (isset($add_array['rms_canais_ilimitado']) && (int) $add_array['rms_canais_ilimitado'] === 1) {
+				$add_array['maxchannels'] = (isset($add_array['maxchannels']) && $add_array['maxchannels'] !== '') ? $add_array['maxchannels'] : '9999';
+				$_POST['maxchannels'] = $add_array['maxchannels'];
+			}
+
 			$entity_name         = strtolower($this->common->get_entity_type('', '', $add_array['type']));
 			$data['country_id']  = $add_array['country_id'];
 			$data['timezone_id'] = $add_array['timezone_id'];
@@ -624,6 +630,7 @@ class Accounts extends MX_Controller {
 	}
 
 	function customer_details_json($module, $accountid) {
+	    $this->flux_log->write_log('customer_details_json', json_encode($module));
 		$entity_type = $this->common->get_field_name('type', 'accounts', array(
 				'id' => $accountid,
 			));
@@ -1781,8 +1788,7 @@ class Accounts extends MX_Controller {
 		$this->load->view('view_accounts_create', $data);
 	}
 
-	function admin_edit($edit_id = '')
-{
+	function admin_edit($edit_id = '') {
     if ((! empty($edit_id)) && (isset($edit_id))) {
         $access_edit = (array) $this->db_model->getSelect("deleted", "accounts", array(
             "id" => $edit_id
@@ -1810,8 +1816,7 @@ class Accounts extends MX_Controller {
     }
 }
 
-function admin_save($add_array = false)
-{
+    function admin_save($add_array = false) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $add_array = $this->input->post();
         $accountinfo = $this->session->userdata('accountinfo');
@@ -1866,6 +1871,7 @@ function admin_save($add_array = false)
         redirect(base_url() . 'accounts/admin_list/');
     }
 }
+	
 	function subadmin_add($type = "") {
 		$this->admin_add(4);
 	}
@@ -3074,6 +3080,113 @@ function admin_save($add_array = false)
 			echo '';
 		}
 		exit();
+	}
+	
+	function customer_emails($edit_id, $entity_type = 'customer') {
+		$accountinfo = $this->session->userdata('accountinfo');
+		$reseller_id = ($accountinfo['type'] == 1 || $accountinfo['type'] == 5)?$accountinfo['id']:0;
+		if ($accountinfo['type'] == -1) {
+			$where = array(
+				'id' => $edit_id,
+			);
+		} else {
+			$where = array(
+				'id'          => $edit_id,
+				"reseller_id" => $reseller_id,
+			);
+		}
+		$account_res = $this->db_model->getSelect("type", "accounts", $where);
+		if ($account_res->num_rows() > 0) {
+			$data['page_title']  = gettext("Customer Emails");
+			$account_data        = (array) $account_res->first_row();
+			$accounttype         = strtolower($this->common->get_entity_type('', '', $account_data['type']));
+			$data["grid_fields"] = $this->accounts_form->build_emails_list_for_customer($edit_id, $accounttype);
+			$email_info       = $this->db_model->getSelect("*", "accounts_emails", array(
+					"id" => $edit_id,
+				));
+			$data['email_info'] = (array) $email_info->first_row();
+			$data['edit_id']     = $edit_id;
+			$data['accounttype'] = $accounttype;
+			$this->load->view('view_customer_emails', $data);
+		} else {
+			$this->session->set_flashdata('flux_notification', gettext('Permission Denied!'));
+			redirect(base_url().'accounts/customer_list/');
+			exit();
+		}
+	}
+
+	function customer_emails_json($accountid, $accounttype) {
+		$json_data      = array();
+		$instant_search = $this->session->userdata('left_panel_search_'.$accounttype.'_emails');
+		$like_str       = !empty($instant_search)?"(email like '%$instant_search%'  OR  creation_date like '%$instant_search%' )":null;
+		if (!empty($like_str)) {
+			$this->db->where($like_str);
+		}
+
+		$where = array(
+			"accountid" => $accountid,
+		);
+		$count_all = $this->db_model->countQuery("*", "accounts_emails", $where);
+
+		$paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
+		$json_data   = $paging_data["json_paging"];
+		if (!empty($like_str)) {
+			$this->db->where($like_str);
+		}
+
+		$query = $this->db_model->select("*", "accounts_emails", $where, "id", "ASC", $paging_data["paging"]["page_no"], $paging_data["paging"]["start"]);
+
+		$grid_fields       = json_decode($this->accounts_form->build_emails_list_for_customer($accountid, $accounttype));
+		$json_data['rows'] = $this->form->build_grid($query, $grid_fields);
+
+		echo json_encode($json_data);
+	}
+	
+	function customer_emails_action($action, $accountid, $emailid = "") {
+		$entity_type = $this->common->get_field_name('type', 'accounts', array(
+				'id' => $accountid,
+			));
+
+		$entity_type = strtolower($this->common->get_entity_type('', '', $entity_type));
+		$url         = "accounts/".$entity_type."_emails/$accountid/";
+		if ($action == "add") {
+			$email = $this->input->post();
+			$this->db->where('email', $email['email']);
+			$this->db->select('count(id) as count');
+			$cnt_result = $this->db->get('accounts_emails');
+			$cnt_result = $cnt_result->result_array();
+			$count      = $cnt_result[0]['count'];
+			if ($count == 0) {
+				if ($email['email'] != "") {
+					$insert_arr = array(
+						'creation_date'      => gmdate('Y-m-d H:i:s'),
+						'last_modified_date' => gmdate('Y-m-d H:i:s'),
+						"email"             => $this->input->post('email'),
+						"accountid"          => $accountid,
+					);
+					$this->db->insert("accounts_emails", $insert_arr);
+					$this->session->set_flashdata('flux_errormsg', gettext('Email added successfully!'));
+				} else {
+					$this->session->set_flashdata('flux_notification', gettext('Please Enter Email value.'));
+				}
+			} else {
+				$this->session->set_flashdata('flux_notification', gettext('Email already Exists.'));
+			}
+		}
+		if ($action == "delete") {
+			$this->session->set_flashdata('flux_notification', gettext('Email removed sucessfully!'));
+			$this->db_model->delete("accounts_emails", array(
+					"id" => $emailid,
+				));
+		}
+		redirect(base_url().$url);
+	}
+	
+	function emails_delete_multiple() {
+		$ids   = $this->input->post("selected_ids", true);
+		$where = "id IN ($ids)";
+		$this->db->delete("accounts_emails", $where);
+		echo TRUE;
 	}
 
 }

@@ -1,4 +1,5 @@
-@import url(http://fonts.googleapis.com/css?family=Montserrat:400,700);
+@import url(https://fonts.googleapis.com/css?family=Montserrat:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i);
+
 
 html{    background-color: #cccccc; no-repeat;
   background-size: cover;
@@ -84,7 +85,7 @@ html{    background-color: #cccccc; no-repeat;
 
 /* Icons ---------------------------------- */
 #name{
-	background-image: url(http://rexkirby.com/kirbyandson/images/name.svg);
+	background-image: url(../images/name.svg);
 	background-size: 30px 30px;
 	background-position: 11px 8px;
 	background-repeat: no-repeat;
@@ -92,7 +93,7 @@ html{    background-color: #cccccc; no-repeat;
 }
 
 #name:focus{
-	background-image: url(http://rexkirby.com/kirbyandson/images/name.svg);
+	background-image: url(../images/name.svg);
 	background-size: 30px 30px;
 	background-position: 8px 5px;
         background-position: 11px 8px;
@@ -100,21 +101,21 @@ html{    background-color: #cccccc; no-repeat;
 }
 
 #email{
-	background-image: url(http://rexkirby.com/kirbyandson/images/email.svg);
+	background-image: url(../images/email.svg);
 	background-size: 30px 30px;
 	background-position: 11px 8px;
 	background-repeat: no-repeat;
 }
 
 #email:focus{
-	background-image: url(http://rexkirby.com/kirbyandson/images/email.svg);
+	background-image: url(../images/email.svg);
 	background-size: 30px 30px;
         background-position: 11px 8px;
 	background-repeat: no-repeat;
 }
 
 #feedback{
-	background-image: url(http://rexkirby.com/kirbyandson/images/comment.svg);
+	background-image: url(../images/comment.svg);
 	background-size: 30px 30px;
 	background-position: 11px 8px;
 	background-repeat: no-repeat;

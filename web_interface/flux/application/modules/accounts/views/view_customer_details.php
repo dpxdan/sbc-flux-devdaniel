@@ -29,6 +29,83 @@
           }
       });
        });
+
+        $(document).on('click', '.consult_tax_number', function(){
+            var doc = $("input[name='tax_number']").val() || $('#tax_number').val();
+            if(!doc){
+                if(typeof print_error === 'function'){
+                    alert('Informe um CPF/CNPJ no campo Tax Number.');
+                }else{
+                    alert('Informe um CPF/CNPJ no campo Tax Number.');
+                }
+                return;
+            }
+            $.ajax({
+                type:'POST',
+                url: "<?=base_url()?>accounts/documents/ajax_consultar/",
+                data: {doc: doc},
+                success: function(resp){
+                    try{ if(typeof resp === 'string') resp = JSON.parse(resp); }catch(e){}
+                    if(resp && resp.ok){
+                        var m = resp.mapped || {};
+                        var fullName = m.company_name || '';
+                        
+                        if (fullName) {
+                            var parts = fullName.trim().split(/\s+/);
+                            var first_name = parts.shift() || '';
+                            var last_name = parts.join(' ');
+                        
+                            $("input[name='first_name']").val(first_name);
+                            $("input[name='last_name']").val(last_name);
+                        }
+                        if(m.company_name) $("input[name='company_name']").val(m.company_name);
+                        if(m.rms_fantasia) $("input[name='rms_fantasia']").val(m.rms_fantasia);
+                        if(m.simei){
+                            const simei_status = m.simei;
+                            if(simei_status == true){
+                                var simei = "<?php echo gettext('Active'); ?>";
+                            }
+                            else{
+                                var simei = "<?php echo gettext('Inactive'); ?>";
+                            }
+                            }
+                        if(simei) $("input[name='simei']").val(simei);
+                        if(m.registrations) $("input[name='rms_inscricao_estadual']").val(m.registrations);
+                        if(m.rms_bairro) $("input[name='rms_bairro']").val(m.rms_bairro);
+                        if(m.rms_endereco_numero) $("input[name='rms_endereco_numero']").val(m.rms_endereco_numero);
+                        if(m.address_1) $("input[name='address_1']").val(m.address_1);
+                        if(m.address_2) $("input[name='address_2']").val(m.address_2);
+                        if(m.city) $("input[name='city']").val(m.city);
+                        if(m.province) $("input[name='province']").val(m.province);
+                        if(m.postal_code) $("input[name='postal_code']").val(m.postal_code);
+                        if(m.telephone_1) $("input[name='telephone_1']").val(m.telephone_1);
+                        if(m.email){
+                            $("input[name='email']").val(m.email);
+                            $("input[name='notification_email']").val(m.email);
+                        }
+                        if(resp.doc) $("input[name='tax_number']").val(resp.doc);
+                    }
+                    else{
+                        var err = (resp && resp.error) ? resp.error : 'Falha ao consultar.';
+                        if(typeof print_error === 'function'){
+                            alert(err);
+                        }else{
+                            alert(err);
+                        }
+                    }
+                },
+                error: function(xhr){
+                    var msg = xhr.responseJSON.message;
+                    if(typeof print_error === 'function'){
+                        window.location.reload();
+                        //alert(msg);
+                    }else{
+                        window.location.reload();
+                        //alert(msg);
+                    }
+                }
+            });
+        });
         var expiry_date = $("#expiry").val();
         $("#expiry").datetimepicker({
            value:expiry_date,
@@ -74,7 +151,7 @@ label.error {
                         <li class="breadcrumb-item"><a
 								href="<?= base_url()."accounts/".strtolower($entity)."_list/"; ?>"><?= gettext(ucfirst($entity_name)); ?>s</a></li>
 							<li class="breadcrumb-item active" aria-current="page"><a
-								href="<?= base_url()."accounts/".strtolower($entity_name)."_edit/".$edit_id."/"; ?>"> <?= ucfirst(@$entity_name); ?> <?php echo gettext('Profile');?> </a></li>
+								href="<?= base_url()."accounts/".strtolower($entity_name)."_edit/".$edit_id."/"; ?>"> <?= gettext(ucfirst(@$entity_name)); ?> <?php echo gettext('Profile');?> </a></li>
 						</ol>
 					</nav>
 				</div>

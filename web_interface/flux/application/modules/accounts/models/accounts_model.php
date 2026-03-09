@@ -35,9 +35,47 @@ class Accounts_model extends CI_Model {
 		$accountinfo['permission_id']  = ($accountinfo['type'] == 1 || $accountinfo['type'] == 2)?(isset($accountinfo['permission_id'])?$accountinfo['permission_id']:$account_data['permission_id']):0;
 		$accountinfo['is_distributor'] = $account_data['type'] == 1?$account_data['is_distributor']:(isset($accountinfo['is_distributor'])?$accountinfo['is_distributor']:1);
 		$this->load->library("flux/signup_lib");
-		$this->signup_lib->create_account($accountinfo);
+
+		// signup_lib pode inserir o account e retornar o ID (ou não).
+		$last_id = $this->signup_lib->create_account($accountinfo);
+		if (empty($last_id)) {
+			$last_id = $this->db->insert_id();
+		}
+
+		// Garante persistência dos campos adicionados para integração RMS (caso signup_lib filtre colunas).
+		if (!empty($last_id)) {
+			$rms_fields = $this->filter_rms_fields($accountinfo);
+			if (!empty($rms_fields)) {
+				$this->db->where('id', (int) $last_id);
+				$this->db->update('accounts', $rms_fields);
+			}
+		}
+
 		return $last_id;
 	}
+
+	protected function filter_rms_fields(array $accountinfo) {
+		$keys = array(
+			'rms_tipo_cliente',
+			'rms_fantasia',
+			'rms_inscricao_estadual',
+			'rms_endereco_numero',
+			'rms_bairro',
+			'rms_rateplan_0800',
+			'rms_rateplan_400x',
+			'rms_rateplan_numeracao',
+			'rms_canais_ilimitado',
+		);
+
+		$out = array();
+		foreach ($keys as $k) {
+			if (array_key_exists($k, $accountinfo)) {
+				$out[$k] = $accountinfo[$k];
+			}
+		}
+		return $out;
+	}
+
 
 	function reseller_rates_batch_update($update_array) {
 		unset($update_array['action']);

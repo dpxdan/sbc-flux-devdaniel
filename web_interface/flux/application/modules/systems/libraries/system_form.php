@@ -53,7 +53,7 @@ class System_form extends common
                 array(
                     'name' => 'name',
                     'size' => '20',
-                    'readonly' => true,
+//                    'readonly' => true,
                     'class' => "text field medium"
                 ),
                 'trim|required|xss_clean',

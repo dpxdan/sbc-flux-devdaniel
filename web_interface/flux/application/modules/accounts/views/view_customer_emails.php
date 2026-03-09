@@ -1,0 +1,249 @@
+<? extend('left_panel_master.php') ?>
+
+<? startblock('extra_head') ?>
+<script
+    type="text/javascript"
+    src="<?php echo base_url(); ?>assets/js/jquery.validate.min.js"></script>
+
+<script type="text/javascript" language="javascript">
+    $(document).ready(function () {
+        build_grid(
+            "emails_list",
+            "<?php echo base_url() . "accounts/customer_emails_json/$edit_id/$accounttype/"; ?>",
+            <? echo $grid_fields; ?>,
+            ""
+        );
+
+        $('.checkall').click(function () {
+            $('.chkRefNos').prop('checked', $(this).prop('checked'));
+        });
+
+        $('#accounts_emails').validate({
+            rules: {
+                email: {
+                    required: true
+                }
+            },
+            messages: {
+                email: {
+                    required: '<i style="color:#D95C5C; padding-right: 6px; padding-top: 10px;" class="fa fa-exclamation-triangle"></i><span class="popup_error error p-0"><?php echo gettext('This field is required'); ?></span>'
+                }
+            },
+            errorPlacement: function (error, element) {
+                var name = $(element).attr("name");
+                error.appendTo($("#" + name + "_validate"));
+            }
+        });
+
+        $("#left_panel_quick_search").keyup(function () {
+            quick_search("accounts/customer_details_search/" + '<?php echo $accounttype ?>' + "_emails/");
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('.page-wrap').addClass('addon_wrap');
+        $("#email").removeClass("borderred");
+
+        $('#submit').click(function () {
+            if ($.trim($('#email').val()) == '') {
+                $('#email').addClass("borderred");
+            }
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(".breadcrumb li a").removeAttr("data-ripple", "");
+    });
+</script>
+
+<style>
+    #err {
+        height: 20px !important;
+        width: 100% !important;
+        float: left;
+    }
+
+    label.error {
+        float: left;
+        color: red;
+        padding-left: 0px;
+        vertical-align: top;
+        margin-top: -10px;
+        width: 100% !important;
+    }
+</style>
+<? endblock() ?>
+
+<? startblock('page-title') ?>
+<?= $page_title ?>
+<? endblock() ?>
+
+<? startblock('content') ?>
+<div id="main-wrapper">
+    <div id="content" class="container-fluid">
+        <div class="row">
+            <div class="col-md-12 color-three border_box">
+                <div class="float-left m-2 lh19">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb m-0 p-0">
+                            <li class="breadcrumb-item">
+                                <a href="<?= base_url() . "accounts/" . strtolower($accounttype) . "_list/"; ?>">
+                                    <?= gettext(ucfirst($accounttype) . "s"); ?>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="<?= base_url() . "accounts/" . strtolower($accounttype) . "_edit/" . $edit_id . "/"; ?>">
+                                    <?php echo gettext('Profile'); ?>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="<?= base_url() . "accounts/" . strtolower($accounttype) . "_emails/" . $edit_id . "/"; ?>">
+                                    <?php echo gettext('Emails'); ?>
+                                </a>
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+
+                <div class="m-2 float-right">
+                    <a
+                        class="btn btn-light btn-hight"
+                        href="<?= base_url() . "accounts/" . strtolower($accounttype) . "_edit/" . $edit_id . "/"; ?>">
+                        <i class="fa fa-fast-backward" aria-hidden="true"></i>
+                        <?php echo gettext('Back'); ?>
+                    </a>
+                </div>
+            </div>
+
+            <?php
+            $permissioninfo = $this->session->userdata('permissioninfo');
+            ?>
+
+            <div class="p-4 col-md-12">
+                <div class="col-md-12 p-0">
+                    <?php
+                    if (
+                        (isset($permissioninfo['emails']['emails_detail']['create'])) &&
+                        ($permissioninfo['emails']['emails_detail']['create'] == 0) &&
+                        (
+                            $permissioninfo['login_type'] == '2' ||
+                            $permissioninfo['login_type'] == '-1' ||
+                            $permissioninfo['login_type'] == '0' ||
+                            $permissioninfo['login_type'] == '3' ||
+                            $permissioninfo['login_type'] == '1'
+                        ) ||
+                        ($permissioninfo['login_type'] == '-1')
+                    ) {
+                    ?>
+                        <div class="float-left" id="left_panel_add">
+                            <span class="btn btn-line-warning">
+                                <i class="fa fa-plus-circle fa-lg"></i>
+                                <?php echo gettext('Add'); ?>
+                            </span>
+                        </div>
+                    <?php
+                    }
+
+                    if (
+                        (isset($permissioninfo['emails']['emails_detail']['delete'])) &&
+                        ($permissioninfo['emails']['emails_detail']['delete'] == 0) &&
+                        (
+                            $permissioninfo['login_type'] == '-1' ||
+                            $permissioninfo['login_type'] == '0' ||
+                            $permissioninfo['login_type'] == '3' ||
+                            $permissioninfo['login_type'] == '1'
+                        ) ||
+                        ($permissioninfo['login_type'] == '-1')
+                    ) {
+                    ?>
+                        <div
+                            id="left_panel_delete"
+                            class="pull-left margin-t-0 padding-x-4"
+                            onclick="delete_multiple('/accounts/emails_delete_multiple/')">
+                            <span class="btn btn-line-danger">
+                                <i class="fa fa-times-circle fa-lg"></i>
+                                <?php echo gettext('Delete'); ?>
+                            </span>
+                        </div>
+                    <?php
+                    }
+
+                    
+                    ?>
+                        <div id="show_search" class="float-right col-md-4 p-0">
+                            <input
+                                type="text"
+                                name="left_panel_quick_search"
+                                id="left_panel_quick_search"
+                                class="form-control form-control-lg m-0"
+                                value="<?php echo $this->session->userdata('left_panel_search_' . $accounttype . '_emails') ?>"
+                                placeholder=<?php echo gettext("Search") ?>
+                        </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="portlet-content mt-4" id="left_panel_form" style="display: none;">
+                        <div id="floating-label" class="card pb-4">
+                            <h3 class="bg-secondary text-light p-2 rounded-top">
+                                <?php echo gettext('Email'); ?>
+                            </h3>
+
+                            <form
+                                class="row px-4"
+                                method="post"
+                                name="accounts_emails"
+                                id="accounts_emails"
+                                action="<?= base_url() ?>accounts/customer_emails_action/add/<?= $edit_id ?>/<?= $accounttype; ?>"
+                                enctype="multipart/form-data">
+
+                                <div class="col-md-4">
+                                    <div class="col-md-12 form-group p-0">
+                                        <label class="no-padding control-label">
+                                            <?php echo gettext('Email'); ?> :
+                                        </label>
+
+                                        <input
+                                            type="input"
+                                            class="form-control"
+                                            name="email"
+                                            id="email"
+                                            maxlength="200">
+
+                                        <div
+                                            id="email_validate"
+                                            class="tooltips error_div float-left p-0"
+                                            style="display: block;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <center>
+                                        <input
+                                            class="btn btn-success btn-lg"
+                                            name="action"
+                                            value=<?php echo gettext("Save"); ?>
+                                            type="submit"
+                                            id="submit">
+                                    </center>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 col-md-12 color-three slice float-left content_border p-0">
+                    <div class="card col-md-12 pb-4">
+                        <table id="emails_list" align="left" style="display: none;"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<? endblock() ?>
+
+<? end_extend() ?>

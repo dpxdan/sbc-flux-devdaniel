@@ -107,12 +107,14 @@ $(document).ready(function(){
 	showTableToggleBtn: false,
 	width: "auto",
 	height: "auto",
-	pagetext: 'Page',
-	outof: 'of',
+	pagetext: '<?php echo gettext("Page"); ?>',
+	outof: '<?php echo gettext("of"); ?>',
 	page:'1',
-	nomsg: 'No items',
 	procmsg: '<?php echo gettext("Processing, please wait ..."); ?>',
 	pagestat: '<?php echo sprintf(_("Displaying %s to %s of %s items"), "{from}", "{to}", "{total}"); ?>',
+	nomsg: '<?php echo gettext("No Records"); ?>',
+
+
 	onSuccess: function(data){
 	  $('a[rel*=facebox]').facebox({
 		    loadingImage : '<?php echo base_url();?>/images/loading.gif',
@@ -120,7 +122,7 @@ $(document).ready(function(){
 	    });
 	},
 	onError: function(){
-	    alert('Sorry, we are unable to connect to freeswitch!!!');
+		alert('<?php echo gettext("Sorry, we are unable to connect to FluxSBC!"); ?>');
 	}
 });
   $("#host_id").change(function(){

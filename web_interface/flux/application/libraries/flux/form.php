@@ -49,7 +49,8 @@ class Form {
 			$this->lib_class = $common_lib;
 	}
 
-	function check_permissions() { 
+	function check_permissions_old() { 
+	    $this->CI->flux_log->write_log("check_permissions", 'Start');
 		if ($this->CI->session->userdata ( 'user_login' ) == TRUE) {
 			$module_info = unserialize ( $this->CI->session->userdata ( "permited_modules" ) );
 			if ($this->CI->session->userdata ( 'userlevel_logintype' ) != 0 && $this->CI->session->userdata ( 'userlevel_logintype' ) != 3) {
@@ -138,6 +139,439 @@ class Form {
 			redirect ( base_url () );
 		}
 	}
+	
+	function check_permissions_new() {
+    $this->CI->flux_log->write_log("check_permissions", 'Start');
+    $this->CI->flux_log->write_log("userlevel_logintype", json_encode($this->CI->session->userdata('userlevel_logintype')));
+    
+    
+
+    if ($this->CI->session->userdata('user_login') == TRUE) {
+        $module_info = unserialize($this->CI->session->userdata("permited_modules"));
+
+        if (
+            $this->CI->session->userdata('userlevel_logintype') != 0 &&
+            $this->CI->session->userdata('userlevel_logintype') != 3
+        ) {
+            $module_info[] = 'dashboard';
+        }
+
+        $url = $this->CI->uri->uri_string;
+        $url_array = explode("/", $url);
+
+        if (isset($url_array['1'])) {
+            $module = explode('_', $url_array['1']);
+        } 
+        else {
+            $module = $url_array;
+        }
+
+        if (
+            $this->CI->session->userdata('userlevel_logintype') != -1 &&
+            $this->CI->session->userdata('userlevel_logintype') != 2 &&
+            $this->CI->session->userdata('userlevel_logintype') != 4
+        ) {
+            $module_info[] = 'user';
+        }
+
+        $permissioninfo = $this->CI->session->userdata('permissioninfo');
+        $permissioninfo_default_array = $this->CI->common->permission_info();
+        $this->CI->flux_log->write_log("permissioninfo", json_encode($permissioninfo));
+
+        $currnet_url = current_url();
+        $this->CI->flux_log->write_log("currnet_url", json_encode($currnet_url));
+        $url_explode = explode('/', $currnet_url);
+        $this->CI->flux_log->write_log("url_explode", json_encode($url_explode));
+
+        if (
+            isset($url_explode[3]) &&
+            (
+                $permissioninfo['login_type'] == '4' ||
+                $permissioninfo['login_type'] == '1' ||
+//                $permissioninfo['login_type'] == '-1' ||
+                $permissioninfo['login_type'] == '2'
+            )
+        ) 
+        {
+            $module_name = $url_explode[3];
+            $this->CI->flux_log->write_log("module_name197", json_encode($module_name));
+
+            if (
+                (isset($url_explode[4]) && isset($permissioninfo[$module_name])) ||
+                (isset($url_explode[3]) && $url_explode[3] == 'dashboard')
+            ) {
+                $sub_module_name = isset($url_explode[4]) ? $url_explode[4] : "";
+                $sub_module_explode = explode('_', $sub_module_name);
+                $logintype = $this->CI->session->userdata('logintype');
+
+                if ($module_name != "dashboard") {
+                    $this->CI->flux_log->write_log("module_name", json_encode($module_name));
+                    foreach ($permissioninfo[$module_name] as $first_permission_key => $first_permission_value) {
+                        $first_key_explode = explode('_', $first_permission_key);
+                        $first_key_explode[1] = (isset($first_key_explode[1]))
+                            ? '_' . $first_key_explode[1]
+                            : '';
+
+                        if (isset($sub_module_explode[1])) {
+                            $last_menu_name = '';
+                            $this->CI->flux_log->write_log("sub_module_explode217", json_encode($sub_module_explode[1]));
+
+                            if ($sub_module_explode[1] == 'add') {
+                                $last_menu_name = 'Create';
+                            }
+
+                            if ($sub_module_explode[1] == 'list') {
+                                $last_menu_name = 'list';
+                            }
+
+                            if ($sub_module_explode[1] == 'edit') {
+                                $last_menu_name = 'EDIT';
+                            }
+
+                            if ($sub_module_explode[1] == 'delete') {
+                                $last_menu_name = 'DELETE';
+                            }
+
+                            if ($sub_module_explode[1] == 'add' && $sub_module_explode[0] == 'customer') {
+                                $last_menu_name = 'Create Customer';
+                            }
+
+                            if (isset($sub_module_explode[2]) && $sub_module_explode[2] == 'list') {
+                                $last_menu_name = 'list';
+                            }
+
+                            $first_key_explode[1] = (isset($first_key_explode[2]))
+                                ? $first_key_explode[1] . '_' . $first_key_explode[2]
+                                : $first_key_explode[1];
+
+                            $Default_flag = 0;
+
+                            foreach ($permissioninfo_default_array as $default_permission_value => $default_permission_key) {
+                                if (isset($default_permission_key[$module_name][$sub_module_explode[0] . $first_key_explode[1]])) {
+                                    $default_key_arr = $default_permission_key[$module_name][$sub_module_explode[0] . $first_key_explode[1]];
+
+                                    foreach ($default_key_arr as $default_final_key => $default_final_value) {
+                                        if ($last_menu_name == $default_final_value) {
+                                            $Default_flag = 1;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (
+                                !isset($permissioninfo[$module_name][$sub_module_explode[0] . $first_key_explode[1]][$last_menu_name]) &&
+                                $last_menu_name != '' &&
+                                $Default_flag == 1
+                            ) {
+                                if (
+                                    $this->CI->session->userdata('userlevel_logintype') == '-1' ||
+                                    $this->CI->session->userdata('userlevel_logintype') == '2' ||
+                                    $this->CI->session->userdata('userlevel_logintype') == '4' ||
+                                    $this->CI->session->userdata('logintype') == '1'
+                                ) {
+                                    redirect(base_url() . 'dashboard/');
+                                } else {
+                                    redirect(base_url() . 'user/user/');
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (
+            in_array($module[0], $module_info) ||
+            (isset($url_explode[3]) && $url_explode[3] == 'dashboard') ||
+            (isset($url_explode[3]) && $url_explode[3] == 'login_activity') ||
+            (isset($url_explode[3]) && $url_explode[4] == 'systems_list') || 
+            (isset($url_explode[3]) && $url_explode[4] == 'emails_delete_multiple')
+        ) 
+        {
+            if (
+                $this->CI->session->userdata('userlevel_logintype') == 0 &&
+                $module[0] == 'customer' &&
+                isset($url_array[1]) &&
+                $url_array[1] != 'customer_transfer'
+            ) {
+                redirect(base_url() . 'user/user/');
+            } 
+            else {
+                return true;
+            }
+        } 
+        
+        else {
+            $this->CI->load->library('flux/permission');
+            $this->CI->session->set_userdata(
+                'flux_errormsg',
+                'You do not have permission to access this module..!'
+            );
+
+            $url = $this->CI->session->userdata('userlevel_logintype') == 0
+                ? 'user/user/'
+                : 'dashboard/';
+
+            $this->CI->permission->permission_redirect_url($url);
+        }
+    } else {
+        redirect(base_url());
+    }
+}
+
+	function check_permissions()
+	{
+	    $this->CI->flux_log->write_log('check_permissions', 'Start');
+	
+	    if ($this->CI->session->userdata('user_login') != TRUE) {
+	        redirect(base_url());
+	    }
+	
+	    $module_info = $this->get_permitted_modules();
+	    $route = $this->get_permission_route_context();
+	
+	    $permissioninfo = $this->CI->session->userdata('permissioninfo');
+	    $permissioninfo_default_array = $this->CI->common->permission_info();
+	
+	    $this->CI->flux_log->write_log('check_permissions.route', json_encode($route));
+	    $this->CI->flux_log->write_log('check_permissions.module_info', json_encode($module_info));
+	
+	    if (
+	        $this->requires_detailed_permission_check($permissioninfo) &&
+	        !$this->has_detailed_permission_access($route, $permissioninfo, $permissioninfo_default_array)
+	    ) {
+	        $this->redirect_default_by_login_type();
+	    }
+	
+	    if (!$this->can_access_route_module($route, $module_info)) {
+	        $this->deny_module_access();
+	    }
+	
+	    if (
+	        $this->CI->session->userdata('userlevel_logintype') == 0 &&
+	        $route['module'] == 'customer' &&
+	        $route['route_key'] != 'customer_transfer'
+	    ) {
+	        redirect(base_url() . 'user/user/');
+	    }
+	
+	    return true;
+	}
+	
+	private function get_permitted_modules()
+	{
+	    $module_info = unserialize($this->CI->session->userdata('permited_modules'));
+	
+	    if (!is_array($module_info)) {
+	        $module_info = [];
+	    }
+	
+	    if (
+	        $this->CI->session->userdata('userlevel_logintype') != 0 &&
+	        $this->CI->session->userdata('userlevel_logintype') != 3
+	    ) {
+	        $module_info[] = 'dashboard';
+	    }
+	
+	    if (
+	        $this->CI->session->userdata('userlevel_logintype') != -1 &&
+	        $this->CI->session->userdata('userlevel_logintype') != 2 &&
+	        $this->CI->session->userdata('userlevel_logintype') != 4
+	    ) {
+	        $module_info[] = 'user';
+	    }
+	
+	    return array_values(array_unique($module_info));
+	}
+	
+	private function get_permission_route_context()
+	{
+	    $uri_string = trim($this->CI->uri->uri_string, '/');
+	    $segments = $uri_string !== '' ? explode('/', $uri_string) : [];
+	
+	    $route_key = isset($segments[1]) ? $segments[1] : '';
+	    $route_parts = $route_key !== '' ? explode('_', $route_key) : [];
+	    $module = $this->normalize_route_module($route_key, $route_parts);
+	
+	    return [
+	        'uri_string'  => $uri_string,
+	        'segments'    => $segments,
+	        'route_key'   => $route_key,
+	        'route_parts' => $route_parts,
+	        'module'      => $module,
+	    ];
+	}
+	
+	private function normalize_route_module($route_key, $route_parts = [])
+	{
+	    if ($route_key == 'dashboard' || $route_key == 'login_activity' || $route_key == 'systems_list') {
+	        return 'dashboard';
+	    }
+	
+	    /*
+	     * Regras de alias por família de rota.
+	     * Ex.: emails_delete_multiple deve obedecer a mesma permissão funcional
+	     * da tela customer_emails.
+	     */
+	    if (preg_match('/^emails_/', $route_key)) {
+	        return 'customer';
+	    }
+	
+	    return isset($route_parts[0]) ? $route_parts[0] : '';
+	}
+	
+	private function requires_detailed_permission_check($permissioninfo)
+	{
+	    if (!is_array($permissioninfo) || !isset($permissioninfo['login_type'])) {
+	        return false;
+	    }
+	
+	    return in_array((string) $permissioninfo['login_type'], ['1', '2', '4'], true);
+	}
+	
+	private function has_detailed_permission_access($route, $permissioninfo, $permissioninfo_default_array)
+	{
+	    $module_name = $route['module'];
+	    $sub_module_name = $route['route_key'];
+	    $sub_module_explode = explode('_', $sub_module_name);
+	
+	    if (
+	        $module_name == '' ||
+	        $module_name == 'dashboard' ||
+	        !isset($permissioninfo[$module_name]) ||
+	        !isset($sub_module_explode[1])
+	    ) {
+	        return true;
+	    }
+	
+	    foreach ($permissioninfo[$module_name] as $first_permission_key => $first_permission_value) {
+	        $first_key_explode = explode('_', $first_permission_key);
+	        $first_key_explode[1] = isset($first_key_explode[1]) ? '_' . $first_key_explode[1] : '';
+	
+	        $last_menu_name = $this->resolve_last_menu_name($sub_module_explode);
+	
+	        if ($last_menu_name == '') {
+	            continue;
+	        }
+	
+	        $first_key_explode[1] = isset($first_key_explode[2])
+	            ? $first_key_explode[1] . '_' . $first_key_explode[2]
+	            : $first_key_explode[1];
+	
+	        $default_flag = 0;
+	
+	        foreach ($permissioninfo_default_array as $default_permission_value => $default_permission_key) {
+	            $default_permission_name = $sub_module_explode[0] . $first_key_explode[1];
+	
+	            if (isset($default_permission_key[$module_name][$default_permission_name])) {
+	                $default_key_arr = $default_permission_key[$module_name][$default_permission_name];
+	
+	                foreach ($default_key_arr as $default_final_key => $default_final_value) {
+	                    if ($last_menu_name == $default_final_value) {
+	                        $default_flag = 1;
+	                    }
+	                }
+	            }
+	        }
+	
+	        $permission_name = $sub_module_explode[0] . $first_key_explode[1];
+	
+	        if (
+	            !isset($permissioninfo[$module_name][$permission_name][$last_menu_name]) &&
+	            $last_menu_name != '' &&
+	            $default_flag == 1
+	        ) {
+	            $this->CI->flux_log->write_log(
+	                'check_permissions.denied_detail',
+	                json_encode([
+	                    'module_name'      => $module_name,
+	                    'sub_module_name'  => $sub_module_name,
+	                    'permission_name'  => $permission_name,
+	                    'last_menu_name'   => $last_menu_name,
+	                ])
+	            );
+	
+	            return false;
+	        }
+	    }
+	
+	    return true;
+	}
+	
+	private function resolve_last_menu_name($sub_module_explode)
+	{
+	    if (!isset($sub_module_explode[1])) {
+	        return '';
+	    }
+	
+	    if ($sub_module_explode[1] == 'add' && isset($sub_module_explode[0]) && $sub_module_explode[0] == 'customer') {
+	        return 'Create Customer';
+	    }
+	
+	    if ($sub_module_explode[1] == 'add') {
+	        return 'Create';
+	    }
+	
+	    if ($sub_module_explode[1] == 'list') {
+	        return 'list';
+	    }
+	
+	    if ($sub_module_explode[1] == 'edit') {
+	        return 'EDIT';
+	    }
+	
+	    if ($sub_module_explode[1] == 'delete') {
+	        return 'DELETE';
+	    }
+	
+	    if (isset($sub_module_explode[2]) && $sub_module_explode[2] == 'list') {
+	        return 'list';
+	    }
+	
+	    return '';
+	}
+	
+	private function can_access_route_module($route, $module_info)
+	{
+	    if (
+	        $route['route_key'] == 'dashboard' ||
+	        $route['route_key'] == 'login_activity' ||
+	        $route['route_key'] == 'systems_list'
+	    ) {
+	        return true;
+	    }
+	
+	    return in_array($route['module'], $module_info);
+	}
+	
+	private function deny_module_access()
+	{
+	    $this->CI->load->library('flux/permission');
+	    $this->CI->session->set_userdata(
+	        'flux_errormsg',
+	        'You do not have permission to access this module..!'
+	    );
+	
+	    $url = $this->CI->session->userdata('userlevel_logintype') == 0
+	        ? 'user/user/'
+	        : 'dashboard/';
+	
+	    $this->CI->permission->permission_redirect_url($url);
+	}
+	
+	private function redirect_default_by_login_type()
+	{
+	    if (
+	        $this->CI->session->userdata('userlevel_logintype') == '-1' ||
+	        $this->CI->session->userdata('userlevel_logintype') == '2' ||
+	        $this->CI->session->userdata('userlevel_logintype') == '4' ||
+	        $this->CI->session->userdata('logintype') == '1'
+	    ) {
+	        redirect(base_url() . 'dashboard/');
+	    }
+	
+	    redirect(base_url() . 'user/user/');
+	}
 	function build_form($fields_array, $values) {
 		$form_contents = '';
 		$form_contents .= '<div class="pop_md col-12 pb-4">';
@@ -154,7 +588,8 @@ class Form {
 			$file_name=FCPATH."application/modules/".$this->CI->router->class."/tooltip_".$current_locale.".php";
 				 include $file_name;
 				//  $this->CI->flux_log->write_log("BUILD_FORM", json_encode($file_name));
-		}elseif(file_exists(FCPATH."application/modules/".$this->CI->router->class.'/tooltip.php')){
+		}
+		elseif(file_exists(FCPATH."application/modules/".$this->CI->router->class.'/tooltip.php')){
 			$file_name=FCPATH."application/modules/".$this->CI->router->class.'/tooltip.php';
 				 include $file_name;
 				//  $this->CI->flux_log->write_log("BUILD_FORM", json_encode($file_name));

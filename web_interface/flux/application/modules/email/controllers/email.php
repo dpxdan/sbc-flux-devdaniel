@@ -35,6 +35,7 @@ class Email extends MX_Controller
         $this->load->model('email_model');
         $this->load->library('csvreader');
         $this->load->library('flux/email_lib');
+        $this->load->library("flux_log");
         $this->load->library('FLUX_Sms');
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
@@ -86,6 +87,8 @@ class Email extends MX_Controller
         }
         $add_array = array(
             'accountid' => $edit_data['accountid'],
+            'reseller_id' => $edit_data['reseller_id'],
+            'history_id' => $add_array['id'],
             'subject' => $add_array['subject'],
             'body' => $add_array['body'],
             'from' => $edit_data['from'],
@@ -96,6 +99,7 @@ class Email extends MX_Controller
             'to_number' => $edit_data['to_number'],
             'attachment' => $edit_data['attachment']
         );
+        $this->flux_log->write_log('email_resend', json_encode($add_array));
         $this->email_re_send($add_array);
         $this->session->set_flashdata('flux_errormsg', gettext('Email resend successfully!'));
         redirect(base_url() . 'email/email_history_list/');
@@ -162,7 +166,7 @@ class Email extends MX_Controller
     {
         $data['username'] = $this->session->userdata('user_name');
         $data['flag'] = 'create';
-        $data['page_title'] = gettext('Create Commission Rate');
+        $data['page_title'] = gettext('Create Email');
         $data['form'] = $this->form->build_form($this->email_form->get_form_fields_email(), '');
 
         $this->load->view('view_email_add_edit', $data);
@@ -203,7 +207,9 @@ class Email extends MX_Controller
 
     function email_re_send($edit_data)
     {
-        $this->email_lib->send_notifications('', $edit_data, '', $edit_data['attachment'], "");
+        $this->flux_log->write_log('email_re_send', json_encode($edit_data));
+//        function send_notifications($template_type, $details, $detail_type = '', $attachment = '', $resend = 0, $mass_mail = 0, $brodcast = 0) {
+        $this->email_lib->send_notifications($edit_data['template'], $edit_data, '', $edit_data['attachment'], "");
         $this->session->set_flashdata('flux_errormsg', gettext('Email resend successfully!'));
         redirect(base_url() . 'email/email_history_list/');
     }

@@ -85,11 +85,10 @@ class Permissions extends MX_Controller
         $data['username'] = $this->session->userdata('user_name');
         $where_arr= array("status"=>0);
         $data['flag'] = 'create';
+        $data['login_type'] = '';
         $data['login_type'] = $this->db_model->build_dropdown("id,permission_type_code,permission_name", "permissions_types","where_arr", $where_arr);
-//        $data['login_type'] = '';
         $data['role_name'] = '';
         $data['description'] = '';
-//        $login_type = 0;
         $login_type_session = $this->session->userdata('add_permission_login_session');
         if (isset($login_type_session) and $login_type_session != '') {
             $login_type = $login_type_session;
@@ -100,8 +99,12 @@ class Permissions extends MX_Controller
             $this->session->unset_userdata('add_permission_role_name');
             $this->session->unset_userdata('add_permission_description');
         }
+        else {
+        $login_type = 0;
+        
+        }
         $roles_and_permission_array = $this->db_model->select("*", "roles_and_permission", array(
-            'login_type' => $login_type,
+//            'login_type' => $login_type,
             'status' => 0
         ), "priority", "ASC", "", "")->result_array();
         $permission_array = array();
@@ -118,7 +121,7 @@ class Permissions extends MX_Controller
         $this->load->view('view_permissions_add', $data);
     }
 
-    function permissions_edit($edit_id = '')
+    function permissions_edit_old($edit_id = '')
     {
         $this->load->library('flux/form');
         $data['page_title'] = gettext('Edit Roles & Permissions');
@@ -142,7 +145,65 @@ class Permissions extends MX_Controller
         $data['id'] = $edit_data['id'];
         $login_type = $edit_data['login_type'];
         $roles_and_permission_array = $this->db_model->select("*", "roles_and_permission", array(
-            'login_type' => $login_type,
+//            'login_type' => $login_type,
+            'status' => 0
+        ), "priority", "ASC", "", "")->result_array();
+        $permission_array = array();
+        $display_name_array = array();
+        if (! empty($roles_and_permission_array)) {
+            foreach ($roles_and_permission_array as $key => $value) {
+                $permission_array[$value['menu_name']][$value['module_name']][$value['module_url']] = json_decode($value['permissions'], true);
+                $display_name_array[$value['menu_name']][$value['module_name']][$value['module_url']] = $value['display_name'];
+            }
+        }
+
+        $data['display_name_array'] = $display_name_array;
+        $data['permission_main_array'] = $permission_array;
+        $this->load->view('view_permissions_edit', $data);
+    }
+    
+    function permissions_edit($edit_id = '')
+    {
+        $this->load->library('flux/form');
+        $data['page_title'] = gettext('Edit Roles & Permissions');
+        $where = array(
+            'id' => $edit_id
+        );
+        $account = $this->db_model->getSelect("*", "view_permissions", $where);
+        foreach ($account->result_array() as $key => $value) {
+            $edit_data = $value;
+            $this->flux_log->write_log ( 'edit_data1', json_encode($edit_data) );
+        }
+        
+        
+        
+
+$modules_info = "select m.id,m.menu_label,m.module_url,m.menu_title,m.menu_subtitle,case when find_in_set(m.id,u.module_permissions)> 0 then 'yes' else 'no' end as is_assigned from menu_modules m left join userlevels u on u.userlevelid='".$edit_data['login_type']."' order by 1 desc";
+
+
+$modules_info =$this->db->query($modules_info);
+
+		if ($modules_info->num_rows > 0) {
+			$data['modules_info'] = $modules_info->result_array();
+			$this->flux_log->write_log ( 'modules_info', json_encode($data['modules_info']) );
+		}
+        $permission_decode = json_decode($edit_data['permissions'], true);
+        $data['permission_result'] = $permission_decode;
+        $edit_decode = json_decode($edit_data['edit_permissions'], true);
+        
+        $where_arr = array(
+            'module_name <>' => ''
+        );
+
+        $data['name'] = $edit_data['name'];
+        $data['description'] = $edit_data['description'];
+        $data['permission_name'] = $edit_data['permission_name'];
+        $data['permission_type_code'] = $edit_data['permission_type_code'];
+        $data['login_type'] = $edit_data['login_type'];
+        $data['id'] = $edit_data['id'];
+        $login_type = $edit_data['login_type'];
+        $permission_type_code = $edit_data['permission_type_code'];
+        $roles_and_permission_array = $this->db_model->select("*", "roles_and_permission", array(
             'status' => 0
         ), "priority", "ASC", "", "")->result_array();
         $permission_array = array();

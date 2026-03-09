@@ -119,8 +119,10 @@ class Login extends MX_Controller
                         $permission_result = $permission_result->result_array();
                         $permission_result = $permission_result[0];
                         $permission_decode = json_decode($permission_result['permissions'], true);
+                        $edit_permission_decode = json_decode($permission_result['edit_permissions'], true);
                         $permission_decode['login_type'] = $result['type'];
                         $this->session->set_userdata('permissioninfo', $permission_decode);
+                        $this->session->set_userdata('edit_permissioninfo', $edit_permission_decode);
                         $logintype = $result['type'] == - 1 ? 2 : $result['type'];
                         $this->session->set_userdata('logintype', $logintype);
                         $this->session->set_userdata('userlevel_logintype', $result['type']);

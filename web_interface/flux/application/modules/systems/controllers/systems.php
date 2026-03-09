@@ -418,6 +418,15 @@ class Systems extends MX_Controller
 
         echo json_encode($json_data);
     }
+    
+    function template_add()
+    {
+        $data['username'] = $this->session->userdata('user_name');
+        $data['flag'] = 'create';
+        $data['page_title'] = gettext('Add Email Template');
+        $data['form'] = $this->form->build_form($this->system_form->get_template_form_fields(), '');
+        $this->load->view('view_template_add_edit', $data);
+    }
 
     function template_edit($edit_id = '')
     {
@@ -472,7 +481,8 @@ class Systems extends MX_Controller
                 redirect(base_url() . 'systems/template/');
                 exit();
             }
-        } else {
+        } 
+        else {
             if ($this->form_validation->run() == FALSE) {
                 $data['page_title'] = gettext('Edit Template');
                 $data['validation_errors'] = validation_errors();
@@ -503,11 +513,13 @@ class Systems extends MX_Controller
                 redirect(base_url() . 'systems/template/');
                 exit();
             }
-        } else {
+        } 
+        else {
             $data['page_title'] = gettext('Termination Details');
             if ($this->form_validation->run() == FALSE) {
                 $data['validation_errors'] = validation_errors();
-            } else {
+            } 
+            else {
                 unset($data['form']);
                 $this->system_model->add_template($data);
                 $this->session->set_flashdata('flux_errormsg', gettext('Template added successfully!'));

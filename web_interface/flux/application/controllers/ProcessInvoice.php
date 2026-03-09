@@ -49,12 +49,13 @@ class ProcessInvoice extends MX_Controller {
 		$this->custom_current_date = gmdate("Y-m-d 23:59:59");
 	}
 
-	function ManageServices() {
+/*	
+    function ManageServices() {
 		$this->flux_log->write_log('ManageServices', 'Start ManageServices');
 		$this->product_renewal_reminder();
 		$this->renew_product_service();
 	}
-
+*/
 	function GenerateInvoice() {
 
 		$this->db->where_in("type", array(
@@ -303,7 +304,30 @@ class ProcessInvoice extends MX_Controller {
 	}
 
 	function bill_calls($accountinfo, $invoiceid) {
+	
+	  $block_billseconds_flag = Common_model::$global_config['system_config']['block_billseconds_invoice'];
+	  $account_type = $accountinfo['type'];
+	  
+	  if ($account_type == '3') {
+	  
+	  if ($block_billseconds_flag == 0) {	  
+		$billable_calls_qr = "select calltype,sum(debit) as debit,sum(block_billseconds) as duration from cdrs where provider_id =" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "' group by calltype";		
+		}
+		else {
+		$billable_calls_qr = "select calltype,sum(debit) as debit,sum(billseconds) as duration from cdrs where provider_id =" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "' group by calltype";		
+		}
+		
+		} 
+	  else {
+		
+		if ($block_billseconds_flag == 0) {	  
+		$billable_calls_qr = "select calltype,sum(debit) as debit,sum(block_billseconds) as duration from cdrs where accountid =" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "' AND invoiceid=0 group by calltype";		
+		}
+		else {
 		$billable_calls_qr = "select calltype,sum(debit) as debit,sum(billseconds) as duration from cdrs where accountid =" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "' AND invoiceid=0 group by calltype";
+		}
+		
+		}
 		$billable_calls = $this->db->query($billable_calls_qr);
 
 		if ($billable_calls->num_rows() > 0) {
@@ -374,7 +398,7 @@ class ProcessInvoice extends MX_Controller {
 				);
 				$this->db->insert("invoice_details", $tempArr);
 				$this->flux_log->write_log('invoice_details', json_encode($logArr));
-
+        if ($account_type == '0'){
 				$update_cdrs_arr = "update cdrs set invoiceid = " . $invoiceid . " where accountid=" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "'";
 				$this->db->query($update_cdrs_arr);
 				$update_log_cdrs_arr = "update cdrs set invoiceid = " . $invoiceid . " where accountid=" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "'";
@@ -382,6 +406,7 @@ class ProcessInvoice extends MX_Controller {
 
 			}
 		}
+	}
 	}
 
 	function apply_taxes($accountinfo, $invoiceid) {

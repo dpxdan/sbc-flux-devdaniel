@@ -210,6 +210,14 @@ class System_model extends CI_Model
         $this->db->insert('default_templates', $data);
         return true;
     }
+    
+    function add_template($data)
+    {
+        unset($data["action"]);
+        unset($data['id']);
+        $this->db->insert('default_templates', $data);
+        return true;
+    }
 
     function getcountry_list($flag, $start = 0, $limit = 0)
     {

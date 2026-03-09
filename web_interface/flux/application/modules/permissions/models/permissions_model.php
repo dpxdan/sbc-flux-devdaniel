@@ -51,6 +51,18 @@ class permissions_model extends CI_Model
         return $query;
     }
 
+    function getmodules_list($id)
+        {
+
+            
+            $where = array(
+                    "menu_modules.menu_label <>" => ""
+                );
+            
+            $query = $this->db_model->getJionQuery('menu_modules', 'menu_modules.id as module_id,menu_modules.menu_label as module_name,menu_modules.module_url,menu_modules.menu_title,menu_modules.menu_subtitle,case when find_in_set(menu_modules.id,userlevels.module_permissions)> 0 then "1" else "0" end as has_access', $where, 'userlevels', 'userlevels.userlevelid='.$id.'', 'inner', "", "", '', '');
+        return $query;
+    }
+
     function add_permissions($add_array)
     {
         $permission_array = array();

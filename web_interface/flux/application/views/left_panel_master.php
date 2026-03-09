@@ -64,11 +64,11 @@
 		<?php 
 		if ($this->uri->segment(3) == 'Plugins'){
 		?>
-		<li class="active"><a href="<?php echo base_url();?>addons/addons_list/plugins">Plugins</a></li>
+		<li class="active"><a href="<?php echo base_url();?>addons/addons_list/plugins"><?php echo gettext('Plugins');?></a></li>
 		<?php
 		} else {
 		?>
-	<li><a href="<?php echo base_url();?>addons/addons_list/plugins">Plugins</a></li>
+	<li><a href="<?php echo base_url();?>addons/addons_list/plugins"><?php echo gettext('Plugins');?></a></li>
 		<?php
 		}
 		?>
@@ -78,7 +78,7 @@
 
 	<?php if(isset($addon_flag) && $addon_flag){?>
 	  <ul class="sidemenu">
-		<li><a href="<?php echo base_url();?>addons/addons_list/plugins">Plugins</a></li>
+		<li><a href="<?php echo base_url();?>addons/addons_list/plugins"><?php echo gettext('Plugins');?></a></li>
 	  </ul>
   	<?php } ?>
              <?php 
@@ -148,7 +148,7 @@
 			 
 			 if(!empty($menu_info)){
 				echo "<ul class='sidemenu'>";
-				// echo "<script>console.log(" . json_encode($menu_info) . ");</script>";
+//				echo "<script>console.log(" . json_encode($menu_info) . ");</script>";
 				$i=0;
 				foreach($menu_info as $key=>$value){ 
 				$url=($entity_name=='provider'||$entity_name =='customer' || $entity_name =='reseller' || $uri_arr[0] =="package" || $uri_arr[0] =="plans") && isset($uri_arr[2]) && !empty($uri_arr[2])

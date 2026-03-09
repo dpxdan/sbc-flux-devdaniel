@@ -78,7 +78,7 @@ function get_alert_msg(id) {
     return answer; // answer is a boolean
 }
 function get_reliase_msg(id) {
-    confirm_string = 'Are you sure want to release DID?';
+    confirm_string = gettext_custom('Are you sure want to release DID?');
     var answer = confirm(confirm_string);
     return answer; // answer is a boolean
 }
@@ -598,12 +598,14 @@ function submit_form(form_id) {
     var form = $('#' + form_id);
     $('input').removeClass('borderred');
     $('.tooltips').css('display', "none");
+         $('.overlay').show();
     $.ajax({
         type: 'POST',
         url: form.attr('action'),
         data: $('#' + form_id).serialize(),
         success: function (response) {
             var tmp = jQuery.parseJSON(response);
+                $('.overlay').hide();
             if (tmp.SUCCESS_ORDER) {
                 $("#toast-container").css("display", "block");
                 $(".toast-message").html(tmp.SUCCESS_ORDER);
@@ -617,7 +619,7 @@ function submit_form(form_id) {
                 for (i in myObject) {
                     var fieldname = i.replace("_error", "");
                     $("input[name='" + fieldname + "']").addClass("borderred");
-                    // $("#" + i + "_div").css("display", "block");
+                    $("#" + i + "_div").css("display", "block");
                     $("#" + i).html(gettext_custom(capitalizeFirstLetter(myObject[i])));
                     // $("#"+i).html(myObject[i]);
                 }

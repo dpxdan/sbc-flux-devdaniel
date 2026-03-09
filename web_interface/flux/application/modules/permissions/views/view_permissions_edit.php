@@ -170,53 +170,28 @@ table {
 									                  					<?php $login_type_list =$this->db_model->getSelect("*","permissions_types",""); 
 									                  					$login_type_list = $login_type_list->result_array(); ?>
 									                  				<?php foreach($login_type_list as $key => $login_type) {    ?>
-									                  				<option value= "<?php echo $login_type['permission_type_code']; ?>"> <?php echo  $login_type['permission_name'] ?> </option>
+									                  				<option value= "<?php echo $login_type['permission_type_code']; ?>"> <?php echo  gettext($login_type['permission_name']) ?> </option>
 									                  				<?php } ?>
 									                  		</select>
 									                  		</div>
-									<!--<div class="col-md-3 form-group">
-										<label class="p-0 control-label"><?php echo gettext('Type') ?> :<span
-											class="text-dark"> *</span></label> <select name="login_type"
-											id="login_type"
-											class='col-md-12 form-control form-control-lg selectpicker'
-											data-live-search='true'>
-											<option value='-1' 
-									<?php if (isset($login_type) && $login_type == -1) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Super Admin")?>
-										</option>
-										<option value='0' 
-									<?php if (isset($login_type) && $login_type == 0) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Admin")?>
-										</option>
-										<option value='1' 
-									<?php if (isset($login_type) && $login_type == 1) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Reseller")?>
-										</option>
-										<option value='2' 
-									<?php if (isset($login_type) && $login_type == 2) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Sub Admin")?>
-										</option>
-										<option value='3' 
-									<?php if (isset($login_type) && $login_type == 3) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Customer")?>
-										</option>
-										<option value='4' 
-										<?php if (isset($login_type) && $login_type == 4) { echo "selected"; } ?>
-											>
-										<?php echo gettext("Provider")?>
-											</option>
-										<option value='5' 
-										<?php if (isset($login_type) && $login_type == 5) { echo "selected"; } ?>
-											 >
-										<?php echo gettext("API")?>
-										</option>
-										</select>
-									</div>-->
+									                  	
+									<!--<div class='col-md-6 form-group'>
+                          <label class="col-md-12 p-0 control-label"><?php echo gettext('Permission Type'); ?></label>
+                          <select  name="login_type" class="col-md-12 form-control selectpicker form-control-lg" data-live-search='true' datadata-live-search-style='begins'>                             
+    			                   <option value= "<?php echo $permission_type_code; ?>"><?php echo gettext($permission_name); ?></option>    			                  
+    			                   <?php
+    			                   $where = array(
+    			                          'permission_type_code <>' => $permission_type_code
+    			                    );
+    			                    
+//    			                    function getSelectWithOrder($select, $tableName, $where, $order_type, $order_by) { 
+    			                   $login_type_list =$this->db_model->getSelectWithOrder("*","permissions_types",$where, "asc", "permission_name");
+									           $login_type_list = $login_type_list->result_array();
+									          foreach($login_type_list as $key => $login_type) {    ?>
+									          <option value= "<?php echo $login_type['permission_type_code']; ?>"><?php echo  $login_type['permission_name'] ?></option>
+									          <?php } ?>
+                          </select>
+									                  		</div>-->
 									<div class="col-md-12 text-right">
 										<input id="save_button" class="save_button btn btn-success"
 											name="save_button" value="<?php echo gettext('Save');  ?>" type="button"

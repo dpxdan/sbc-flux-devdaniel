@@ -7,12 +7,12 @@
 <script type="text/javascript">
     $(document).ready(function(){
         var jqueryarray = <?php echo json_encode($this->tooltip_data); ?>;
-        //console.log(jqueryarray);
+        console.log(jqueryarray);
         if(jqueryarray && jqueryarray !=''){
           var form_name = $('form').attr("name");
           $.each(jqueryarray, function (key, val) {
             key = key.replace(form_name+'_','');
-            // console.log(key);
+            console.log(key);
             /*If condition used for select,input and textarea tag purpose*/
             if(key == 'customer_type' || key == 'country_id[]' || key == 'accounts_id[]' || key == 'fields_in_csv[]' || key == 'recuring_type' || key == 'product_id' || key == 'product_category' || key == 'product_rate_group' || key == 'product_rate_group[]' ||key == 'debit_amt' || key == 'email_notify' || key == 'despostion[]' || key == 'template' || key == 'call_forwarding_flag' || key == 'on_busy_flag' || key == 'no_answer_flag' || key == 'not_register_flag' ){
 
@@ -232,8 +232,6 @@ jQuery(function($) {
 		<div class="col py-2">
   	   		 <label class="text-light" style="margin-top:3px;"><i></i></label>
   	   		 <div class="social-media">
-  	   		  <!-- <a target="_blank" href="https://www.facebook.com/fluxtec/" title="Facebook"> <i class="facebook fa fa-facebook"></i></a>
-  	   		  <a target="_blank" href="https://in.linkedin.com/company/fluxtelecom" title="Linkedin"> <i class="linkin fa fa-linkedin"></i></a> -->
   	   		 
   	   		</div>
 		 </div>
@@ -266,8 +264,6 @@ jQuery(function($) {
 		<div class="col-md-3 py-2 text-md-center">
 
   	   		 <div class="social-media">
-  	   		  <!-- <a target="_blank" href="https://www.facebook.com/fluxtec/" title="Facebook"> <i class="facebook fa fa-facebook"></i></a>
-  	   		  <a target="_blank" href="https://in.linkedin.com/company/fluxtelecom" title="Linkedin"> <i class="linkin fa fa-linkedin"></i></a> -->
   	   		</div>
 		 </div>
 

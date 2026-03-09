@@ -36,6 +36,7 @@ class email_lib {
 	public $sms_body = '';
 	public $to_number = '';
 	public $to = '';
+	public $cc = '';
 	public $subject = '';
 	public $company_name = '';
 	public $company_website = '';
@@ -47,6 +48,7 @@ class email_lib {
 		$this->CI->load->model ( 'db_model' );
 		$this->CI->load->library ( 'email' );
 		$this->CI->load->library ( 'session' );
+		$this->CI->load->library ( 'flux_log' );
 	}
 	
 	function get_email_settings($resellerID = 1,$details=array()) {
@@ -81,7 +83,6 @@ class email_lib {
 			}
 		}
 	}
-	
 	function get_sms_settings(){
 
 		$where = array (
@@ -107,6 +108,7 @@ class email_lib {
 		
 	}
 	function get_template($type) {
+	$this->CI->flux_log->write_log('get_template', json_encode($type));	
 		$where = array (
 				'name' => $type
 		);
@@ -222,7 +224,6 @@ class email_lib {
 			}
 		}
 	}
-
 	function mail_history($attachment) {
 		$send_mail_details = array (
 				'from'      => $this->from,
@@ -257,7 +258,7 @@ class email_lib {
 		}
 		// FLUXUPDATE-924 END
 	}
-	function set_email_paramenters($details) {
+	function set_email_paramenters_old($details) {
 		if (! is_array ( $details )) {
 			$this->get_admin_details ();
 			$where = array (
@@ -275,6 +276,25 @@ class email_lib {
 		$this->subject    = $details ['subject'];
 		$this->account_id = $details ['accountid'];
 	}
+	function set_email_paramenters($details) {
+		if (! is_array ( $details )) {
+			$this->get_admin_details ();
+			$where = array (
+					'id' => $details
+			);
+			$query   = $this->CI->db_model->getSelect ( "*", "mail_details", $where );
+			$query   = $query->result_array ();
+			$details = $query [0];
+		}
+		$this->message    = $details ['body'];
+		$this->from       = $details ['from'];
+		$this->sms_body   = $details ['sms_body'];
+		$this->to_number  = $details ['to_number'];
+		$this->to         = $details ['to'];
+		$this->cc         = isset($details['cc']) ? $details['cc'] : '';
+		$this->subject    = $details ['subject'];
+		$this->account_id = $details ['accountid'];
+	}
 	function get_smtp_details() {
 		if ($this->smtp_port != '' || $this->smtp_host != '' || $this->smtp_user != '' || $this->smtp_pass != '') {
 			$config ['protocol'] = "smtp";
@@ -288,16 +308,27 @@ class email_lib {
 			$this->CI->email->initialize ( $config );
 		}
 	}
-	function send_notifications ($template_type, $details, $detail_type = '', $attachment = '', $resend = 0, $mass_mail = 0, $brodcast = 0) {
+	function send_notifications($template_type, $details, $detail_type = '', $attachment = '', $resend = 0, $mass_mail = 0, $brodcast = 0) {
+	
+	    $NotifyLog = array(
+            "template_type" => $template_type,
+            "details" => $details,
+            "detail_type" => $detail_type,
+            "attachment" => $attachment,
+            "resend" => $resend,
+            "mass_mail" => $mass_mail,
+        );
+        $this->CI->flux_log->write_log('send_notifications', json_encode($NotifyLog));
+	    
 		$email_response = $this->send_notifications_email($template_type,$details,$detail_type,$attachment,$resend,$mass_mail,$brodcast);
 		if ($email_response) {
 			$this->update_mail_history ( $details ['history_id'],$email_response,$sms_response='',$alert_response='','email' );
-		}else{
+		}
+		else{
 			$this->update_mail_history ( $details ['history_id'],2,$sms_response='',$alert_response='','email' );
 		}
 		$this->send_notifications_sms($template_type,$details,$detail_type,$attachment = '',$resend,$mass_mail,$brodcast,$history_id='');
 	}
-
 	function send_notifications_sms($template_type, $details, $detail_type = '', $attachment = '', $resend = 0, $mass_mail = 0, $brodcast = 0 , $history_id) {
 
 		$this->get_sms_settings ();
@@ -323,45 +354,40 @@ class email_lib {
 			}
 		}
 	}
-
-	function send_notifications_email($template_type, $details, $detail_type = '', $attachment = '', $resend = 0, $mass_mail = 0, $brodcast = 0) {
+	function send_notifications_email_old($template_type, $details, $detail_type = '', $attachment = '', $resend = 0, $mass_mail = 0, $brodcast = 0) {
 
 		$history_id = "";
 		if (array_key_exists("history_id",$details)) {
 			$history_id = $details ['history_id'];
 		}
-		// FLUXUPDATE-924 Start
+		if (array_key_exists("reseller_id",$details)) {
+			$resellerID = $details ['reseller_id'];
+		} else {
+		    $resellerID = 0;		
+		}
 		$smtpData = $this->get_email_settings ($resellerID,$details);
 		if (!$this->email && $this ->smtp == 0) {
-		// FLUXUPDATE-924 END
 			if (! $resend) {
 				$this->build_template ( $template_type, $details, $detail_type );
-			} else {
+			} 
+			else {
 				$this->set_email_paramenters ( $details );
 			}
-			// FLUXUPDATE-924 Start
 			if ($brodcast == 2) {
-			// FLUXUPDATE-924 END
 				$history_id = $this->mail_history ( $attachment );
 			}
 			else {
 				$history_id = $details ['history_id'];
 			}
 			$accountID = $this->CI->common->get_field_name('accountid','mail_details',array("id" => $history_id));
-			// FLUXUPDATE-873 Ashish start
 			$resellerID = $this->CI->common->get_field_name('reseller_id','accounts',array("id" => $accountID));
-			// FLUXUPDATE-873 Ashish End
 			$cc_email_ids = explode(',',strtolower($this->CI->common->get_field_name('cc','mail_details',array("accountid" => $accountID))));
-			// FLUXUPDATE-873 Ashish start
-			// FLUXUPDATE-873 Ashish End
 			if (isset ( $this->from ) && $this->from != '' && isset ( $this->to ) && $this->to != '' && ! $mass_mail) {
 				if (! $this->smtp) {
 					$this->get_smtp_details ();
 				}
-				// FLUXUPDATE-873 Ashish start
 				$from_title = isset($this->website_title) && $this->website_title != '' ? $this->website_title : $this->company_name ;
 				$this->CI->email->from ( $this->from, $from_title );
-				// FLUXUPDATE-873 Ashish End
 				$this->CI->email->to ( $this->to );
 				$this->CI->email->cc ( $cc_email_ids );
 				$this->CI->email->subject ( $this->subject );
@@ -390,7 +416,82 @@ class email_lib {
 			}
 		}
 	}
-
+	function send_notifications_email($template_type, $details, $detail_type = '', $attachment = '', $resend = 0, $mass_mail = 0, $brodcast = 0) {
+	
+		$history_id = "";
+		if (array_key_exists("history_id",$details)) {
+			$history_id = $details ['history_id'];
+		}
+	    if (array_key_exists("reseller_id",$details)) {
+			$resellerID = $details ['reseller_id'];
+		} else {
+		    $resellerID = 0;		
+		}
+		$smtpData = $this->get_email_settings ($resellerID,$details);
+	
+		if (!$this->email && $this ->smtp == 0) {
+			if (! $resend) {
+				$this->build_template ( $template_type, $details, $detail_type );
+			} 
+			else {
+				$this->set_email_paramenters ( $details );
+			}
+	
+			$this->cc = $this->get_account_cc_emails($this->account_id, $this->to);
+	
+			if ($brodcast == 2) {
+				$history_id = $this->mail_history ( $attachment );
+			}
+			else {
+				$history_id = $details ['history_id'];
+			}
+	
+			$this->update_mail_history_cc($history_id, $this->cc);
+	
+			$cc_email_ids = array();
+			if ($this->cc != '') {
+				$cc_email_ids = array_filter(array_map('trim', explode(',', strtolower($this->cc))));
+			}
+	
+			if (isset ( $this->from ) && $this->from != '' && isset ( $this->to ) && $this->to != '' && ! $mass_mail) {
+				if (! $this->smtp) {
+					$this->get_smtp_details ();
+				}
+	
+				$from_title = isset($this->website_title) && $this->website_title != '' ? $this->website_title : $this->company_name ;
+				$this->CI->email->from ( $this->from, $from_title );
+				$this->CI->email->to ( $this->to );
+	
+				if (!empty($cc_email_ids)) {
+					$this->CI->email->cc ( $cc_email_ids );
+				}
+	
+				$this->CI->email->subject ( $this->subject );
+				$this->CI->email->set_mailtype ( "html" );
+				$this->message = nl2br($this->message);
+				$this->CI->email->message ( $this->message );
+	
+				if ($attachment != "") {
+					$attac_exp = explode ( ",", $attachment );
+					foreach ( $attac_exp as $key => $value ) {
+						if ($value != '') {
+							$this->CI->email->attach ( getcwd () . "/attachments/" . $value );
+						}
+	
+						$mail_data ['attachment'] [$key] = $value;
+					}
+				}
+	
+				$data = $this->CI->email->send ();
+				$mail_data ['from']    = isset ( $this->from ) ? $this->from : '';
+				$mail_data ['to']      = isset ( $this->to ) ? $this->to : '';
+				$mail_data ['subject'] = isset ( $this->subject ) ? $this->subject : '';
+				$this->CI->email->print_debugger_email ( $mail_data, common_model::$global_config ['system_config'] ['mail_log'] );
+				$this->CI->email->clear ( true );
+				return $history_id;
+			}
+		}
+	}
 	function send_mail($template_type, $details, $detail_type = '', $attachment = '', $resend = 0, $mass_mail = 0, $brodcast = 0) {
 		$this->get_email_settings ();
 		if (! $this->email) {
@@ -441,6 +542,47 @@ class email_lib {
 	function push_alert_notifications($template_type, $details, $detail_type = '', $attachment = '', $resend = 0, $mass_mail = 0, $brodcast = 0 , $history_id) {
 		return true;
 		
+	}
+	function get_account_cc_emails($accountid, $primary_email = '') {
+		$accountid = (int) $accountid;
+	
+		if ($accountid <= 0) {
+			return '';
+		}
+	
+		$this->CI->db->select('email');
+		$this->CI->db->from('accounts_emails');
+		$this->CI->db->where('accountid', $accountid);
+		$this->CI->db->where('status', 0);
+		$query = $this->CI->db->get()->result_array();
+	
+		$primary_email = strtolower(trim($primary_email));
+		$cc_emails = array();
+	
+		foreach ($query as $row) {
+			$email = strtolower(trim($row['email']));
+	
+			if ($email == '' || $email == $primary_email) {
+				continue;
+			}
+	
+			if (!in_array($email, $cc_emails)) {
+				$cc_emails[] = $email;
+			}
+		}
+	
+		return implode(',', $cc_emails);
+	}
+	
+	function update_mail_history_cc($history_id, $cc = '') {
+		if ((int)$history_id <= 0) {
+			return;
+		}
+	
+		$this->CI->db->where('id', (int)$history_id);
+		$this->CI->db->update('mail_details', array(
+			'cc' => $cc != '' ? $cc : null
+		));
 	}
 	
 }

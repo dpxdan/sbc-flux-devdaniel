@@ -28,11 +28,13 @@ class Accounts_form extends common {
 
 	function __construct($library_name = '') {
 		$this->CI = &get_instance();
+		$this->CI->load->library ('flux_log');
 	}
-
+	
 	function get_customer_form_fields($entity_type = false, $id = false, $reseller_id = '') {
 		$account_data = $this->CI->session->userdata("accountinfo");
 		$reseller_id  = ($reseller_id > 0)?$reseller_id:(($account_data['type'] == 1 || $account_data['type'] == 5)?$account_data['id']:0);
+//		$parent_id  = ($parent_id > 0)?$parent_id:(($account_data['type'] == 0 || $account_data['type'] == 3)?$account_data['id']:0);
 		$expiry_date  = gmdate('Y-m-d H:i:s', strtotime('+10 years'));
 		$readable     = FALSE;
 		$type         = $entity_type == 'customer'?0:3;
@@ -65,6 +67,7 @@ class Accounts_form extends common {
 		$allow_ip_management     = null;
 		$balnce_below            = null;
 		$reseller                = null;
+		$parent                  = null;
 		$change_account_number   = '';
 		$change_password         = '';
 		$password                = '';
@@ -77,9 +80,11 @@ class Accounts_form extends common {
 			$pin_number   = rand(pow(10, $numberlength-1), pow(10, $numberlength)-1);
 		}
 		$account_val        = 'accounts.number';
+		$cnpj_val           = 'accounts.tax_number';
 		$cps                = Common_model::$global_config['system_config']['cps'];
 		$concurrent_calls   = Common_model::$global_config['system_config']['maxchannels'];
 		$pricelist_id       = Common_model::$global_config['system_config']['default_signup_rategroup'];
+		$credit_limit       = Common_model::$global_config['system_config']['balance'];
 		$smsrategroup_array = null;
 		if (isset(common_model::$global_config['system_config']['signup_sms_pricelist_id'])) {
 			$smsrategroup_array = array(
@@ -104,6 +109,37 @@ class Accounts_form extends common {
 				),
 			);
 		}
+		if (isset($id) && $id != '') {
+		$credit_limit_array = array(
+				gettext('Credit Limit'),
+				'INPUT',
+				array(
+					'name'  => 'credit_limit',
+					'size'  => '20',
+					'class' => "text field medium",					
+				),
+				'currency_decimal',
+				'tOOL TIP',
+				'',
+			);
+		}
+		else {				
+		$credit_limit_array = array(
+						gettext('Credit Limit'),
+						'INPUT',
+						array(
+							'name'  => 'credit_limit',
+							'size'  => '20',
+							'class' => "text field medium",
+							"value" => $credit_limit,
+						),
+						'currency_decimal',
+						'tOOL TIP',
+						'',
+					);		
+		}
+		
+
 		$allow_local_calls = array(
 			gettext('Allow Local Calls'),
 			'local_call',
@@ -141,6 +177,7 @@ class Accounts_form extends common {
 		if (!$entity_type) {
 			$entity_type = 'customer';
 		}
+		$this->CI->flux_log->write_log('entity_type', json_encode($entity_type));
 		$params = array(
 			'name'  => 'number',
 			'value' => $uname,
@@ -166,7 +203,8 @@ class Accounts_form extends common {
 					'',
 					' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Generate Account" class="change_number align-self-end text-success fa fa-refresh" ></i>',
 				);
-			} else {
+			} 
+			else {
 				$account = array(
 					gettext('Account'),
 					'INPUT',
@@ -184,7 +222,8 @@ class Accounts_form extends common {
 					' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Generate Account" class="change_number align-self-end text-success fa fa-refresh" ></i>',
 				);
 			}
-		} else {
+		} 
+		else {
 			if ($account_number_editable == 0) {
 				$account = array(
 					gettext('Account'),
@@ -239,6 +278,23 @@ class Accounts_form extends common {
 					'',
 					'get_reseller_info',
 				);
+				$parent = array(
+					gettext('Parent Account'),
+					array(
+						'name'  => 'parent_id',
+						'class' => 'parent',
+						'id'    => 'parent',
+					),
+					'SELECT',
+					'',
+					'',
+					'tOOL TIP',
+					'Please Enter account number',
+					'',
+					'',
+					'',
+					'get_parent_account',
+				);
 			} else {
 				$notifications = 1;
 			}
@@ -247,6 +303,7 @@ class Accounts_form extends common {
 			$readable    = 'disabled';
 			$val         = 'accounts.email.'.$id;
 			$account_val = 'accounts.number.'.$id;
+			$cnpj_val    = 'accounts.tax_number.'.$id;
 			$taxes_array = array(
 				gettext('Taxes'),
 				"tax_id",
@@ -318,6 +375,20 @@ class Accounts_form extends common {
 				'',
 				'',
 			);
+			$tax_account = array(
+				gettext('CPF/CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CPF/CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
+			);
 			$password = array(
 				gettext('Password'),
 				'PASSWORD',
@@ -350,6 +421,24 @@ class Accounts_form extends common {
 				'',
 				'',
 				'get_reseller_info',
+			);
+			$parent = array(
+				gettext('Parent Account'),
+				array(
+					'name'     => 'parent_id',
+					'disabled' => FALSE,
+					'class'    => 'parent',
+					'id'       => 'parent',
+				),
+				'SELECT',
+				'',
+				'',
+				'tOOL TIP',
+				'Please Enter account number',
+				'',
+				'',
+				'',
+				'get_parent_account',
 			);
 			$expiry_date_array = array(
 				gettext('Expiry Date'),
@@ -414,6 +503,53 @@ class Accounts_form extends common {
 				);
 
 			}
+			if ($entity_type == 'customer') {
+			$accounttype_arr = array(
+				gettext('Tipo Cliente'),
+				array(
+					'name'  => 'rms_tipo_cliente',
+					'class' => 'rms_tipo_cliente',
+					'id'    => 'rms_tipo_cliente',
+					'value' => 1,
+				),
+				'SELECT',
+				'',
+				array(
+					"name"  => "rms_tipo_cliente",
+					"rules" => "required",
+				),
+				'tOOL TIP',
+				'',
+				'',
+				'',
+				'',
+				'set_customer_type',
+			);
+			}
+			else {
+			$accounttype_arr = array(
+				gettext('Tipo Provedor'),
+				array(
+					'name'  => 'rms_tipo_cliente',
+					'class' => 'rms_tipo_cliente',
+					'id'    => 'rms_tipo_cliente',
+					'value' => 1,
+				),
+				'SELECT',
+				'',
+				array(
+					"name"  => "rms_tipo_cliente",
+					"rules" => "required",
+				),
+				'tOOL TIP',
+				'',
+				'',
+				'',
+				'',
+				'set_customer_type',
+			);
+			
+			}
 			$status = array(
 				gettext('Status'),
 				'status',
@@ -477,9 +613,11 @@ class Accounts_form extends common {
 				'tOOL TIP',
 				'',
 			);
-		} else {
+		} 
+		else {
 			$val         = 'accounts.email';
 			$account_val = 'accounts.number';
+			$cnpj_val    = 'accounts.tax_number';
 			$password    = $this->CI->common->generate_password();
 			$password    = array(
 				gettext('Password'),
@@ -497,6 +635,20 @@ class Accounts_form extends common {
 				'tOOL TIP',
 				'',
 				'<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_pass align-self-end text-success fa fa-refresh" ></i>',
+			);
+			$tax_account = array(
+				gettext('CPF/CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CPF/CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
 			);
 			$change_password = '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" onmouseover="seetext(password)" onmouseout="hidepassword(password)" class="change_pass align-self-end text-success fa fa-refresh" ></i>';
 			$change_pin      = '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Generate Pin" class="change_pin align-self-end text-success fa fa-refresh" ></i>';
@@ -526,7 +678,8 @@ class Accounts_form extends common {
 					"name" => "customer_form",
 				),
 			);
-		} else {
+		} 
+		else {
 			$form['forms'] = array(
 				base_url().'accounts/'.$entity_type.'_save/',
 				array(
@@ -559,6 +712,7 @@ class Accounts_form extends common {
 				'',
 			),
 			$reseller,
+			$parent,
 			$account,
 			$password,
 			array(
@@ -622,6 +776,27 @@ class Accounts_form extends common {
 				'numeric',
 				'tOOL TIP',
 				'',
+			),
+			array(
+				gettext('Canais'),
+				array(
+					'name'  => 'rms_canais_ilimitado',
+					'class' => 'rms_canais_ilimitado',
+					'id'    => 'rms_canais_ilimitado',
+					'value' => 1,
+				),
+				'SELECT',
+				'',
+				array(
+					"name"  => "rms_canais_ilimitado",
+					"rules" => "required",
+				),
+				'tOOL TIP',
+				'',
+				'',
+				'',
+				'',
+				'set_channels_type',
 			),
 			$localization_arr,
 			$allow_local_calls,
@@ -751,6 +926,30 @@ class Accounts_form extends common {
 				'',
 			),
 			array(
+				gettext('Número'),
+				'INPUT',
+				array(
+					'name'  => 'rms_endereco_numero',
+					'size'  => '20',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean|required',
+				'tOOL TIP',
+				'',
+			),
+			array(
+				gettext('Bairro'),
+				'INPUT',
+				array(
+					'name'  => 'rms_bairro',
+					'size'  => '120',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean|required',
+				'tOOL TIP',
+				'',
+			),
+			array(
 				gettext('City'),
 				'INPUT',
 				array(
@@ -853,7 +1052,6 @@ class Accounts_form extends common {
 				array(),
 			),
 		);
-
 		$form[gettext('Billing Settings')] = array(
 			array(
 				gettext('Account Type'),
@@ -874,17 +1072,96 @@ class Accounts_form extends common {
 				'set_account_type',
 			),
 			array(
-				gettext('Credit Limit'),
+				gettext('Account Location'),
+				array(
+					'name'     => 'location',
+					'disabled' => FALSE,
+					'class'    => 'location',
+					'id'       => 'location',
+				),
+				'SELECT',
+				'',
+				'',
+				'tOOL TIP',
+				'Please Enter account number',
+				'',
+				'',
+				'',
+				'set_account_location',
+			),
+			array(
+				gettext('Tipo Cliente'),
+				array(
+					'name'  => 'rms_tipo_cliente',
+					'class' => 'rms_tipo_cliente',
+					'id'    => 'rms_tipo_cliente',
+					'value' => 1,
+				),
+				'SELECT',
+				'',
+				array(
+					"name"  => "rms_tipo_cliente",
+					"rules" => "required",
+				),
+				'tOOL TIP',
+				'',
+				'',
+				'',
+				'',
+				'set_customer_type',
+			),
+			/*array(
+				gettext('CPF/CNPJ'),
 				'INPUT',
 				array(
-					'name'  => 'credit_limit',
-					'size'  => '20',
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|required|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CPF/CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
+			),*/
+			$tax_account,
+			array(
+				gettext('Nome Fantasia'),
+				'INPUT',
+				array(
+					'name'  => 'rms_fantasia',
+					'size'  => '50',
 					'class' => "text field medium",
 				),
-				'currency_decimal',
+				'trim|xss_clean',
 				'tOOL TIP',
 				'',
 			),
+			array(
+				gettext('Inscrição Estadual'),
+				'INPUT',
+				array(
+					'name'  => 'rms_inscricao_estadual',
+					'size'  => '32',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean',
+				'tOOL TIP',
+				'',
+			),
+			array(
+				gettext('Simples Nacional'),
+				'INPUT',
+				array(
+					'name'  => 'simei',
+					'size'  => '32',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean',
+				'tOOL TIP',
+				'',
+			),
+			$credit_limit_array,		
 			array(
 				gettext('Rate Group'),
 				array(
@@ -949,18 +1226,6 @@ class Accounts_form extends common {
 			$taxes_array,
 			$domains_array,
 			array(
-				gettext('Tax Number'),
-				'INPUT',
-				array(
-					'name'  => 'tax_number',
-					'size'  => '100',
-					'class' => "text field medium",
-				),
-				'',
-				'tOOL TIP',
-				'',
-			),
-			array(
 				gettext('Generate Invoice'),
 				array(
 					"name"  => "generate_invoice",
@@ -1004,6 +1269,47 @@ class Accounts_form extends common {
 				'',
 			),
 		);
+		if ($entity_type == 'customer') {
+			$form[gettext('RMS')] = array(
+			array(
+				gettext('RatePlanID 0800'),
+				'INPUT',
+				array(
+					'name'  => 'rms_rateplan_0800',
+					'size'  => '50',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean',
+				'tOOL TIP',
+				'',
+			),
+			array(
+				gettext('RatePlanID 400x'),
+				'INPUT',
+				array(
+					'name'  => 'rms_rateplan_400x',
+					'size'  => '50',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean',
+				'tOOL TIP',
+				'',
+			),
+			array(
+				gettext('RatePlanID Numeração'),
+				'INPUT',
+				array(
+					'name'  => 'rms_rateplan_numeracao',
+					'size'  => '50',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean',
+				'tOOL TIP',
+				'',
+			),
+			
+		);
+		}
 		$form['button_save'] = array(
 			'name'    => 'action',
 			'content' => gettext('Save'),
@@ -1449,6 +1755,7 @@ class Accounts_form extends common {
 		$new_password   = '';
 		$val            = 'accounts.email';
 		$account_val    = 'accounts.number';
+		$cnpj_val       = 'accounts.tax_number';
 		$taxes_arr      = "";
 		$account_number = '';
 		if (isset(common_model::$global_config['system_config']['minimum_accountlength'])) {
@@ -1565,9 +1872,7 @@ class Accounts_form extends common {
 				'permissions',
 				'build_dropdown',
 				'where_arr',
-				array(
-					"login_type" => "0",
-				),
+				'',
 			);
 			$reseller = array(
 				gettext('Reseller'),
@@ -1693,6 +1998,7 @@ class Accounts_form extends common {
 		if ($id > 0) {
 			$val         = 'accounts.email.'.$id;
 			$account_val = 'accounts.number.'.$id;
+			$cnpj_val = 'accounts.tax_number.'.$id;
 			$readable    = 'disabled';
 			$account     = array(
 				gettext('Account'),
@@ -1786,6 +2092,20 @@ class Accounts_form extends common {
 				),
 				'multi',
 			);
+			$tax_account = array(
+				gettext('CPF/CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CPF/CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
+			);
 			$balnce_below = array(
 				gettext('Balance Below'),
 				'INPUT',
@@ -1836,7 +2156,9 @@ class Accounts_form extends common {
 				'',
 				'custom_status',
 			);
-		} else {
+		} 
+		
+		else {
 			$invoice_config = array(
 				gettext('Use same credential for Invoice Config'),
 				'invoice_config_flag',
@@ -1850,6 +2172,34 @@ class Accounts_form extends common {
 				'',
 				'set_prorate',
 			);
+			$cnpj_account = array(
+				gettext('CPF/CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|required|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CPF/CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
+			);
+			$tax_account = array(
+				gettext('CPF/CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CPF/CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
+			);			
 			$password = $this->CI->common->generate_password();
 			$password = array(
 				gettext('Password'),
@@ -2177,6 +2527,43 @@ class Accounts_form extends common {
 				'',
 				'',
 				'set_account_type',
+			),			
+			$tax_account,
+			array(
+				gettext('Nome Fantasia'),
+				'INPUT',
+				array(
+					'name'  => 'rms_fantasia',
+					'size'  => '50',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean',
+				'tOOL TIP',
+				'',
+			),
+			array(
+				gettext('Inscrição Estadual'),
+				'INPUT',
+				array(
+					'name'  => 'rms_inscricao_estadual',
+					'size'  => '32',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean',
+				'tOOL TIP',
+				'',
+			),
+			array(
+				gettext('Simples Nacional'),
+				'INPUT',
+				array(
+					'name'  => 'simei',
+					'size'  => '32',
+					'class' => "text field medium",
+				),
+				'trim|xss_clean',
+				'tOOL TIP',
+				'',
 			),
 			array(
 				gettext('Credit Limit'),
@@ -2250,19 +2637,7 @@ class Accounts_form extends common {
 				'',
 				'set_invoice_option',
 			),
-			$taxes_arr,
-			array(
-				gettext('Tax Number'),
-				'INPUT',
-				array(
-					'name'  => 'tax_number',
-					'size'  => '100',
-					'class' => "text field medium",
-				),
-				'',
-				'tOOL TIP',
-				'',
-			),
+			$taxes_arr,			
 			array(
 				gettext('Generate Invoice'),
 				array(
@@ -3428,8 +3803,26 @@ class Accounts_form extends common {
 					"deleted" => 0,
 				),
 			);
+			$parent_drp = array(
+				gettext('Parent Account'),
+				'parent_id',
+				'SELECT',
+				'',
+				'',
+				'tOOL TIP',
+				'Please Enter account number',
+				'id',
+				'first_name,last_name,number',
+				'accounts',
+				'build_concat_dropdown_parent',
+				'where_arr',
+				array(
+					"deleted" => 0,
+				),
+			);
 		} else {
 			$reseller_drp = null;
+			$parent_drp = null;
 		}
 
 		if ($logintype != 1) {
@@ -3708,6 +4101,7 @@ class Accounts_form extends common {
 					'set_Billing_Schedule_status',
 				),
 				$reseller_drp,
+				$parent_drp,
 				array(
 					'',
 					'HIDDEN',
@@ -4724,7 +5118,7 @@ class Accounts_form extends common {
 						"true",
 						"right",
 					),
-					array(
+					/*array(
 						gettext("First Used"),
 						"80",
 						"first_used",
@@ -4734,7 +5128,7 @@ class Accounts_form extends common {
 						"",
 						"true",
 						"center",
-					),
+					),*/
 					array(
 						gettext("Last Bill Date"),
 						"80",
@@ -4748,7 +5142,7 @@ class Accounts_form extends common {
 					),
 					array(
 						"CC",
-						"30",
+						"80",
 						"maxchannels",
 						"",
 						"",
@@ -4764,6 +5158,17 @@ class Accounts_form extends common {
 						"name",
 						"localization",
 						"get_field_name",
+						"",
+						"true",
+						"center",
+					),
+					array(
+						gettext("Parent Account"),
+						"85",
+						"parent_id",
+						"first_name,last_name,number",
+						"accounts",
+						"parent_select_value",
 						"",
 						"true",
 						"center",
@@ -5496,6 +5901,20 @@ class Accounts_form extends common {
 		return $buttons_json;
 	}
 
+	function rms_tipo_cliente_option($status = null) {
+		return array(
+			'1' => 'Jurídica',
+			'0' => 'Físico',
+		);
+	}
+
+	function rms_canais_ilimitado_option($status = null) {
+		return array(
+			'1' => 'Ilimitado',
+			'0' => 'Limitado',
+		);
+	}
+
 	function custom_status_option($status) {
 		$status_array = array(
 			'1' => gettext('No'),
@@ -5503,6 +5922,106 @@ class Accounts_form extends common {
 		);
 		return $status_array;
 	}
+	
+	function build_emails_list_for_customer($accountid, $accounttype) {
+			$grid_field_arr = json_encode(array(
+					array(
+						"<input type='checkbox' name='chkAll' class='ace checkall'/><label class='lbl'></label>",
+						"30",
+						"",
+						"",
+						"",
+						"",
+						"",
+						"false",
+						"center",
+					),
+					array(
+						gettext("Email"),
+						"200",
+						"email",
+						"",
+						"",
+						"",
+						"",
+						"true",
+						"center",
+					),
+					array(
+						gettext("Status"),
+						"180",
+						"status",
+						"status",
+						"accounts_emails",
+						"get_status",
+						"",
+						"true",
+						"center",
+					),
+					array(
+						gettext("Created Date"),
+						"200",
+						"creation_date",
+						"creation_date",
+						"creation_date",
+						"convert_GMT_to",
+						"",
+						"true",
+						"center",
+					),
+					array(
+						gettext("Modified Date"),
+						"170",
+						"last_modified_date",
+						"last_modified_date",
+						"last_modified_date",
+						"convert_GMT_to",
+						"",
+						"true",
+						"center",
+					),
+				));
+			return $grid_field_arr;
+		}
+		
+	function build_emails_list() {
+			$grid_field_arr = json_encode(array(
+					array(
+						gettext("Email"),
+						"180",
+						"email",
+						"",
+						"",
+						"",
+					),
+					array(
+						gettext("status"),
+						"180",
+						"status",
+						"status",
+						"accounts_emails",
+						"get_status",
+					),
+					array(
+						gettext("Action"),
+						"130",
+						"",
+						"",
+						"",
+						array(
+							"EDIT_ANIMAP" => array(
+								"url"        => "accounts/accounts_emails_list_edit/",
+								"mode"       => "single",
+							),
+							"DELETE_ANIMAP" => array(
+								"url"          => "accounts/accounts_emails_list_remove/",
+								"mode"         => "single",
+							),
+						),
+					),
+				));
+			return $grid_field_arr;
+		}
 }
 
 ?>

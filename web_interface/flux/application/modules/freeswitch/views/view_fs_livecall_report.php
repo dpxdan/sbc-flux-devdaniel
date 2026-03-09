@@ -35,11 +35,11 @@ $(document).ready(function() {
 	showTableToggleBtn: true,
 	width: "auto",
 	height: "auto",
-	pagetext: 'Page',
-	outof: 'of',
-	nomsg: 'No Records',
-	procmsg: 'Processing, please wait ...',
-	pagestat: 'Displaying {from} to {to} of {total} items',
+	pagetext: '<?php echo gettext("Page"); ?>',
+	outof: '<?php echo gettext("of"); ?>',
+	nomsg: '<?php echo gettext("No Records"); ?>',
+	procmsg: '<?php echo gettext("Processing, please wait ..."); ?>',
+	pagestat: '<?php echo gettext("Displaying {from} to {to} of {total} items"); ?>',
 	//preProcess: formatContactResults,
 	onSuccess: function(data){
 	  $('a[rel*=facebox]').facebox({
