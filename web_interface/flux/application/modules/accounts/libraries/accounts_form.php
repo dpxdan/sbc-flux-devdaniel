@@ -5207,29 +5207,29 @@ class Accounts_form extends common {
 	function build_grid_buttons_customer() {
 		$logintype      = $this->CI->session->userdata('userlevel_logintype');
 		$provider       = null;
-		$account_import = array();
-		if ($logintype != 1) {
-			$account_import = array(
-				gettext("Import Customers"),
-				"btn btn-line-warning",
-				"fa fa-download fa-lg",
-				"button_action",
-				"/account_import/customer_import_mapper/",
-				'single',
-				"small",
-				"import",
-			);
-			$provider = array(
-				gettext("Create Provider"),
-				"btn btn-line-blue btn",
-				"fa fa-plus-circle fa-lg",
-				"button_action",
-				"/accounts/provider_add/",
-				"single",
-				"medium",
-				"create_provider",
-			);
-		}
+        $account_import = array(
+            gettext("Import Customers"),
+            "btn btn-line-warning",
+            "fa fa-download fa-lg",
+            "button_action",
+            "/account_import/customer_import_mapper/",
+            'single',
+            "small",
+            "import",
+        );
+    
+        if ($logintype != 1) {
+            $provider = array(
+                gettext("Create Provider"),
+                "btn btn-line-blue btn",
+                "fa fa-plus-circle fa-lg",
+                "button_action",
+                "/accounts/provider_add/",
+                "single",
+                "medium",
+                "create_provider",
+            );
+        }
 		$buttons_json = json_encode(array(
 				array(
 					gettext("Create Customer"),
