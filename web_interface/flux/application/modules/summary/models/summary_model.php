@@ -219,19 +219,21 @@ class Summary_model extends CI_Model
 	   if($this->session->userdata('advance_search') != 1 && isset($product_summary_search['order_items.accountid']) && $product_summary_search['order_items.accountid'] != ''){
             $this->db->where('orders.accountid',$product_summary_search['order_items.accountid']);         
             $where = array(    
-                'orders.order_date >= ' => $this->common->convert_GMT_new (date('Y-m-d') . " 00:00:01"),
-                'orders.order_date <=' => $this->common->convert_GMT_new (date("Y-m-d") . " 23:59:59")      
+                'order_items.billing_date >= ' => $this->common->convert_GMT_new (date('Y-m-d') . " 00:00:01"),
+                'order_items.billing_date <=' => $this->common->convert_GMT_new (date("Y-m-d") . " 23:59:59")      
             );
-    	}else{ 
+    	}
+    	else{ 
     		$where = array();
     	}
 	if((isset($product_summary_search) && $product_summary_search !="" )){
 		$this->db->where("product_category",$product_summary_search['product_category']);
-	}else{
+	}
+	else{
 		$this->db->where("product_category",1);
 	}
 	$this->db->where($where);
-        $this->db->select($select . ",orders.id,orders.payment_status,orders.order_date,order_items.product_category,order_items.product_id,order_items.product_id as productid,order_items.order_id,sum(order_items.quantity) as quantity,sum(order_items.price) as price,sum(setup_fee) as setup_fee,sum(order_items.free_minutes) as free_minutes,order_items.billing_type,sum(order_items.billing_days) as billing_days,order_items.accountid", false);
+        $this->db->select($select . ",orders.id,orders.payment_status,orders.order_date,order_items.product_category,order_items.product_id,order_items.product_id as productid,order_items.order_id,sum(order_items.quantity) as quantity,sum(order_items.price) as price,sum(setup_fee) as setup_fee,sum(order_items.free_minutes) as free_minutes,order_items.billing_type,order_items.billing_date,sum(order_items.billing_days) as billing_days,order_items.accountid", false);
 
         $this->db->order_by($order, "ASC");
         if (! $export && $limit > 0) {

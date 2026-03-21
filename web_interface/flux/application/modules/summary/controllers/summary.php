@@ -36,7 +36,6 @@ class Summary extends MX_Controller
         $this->load->library("summary_form");
         $this->load->model('summary_model');
         $this->load->library ('flux_log');
-        //$this->flux_log->write_log ( 'permission_list', json_encode($data) );
         $this->load->library('FLUX_Sms');
  
         if ($this->session->userdata('user_login') == FALSE)
@@ -1076,6 +1075,7 @@ class Summary extends MX_Controller
         $this->load->helper('csv');
         array_to_csv($reseller_array, 'Reseller_Summary_Report_' . date("Y-m-d") . '.csv');
     }
+    
     function product()
     {
         $data['page_title'] = gettext('Product Summary Report');
@@ -1088,14 +1088,15 @@ class Summary extends MX_Controller
 		    'reseller_id' => $reseller_id,
 		    "type" => "GLOBAL"
 		));
-	}else{
+    }
+        else{
 		$accountlist = $this->db_model->build_dropdown_deleted('id,IF(`deleted`=1,IF( company_name = "",concat( first_name, " ", last_name, " ", "(", number, ")^" ),concat( company_name, " ", "(", number, ")^" )),IF( company_name = "",concat( first_name, " ", last_name, " ", "(", number, ")" ),concat( company_name, " ", "(", number, ")" ))) as number', 'accounts', 'where_arr', array(
 		    "type" => "GLOBAL"
 		));
 	}
-        $product_list = $this->db_model->build_dropdown('id,name', 'products','where_arr',array("status" =>0));
+        $product_list = $this->db_model->build_dropdown_products('id,name', 'products','where_arr',array("status" =>0));
         $data['productlist'] = $product_list;
-	$category_list = $this->db_model->build_dropdown("id,name", "category",'where_arr', array(
+	    $category_list = $this->db_model->build_dropdown_products("id,name", "category",'where_arr', array(
             "code <> " => 'REFILL',
             "code <>" => 'DID',
 		
@@ -1129,6 +1130,7 @@ class Summary extends MX_Controller
         $this->session->set_userdata('productsummary_reports_export', $search_arr);
         echo json_encode($json_data);
     }
+    
     function product_search()
     {
         if ($this->input->post('advance_search', TRUE) == 1) {
@@ -1136,11 +1138,11 @@ class Summary extends MX_Controller
             $action = $this->input->post();
             unset($_POST['action']);
             unset($_POST['advance_search']);
-             if(!empty($action['order_date'][0])){
-                $action['order_date'][0]=$this->common->convert_GMT_new ( $action['order_date'][0]);
+             if(!empty($action['billing_date'][0])){
+                $action['billing_date'][0]=$this->common->convert_GMT_new ( $action['billing_date'][0]);
             }
-            if(!empty($action['order_date'][1])){
-                $action['order_date'][1]=$this->common->convert_GMT_new ( $action['order_date'][1]);
+            if(!empty($action['billing_date'][1])){
+                $action['billing_date'][1]=$this->common->convert_GMT_new ( $action['billing_date'][1]);
             }
             $_POST['order_items.accountid'] = $_POST['order_items#accountid'];
             unset($_POST['order_items#accountid']);
@@ -1159,7 +1161,8 @@ class Summary extends MX_Controller
         redirect(base_url() . 'summary/product/');
     }
 
-    function product_summary_report_grid($search_arr, $query, $entity, $purpose){
+    function product_summary_report_grid($search_arr, $query, $entity, $purpose)
+    {
         $export_arr = array();
         $show_seconds = (! empty($search_arr['search_in'])) ? $search_arr['search_in'] : 'minutes';
         $currency_info = $this->common->get_currency_info();
@@ -1177,8 +1180,6 @@ class Summary extends MX_Controller
         }
         if((isset($search_arr['groupby_1']) || ($search_arr['groupby_2']) || ($search_arr['groupby_2'])) && ($search_arr['groupby_1'] == 'order_items.accountid' || $search_arr['groupby_2'] == 'order_items.accountid' ) ){
     
-            /*$used_seconds = "select sum(used_seconds) as used_seconds from counters as C inner join packages_view as P on C.product_id=P.id where P.product_id=".$row1['product_id']." and C.accountid = ".$row1['accountid']." ";
-            $used_seconds = $this->db->query($used_seconds);*/
         $this->db->select_sum('used_seconds');
             $this->db->from('counters');
             $this->db->where("product_id",$row1['product_id']);
@@ -1186,12 +1187,9 @@ class Summary extends MX_Controller
             $used_seconds=$this->db->get();
 
         }else{
-            /* $used_seconds = "select sum(used_seconds) as used_seconds from counters as C inner join packages_view as P on C.product_id=P.id where P.product_id=".$row1['product_id']."";
-            $used_seconds = $this->db->query($used_seconds);*/
          if($reseller_id > 0){
                $this->db->select_sum('used_seconds');
                $this->db->from('counters');
-            //    $this->db->where_not_in("accountid",$row1['accountid']);
                $this->db->where("accountid",$row1['accountid']);               
                $this->db->where("product_id",$row1['product_id']);
                $used_seconds=$this->db->get();
@@ -1199,8 +1197,6 @@ class Summary extends MX_Controller
                $this->db->select_sum('used_seconds');
                $this->db->from('counters');
                $this->db->where("product_id",$row1['product_id']);
-               // $this->db->where("package_id",$row1['id']);
-               $this->db->where("type",0);
                $used_seconds=$this->db->get();
         }
         }
@@ -1249,21 +1245,6 @@ class Summary extends MX_Controller
                  if ($search_arr['groupby_2'] == "order_items.accountid") {
                      $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1["accountid"]);
                  } 
-            
-           /* if ($search_arr['groupby_1'] == "order_items.accountid" || $search_arr['groupby_2'] == "order_items.accountid") {
-                if($reseller_id == '0'){
-                    $account_id = $this->db_model->getSelect('*','accounts',array("reseller_id" => $row1["accountid"]))->result_array();
-                    $account_id = $account_id[0]['id'];
-                }else{
-                    $account_id = $this->db_model->getSelect('*','accounts',array("id" => $row1["accountid"]))->result_array();
-                    $account_id = $account_id[0]['id'];
-                }
-                    $new_arr[] = $this->common->build_concat_string("first_name,last_name,number,company_name", "accounts", $account_id);
-                }
-
-            if($search_arr['groupby_2'] == "order_items.product_id"){
-                    $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
-                } */
         
              if (isset($search_arr['groupby_1']) && isset($search_arr['groupby_2']) &&  $search_arr['groupby_1'] == $search_arr['groupby_2']) {
                 unset($new_arr[1]);
@@ -1303,7 +1284,6 @@ class Summary extends MX_Controller
             $total_user = $this->db_model->countQuery("*","order_items",array("product_id"=>$row1['productid'], "reseller_id" => 0),"accountid");
          }
         $custom_array = array(
-            //$product_name = $this->common->get_field_name("name","products",array("id"=>$row1['product_id'])),
             $row1['quantity'],
                 $row1['price'],
             $row1['setup_fee'],
@@ -1314,7 +1294,7 @@ class Summary extends MX_Controller
             $active_user,
             $total_user,
         );
-        }else if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.accountid") || (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.accountid" )){//echo 4334; exit;
+        }else if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.accountid") || (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.accountid" )){
             $custom_array = array(
               
                 $free_minutes_result,
@@ -1392,7 +1372,7 @@ class Summary extends MX_Controller
             $active_user,
             $total_user,
         );
-        }else if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.accountid") || (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.accountid" )){//echo 4334; exit;
+        }else if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.accountid") || (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.accountid" )){
             $custom_array = array(
               
             $this->db_model->countQuery("*","order_items",array("accountid"=>$row1['accountid'])),
@@ -1446,7 +1426,6 @@ class Summary extends MX_Controller
         $price = 0;
     $setup_fee = 0;
         $minutes = 0;
-        //$billing_type = 0;
         $totalamt = 0;
     $active_user = 0;
     $total_user = 0;
@@ -1459,8 +1438,6 @@ class Summary extends MX_Controller
                 $this->db->where('accountid',$session_info['order_items.accountid']); 
                 }
     if((isset($search_arr['groupby_1']) || ($search_arr['groupby_2']) || ($search_arr['groupby_2'])) && ($search_arr['groupby_1'] == 'order_items.accountid' || $search_arr['groupby_2'] == 'order_items.accountid' ) ){
-/*          $used_seconds = "select sum(used_seconds) as used_seconds from counters as C inner join packages_view as P on C.product_id=P.id where P.product_id=".$val['productid']." and C.accountid = ".$val['accountid']." ";
-            $used_seconds = $this->db->query($used_seconds);*/
         $this->db->select_sum('used_seconds');
             $this->db->from('counters');
             $this->db->where("product_id",$val['product_id']);
@@ -1469,12 +1446,9 @@ class Summary extends MX_Controller
         
 
         }else{
-            /*$used_seconds = "select sum(used_seconds) as used_seconds from counters as C inner join packages_view as P on C.product_id=P.id where P.product_id=".$val['productid']."";
-            $used_seconds = $this->db->query($used_seconds);*/
          if($reseller_id > 0){
                $this->db->select_sum('used_seconds');
                $this->db->from('counters');
-            //    $this->db->where_not_in("accountid",$reseller_id);
                $this->db->where("accountid",$reseller_id);            
                $this->db->where("product_id",$row1['product_id']);
                $used_seconds=$this->db->get();
@@ -1482,14 +1456,8 @@ class Summary extends MX_Controller
                $this->db->select_sum('used_seconds');
                $this->db->from('counters');
                $this->db->where("product_id",$row1['product_id']);
-               // $this->db->where("package_id",$val['id']);
-               $this->db->where("type",0);
                $used_seconds=$this->db->get();
         }
-            /*$this->db->select_sum('used_seconds');
-            $this->db->from('counters');
-            $this->db->where("product_id",$val['product_id']);
-            $used_seconds=$this->db->get();*/
         }
         if($used_seconds->num_rows > 0){
             $usedsec+= $used_seconds->result_array()[0]['used_seconds'];
@@ -1532,7 +1500,6 @@ class Summary extends MX_Controller
         }
         
         } 
-//echo $active_user; exit;
     $free_min =$minutes *60;
     $avaiable_minutes += $this->common->get_total_available_minutes($free_min,$usedsec);
         if ($show_seconds == 'minutes') {
@@ -1565,7 +1532,6 @@ class Summary extends MX_Controller
         if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.product_id") && (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.product_id" )){ 
             unset($search_arr['custom_total_array'][1]);
         }else{ 
-            //unset($search_arr['custom_total_array'][1]);
         }
         $last_array = array(
             
@@ -1584,7 +1550,6 @@ class Summary extends MX_Controller
             if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.accountid") && (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.accountid" )){ 
                 unset($search_arr['custom_total_array'][1]);
             }else{ 
-                //unset($search_arr['custom_total_array'][1]);
             }
         $last_array = array(
            
@@ -1683,7 +1648,7 @@ class Summary extends MX_Controller
         }
     }
         if ($purpose == 'export') {
-            $search_arr['custom_total_array'][0] = "Grand Total";
+            $search_arr['custom_total_array'][0] = gettext('Grand Total');
         }
         $new_export_array = array();
         foreach ($last_array as $key => $value) {
@@ -1704,8 +1669,8 @@ class Summary extends MX_Controller
         return $purpose == 'grid' ? $json_data : $export_arr;
     }
 
-
- function product_list_dropdown(){ 
+    function product_list_dropdown()
+    { 
 	$add_array = $this->input->post();
 	$reseller_id = $this->session->userdata('logintype') == 1 || $this->session->userdata('logintype') == 5 ? $this->session->userdata['accountinfo']['id'] : 0;
 	if($reseller_id > 0){
@@ -1720,7 +1685,8 @@ class Summary extends MX_Controller
 		}else{
 			$data['product_item_list'] = array();
 		}
-	}else{
+    }
+    else{
 		$data['product_item_list'] = $this->db_model->build_dropdown("id,name", "products", "where_arr",array("product_category"=>$add_array['category_id']));
 	}
 	$product_item = array("id" => "product_id","name" => "product_id","class" => "product_id");
@@ -1728,6 +1694,7 @@ class Summary extends MX_Controller
 	echo $data['productlist'];
         exit();
    }
+    
     function product_export_csv()
     {
         $search_arr = $this->session->userdata('productsummary_reports_export');
@@ -1740,30 +1707,6 @@ class Summary extends MX_Controller
 		$product_category = 1;
 	}
         ob_clean();
-	/*	if($product_category == 2){
-			$fixed_header = array(
-			    'Quantity',
-			    'Price',
-			    'Setup Fee',
-			    'Total Price',
-			    'Active User',
-			    'Total User'
-
-			);
-	   	}else{
-			$fixed_header = array(
-			    'Quantity',
-			    'Price',
-			    'Setup Fee',
-			    'Free Minutes',
-			    'Used Minutes',
-			    'Available Minutes',
-			    'Total Price',
-			    'Active User',
-			    'Total User'
-
-			);
-		}*/
 	$new_search_array = array();
         $new_column_arr = $this->summary_column_arr('product');
 		$grid_field = $this->summary_form->build_product_summary($new_column_arr);
@@ -1775,20 +1718,7 @@ class Summary extends MX_Controller
 				$fixed_header_new[] = $fix_val[0];
 			}
 		}
-//echo "<pre>"; print_r($fixed_header_new); exit;
-//echo "<pre>"; print_r($fixed_header);
-
-/*	if(!empty($new_column_arr) && (isset($search_arr['groupby_1']) || isset($search_arr['groupby_2']))){
-		foreach($new_column_arr as $column_value){
-			$new_search_array[] = $column_value[0];
-		}
-	}else{
-			$new_search_array[] ="Product Name";
-	}*/
-//echo "<pre>"; print_r($fixed_header_new);// exit;
-//        $header_arr[] = array_merge($new_search_array, $fixed_header_new);
         $header_arr[] = $fixed_header_new;
-//echo "<pre>"; print_r($header_arr); exit;
         if ($query->num_rows() > 0) {
             $data_arr = $this->product_summary_report_grid($search_arr, $query, 'product', 'export');
         }

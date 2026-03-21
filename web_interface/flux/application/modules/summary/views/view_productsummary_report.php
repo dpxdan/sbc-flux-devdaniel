@@ -11,12 +11,10 @@
        });
        $("#id_reset").click(function(){
            clear_search_request("productsummary_grid","");
-             // Jaimin FLUXUPDATE-847
                setTimeout(function(){
                $('#from_date').val("");
                $('#to_date').val("");
             },50);
-           // END
        });
         // var currentdate = new Date(); 
         // var from_date = currentdate.getFullYear() + "-"
@@ -29,9 +27,9 @@
 
   var from_date = date + " 00:00:00";
   var to_date = date + " 23:59:59";
-	var session_from_date = "<?php echo (isset($product_summary_search['order_date'][0]) && $product_summary_search['order_date'][0] !="")?$product_summary_search['order_date'][0]:""?>";
+	var session_from_date = "<?php echo (isset($product_summary_search['billing_date'][0]) && $product_summary_search['billing_date'][0] !="")?$product_summary_search['billing_date'][0]:""?>";
 	
-	var session_to_date = "<?php echo (isset($product_summary_search['order_date'][1]) && $product_summary_search['order_date'][1] !="")?$product_summary_search['order_date'][1]:""?>";
+	var session_to_date = "<?php echo (isset($product_summary_search['billing_date'][1]) && $product_summary_search['billing_date'][1] !="")?$product_summary_search['billing_date'][1]:""?>";
 
 	var frm_date = (session_from_date != "")?session_from_date:from_date;
 	var todate = (session_to_date != "")?session_to_date:to_date;
@@ -102,16 +100,16 @@
                            <div class="col-3 input-group">
                               <label class="search_label col-md-12 p-0">
                               <?php echo gettext("From Date"); ?>
-                              </label> <input type="text" name="order_date[]"
-                                 value="<?php echo isset($session_info['order_date'][0]) ? $session_info['order_date'][0] : date("Y-m-d") . " 00:00:00"; ?>"
+                              </label> <input type="text" name="billing_date[]"
+                                 value="<?php echo isset($session_info['billing_date'][0]) ? $session_info['billing_date'][0] : date("Y-m-d") . " 00:00:00"; ?>"
                                  id="from_date" size="20"
                                  class="col-md-12 form-control form-control-lg" />
                            </div>
                            <div class="col-3 input-group">
                               <label class="search_label col-md-12 p-0">
                               <?php echo gettext("To Date"); ?>
-                              </label> <input type="text" name="order_date[]"
-                                 value="<?php echo isset($session_info['order_date'][1]) ? $session_info['order_date'][1] : date("Y-m-d") . " 23:59:59"; ?>"
+                              </label> <input type="text" name="billing_date[]"
+                                 value="<?php echo isset($session_info['billing_date'][1]) ? $session_info['billing_date'][1] : date("Y-m-d") . " 23:59:59"; ?>"
                                  id="to_date" size="20"
                                  class="col-md-12 form-control form-control-lg " />
                            </div>

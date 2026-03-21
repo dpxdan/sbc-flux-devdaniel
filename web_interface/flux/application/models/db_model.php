@@ -814,7 +814,7 @@ class Db_model extends CI_Model {
 							if (array_key_exists ( $key . "-string", $value )) {
 								$this->get_string_array ( $table_name.$key, $value [$key . "-string"], $value [$key]);
 							}
-							if ($key == 'callstart' || $key == 'date' || $key == 'order_date' || $key == 'timestamp' || $key == 'payment_date' || $key == 'first_used' || $key == 'creation' || $key == 'from_date' || $key == 'generate_date' || $key == 'expiry' || $key == 'created_date' || $key == 'to_date' || $key == 'triggered_date' || $key == 'last_triggered_date') {
+							if ($key == 'callstart' || $key == 'date' || $key == 'order_date' || $key == 'billing_date' || $key == 'timestamp' || $key == 'payment_date' || $key == 'first_used' || $key == 'creation' || $key == 'from_date' || $key == 'generate_date' || $key == 'expiry' || $key == 'created_date' || $key == 'to_date' || $key == 'triggered_date' || $key == 'last_triggered_date') {
 								$this->get_date_array ( $table_name.$key, $value );
 							}
 						} else {
