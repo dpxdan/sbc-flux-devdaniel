@@ -16,7 +16,8 @@ function open_sub_menu(parent_div_id,list,i){
 	$('#'+div_id).toggle();
 	if($("#"+parent_div_id+' .collaps-'+i).html()=='<i class="fa fa-plus"></i>'){
 		$("#"+parent_div_id+' .collaps-'+i).html('<i class="fa fa-minus"></i>');
-	}else{
+	}
+	else{
 		$("#"+parent_div_id+' .collaps-'+i).html('<i class="fa fa-plus"></i>');
 	}
 }
@@ -32,7 +33,8 @@ function form_submit(){
 	else if(description == ''){
 		document.getElementById("description_err").style.display = "block"; 
 		document.getElementById("description_err").innerHTML="<i style='color:#D95C5C; padding-right: 6px; padding-top: 10px;' class='fa fa-exclamation-triangle'></i><span class='popup_error error p-0'> Description field is required</span>";
-	}else{
+	}
+	else{
 		document.getElementById('permissions_form').submit();
 	}
 }
@@ -42,10 +44,12 @@ $(document).ready(function(){
 		if (id.match("_main$")) {
 			if ($('#'+id).is(':checked')) {
 					$("#"+id+"_table input[type=checkbox]" ).prop('checked',true);
-			}else{
+			}
+			else{
 				$("#"+id+"_table input[type=checkbox]" ).prop('checked',false);
 			}
-		}else{
+		}
+		else{
 			var table_id =$("#"+$(this)[0].id).parent().parent().parent().parent()[0].id;
 			var countchecked = $("#"+table_id+" input[type=checkbox]:checked").length;
 			var main_id  = table_id.replace("_table","");
@@ -58,10 +62,12 @@ $(document).ready(function(){
 				}
 				if(countchecked > 0){
 					$("input:checkbox[id="+main_id+"]" ).prop('checked',true);
-				}else{
+				}
+				else{
 					$("input:checkbox[id="+main_id+"]" ).prop('checked',false);
 				}	
-			}else{
+			}
+			else{
 				if(current_event_id=="list"){
 					if($("input:checkbox[id="+custom_id+"_list]" ).prop('checked',false)){
 						$("input:checkbox[id="+main_id+"]" ).prop('checked',false);
@@ -163,60 +169,21 @@ table {
 									</div>
 							
 									                  <div class='col-md-6 form-group'>
-									                        <label class="p-0 control-label" data-toggle="tooltip" data-html="true" data-original-title= "Select the call type to filter the rates according to selected code." data-placement="right"><?php echo gettext('Permission Type'); ?></label>
-									    <select name="login_type" id="login_type" class='col-md-12 form-control form-control-lg selectpicker' data-live-search='true'>
+                          <label class="col-md-12 p-0 control-label"><?php echo gettext('Permission Type'); ?></label>
+                          <select  name="login_type" class="col-md-12 form-control selectpicker form-control-lg" data-live-search='true' datadata-live-search-style='begins'>                             
+    			                   <option value= "<?php echo $permission_type_code; ?>"><?php echo gettext($permission_name); ?></option>    			                  
+    			                   <?php
+    			                   $where = array(
+    			                          'permission_type_code <>' => $permission_type_code
+    			                    );
 									                  		
-									        			
-									                  					<?php $login_type_list =$this->db_model->getSelect("*","permissions_types",""); 
-									                  					$login_type_list = $login_type_list->result_array(); ?>
-									                  				<?php foreach($login_type_list as $key => $login_type) {    ?>
-									                  				<option value= "<?php echo $login_type['permission_type_code']; ?>"> <?php echo  $login_type['permission_name'] ?> </option>
+    			                   $login_type_list =$this->db_model->getSelectWithOrder("*","permissions_types",$where, "asc", "permission_name");
+									           $login_type_list = $login_type_list->result_array();
+									          foreach($login_type_list as $key => $login_type) {    ?>
+									                  				<option value= "<?php echo $login_type['permission_type_code']; ?>"> <?php echo gettext($login_type['permission_name']) ?> </option>
 									                  				<?php } ?>
 									                  		</select>
 									                  		</div>
-									<!--<div class="col-md-3 form-group">
-										<label class="p-0 control-label"><?php echo gettext('Type') ?> :<span
-											class="text-dark"> *</span></label> <select name="login_type"
-											id="login_type"
-											class='col-md-12 form-control form-control-lg selectpicker'
-											data-live-search='true'>
-											<option value='-1' 
-									<?php if (isset($login_type) && $login_type == -1) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Super Admin")?>
-										</option>
-										<option value='0' 
-									<?php if (isset($login_type) && $login_type == 0) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Admin")?>
-										</option>
-										<option value='1' 
-									<?php if (isset($login_type) && $login_type == 1) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Reseller")?>
-										</option>
-										<option value='2' 
-									<?php if (isset($login_type) && $login_type == 2) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Sub Admin")?>
-										</option>
-										<option value='3' 
-									<?php if (isset($login_type) && $login_type == 3) { echo "selected"; } ?>
-										>
-									<?php echo gettext("Customer")?>
-										</option>
-										<option value='4' 
-										<?php if (isset($login_type) && $login_type == 4) { echo "selected"; } ?>
-											>
-										<?php echo gettext("Provider")?>
-											</option>
-										<option value='5' 
-										<?php if (isset($login_type) && $login_type == 5) { echo "selected"; } ?>
-											 >
-										<?php echo gettext("API")?>
-										</option>
-										</select>
-									</div>-->
 									<div class="col-md-12 text-right">
 										<input id="save_button" class="save_button btn btn-success"
 											name="save_button" value="<?php echo gettext('Save');  ?>" type="button"

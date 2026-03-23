@@ -189,7 +189,7 @@ $(document).ready(function(){
           <?php $login_type_list =$this->db_model->getSelect("*","permissions_types",""); 
           $login_type_list = $login_type_list->result_array(); ?>
         <?php foreach($login_type_list as $key => $login_type) {    ?>
-        <option value= "<?php echo $login_type['permission_type_code']; ?>"> <?php echo  $login_type['permission_name'] ?> </option>
+        <option value= "<?php echo $login_type['permission_type_code']; ?>"> <?php echo  gettext($login_type['permission_name']) ?> </option>
         <?php } ?>
     </select>
 

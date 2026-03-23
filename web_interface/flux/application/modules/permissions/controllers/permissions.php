@@ -60,8 +60,6 @@ class Permissions extends MX_Controller
         $data['grid_fields'] = $this->permissions_form->build_permissions_list_for_admin();
         $data["grid_buttons"] = $this->permissions_form->build_grid_buttons();
         $data['form_search'] = $this->form->build_serach_form($this->permissions_form->get_permissions_search_form());
-        // print_r($data);exit;
-        $this->flux_log->write_log ( 'permission_list', json_encode($data) );
         $this->load->view('view_permissions_list', $data);
     }
 
@@ -75,7 +73,6 @@ class Permissions extends MX_Controller
         $query = $this->permissions_model->getpermissions_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
         $grid_fields = json_decode($this->permissions_form->build_permissions_list_for_admin());
         $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
-        $this->flux_log->write_log ( 'permission_info', json_encode($query) );
         echo json_encode($json_data);
     }
 
@@ -86,10 +83,8 @@ class Permissions extends MX_Controller
         $where_arr= array("status"=>0);
         $data['flag'] = 'create';
         $data['login_type'] = $this->db_model->build_dropdown("id,permission_type_code,permission_name", "permissions_types","where_arr", $where_arr);
-//        $data['login_type'] = '';
         $data['role_name'] = '';
         $data['description'] = '';
-//        $login_type = 0;
         $login_type_session = $this->session->userdata('add_permission_login_session');
         if (isset($login_type_session) and $login_type_session != '') {
             $login_type = $login_type_session;
@@ -101,7 +96,6 @@ class Permissions extends MX_Controller
             $this->session->unset_userdata('add_permission_description');
         }
         $roles_and_permission_array = $this->db_model->select("*", "roles_and_permission", array(
-            'login_type' => $login_type,
             'status' => 0
         ), "priority", "ASC", "", "")->result_array();
         $permission_array = array();
@@ -125,24 +119,23 @@ class Permissions extends MX_Controller
         $where = array(
             'id' => $edit_id
         );
-        $account = $this->db_model->getSelect("*", "permissions", $where);
+        $account = $this->db_model->getSelect("*", "view_permissions", $where);
         foreach ($account->result_array() as $key => $value) {
             $edit_data = $value;
+            $permission_decode = json_decode($edit_data['permissions'], true);
+            $data['permission_result'] = $permission_decode;
         }
-        $permission_decode = json_decode($edit_data['permissions'], true);
-        $data['permission_result'] = $permission_decode;
-        foreach ($account->result_array() as $key => $value) {
-            $edit_data = $value;
-        }
-        $edit_decode = json_decode($edit_data['edit_permissions'], true);
-        $data['edit_result'] = $edit_decode;
+        
+
         $data['name'] = $edit_data['name'];
         $data['description'] = $edit_data['description'];
+        $data['permission_name'] = $edit_data['permission_name'];
+        $data['permission_type_code'] = $edit_data['permission_type_code'];
         $data['login_type'] = $edit_data['login_type'];
         $data['id'] = $edit_data['id'];
         $login_type = $edit_data['login_type'];
+        $permission_type_code = $edit_data['permission_type_code'];
         $roles_and_permission_array = $this->db_model->select("*", "roles_and_permission", array(
-            'login_type' => $login_type,
             'status' => 0
         ), "priority", "ASC", "", "")->result_array();
         $permission_array = array();

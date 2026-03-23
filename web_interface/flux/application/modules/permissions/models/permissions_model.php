@@ -38,7 +38,8 @@ class permissions_model extends CI_Model
             $where = array(
                 "reseller_id" => $reseller
             );
-        } else {
+        } 
+        else {
             $where = array(
                 "reseller_id" => "0"
             );
