@@ -29,7 +29,7 @@ class logger {
 		 //~ $this->config['log_path'] = "/backup/html/flux/";
 		if ($this->config ['debug'] == '0') {
 			// $this->fp = fopen($this->config['log_path'] . 'flux_' . date('Y-m-d') . '.txt', 'a+');
-			$this->fp = fopen ( $this->config ['log_path'] . 'flux.log', 'a+' );
+			$this->fp = fopen ( $this->config ['log_path'] . 'fs_flux.log', 'a+' );
 			//$this->fp = fopen ( $this->config ['log_path'], 'a+' );
 		}
 	}
