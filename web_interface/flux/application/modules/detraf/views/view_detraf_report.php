@@ -1,17 +1,21 @@
 <? extend('master.php') ?>
 <? startblock('extra_head') ?>
+
 <script type="text/javascript" language="javascript">
     $(document).ready(function() {
-        build_grid("detraf_grid", "<?= base_url() ?>/detraf/detraf_list_json/", <?= $grid_fields ?>, <?= $grid_buttons ?>);
-
-        $("#detraf_search_btn").click(function() {
-            post_request_for_search("detraf_grid", "", "detraf_search");
+      
+        build_grid("detraf_grid","",<? echo $grid_fields; ?>,<? echo $grid_buttons; ?>);
+         $('.checkall').click(function () {
+       		 $('.chkRefNos').prop('checked', $(this).prop('checked'));
         });
-
-        $("#id_reset").click(function() {
-            clear_search_request("detraf_grid", "");
+       $("#detraf_search_btn").click(function(){
+           
+            post_request_for_search("detraf_grid","","detraf_search");
+        });        
+        $("#id_reset").click(function(){
+            clear_search_request("detraf_grid","");
         });
-
+        
         $("#detraf_from_date").datetimepicker({
             uiLibrary: 'bootstrap4',
             iconsLibrary: 'fontawesome',
@@ -62,6 +66,7 @@
             $('#email_feedback').html('');
             $('#email_to').val('');
         });
+        
     });
 </script>
 <? endblock() ?>
@@ -82,12 +87,16 @@
     </div>
 </section>
 
+
 <section class="slice color-three pb-4">
-    <div class="w-section inverse p-0">
-        <div class="card col-md-12 pb-4">
-            <table id="detraf_grid" align="left" style="display: none;"></table>
-        </div>
-        <div class="col-md-12 pb-3 text-right">
+	<div class="w-section inverse p-0">
+		<div class="card col-md-12 pb-4">
+			<form method="POST" action="del/0/" enctype="multipart/form-data"
+				id="ListForm">
+				<table id="detraf_grid" align="left" style="display: none;"></table>
+			</form>
+		</div>
+		<div class="col-md-12 pb-3 text-right">
             <button type="button"
                     class="btn btn-primary"
                     data-toggle="modal"
@@ -95,8 +104,9 @@
                 <i class="fa fa-envelope-o mr-1"></i> <?= gettext('Enviar por E-mail') ?>
             </button>
         </div>
-    </div>
+	</div>
 </section>
+
 
 <div class="modal fade" id="detraf_email_modal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">

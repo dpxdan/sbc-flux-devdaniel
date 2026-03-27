@@ -238,10 +238,15 @@ class common {
 		}
 		if (is_array ( $where )) {
 			$where = $where;
-		} else {
+		} 
+		else {
 			if($select == 'gmtoffset'){
 				$where = array("timezone_name"=>$where);
-			}else{
+			}
+			else if($select == 'carrier_name' && $table == 'carrier_routing'){
+				$where = array("carrier_id"=>$where);
+			}
+			else{
 				$where = array (
 					"id" => $where
 				);
@@ -404,7 +409,7 @@ class common {
 		return rtrim ( $value, ',' );
 	}
 	function set_invoice_option($select = "", $table = "", $call_type = "", $edit_value = '') {
-		$this->CI->flux_log->write_log('set_invoice_option', json_encode($select));	
+//		$this->CI->flux_log->write_log('set_invoice_option', json_encode($select));	
 		$invoice_date = false;
 		$uri_segment = $this->CI->uri->segments;
 		if (isset ( $uri_segment [3] ) && $uri_segment [3] > 0 && empty ( $edit_value )) {
@@ -726,19 +731,6 @@ class common {
 				'3' => "Provider",
 				"4" => "Subadmin",
 				"5" => "Callshop"
-		);
-		return ($entity_array [$entity_type]);
-	}
-	function get_entity_type_old($select = "", $table = "", $entity_type) {
-		$entity_array = array (
-				'-1' => 'Administrator',
-				'0' => 'Customer',
-				'1' => 'Reseller',
-				'2' => 'Admin',
-				'3' => 'Provider',
-				'4' => 'SubAdmin',
-				'5' => 'SuperAdmin',
-				'6' => 'API'
 		);
 		return ($entity_array [$entity_type]);
 	}
@@ -1133,8 +1125,8 @@ class common {
 	}
 	function set_account_type($status = '') {
 		$status_array = array (
-				'0' => gettext ( 'Prepaid' ),
-				'1' => gettext ( 'Postpaid' )
+				'1' => gettext ( 'Postpaid' ),
+				'0' => gettext ( 'Prepaid' )
 		);
 		return $status_array;
 	}
@@ -1573,9 +1565,9 @@ class common {
 			$rategroup_cnt = $this->get_field_count ( 'id', 'routes', $where );
 			if ($rategroup_cnt > 0 || $customer_cnt > 0) {
 
-				return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_message(' . $rategroup_cnt . ',' . $customer_cnt . ',' . $linkid . ',1);"><i class="fa fa-trash fa-fw"></i></a>';
+				return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="'.gettext ("Delete").'" onClick="return get_alert_message(' . $rategroup_cnt . ',' . $customer_cnt . ',' . $linkid . ',1);"><i class="fa fa-trash fa-fw"></i></a>';
 			} else {
-				return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_msg();"><i class="fa fa-trash fa-fw"></i></a>';
+				return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="'.gettext ("Delete").'" onClick="return get_alert_msg();"><i class="fa fa-trash fa-fw"></i></a>';
 			}
 		}
 		if ($flag == '2') {
@@ -1584,30 +1576,30 @@ class common {
 			);
 			$trunk_cnt = $this->get_field_count ( 'id', 'outbound_routes', $where );
 			if ($trunk_cnt > 0) {
-				return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_message(' . $trunk_cnt . ',null,' . $linkid . ',2);"><i class="fa fa-trash fa-fw"></i></a>';
+				return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="'.gettext ("Delete").'" onClick="return get_alert_message(' . $trunk_cnt . ',null,' . $linkid . ',2);"><i class="fa fa-trash fa-fw"></i></a>';
 			} else {
-				return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_msg();"><i class="fa fa-trash fa-fw"></i></a>';
+				return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="'.gettext ("Delete").'" onClick="return get_alert_msg();"><i class="fa fa-trash fa-fw"></i></a>';
 			}
 		}
 		if ($flag == '3') {
-			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_message(0,null,' . $linkid . ',3);">
+			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="'.gettext ("Delete").'" onClick="return get_alert_message(0,null,' . $linkid . ',3);">
 		<i class="fa fa-trash fa-fw"></i></a>';
 		}
 		if ($flag == '4') {
-			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_message(0,null,' . $linkid . ',4);">
+			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="'.gettext ("Delete").'" onClick="return get_alert_message(0,null,' . $linkid . ',4);">
 		<i class="fa fa-trash fa-fw"></i></a>';
 		}
 		if ($flag == '0' && $url . $linkid != 'accounts/admin_delete/1') {
-			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_msg();"><i class="fa fa-trash fa-fw"></i></a>';
+			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="'.gettext ("Delete").'" onClick="return get_alert_msg();"><i class="fa fa-trash fa-fw"></i></a>';
 		}
 	}
 	function build_view_button($button_params, $linkid) {
 		$link = base_url () . $button_params->url . "" . $linkid;
 		if ($button_params->mode == 'popup') {
 			$rel = (isset ( $button_params->layout ) && $button_params->layout != '') ? "facebox_" . $button_params->layout : "facebox";
-			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" rel="' . $rel . '" title="View Details"><i class="fa fa-reorder fa-fw"></i></a>&nbsp;';
+			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" rel="' . $rel . '" title="'.gettext ("View Details").'"><i class="fa fa-reorder fa-fw"></i></a>&nbsp;';
 		} else {
-			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="View Details"><i class="fa fa-reorder fa-fw"></i></a>&nbsp;';
+			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="'.gettext ("View Details").'"><i class="fa fa-reorder fa-fw"></i></a>&nbsp;';
 		}
 	}
 	function build_add_taxes_button($button_params, $linkid) {
@@ -1667,9 +1659,9 @@ class common {
 	function build_edit_button_resend($button_params, $linkid) {
 		$link = base_url () . $button_params->url . "" . $linkid;
 		if ($button_params->mode == 'popup') {
-			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" rel="facebox" title="Resend Mail"><i class="fa fa-repeat"></i></a>&nbsp;';
+			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" rel="facebox" title="'.gettext ("Resend Mail").'"><i class="fa fa-repeat"></i></a>&nbsp;';
 		} else {
-			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Resend Mail"><i class="fa fa-repeat"></i></a>&nbsp;';
+			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="'.gettext ("Resend Mail").'"><i class="fa fa-repeat"></i></a>&nbsp;';
 		}
 	}
 	function get_only_numeric_val($select = "", $table = "", $string) {
@@ -1679,417 +1671,665 @@ class common {
 			return filter_var ( $string, FILTER_SANITIZE_NUMBER_INT );
 		}
 	}
-	function mail_to_users($type, $accountinfo, $attachment = "", $amount = "",$filePath ="") {
-		$subject              = "";
-//		$company_telephone    = "";
-		$settings_reply_email = 'suporte@flux.net.br';
-		$reseller_id          = $accountinfo['reseller_id'] > 0 ? $accountinfo['reseller_id'] : 0;
-		$invoiceconf = (array)$this->CI->db_model->getSelect('company_name,website,emailaddress,telephone,domain' , 'invoice_conf' , array("accountid" => 1))->first_row();
-		if($type == 'email_sent_support_ticket' || $type == 'auto_reply_mail_support'){
-			$department_id = $this->get_field_name('department_id','support_ticket' , array("support_ticket_number" => $accountinfo['ticket_number']));
-			$department_smtp = $this->get_field_name('smtp_user','department',array("id" => $department_id));
-			if($department_smtp !=''){
-				$settings_reply_email = $department_smtp;
-			}
-		}
-		else{
-			$smtp_user = $this->get_field_name('value' , 'system' , array("name" => "smtp_user"));
-			if($smtp_user != ''){
-				if($smtp_user == 'SMTP_USER_NAME'){
-					$settings_reply_email = $invoiceconf['emailaddress'];
-				}else{
-					$settings_reply_email = $smtp_user;
-				}
-			}else{
-				$this->CI->db->select('domain');
-				$domain_arr=(array)$this->CI->db->get_where("invoice_conf")->first_row();
-				$this->CI->db->where('domain',$_SERVER['HTTP_HOST']);
-				$this->CI->db->or_where("accountid",1);
-				$this->CI->db->order_by("id","asc");
-				$this->CI->db->limit(1);
-				$invoiceconf=(array)$this->CI->db->get_where("invoice_conf")->first_row();
-				$settings_reply_email=$invoiceconf['emailaddress'];
-			}
-		}
-		$company_name=$invoiceconf['company_name'];
-		$company_website=$invoiceconf['website'];
-		$company_telephone=$invoiceconf['telephone'];
-		$where = array('name' => $type);
-		$query = $this->CI->db_model->getSelect("*", "default_templates", $where);
-		$query = $query->result();
-		$sms_message=$query[0]->sms_template;
-		$alert_template=$query[0]->alert_template;
-		$message = $query[0]->template;
-		$subject = $query [0]->subject;	
-		$accountinfo['email']=(isset($accountinfo['notification_email']) && $accountinfo['notification_email'] != '')?$accountinfo['notification_email'] : $accountinfo['email'];
-		$useremail = $accountinfo['email'];
-		$cc_email_ids = $accountinfo['notification_email'];
-		$userdata = (array)$this->CI->db->get_where("accounts",array('email'=>$useremail,'status'=> 0))->first_row();
-		$usermobile=(isset($accountinfo['telephone_1']) && $accountinfo['telephone_1'] != '')?$accountinfo['telephone_1'] : $userdata['telephone_1'];
-		$message = html_entity_decode($message);
-		$message = str_replace("#COMPANY_EMAIL#", $settings_reply_email, $message);
-		$message = str_replace("#COMPANY_PHONE#", $company_telephone, $message);
-		$message = str_replace("#COMPANY_NAME#", $company_name, $message);
-		$sms_message = str_replace("#COMPANY_NAME#", $company_name, $sms_message);
-		$message = str_replace("#COMPANY_WEBSITE#", $company_website, $message);
-		$message = str_replace("</p>", "", $message);
-		if(isset($accountinfo['refill_amount']) && $accountinfo['refill_amount']!= ""){
-			$refillamount = $accountinfo['refill_amount'];
-		}
-		else{
-			$refillamount = "0";
-		}
+    function mail_to_users($type, $accountinfo, $attachment = "", $amount = "", $filePath = "") {
+    $subject = "";
+    $settings_reply_email = 'suporte@flux.net.br';
+    $reseller_id = $accountinfo['reseller_id'] > 0 ? $accountinfo['reseller_id'] : 0;
+    
+    if (isset($accountinfo['parent_id']) && $accountinfo['parent_id'] != "")  {
+    $parent_id = $accountinfo['parent_id'] > 0 ? $accountinfo['parent_id'] : null;    
+    } 
+    else {
+    
+    $parent_id = 0;
+    }
+    
+    
 
-		$sip_user_name     = isset($accountinfo ['sip_user_name']) && $accountinfo ['sip_user_name'] != "" ? $accountinfo ['sip_user_name'] : '';
-		$callkit_token     = isset($accountinfo ['callkit_token']) && $accountinfo ['callkit_token'] != "" ? $accountinfo ['callkit_token'] : '';
-		$status_code      = isset($accountinfo ['status_code']) && $accountinfo ['status_code'] != "" ? $accountinfo ['status_code'] : '';
-	switch ($type) {
-	    case 'product_renewed':
+    $invoiceconf = (array) $this->CI->db_model
+        ->getSelect(
+            'company_name,website,emailaddress,telephone,domain',
+            'invoice_conf',
+            array("accountid" => 1)
+        )
+        ->first_row();
 
-	        $subject = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $subject);
-       	    $subject = str_replace('#NUMBER#', $accountinfo['number'], $subject);
-			$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-        	$message = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $message);
-        	$message = str_replace('#NEXT_BILL_DATE#', $accountinfo['next_billing_date'], $message);
-			$message = str_replace('#QUANTITY#', $accountinfo['quantity'], $message);
-			$message = str_replace('#TOTAL_PRICE#', isset($accountinfo['quantity']) && $accountinfo['quantity'] != 0 ?$accountinfo['price'] * $accountinfo['quantity'] : $accountinfo['price'], $message);
-			$message = str_replace('#PRODUCT_AMOUNT#', $accountinfo['price'], $message);
-		break;
+    if ($type == 'email_sent_support_ticket' || $type == 'auto_reply_mail_support') {
+        $department_id = $this->get_field_name(
+            'department_id',
+            'support_ticket',
+            array("support_ticket_number" => $accountinfo['ticket_number'])
+        );
 
-	    case 'account_refilled':
-		$subject = str_replace('#REFILLBALANCE#', $accountinfo['refill_amount'], $subject);
-		$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-        $message = str_replace('#REFILLBALANCE#', $accountinfo['refill_amount'], $message);
-        $message = str_replace('#BALANCE#', $accountinfo['balance'], $message);
-        $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
-		$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-		break;
+        $department_smtp = $this->get_field_name(
+            'smtp_user',
+            'department',
+            array("id" => $department_id)
+        );
 
-		case 'account_postcharge':
-		$subject = str_replace('#REFILLBALANCE#', $accountinfo['refill_amount'], $subject);
-		$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-        $message = str_replace('#REFILLBALANCE#', $accountinfo['refill_amount'], $message);
-        $message = str_replace('#BALANCE#', $accountinfo['balance'], $message);
-        $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
-		$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-		break;
-		// END
+        if ($department_smtp != '') {
+            $settings_reply_email = $department_smtp;
+        }
+    } 
+    else {
+        $smtp_user = $this->get_field_name('value', 'system', array("name" => "smtp_user"));
 
-		case 'create_account':
-		$subject = str_replace('#COMPANY_NAME#', $company_name, $subject);
-		
-		$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-        $message = str_replace('#NUMBER#', $accountinfo['number'], $message);
-        $message = str_replace('#PASSWORD#', $accountinfo['password'], $message);
-        $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
-		$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-		break;
+        if ($smtp_user != '') {
+            if ($smtp_user == 'SMTP_USER_NAME') {
+                $settings_reply_email = $invoiceconf['emailaddress'];
+            } 
+            else {
+                $settings_reply_email = $smtp_user;
+            }
+        } 
+        else {
+            $this->CI->db->select('domain');
+            $domain_arr = (array) $this->CI->db->get_where("invoice_conf")->first_row();
 
+            $this->CI->db->where('domain', $_SERVER['HTTP_HOST']);
+            $this->CI->db->or_where("accountid", 1);
+            $this->CI->db->order_by("id", "asc");
+            $this->CI->db->limit(1);
 
-        case 'create_sip_device':
-		
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#USERNAME#', $accountinfo['number'], $message);
-                $message = str_replace('#PASSWORD#', $accountinfo['password'], $message);
-                $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
-				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-		break;
-		
-		case 'new_invoice':
-			$subject = str_replace('#INVOICE_NUMBER#',isset($accountinfo['invoice_number'])?$accountinfo['invoice_number']:'', $subject);
-			$subject = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:"", $accountinfo['currency_id'], $accountinfo['currency_id'], true,true),$subject);
-			$subject = str_replace('#INVOICE_DATE#', isset($accountinfo['generate_date'])?$accountinfo['generate_date']:"", $subject);
-			$subject = str_replace('#DUE_DATE#',isset($accountinfo['due_date'])?$accountinfo['due_date']:'', $subject);
-			
-			$message = str_replace('#INVOICE_DATE#', $this->convert_GMT_to('generate_date','invoices',isset($accountinfo['generate_date'])?$accountinfo['generate_date']:"", isset($accountinfo['timezone_id']) ? $accountinfo['timezone_id'] : ''), $message);
-			$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-			$message = str_replace('#INVOICE_NUMBER#', isset($accountinfo['invoice_number'])?$accountinfo['invoice_number']:'', $message);
-			$message = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:"", '', $accountinfo['currency_id'], true,true), $message);
-			$message = str_replace('#DUE_DATE#',isset($accountinfo['due_date'])?$accountinfo['due_date']:'', $message);
-			$message = str_replace("#COMPANY_PHONE#", $company_telephone, $message);
-			$sms_message = str_replace('#INVOICE_NUMBER#',isset($accountinfo['invoice_number'])?$accountinfo['invoice_number']:'', $sms_message);
-			$sms_message = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:"", '', $accountinfo['currency_id'], true,true), $sms_message);		
-			$sms_message = str_replace('#INVOICE_DATE#', $this->convert_GMT_to('generate_date','invoices',isset($accountinfo['generate_date'])?$accountinfo['generate_date']:"", isset($accountinfo['timezone_id']) ? $accountinfo['timezone_id'] : ''), $sms_message);
-			$sms_message = str_replace('#DUE_DATE#',isset($accountinfo['due_date'])?$accountinfo['due_date']:'', $sms_message);
+            $invoiceconf = (array) $this->CI->db->get_where("invoice_conf")->first_row();
+            $settings_reply_email = $invoiceconf['emailaddress'];
+        }
+    }
 
-			$alert_template = str_replace('#INVOICE_DATE#', isset($accountinfo['generate_date'])?$accountinfo['generate_date']:"", $alert_template);
-			$alert_template = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:"", '', '', true,true), $alert_template);
-			$alert_template = str_replace('#DUE_DATE#', isset($accountinfo['due_date'])?$accountinfo['due_date']:'', $alert_template);
-	        $alert_template = str_replace('#INVOICE_NUMBER#', isset($accountinfo['invoice_number'])?$accountinfo['invoice_number']:'', $alert_template);
-		break;
-        case 'low_balance':
-			    $subject     = str_replace('#NUMBER#', $accountinfo['number'], $subject);
-				$message = str_replace('#NAME#', $accountinfo['first_name'] , $message);
-				$message = str_replace('#BALANCE#', $accountinfo['balance'], $message);
-                $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
-				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-				$message = str_replace('#COMPANY_NAME#', $company_name, $message);
-		break;
-		case 'automated_report':
-			$subject = str_replace('#Report Name#', $accountinfo['subject_title'], $subject);
-			$subject = str_replace('#Interval Freq. of Email#', $accountinfo['interval_freq_of_email'], $subject);
-			$sms_message    = "";
-			$alert_template = "";
-			$message = str_replace('#Report Name#', $accountinfo['subject_title'], $message);
-			$message = str_replace('#Integer value#', $accountinfo['report_interval_days'], $message);
-			$message = str_replace('#Interval#', $accountinfo['report_interval_recurring'], $message);
-			$message = str_replace('#Interval Filter On#', $accountinfo['interval_filter_on'], $message);
-			if($filePath != '')
-			{
-				$today_date = gmdate('Y-m-d H:i:s');
-				$purge_date = common_model::$global_config['system_config']['automated_report_attachment_deleted'];
-				$last_date = date('Y-m-d' , strtotime("+ ".$purge_date." day"));
-				$filelink = $purge_date != -1 ? '<p>You can download Automated report from following link until '.$last_date.' </p>' : '<p>You can download Automated report from following link </p>';
-				$filelink .= '<a href="'.$filePath.'" target="_blank">'.$filePath.'</a>';
-				$message = $message.'<br/>'.$filelink;
-			}
-		break;
-		case 'schedule_report':
-	         	$subject = str_replace('#title#', $accountinfo['subject_title'], $subject);
-				$sms_message    = "";
-				$alert_template = "";
-				$attachment     = $accountinfo['attachment'];
-       break;
+    $company_name = $invoiceconf['company_name'];
+    $company_website = $invoiceconf['website'];
+    $company_telephone = $invoiceconf['telephone'];
+    
+    $account_parent_emails = $parent_id;
+//    $this->CI->flux_log->write_log('parent_accounts', json_encode($account_parent_emails));	
 
-       case 'ported_number':
-	         	$subject = str_replace('#user#', $accountinfo['first_name'], $subject);
-				$sms_message    = "";
-				$alert_template = "";
-				$attachment     = $accountinfo['attachment'];
-        break;
-        case 'ported_number_ftp_connect':
-	         	$subject = str_replace('#user#', $accountinfo['first_name'], $subject);
-				$sms_message    = "";
-				$alert_template = "";
-        break;
-                              
-            case 'signup_confirmation':
-		
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#OTP#', $accountinfo['number'], $message);
-                $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
-				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-            break;
+    $where = array('name' => $type);
+    $query = $this->CI->db_model->getSelect("*", "default_templates", $where);
+    $query = $query->result();
 
-            case 'new_password':
-			
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#PASSWORD#', $accountinfo['password'], $message);
-                $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
-				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-			
-           	break;
-           
-           	case 'reset_password':
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#PASSWORD#', $accountinfo['password'], $message);
-                $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
-				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-			
-           	break;		
+    $sms_message = $query[0]->sms_template;
+    $alert_template = $query[0]->alert_template;
+    $message = $query[0]->template;
+    $subject = $query[0]->subject;
 
-            case 'forgot_password_confirmation':
-		
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#OTP#', $accountinfo['number'], $message);
-                $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
-				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-            break;
+    $accountinfo['email'] = (
+        isset($accountinfo['notification_email']) && $accountinfo['notification_email'] != ''
+    ) ? $accountinfo['notification_email'] : $accountinfo['email'];
 
-            case 'invoice_due_reminder':
-                $subject = str_replace('#INVOICE_NUMBER#', $accountinfo['refillbalance'], $subject);
-		
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#INVOICE_NUMBER#', $accountinfo['number'], $message);
-                $message = str_replace('#INVOICE_DATE#', $accountinfo['password'], $message);
-                $message = str_replace('#DUE_DATE#', $accountinfo['number'], $message);
-                $message = str_replace('#AMOUNT#', $accountinfo['password'], $message);
-                $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
-				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-            break;
+    $useremail = $accountinfo['email'];
+    $cc_email_ids = $accountinfo['notification_email'];
 
-            case 'new_archive_table':
-                $subject = str_replace('#TABLE_NAME#', $accountinfo['refillbalance'], $subject);
-		
-				$message = str_replace('#TABLE_NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-            break;
+    $userdata = (array) $this->CI->db
+        ->get_where("accounts", array('email' => $useremail, 'status' => 0))
+        ->first_row();
 
-   	//case 'balance_tranfer':
-	// 	$subject = str_replace('#AMOUNT#', $accountinfo['refillbalance'], $subject);
-   	//  $subject = str_replace('#RECEIVER_ACCOUNT_NUMBER#', $accountinfo['number'], $subject);
-	// 	$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-   	// 	$message = str_replace('#AMOUNT#', $accountinfo['refillbalance'], $message);
-   	// 	$message = str_replace('#RECEIVER_ACCOUNT_NUMBER#', $accountinfo['number'], $message);
-   	// 	break;
-        case 'balance_transfer':
-			$subject = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:'',"","",true,true), $subject);
-			$subject = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:'', $subject);
-			$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+    $usermobile = (
+        isset($accountinfo['telephone_1']) && $accountinfo['telephone_1'] != ''
+    ) ? $accountinfo['telephone_1'] : $userdata['telephone_1'];
 
-			$message = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:'',"","",true,true), $message);
-			$message = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $message);
+    $message = html_entity_decode($message);
+    $message = str_replace("#COMPANY_EMAIL#", $settings_reply_email, $message);
+    $message = str_replace("#COMPANY_PHONE#", $company_telephone, $message);
+    $message = str_replace("#COMPANY_NAME#", $company_name, $message);
+    $sms_message = str_replace("#COMPANY_NAME#", $company_name, $sms_message);
+    $message = str_replace("#COMPANY_WEBSITE#", $company_website, $message);
+    $message = str_replace("</p>", "", $message);
 
-			$sms_message = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:'',"","",true,true), $sms_message);
-			$sms_message = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $sms_message);
+    if (isset($accountinfo['refill_amount']) && $accountinfo['refill_amount'] != "") {
+        $refillamount = $accountinfo['refill_amount'];
+    } 
+    else {
+        $refillamount = "0";
+    }
 
-			$alert_template = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:'',"","",true,true), $alert_template);
-			$alert_template = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $alert_template);
-		break;
-				
-		case 'customer_refill_balance':
-			$subject = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:'',"",$accountinfo['to_currency'],true,true), $subject);
-			$subject = str_replace('#SENDER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:'', $subject);
-			$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+    $sip_user_name = isset($accountinfo['sip_user_name']) && $accountinfo['sip_user_name'] != ""
+        ? $accountinfo['sip_user_name']
+        : '';
 
-			$message = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:'',"",$accountinfo['to_currency'],true,true), $message);
-			$message = str_replace('#SENDER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $message);
+    $callkit_token = isset($accountinfo['callkit_token']) && $accountinfo['callkit_token'] != ""
+        ? $accountinfo['callkit_token']
+        : '';
 
-			$sms_message = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:'',"",$accountinfo['to_currency'],true,true), $sms_message);
-			$sms_message = str_replace('#SENDER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $sms_message);		
+    $status_code = isset($accountinfo['status_code']) && $accountinfo['status_code'] != ""
+        ? $accountinfo['status_code']
+        : '';
 
-			$alert_template = str_replace('#AMOUNT#',$this->CI->common_model->calculate_currency(isset($accountinfo['amount'])?$accountinfo['amount']:'',"",$accountinfo['to_currency'],true,true), $alert_template);
-			$alert_template = str_replace('#SENDER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $alert_template);
-		break;
-
-			case 'product_purchase':
-				$accountinfo['total_price_amount'] = isset($accountinfo['quantity']) && $accountinfo['quantity'] != 0 ?$accountinfo['price'] * $accountinfo['quantity'] : (isset($accountinfo['price']) ?$accountinfo['price']:'' );
-                $subject = str_replace('#NAME#', $accountinfo['first_name'], $subject);
-                $subject = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $subject);
-				$subject = str_replace('#NUMBER#', $accountinfo['number'], $subject);
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $message);
-                $message = str_replace('#PRODUCT_CATEGORY#', $accountinfo['category_name'], $message);
-                $message = str_replace('#PAYMENT_METHOD#', $accountinfo['payment_by'], $message);
-				$message = str_replace('#PRODUCT_AMOUNT#', $accountinfo['total_price_amount'], $message);
-				$message = str_replace('#QUANTITY#', $accountinfo['quantity'], $message);
-				$message = str_replace('#TOTAL_PRICE#', $accountinfo['total_price'], $message);
-                $message = str_replace('#NEXT_BILL_DATE#', $accountinfo['next_billing_date'], $message);
-				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-            break;
-
-            case 'product_release';
-
-			$product_name = (isset($accountinfo['name'])) ? $accountinfo['name'] : (isset($accountinfo['product_name'])  ? $accountinfo['product_name'] : $product_name);
-
-			$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-			$message = str_replace('#PRODUCT_NAME#', $product_name, $message);
-			$message = str_replace('#NEXT_BILL_DATE#', isset($accountinfo['next_billing_date'])?$accountinfo['next_billing_date']:"", $message);
-			$message = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $message);
-
-			$sms_message = str_replace('#PRODUCT_NAME#',$product_name, $sms_message);
-			$sms_message = str_replace("#NEXT_BILL_DATE#", isset($accountinfo['next_billing_date'])?$accountinfo['next_billing_date']:"", $sms_message);
-			$sms_message = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:'', $sms_message);
-
-			$subject = str_replace('#PRODUCT_NAME#', $product_name, $subject);
+    switch ($type) {
+        case 'product_renewed':
+            $subject = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $subject);
             $subject = str_replace('#NUMBER#', $accountinfo['number'], $subject);
 
-			$subject = str_replace('#NEXT_BILL_DATE#',isset($accountinfo['next_billing_date'])?$accountinfo['next_billing_date']:"", $subject);
-			$subject = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $subject);
-
-			$alert_template = str_replace('#PRODUCT_NAME#',$product_name, $alert_template);
-			$alert_template = str_replace('#NEXT_BILL_DATE#',isset($accountinfo['next_billing_date'])?$accountinfo['next_billing_date']:"", $alert_template);
-			$alert_template = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number'])?$accountinfo['number']:"", $alert_template);
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $message);
+            $message = str_replace('#NEXT_BILL_DATE#', $accountinfo['next_billing_date'], $message);
+            $message = str_replace('#QUANTITY#', $accountinfo['quantity'], $message);
+            $message = str_replace(
+                '#TOTAL_PRICE#',
+                isset($accountinfo['quantity']) && $accountinfo['quantity'] != 0
+                    ? $accountinfo['price'] * $accountinfo['quantity']
+                    : $accountinfo['price'],
+                $message
+            );
+            $message = str_replace('#PRODUCT_AMOUNT#', $accountinfo['price'], $message);
             break;
 
-            case 'product_renewal_notice';
-
-                $subject = str_replace('#PRODUCT_NAME#', $accountinfo['product_name'], $subject);
-				$subject = str_replace('#NUMBER#', $accountinfo['number'], $subject);
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $message);
-                $message = str_replace('#NEXT_BILL_DATE#', $accountinfo['next_billing_date'], $message);
-                $message = str_replace('#PRODUCT_AMOUNT#', $accountinfo['price'], $message);
-				$message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
-
+        case 'account_refilled':
+            $subject = str_replace('#REFILLBALANCE#', $accountinfo['refill_amount'], $subject);
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#REFILLBALANCE#', $accountinfo['refill_amount'], $message);
+            $message = str_replace('#BALANCE#', $accountinfo['balance'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
             break;
 
-             case 'product_commission';
-				$subject = str_replace('#AMOUNT#', $accountinfo['amount'], $subject);
-				$subject = str_replace('#PRODUCT_NAME#', $accountinfo['product_name'], $subject);
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-				$message = str_replace('#AMOUNT#', $accountinfo['amount'], $message);
-                $message = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $message);
-                $message = str_replace('#BALANCE#', $accountinfo['balance'], $message);
-                $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+        case 'account_postcharge':
+            $subject = str_replace('#REFILLBALANCE#', $accountinfo['refill_amount'], $subject);
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#REFILLBALANCE#', $accountinfo['refill_amount'], $message);
+            $message = str_replace('#BALANCE#', $accountinfo['balance'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
             break;
 
-            case 'fraud_whitelisted_login';
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#THRESHOLD#.', $accountinfo['number'], $message);
-                $message = str_replace('#IP#', $accountinfo['password'], $message);
-                $message = str_replace('#COMPANY_NAME#', $company_name, $message);
-                break;
+        case 'create_account':
+            $subject = str_replace('#COMPANY_NAME#', $company_name, $subject);
 
-	     	case 'fraud_detection_notification':
-				$message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
-                $message = str_replace('#ACCOUNTCODE#', $accountinfo['number'], $message);
-                $message = str_replace('#REASON#', $accountinfo['password'], $message);
-                $message = str_replace('#COMPANY_NAME#', $company_name, $message);
-			break;
-			
-			case 'email_sent_support_ticket':
-				$system_config = common_model::$global_config['system_config'];
-				$ticket = $system_config['ticket_digits']; 
-				$useremail = strtolower($this->CI->common->get_field_name("email","accounts",array("id" => $accountinfo['customer_account_id'])));
-$cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email","accounts",array("id" => $accountinfo['customer_account_id'])));
-				//$cc_email_ids = 'suporte@flux.net.br';
-				//$cc_email_ids = isset($accountinfo['cc_email_ids']) ? $accountinfo['cc_email_ids'] : '';
-				$message = str_replace("#TICKET_ID#", sprintf('%0'.$ticket.'d', $accountinfo['ticket_number']), $message);
-				$message = str_replace("#REPLY_TYPE#", "Close", $message);
-				$message = str_replace("#NAME#", $this->CI->common->get_field_name_coma_new('first_name,last_name,number,company_name','accounts',$accountinfo['id']),$message);
-				$message = str_replace("#MESSAGE#", "" , $message);
-				$subject = str_replace("#TICKET_ID#", sprintf('%0'.$ticket.'d', $accountinfo['ticket_number']), $subject);
-				$subject = str_replace("#TICKET_SUBJECT#", $accountinfo['ticket_subject'],$subject);
-					
-			break;
-		}
-		if($subject == ""){
-				$subject = $query[0]->subject;
-				$subject = str_replace("#NAME#", $accountinfo['first_name'] . " " . $accountinfo['last_name'], $subject);
-				$subject = str_replace("#COMPANY_NAME#", $company_name, $subject);	
-		}
-			$account_id = (isset($accountinfo['last_id']) && $accountinfo['last_id'] != "") ? $accountinfo['last_id'] : $accountinfo['id'];
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#NUMBER#', $accountinfo['number'], $message);
+            $message = str_replace('#PASSWORD#', $accountinfo['password'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
 
-			if ($type == 'schedule_report') {
-				$account_id = 0;
-		    }
-			if ($type == 'email_sent_support_ticket') {
-				$account_id = $accountinfo['customer_account_id'];
-			}
-        	$reseller_id = $accountinfo['reseller_id'];
+        case 'create_sip_device':
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#USERNAME#', $accountinfo['number'], $message);
+            $message = str_replace('#PASSWORD#', $accountinfo['password'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
 
-			if($query[0]->is_email_enable == '1')
-			{
-				$accountinfo['email']='';
-				$subject='';
-				$message='';
-				$emailstatus = 2;
-			}else{
-				$emailstatus = 1;
-			}
-			if($query[0]->is_sms_enable == '1')
-			{
-				$usermobile='';
-				$sms_message='';				
-			}
-			if($query[0]->is_alert_enable == '1')
-			{
-				$sip_user_name     = '';
-				$callkit_token     = '';
-				$alert_template    = '';
-				$status_code       = '';
-			}	
-			if($query[0]->is_alert_enable == '0' || $query[0]->is_sms_enable == '0' || $query[0]->is_email_enable == '0')
-			{		
-				$last_id=$this->emailFunction($settings_reply_email, $useremail, $subject, $message,$alert_template,$usermobile,$sms_message,$company_name, $attachment, $account_id, $reseller_id,$sip_user_name,$callkit_token,$status_code,$type,$emailstatus,$cc_email_ids);
-				return $last_id;
-			} else {
-				return true;
-			}
-		
+        case 'new_invoice':
+            $subject = str_replace('#INVOICE_NUMBER#', isset($accountinfo['invoice_number']) ? $accountinfo['invoice_number'] : '', $subject);
+            $subject = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : "",
+                    $accountinfo['currency_id'],
+                    $accountinfo['currency_id'],
+                    true,
+                    true
+                ),
+                $subject
+            );
+            $subject = str_replace('#INVOICE_DATE#', isset($accountinfo['generate_date']) ? $accountinfo['generate_date'] : "", $subject);
+            $subject = str_replace('#DUE_DATE#', isset($accountinfo['due_date']) ? $accountinfo['due_date'] : '', $subject);
 
+            $message = str_replace(
+                '#INVOICE_DATE#',
+                $this->convert_GMT_to(
+                    'generate_date',
+                    'invoices',
+                    isset($accountinfo['generate_date']) ? $accountinfo['generate_date'] : "",
+                    isset($accountinfo['timezone_id']) ? $accountinfo['timezone_id'] : ''
+                ),
+                $message
+            );
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#INVOICE_NUMBER#', isset($accountinfo['invoice_number']) ? $accountinfo['invoice_number'] : '', $message);
+            $message = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : "",
+                    '',
+                    $accountinfo['currency_id'],
+                    true,
+                    true
+                ),
+                $message
+            );
+            $message = str_replace('#DUE_DATE#', isset($accountinfo['due_date']) ? $accountinfo['due_date'] : '', $message);
+            $message = str_replace("#COMPANY_PHONE#", $company_telephone, $message);
+
+            $sms_message = str_replace('#INVOICE_NUMBER#', isset($accountinfo['invoice_number']) ? $accountinfo['invoice_number'] : '', $sms_message);
+            $sms_message = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : "",
+                    '',
+                    $accountinfo['currency_id'],
+                    true,
+                    true
+                ),
+                $sms_message
+            );
+            $sms_message = str_replace(
+                '#INVOICE_DATE#',
+                $this->convert_GMT_to(
+                    'generate_date',
+                    'invoices',
+                    isset($accountinfo['generate_date']) ? $accountinfo['generate_date'] : "",
+                    isset($accountinfo['timezone_id']) ? $accountinfo['timezone_id'] : ''
+                ),
+                $sms_message
+            );
+            $sms_message = str_replace('#DUE_DATE#', isset($accountinfo['due_date']) ? $accountinfo['due_date'] : '', $sms_message);
+
+            $alert_template = str_replace('#INVOICE_DATE#', isset($accountinfo['generate_date']) ? $accountinfo['generate_date'] : "", $alert_template);
+            $alert_template = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : "",
+                    '',
+                    '',
+                    true,
+                    true
+                ),
+                $alert_template
+            );
+            $alert_template = str_replace('#DUE_DATE#', isset($accountinfo['due_date']) ? $accountinfo['due_date'] : '', $alert_template);
+            $alert_template = str_replace('#INVOICE_NUMBER#', isset($accountinfo['invoice_number']) ? $accountinfo['invoice_number'] : '', $alert_template);
+            break;
+
+        case 'low_balance':
+            $subject = str_replace('#NUMBER#', $accountinfo['number'], $subject);
+            $message = str_replace('#NAME#', $accountinfo['first_name'], $message);
+            $message = str_replace('#BALANCE#', $accountinfo['balance'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            $message = str_replace('#COMPANY_NAME#', $company_name, $message);
+            break;
+
+        case 'automated_report':
+            $subject = str_replace('#Report Name#', $accountinfo['subject_title'], $subject);
+            $subject = str_replace('#Interval Freq. of Email#', $accountinfo['interval_freq_of_email'], $subject);
+            $sms_message = "";
+            $alert_template = "";
+            $message = str_replace('#Report Name#', $accountinfo['subject_title'], $message);
+            $message = str_replace('#Integer value#', $accountinfo['report_interval_days'], $message);
+            $message = str_replace('#Interval#', $accountinfo['report_interval_recurring'], $message);
+            $message = str_replace('#Interval Filter On#', $accountinfo['interval_filter_on'], $message);
+
+            if ($filePath != '') {
+                $today_date = gmdate('Y-m-d H:i:s');
+                $purge_date = common_model::$global_config['system_config']['automated_report_attachment_deleted'];
+                $last_date = date('Y-m-d', strtotime("+ " . $purge_date . " day"));
+                $filelink = $purge_date != -1
+                    ? '<p>You can download Automated report from following link until ' . $last_date . ' </p>'
+                    : '<p>You can download Automated report from following link </p>';
+
+                $filelink .= '<a href="' . $filePath . '" target="_blank">' . $filePath . '</a>';
+                $message = $message . '<br/>' . $filelink;
+            }
+            break;
+
+        case 'schedule_report':
+            $subject = str_replace('#title#', $accountinfo['subject_title'], $subject);
+            $sms_message = "";
+            $alert_template = "";
+            $attachment = $accountinfo['attachment'];
+            break;
+
+        case 'ported_number':
+            $subject = str_replace('#user#', $accountinfo['first_name'], $subject);
+            $sms_message = "";
+            $alert_template = "";
+            $attachment = $accountinfo['attachment'];
+            break;
+
+        case 'ported_number_ftp_connect':
+            $subject = str_replace('#user#', $accountinfo['first_name'], $subject);
+            $sms_message = "";
+            $alert_template = "";
+            break;
+
+        case 'signup_confirmation':
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#OTP#', $accountinfo['number'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
+
+        case 'new_password':
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#PASSWORD#', $accountinfo['password'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
+
+        case 'reset_password':
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#PASSWORD#', $accountinfo['password'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $company_website, $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
+
+        case 'forgot_password_confirmation':
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#OTP#', $accountinfo['number'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
+
+        case 'invoice_due_reminder':
+            $subject = str_replace('#INVOICE_NUMBER#', $accountinfo['refillbalance'], $subject);
+
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#INVOICE_NUMBER#', $accountinfo['number'], $message);
+            $message = str_replace('#INVOICE_DATE#', $accountinfo['password'], $message);
+            $message = str_replace('#DUE_DATE#', $accountinfo['number'], $message);
+            $message = str_replace('#AMOUNT#', $accountinfo['password'], $message);
+            $message = str_replace('#COMPANY_WEBSITE#', $accountinfo['number'], $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
+
+        case 'new_archive_table':
+            $subject = str_replace('#TABLE_NAME#', $accountinfo['refillbalance'], $subject);
+            $message = str_replace('#TABLE_NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            break;
+
+        case 'balance_transfer':
+            $subject = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : '',
+                    "",
+                    "",
+                    true,
+                    true
+                ),
+                $subject
+            );
+            $subject = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : '', $subject);
+
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : '',
+                    "",
+                    "",
+                    true,
+                    true
+                ),
+                $message
+            );
+            $message = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : "", $message);
+
+            $sms_message = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : '',
+                    "",
+                    "",
+                    true,
+                    true
+                ),
+                $sms_message
+            );
+            $sms_message = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : "", $sms_message);
+
+            $alert_template = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : '',
+                    "",
+                    "",
+                    true,
+                    true
+                ),
+                $alert_template
+            );
+            $alert_template = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : "", $alert_template);
+            break;
+
+        case 'customer_refill_balance':
+            $subject = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : '',
+                    "",
+                    $accountinfo['to_currency'],
+                    true,
+                    true
+                ),
+                $subject
+            );
+            $subject = str_replace('#SENDER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : '', $subject);
+
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : '',
+                    "",
+                    $accountinfo['to_currency'],
+                    true,
+                    true
+                ),
+                $message
+            );
+            $message = str_replace('#SENDER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : "", $message);
+
+            $sms_message = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : '',
+                    "",
+                    $accountinfo['to_currency'],
+                    true,
+                    true
+                ),
+                $sms_message
+            );
+            $sms_message = str_replace('#SENDER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : "", $sms_message);
+
+            $alert_template = str_replace(
+                '#AMOUNT#',
+                $this->CI->common_model->calculate_currency(
+                    isset($accountinfo['amount']) ? $accountinfo['amount'] : '',
+                    "",
+                    $accountinfo['to_currency'],
+                    true,
+                    true
+                ),
+                $alert_template
+            );
+            $alert_template = str_replace('#SENDER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : "", $alert_template);
+            break;
+
+        case 'product_purchase':
+            $accountinfo['total_price_amount'] = isset($accountinfo['quantity']) && $accountinfo['quantity'] != 0
+                ? $accountinfo['price'] * $accountinfo['quantity']
+                : (isset($accountinfo['price']) ? $accountinfo['price'] : '');
+
+            $subject = str_replace('#NAME#', $accountinfo['first_name'], $subject);
+            $subject = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $subject);
+            $subject = str_replace('#NUMBER#', $accountinfo['number'], $subject);
+
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $message);
+            $message = str_replace('#PRODUCT_CATEGORY#', $accountinfo['category_name'], $message);
+            $message = str_replace('#PAYMENT_METHOD#', $accountinfo['payment_by'], $message);
+            $message = str_replace('#PRODUCT_AMOUNT#', $accountinfo['total_price_amount'], $message);
+            $message = str_replace('#QUANTITY#', $accountinfo['quantity'], $message);
+            $message = str_replace('#TOTAL_PRICE#', $accountinfo['total_price'], $message);
+            $message = str_replace('#NEXT_BILL_DATE#', $accountinfo['next_billing_date'], $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
+
+        case 'product_release':
+            $product_name = (isset($accountinfo['name']))
+                ? $accountinfo['name']
+                : (isset($accountinfo['product_name']) ? $accountinfo['product_name'] : $product_name);
+
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#PRODUCT_NAME#', $product_name, $message);
+            $message = str_replace('#NEXT_BILL_DATE#', isset($accountinfo['next_billing_date']) ? $accountinfo['next_billing_date'] : "", $message);
+            $message = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : "", $message);
+
+            $sms_message = str_replace('#PRODUCT_NAME#', $product_name, $sms_message);
+            $sms_message = str_replace("#NEXT_BILL_DATE#", isset($accountinfo['next_billing_date']) ? $accountinfo['next_billing_date'] : "", $sms_message);
+            $sms_message = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : '', $sms_message);
+
+            $subject = str_replace('#PRODUCT_NAME#', $product_name, $subject);
+            $subject = str_replace('#NUMBER#', $accountinfo['number'], $subject);
+            $subject = str_replace('#NEXT_BILL_DATE#', isset($accountinfo['next_billing_date']) ? $accountinfo['next_billing_date'] : "", $subject);
+            $subject = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : "", $subject);
+
+            $alert_template = str_replace('#PRODUCT_NAME#', $product_name, $alert_template);
+            $alert_template = str_replace('#NEXT_BILL_DATE#', isset($accountinfo['next_billing_date']) ? $accountinfo['next_billing_date'] : "", $alert_template);
+            $alert_template = str_replace('#RECEIVER_ACCOUNT_NUMBER#', isset($accountinfo['number']) ? $accountinfo['number'] : "", $alert_template);
+            break;
+
+        case 'product_renewal_notice':
+            $subject = str_replace('#PRODUCT_NAME#', $accountinfo['product_name'], $subject);
+            $subject = str_replace('#NUMBER#', $accountinfo['number'], $subject);
+
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $message);
+            $message = str_replace('#NEXT_BILL_DATE#', $accountinfo['next_billing_date'], $message);
+            $message = str_replace('#PRODUCT_AMOUNT#', $accountinfo['price'], $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
+
+        case 'product_commission':
+            $subject = str_replace('#AMOUNT#', $accountinfo['amount'], $subject);
+            $subject = str_replace('#PRODUCT_NAME#', $accountinfo['product_name'], $subject);
+
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#AMOUNT#', $accountinfo['amount'], $message);
+            $message = str_replace('#PRODUCT_NAME#', $accountinfo['name'], $message);
+            $message = str_replace('#BALANCE#', $accountinfo['balance'], $message);
+            $message = str_replace('#COMPANY_EMAIL#', $settings_reply_email, $message);
+            break;
+
+        case 'fraud_whitelisted_login':
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#THRESHOLD#.', $accountinfo['number'], $message);
+            $message = str_replace('#IP#', $accountinfo['password'], $message);
+            $message = str_replace('#COMPANY_NAME#', $company_name, $message);
+            break;
+
+        case 'fraud_detection_notification':
+            $message = str_replace('#NAME#', $accountinfo['first_name'] . " " . $accountinfo['last_name'], $message);
+            $message = str_replace('#ACCOUNTCODE#', $accountinfo['number'], $message);
+            $message = str_replace('#REASON#', $accountinfo['password'], $message);
+            $message = str_replace('#COMPANY_NAME#', $company_name, $message);
+            break;
+
+        case 'email_sent_support_ticket':
+            $system_config = common_model::$global_config['system_config'];
+            $ticket = $system_config['ticket_digits'];
+
+            $useremail = strtolower(
+                $this->CI->common->get_field_name(
+                    "email",
+                    "accounts",
+                    array("id" => $accountinfo['customer_account_id'])
+                )
+            );
+
+            $cc_email_ids = strtolower(
+                $this->CI->common->get_field_name(
+                    "notification_email",
+                    "accounts",
+                    array("id" => $accountinfo['customer_account_id'])
+                )
+            );
+
+            $message = str_replace("#TICKET_ID#", sprintf('%0' . $ticket . 'd', $accountinfo['ticket_number']), $message);
+            $message = str_replace("#REPLY_TYPE#", "Close", $message);
+            $message = str_replace(
+                "#NAME#",
+                $this->CI->common->get_field_name_coma_new(
+                    'first_name,last_name,number,company_name',
+                    'accounts',
+                    $accountinfo['id']
+                ),
+                $message
+            );
+            $message = str_replace("#MESSAGE#", "", $message);
+
+            $subject = str_replace("#TICKET_ID#", sprintf('%0' . $ticket . 'd', $accountinfo['ticket_number']), $subject);
+            $subject = str_replace("#TICKET_SUBJECT#", $accountinfo['ticket_subject'], $subject);
+            break;
     }
-  function emailFunction($from, $to, $subject, $message,$alert_template="",$usermobile="",$sms_message, $company_name = "", $attachment = "", $account_id, $reseller_id,$sip_user_name='',$callkit_token='',$status_code='',$type,$emailstatus = '',$cc_email_ids = '') {
+
+    if ($subject == "") {
+        $subject = $query[0]->subject;
+        $subject = str_replace("#NAME#", $accountinfo['first_name'] . " " . $accountinfo['last_name'], $subject);
+        $subject = str_replace("#COMPANY_NAME#", $company_name, $subject);
+    }
+
+    $account_id = (
+        isset($accountinfo['last_id']) && $accountinfo['last_id'] != ""
+    ) ? $accountinfo['last_id'] : $accountinfo['id'];
+
+    if ($type == 'schedule_report') {
+        $account_id = 0;
+    }
+
+    if ($type == 'email_sent_support_ticket') {
+        $account_id = $accountinfo['customer_account_id'];
+    }
+
+    $reseller_id = $accountinfo['reseller_id'];
+
+    if ($query[0]->is_email_enable == '1') {
+        $accountinfo['email'] = '';
+        $subject = '';
+        $message = '';
+        $emailstatus = 2;
+    } 
+    else {
+        $emailstatus = 1;
+    }
+
+    if ($query[0]->is_sms_enable == '1') {
+        $usermobile = '';
+        $sms_message = '';
+    }
+
+    if ($query[0]->is_alert_enable == '1') {
+        $sip_user_name = '';
+        $callkit_token = '';
+        $alert_template = '';
+        $status_code = '';
+    }
+
+    if (
+        $query[0]->is_alert_enable == '0' ||
+        $query[0]->is_sms_enable == '0' ||
+        $query[0]->is_email_enable == '0'
+    ) {
+        $last_id = $this->emailFunction(
+            $settings_reply_email,
+            $useremail,
+            $subject,
+            $message,
+            $alert_template,
+            $usermobile,
+            $sms_message,
+            $company_name,
+            $attachment,
+            $account_id,
+            $reseller_id,
+            $sip_user_name,
+            $callkit_token,
+            $status_code,
+            $type,
+            $emailstatus,
+            $cc_email_ids
+        );
+
+        return $last_id;
+    } 
+    else {
+        return true;
+    }
+}
+    function emailFunction($from, $to, $subject, $message,$alert_template="",$usermobile="",$sms_message, $company_name = "", $attachment = "", $account_id, $reseller_id,$sip_user_name='',$callkit_token='',$status_code='',$type,$emailstatus = '',$cc_email_ids = '') {
 
     			    $sms_message = '';
 					$alert_template = '';
@@ -2168,11 +2408,9 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			return $this->CI->timezone->display_GMT ( $date, 1, $timezone_id );
 		}
 	}
-
 	function convert_GMT_to_noChange($select = "", $table = "", $date, $timezone_id = '') {
 		return $date;
 	}
-
 	function convert_GMT($date) { 
 		return $this->CI->timezone->convert_to_GMT ($date );
 	}
@@ -2670,7 +2908,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		}
 		return $pricelist_arr;
 	}
-		function default_signup_login_type(){
+	function default_signup_login_type(){
 		$this->CI->db->select ( "id,name" );
 		$this->CI->db->where ( "reseller_id", 0 );
 		$login_type_result = $this->CI->db->get ( "permissions" )->result_array ();
@@ -2681,8 +2919,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		}
 		return $login_type_dropdown;
 	}
-	
-	
 	function outbound_fax() {
 		$status_array = array (
 				'0' => gettext ( 'Enable' ),
@@ -2811,15 +3047,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			$calltype=array('calltype'=>gettext("Call Type"));
 			$status_array=array_merge($status_array,$calltype);
 		}
-		return $status_array;
-	}
-	function set_summaryprovider_groupby($status = '') {
-		$status_array = array (
-				'' => gettext ( "--Select--" ),
-				'provider_id' => gettext ( 'Account' ),
-				'trunk_id' => gettext ( "Trunks" ),
-				'pattern' => gettext ( 'Code' ),
-		);
 		return $status_array;
 	}
 	function get_currency_info() {
@@ -2982,6 +3209,12 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 				'accountid' => $id
 		) );
 		$this->delete_data ( 'mail_details', array (
+				'accountid' => $id
+		) );
+		$this->delete_data ( 'accounts_emails', array (
+				'accountid' => $id
+		) );
+		$this->delete_data ( 'domains_to_accounts', array (
 				'accountid' => $id
 		) );
 		$this->update_data ( 'dids', array (
@@ -3293,11 +3526,11 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	function get_sipinfo_array(){
 		return array("Random"=>"Random");
 	}
-  function default_system_type() {
+    function default_system_type() {
         $option_array = array('0' => gettext('Half Year'), '1' => gettext('Year'));
         return $option_array;
     }
-  function set_year_dropdown($type = '') {
+    function set_year_dropdown($type = '') {
 	if($type != ''){
 		$type = $type."_archive";
 	}
@@ -3315,7 +3548,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
         }
         return $status_array;
     }
-  function get_did_destination($select = "", $table = "", $id){ 
+    function get_did_destination($select = "", $table = "", $id){ 
 		$name='';
 		if($this->CI->db->table_exists('pbx_ringgroup') && $this->CI->db->table_exists('tbl_conference_specification') && $this->CI->db->table_exists('tbl_ivr_specification')) {
 			$accountinfo = $this->CI->session->userdata ( 'accountinfo' );
@@ -3359,7 +3592,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$reseller_id = $accountinfo['type'] == 1 || $accountinfo['type'] ==5 ?  $accountinfo['id']: 0 ;
         	return $this->CI->db_model->build_dropdown('id,name', 'sms_pricelists',array("status"=>0,"reseller_id"=>$reseller_id));
     	}
-  function pin_generate($size = '', $field = '', $tablename = ''){
+    function pin_generate($size = '', $field = '', $tablename = ''){
 		if ($tablename != '') {
 			$accounttype_array = array ();
 			$uname = rand ( pow ( 10, $size - 1 ), pow ( 10, $size ) - 1 );
@@ -3402,7 +3635,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			}
 				return $drp_value;
 		}
-  function get_reseller_info_company_profile(){
+    function get_reseller_info_company_profile(){
 		$accountinfo = $this->CI->session->userdata ( 'accountinfo' );
 		$logintype = $this->CI->session->userdata('logintype');
 		if($logintype == 1)
@@ -3834,9 +4067,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$permission_array['login_type'] = $accountinfo['type'];
 		return $permission_array;
 	}
-	function permission_login_type_old($select = "", $table = "", $status) {
-		return ($status == 0) ? "Admin" : "Reseller";
-	}
 	function permission_login_type($select = "", $table = "", $entity_type) {
 /*	-1 Super
 	0 Cliente
@@ -4119,7 +4349,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$drop_down .= '</select>';
 		return $drop_down;
   }
-  function ipsettigs_account_number_icon($select = "", $table = "", $number) {
+    function ipsettigs_account_number_icon($select = "", $table = "", $number) {
 		$return_value = '';
 		$where = array (
 				'number' => $number
@@ -4280,7 +4510,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
         }
         return $output;
     }
-  function get_field_name_country_camel($select, $table, $where) {
+    function get_field_name_country_camel($select, $table, $where) {
 		$timezone_name = $where;
 		if (is_array ( $where )) {
 			$where = $where;
@@ -4390,6 +4620,193 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 				'single' => gettext ( 'Single' ),				
 				'multiple' => gettext ( 'Multiple' ),
 				'range' => gettext ( 'Range' )
+		);
+		return $status_array;
+	}
+	function set_customer_type($status = '') {
+		$status_array = array (
+				'0' => gettext ( 'Física' ),
+				'1' => gettext ( 'Jurídica' )
+		);
+		return $status_array;
+	}
+	function set_channels_type($status = '') {
+		$status_array = array (
+				'0' => gettext ( 'Limitado' ),
+				'1' => gettext ( 'Ilimitado' )
+		);
+		return $status_array;
+	}
+	function get_parent_account(){
+			 
+			 $parent_info    = $this->CI->db_model->getSelect("*","accounts",array("type"=>0,"deleted"=>0,"status"=>0));
+			 $drp_value[0] = gettext("--Select--");
+			 if($parent_info->num_rows > 0) {
+			    $parent_data = $parent_info->result_array();
+				 foreach($parent_data as $k =>$parent) {
+//					$drp_value[0] = gettext("--Select--");
+					if(isset($parent['company_name']) && $parent['company_name'] != ''){
+						$drp_value[$parent['id']] = $parent['company_name'].' '.'('.$parent['number'].')';
+					}
+					else{
+						$drp_value[$parent['id']] = $parent['first_name'].' '.$parent['last_name'].'('.$parent['number'].')';
+					}
+				 }	
+			} 
+			 else {
+					//$drp_value[0]="Admin";
+			}
+				return $drp_value;
+		}
+	function set_account_location($status = '') {
+		$status_array = array (
+				'0' => gettext ( 'National' ),
+				'1' => gettext ( 'International' )
+		);
+		return $status_array;
+	}
+	function parent_select_value($select, $table, $id_where = '') {
+		$select_params = explode ( ',', $select );
+		
+		if ($id_where != '') {
+			$where = array (
+					"id" => $id_where
+			);
+		}
+		$select_params = explode ( ',', $select );
+		if(isset($select_params[3]) && $select_params[3] != ''){
+			$cnt_str = " $select_params[3],' ','(',$select_params[2],')' ";
+		}
+		else{
+			$cnt_str = " $select_params[0],' ',$select_params[1],' ','(',$select_params[2],')' ";
+		}
+		$select = $select_params[3];
+		$drp_array = $this->CI->db_model->getSelect ( $select, $table, $where );
+		$drp_array = $drp_array->result ();
+		if(empty($drp_array[0]->company_name)){
+			$cnt_str = " $select_params[0],' ',$select_params[1],' ','(',$select_params[2],')' ";
+		}
+		$select = "concat($cnt_str) as $select_params[2] ";
+		$drp_array = $this->CI->db_model->getSelect ( $select, $table, $where );
+		$drp_array = $drp_array->result ();
+		if (isset ( $drp_array [0] ))
+			return $drp_array [0]->{$select_params [2]};
+		else
+			return '--';
+	}
+    function set_summarycustomer_groupby_new($status = '') {
+        $accountinfo = $this->CI->session->userdata ( 'accountinfo' );
+        
+        $status_array = array (
+                '' => gettext ( "--Select--" ),
+                'accountid' => gettext ( 'Account' ),
+                'pattern' => gettext ( 'Code' ),
+                'package_id' => gettext ( "Package" ),
+                'sip_user'=>gettext("SIP User"),
+                'call_direction'=>gettext("Direction"),				
+        );
+        if($accountinfo['type'] == -1 || $accountinfo['type'] == 2)
+        {
+            $trunk=array('trunk_id'=>gettext("Trunk"));
+            $status_array=array_merge($status_array,$trunk);
+            $calltype=array('calltype'=>gettext("Call Type"));
+            $status_array=array_merge($status_array,$calltype);
+            $carrier=array('carrier_id'=>gettext("Carrier"));
+            $status_array=array_merge($status_array,$carrier);
+        }
+    
+}
+    function set_summaryprovider_groupby($status = '') {
+        $status_array = array (
+                '' => gettext ( "--Select--" ),
+                'provider_id' => gettext ( 'Account' ),
+                'trunk_id' => gettext ( "Trunks" ),
+                'pattern' => gettext ( 'Code' ),
+        );
+        return $status_array;
+    }
+    function set_summarycarrier_groupby($status = '') {
+        $status_array = array (
+                '' => gettext ( "--Select--" ),
+                'carrier_id' => gettext ( 'Carrier' ),
+                'trunk_id' => gettext ( "Trunks" ),
+                'pattern' => gettext ( 'Code' ),
+        );
+        return $status_array;
+    }
+    function set_cycle_frequency($status = '') {
+    	$status_array = array (
+    			'0' => gettext ( 'Mensal' ),
+    			'1' => gettext ( 'Quinzenal' ),
+    			'2' => gettext ( 'Semanal' ),
+    			'3' => gettext ( 'Diário' )
+    	);
+    	return $status_array;
+    }
+    function get_cycle_frequency($select = "", $table = "", $row) {
+    	$map = array (
+    			'0' => gettext ( 'Mensal' ),
+    			'1' => gettext ( 'Quinzenal' ),
+    			'2' => gettext ( 'Semanal' ),
+    			'3' => gettext ( 'Diário' )
+    	);
+    	$val = is_array($row) ? $row['cycle_frequency'] : $row;
+    	return isset($map[$val]) ? $map[$val] : '';
+    }
+    function get_yes_no($select = "", $table = "", $status) {
+    	return ($status == 1) ? gettext('Yes') : gettext('No');
+    }
+    function get_yes_no1(){
+    
+    	$status_array = array (
+    			'0' => gettext ( 'No' ),
+    			'1' => gettext ( 'Yes' ),
+    	);
+    	return $status_array;
+    }
+    function block_type_status($status='') {
+		$status_array = array (
+				'0' => gettext ( 'Disabled' ),
+				'1' => gettext ( 'Outbound Calls' ),
+				'2' => gettext ( 'Total' )
+		);
+		return $status_array;
+	}
+	function set_block_type_status($status = '') {
+		$status_array = array (
+				'0' => gettext ( 'Disabled' ),
+				'1' => gettext ( 'Outbound Calls' ),
+				'2' => gettext ( 'Total' )
+		);
+		return $status_array;
+	}
+	function set_cycle_status(){
+			 
+			 $cycle_info    = $this->CI->db_model->getSelect("*","billing_cycles",array("status"=>0));
+			 $drp_value[0] = gettext("--Select--");
+			 if($cycle_info->num_rows > 0) {
+			    $cycle_data = $cycle_info->result_array();
+				 foreach($cycle_data as $k =>$cycle) {
+//					$drp_value[0] = gettext("--Select--");
+					if(isset($cycle['cycle_name']) && $cycle['cycle_name'] != ''){
+						$drp_value[$cycle['id']] = $cycle['cycle_name'].' '.'('.$cycle['billing_cycle_description'].')';
+					}
+					else{
+						$drp_value[$cycle['id']] = $cycle['cycle_name'].' '.'('.$cycle['billing_cycle_description'].')';
+					}
+				 }	
+			} 
+			 else {
+					//$drp_value[0]="Admin";
+			}
+				return $drp_value;
+		}
+	function set_status_carrier($status = '') {
+		$status_array = array (
+				'none' => gettext ( 'None' ),
+				'caller_id' => gettext ( 'Caller ID' ),
+				'destination_number' => gettext ( 'Destination Number' ),
+				'both' => gettext ( 'Both' )
 		);
 		return $status_array;
 	}

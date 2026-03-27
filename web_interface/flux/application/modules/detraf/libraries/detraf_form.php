@@ -1,6 +1,6 @@
 <?php
 // ##############################################################################
-// Flux Telecom - Unindo pessoas e neg—cios
+// Flux Telecom - Unindo pessoas e negócios
 //
 // Copyright (C) 2026 Flux Telecom
 // Daniel Paixao <daniel@flux.net.br>
@@ -41,38 +41,34 @@ class Detraf_form extends common
 
         $form[gettext('Pesquisa')] = array(
             array(
-                gettext('Data Início'),
-                'INPUT',
-                array(
-                    'name'  => 'data_inicio',
-                    'id'    => 'detraf_from_date',
-                    'size'  => '20',
-                    'class' => 'text field',
-                    'value' => isset($session_info['data_inicio'])
-                               ? $session_info['data_inicio']
-                               : date('Y-m-01') . ' 00:00:00',
-                ),
-                '',
-                'tOOL TIP',
-                '',
-                'start_date[start_date-date]'
+            	gettext('Data Início'),
+            	'INPUT',
+            	array(
+            		'name' => 'data_inicio',
+            		'',
+            		'size'  => '20',
+            		'class' => "text field",
+            		'id'    => 'detraf_from_date',
+            	),
+            	'',
+            	'tOOL TIP',
+            	'',
+            	'data_inicio[data_inicio-date]',
             ),
             array(
-                gettext('Data Fim'),
-                'INPUT',
-                array(
-                    'name'  => 'data_fim',
-                    'id'    => 'detraf_to_date',
-                    'size'  => '20',
-                    'class' => 'text field',
-                    'value' => isset($session_info['data_fim'])
-                               ? $session_info['data_fim']
-                               : date('Y-m-t') . ' 23:59:59',
-                ),
-                '',
-                'tOOL TIP',
-                '',
-                'end_date[end_date-date]'
+            	gettext('Data Fim'),
+            	'INPUT',
+            	array(
+            		'name' => 'data_fim',
+            		'',
+            		'size'  => '20',
+            		'class' => "text field",
+            		'id'    => 'detraf_to_date',
+            	),
+            	'',
+            	'tOOL TIP',
+            	'',
+            	'data_fim[data_fim-date]',
             ),
             array(
                 gettext('Operadora (EOT Devedora)'),
@@ -81,15 +77,34 @@ class Detraf_form extends common
                 '',
                 '',
                 'tOOL TIP',
-                'Selecione a operadora',
-                'cd_eot',
-                'cd_eot,nm_grupo_holding',
-                'eot_operadoras',
-                'build_dropdown',
-                '',
-                array()
+                'Please Enter account number',
+                'id',
+                'eot,nome_fantasia,holding',
+                'eot_anexo_5',
+                'build_concat_eot_select_dropdown',
+                'where_arr',
+                array(
+                    "nome_fantasia <>" => ""
+                )
             ),
             array(
+                gettext('Operadora (EOT Credora)'),
+                'eot_credora',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Enter account number',
+                'id',
+                'eot,nome_fantasia,holding',
+                'eot_anexo_5',
+                'build_concat_eot_select_dropdown',
+                'where_arr',
+                array(
+                    "nome_fantasia <>" => ""
+                )
+            ),
+           /* array(
                 gettext('EOT Credora (sua operadora)'),
                 'eot_credora',
                 'INPUT',
@@ -104,28 +119,28 @@ class Detraf_form extends common
                 '',
                 'tOOL TIP',
                 ''
-            ),
+            ),*/
             array('', 'HIDDEN', 'ajax_search',    '1', '', '', ''),
             array('', 'HIDDEN', 'advance_search', '1', '', '', ''),
         );
 
-        $form['button_search'] = array(
-            'name'    => 'action',
-            'id'      => 'detraf_search_btn',
-            'content' => gettext('Pesquisar'),
-            'value'   => 'save',
-            'type'    => 'button',
-            'class'   => 'btn btn-success float-right'
-        );
+		$form['button_search'] = array(
+			'name'    => 'action',
+			'id'      => "detraf_search_btn",
+			'content' => gettext('Search'),
+			'value'   => 'save',
+			'type'    => 'button',
+			'class'   => 'btn btn-success float-right',
+		);
 
-        $form['button_reset'] = array(
-            'name'    => 'action',
-            'id'      => 'id_reset',
-            'content' => gettext('Limpar'),
-            'value'   => 'cancel',
-            'type'    => 'reset',
-            'class'   => 'btn btn-secondary float-right mx-2'
-        );
+		$form['button_reset'] = array(
+			'name'    => 'action',
+			'id'      => "id_reset",
+			'content' => gettext('Clear'),
+			'value'   => 'cancel',
+			'type'    => 'reset',
+			'class'   => 'btn btn-secondary float-right mx-2',
+		);
 
         return $form;
     }

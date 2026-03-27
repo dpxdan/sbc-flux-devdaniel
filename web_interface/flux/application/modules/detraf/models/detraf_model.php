@@ -1,6 +1,6 @@
 <?php
 // ##############################################################################
-// Flux Telecom - Unindo pessoas e neg—cios
+// Flux Telecom - Unindo pessoas e negócios
 //
 // Copyright (C) 2026 Flux Telecom
 // Daniel Paixao <daniel@flux.net.br>
@@ -29,25 +29,21 @@ class Detraf_model extends CI_Model
         $this->load->library('flux_log');
     }
 
-    function get_detraf_report_list(
-    $flag,
-    $start        = 0,
-    $limit        = 0,
-    $data_inicio  = '',
-    $data_fim     = '',
-    $eot_devedora = '',
-    $eot_credora  = '',
-    $export       = false
-) {
+    function get_detraf_report_list($flag, $start = 0, $limit = 0, $data_inicio = '', $data_fim = '', $eot_devedora = '', $eot_credora  = '', $export = false) 
+    {
     if (empty($data_inicio)) $data_inicio = date('Y-m-01');
     if (empty($data_fim))    $data_fim    = date('Y-m-t');
 
     $dt_inicio_esc = $this->db->escape($data_inicio);
     $dt_fim_esc    = $this->db->escape($data_fim);
 
-    $eot_filter = !empty($eot_devedora)
-        ? 'AND c.carrier_eot = ' . $this->db->escape($eot_devedora)
-        : '';
+    $eot_filter = '';
+    if (!empty($eot_devedora)) {
+        $eot_filter .= ' AND c.carrier_eot = ' . $this->db->escape($eot_devedora);
+    }
+    if (!empty($eot_credora)) {
+        $eot_filter .= "\n          AND (\n              (c.call_direction = 'outbound' AND COALESCE(NULLIF(ea.carrier_eot,''),'') = " . $this->db->escape($eot_credora) . ")\n              OR\n              (c.call_direction = 'inbound'  AND c.carrier_eot = " . $this->db->escape($eot_credora) . ")\n          )";
+    }
 
     $grupo_horario_expr = "
         CASE
@@ -58,26 +54,22 @@ class Detraf_model extends CI_Model
 
     $sql = "
         SELECT
-            -- EOT Credora: outbound = lado A (caller_carrier_eot via carrier_routing)
-            --              inbound  = lado B (c.carrier_eot)
             CASE
                 WHEN c.call_direction = 'outbound' THEN COALESCE(NULLIF(ea.carrier_eot,''), '')
                 ELSE                                    COALESCE(NULLIF(c.carrier_eot,''),  '')
             END AS `EOT Credora`,
             CASE
-                WHEN c.call_direction = 'outbound' THEN COALESCE(NULLIF(eo_c.nm_grupo_holding,''), '')
-                ELSE                                    COALESCE(NULLIF(eo_c2.nm_grupo_holding,''), '')
+                WHEN c.call_direction = 'outbound' THEN COALESCE(NULLIF(eo_c.holding,''), '')
+                ELSE                                    COALESCE(NULLIF(eo_c2.holding,''), '')
             END AS `Operadora Credora`,
 
-            -- EOT Devedora: outbound = lado B (c.carrier_eot)
-            --               inbound  = lado A (caller_carrier_eot via carrier_routing)
             CASE
                 WHEN c.call_direction = 'outbound' THEN COALESCE(NULLIF(c.carrier_eot,''),  '')
                 ELSE                                    COALESCE(NULLIF(ea.carrier_eot,''), '')
             END AS `EOT Devedora`,
             CASE
-                WHEN c.call_direction = 'outbound' THEN COALESCE(NULLIF(eo_d.nm_grupo_holding,''), '')
-                ELSE                                    COALESCE(NULLIF(eo_d2.nm_grupo_holding,''), '')
+                WHEN c.call_direction = 'outbound' THEN COALESCE(NULLIF(eo_d.holding,''), '')
+                ELSE                                    COALESCE(NULLIF(eo_d2.holding,''), '')
             END AS `Operadora Devedora`,
 
             DATE_FORMAT(CONVERT_TZ(c.callstart,'+00:00','-03:00'),'%Y%m') AS `Referência`,
@@ -95,7 +87,6 @@ class Detraf_model extends CI_Model
 
         FROM cdrs c
 
-        -- Lado A: único JOIN restante — carrier_routing, 514 linhas, sem cadup
         LEFT JOIN (
             SELECT carrier_id, MAX(carrier_eot) AS carrier_eot
             FROM carrier_routing
@@ -103,12 +94,10 @@ class Detraf_model extends CI_Model
             GROUP BY carrier_id
         ) ea ON ea.carrier_id = c.caller_carrier_id
 
-        -- Nomes via eot_operadoras — outbound
-        LEFT JOIN eot_operadoras eo_c  ON eo_c.cd_eot  = ea.carrier_eot   -- credora outbound = lado A
-        LEFT JOIN eot_operadoras eo_d  ON eo_d.cd_eot  = c.carrier_eot    -- devedora outbound = lado B
-        -- Nomes via eot_operadoras — inbound (lados invertidos)
-        LEFT JOIN eot_operadoras eo_c2 ON eo_c2.cd_eot = c.carrier_eot    -- credora inbound = lado B
-        LEFT JOIN eot_operadoras eo_d2 ON eo_d2.cd_eot = ea.carrier_eot   -- devedora inbound = lado A
+        LEFT JOIN eot_anexo_5 eo_c  ON eo_c.eot  = ea.carrier_eot
+        LEFT JOIN eot_anexo_5 eo_d  ON eo_d.eot  = c.carrier_eot
+        LEFT JOIN eot_anexo_5 eo_c2 ON eo_c2.eot = c.carrier_eot
+        LEFT JOIN eot_anexo_5 eo_d2 ON eo_d2.eot = ea.carrier_eot
 
         WHERE c.callstart  >= {$dt_inicio_esc}
           AND c.callstart  <  {$dt_fim_esc}
@@ -143,31 +132,36 @@ class Detraf_model extends CI_Model
         'eot_credora'  => $eot_credora,
     )));
 
+    if (!$flag) {
+        $count_result = $this->db->query("SELECT COUNT(*) AS total FROM ({$sql}) _count");
+        if (!$count_result) {
+        $this->flux_log->write_log('get_detraf_report_list_error', json_encode($this->db->error()));
+            return 0;
+    }
+        return (int)$count_result->row()->total;
+    }
+
+    if (!$export && (int)$limit > 0) {
+        $sql .= ' LIMIT ' . (int)$start . ', ' . (int)$limit;
+    }
+
     $result = $this->db->query($sql);
 
     if (!$result) {
         $this->flux_log->write_log('get_detraf_report_list_error', json_encode($this->db->error()));
-        return $flag ? false : 0;
+        return false;
     }
 
-    $all_rows = $result->result_array();
-
-    if (!$flag) return count($all_rows);
-
-    if (!$export && (int)$limit > 0) {
-        return $this->_result_to_object(array_slice($all_rows, (int)$start, (int)$limit));
-    }
-
-    return $this->_result_to_object($all_rows);
+    return $result;
 }
 
     function get_carrier_list()
     {
         $result = $this->db->query(
-            "SELECT DISTINCT vc.eot, vc.nomePrestadora
-             FROM view_carriers vc
-             WHERE vc.eot IS NOT NULL AND vc.eot <> ''
-             ORDER BY vc.nomePrestadora ASC, vc.eot ASC"
+            "SELECT DISTINCT eot, nome_fantasia as nomePrestadora
+             FROM eot_anexo_5
+             WHERE eot IS NOT NULL AND eot <> '' AND nome_fantasia <> ''
+             ORDER BY nomePrestadora ASC, eot ASC"
         );
 
         if (!$result || $result->num_rows() === 0) {
@@ -232,7 +226,11 @@ class Detraf_model extends CI_Model
     
     function add_email($add_array)
     {
-        $this->db->insert("mail_details", $add_array);
+        $this->db->insert('mail_details', $add_array);
+        if ($this->db->affected_rows() < 1) {
+            $this->flux_log->write_log('add_email_error', json_encode($this->db->error()));
+            return false;
+        }
         return true;
     }
     
@@ -243,6 +241,8 @@ class Detraf_model extends CI_Model
     $eots_credora  = array_unique(array_filter(array_column($rows, 'eot_credora')));
     $eots_devedora = array_unique(array_filter(array_column($rows, 'eot_devedora')));
     $referencias   = array_unique(array_filter(array_column($rows, 'referencia')));
+
+        $this->db->trans_start();
 
     $this->db->insert('detraf_import_batch', array(
         'batch_id'     => $batch_id,
@@ -258,6 +258,13 @@ class Detraf_model extends CI_Model
     foreach (array_chunk($rows, 100) as $chunk) {
         $this->db->insert_batch('detraf_import', $chunk);
     }
+
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === false) {
+            $this->flux_log->write_log('save_import_batch_error', 'batch_id=' . $batch_id);
+            return false;
+        }
 
     return true;
 }
@@ -365,8 +372,8 @@ class Detraf_model extends CI_Model
                 END AS eot_devedora,
                 DATE_FORMAT(CONVERT_TZ(c.callstart,'+00:00','-03:00'),'%Y%m') AS referencia,
                 CASE
-                    WHEN c.call_direction = 'inbound'  THEN 'SPO.IB'
-                    WHEN c.call_direction = 'outbound' THEN 'SPO.CO'
+                    WHEN c.call_direction = 'inbound'  THEN 'SPO.CO'
+                    WHEN c.call_direction = 'outbound' THEN 'SPO.IB'
                     ELSE 'OUTRO'
                 END AS poi,
                 {$grupo_horario_expr} AS grupo_horario,

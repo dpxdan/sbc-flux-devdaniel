@@ -1,6 +1,6 @@
 <?php
 // ##############################################################################
-// Flux Telecom - Unindo pessoas e neg—cios
+// Flux Telecom - Unindo pessoas e negócios
 //
 // Copyright (C) 2026 Flux Telecom
 // Daniel Paixao <daniel@flux.net.br>
@@ -35,6 +35,8 @@ class Detraf extends MX_Controller
         $this->load->library('csvreader');
         $this->load->library('flux/email_lib');
         $this->load->library('flux_log');
+        $this->load->library('fpdf');
+        $this->load->library('pdf');
 
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
@@ -177,7 +179,7 @@ class Detraf extends MX_Controller
         array_to_csv($outbound_array, $filename);
     }
 
-    function detraf_export_cdr_pdf()
+    function detraf_export_cdr_pdf_old()
     {
         $search_arr = $this->session->userdata('detraf_export');
         if (empty($search_arr)) {
@@ -195,8 +197,8 @@ class Detraf extends MX_Controller
 
         $outbound_array = array();
 
-        $this->load->library('fpdf');
-        $this->load->library('pdf');
+//        $this->load->library('fpdf');
+//        $this->load->library('pdf');
         $this->fpdf = new PDF('P', 'pt');
         $this->fpdf->initialize('P', 'mm', 'A4');
         $this->fpdf->tablewidths = array(15, 45, 15, 45, 18, 18, 18, 12, 12, 18, 18, 18);
@@ -255,6 +257,77 @@ class Detraf extends MX_Controller
                   . '.pdf';
 
         $this->fpdf->Output($filename, 'D');
+    }
+    
+    function detraf_export_cdr_pdf()
+    {
+        $query = $this->detraf_model->get_detraf_report_list(true, '', '', false);
+        $outbound_array = array();
+        $this->load->library('fpdf');
+        $this->load->library('pdf');
+        $this->fpdf = new PDF('P', 'pt');
+        $this->fpdf->initialize('P', 'mm', 'A4');
+        $this->fpdf->tablewidths = array(
+            20,
+            30,
+            20,
+            20,
+            20,
+            20,
+            20,
+            20,
+            20,
+            20,
+            20,
+            20
+        );
+        $outbound_array[] = array(
+            gettext('EOT Credora'),
+            gettext('Operadora Credora'),
+            gettext('EOT Devedora'),
+            gettext('Operadora Devedora'),
+            gettext('Referência'),
+            gettext('Período Tráfego'),
+            gettext('POI'),
+            gettext('Tipo Rel.'),
+            gettext('Descritor'),
+            gettext('Grupo Horário'),
+            gettext('Chamadas'),
+            gettext('Minutos')
+        );
+        if ($query->num_rows() > 0) {
+    
+            foreach ($query->result_array() as $row) {
+                $outbound_array[] = array(
+                    $row['EOT Credora'],
+                    $row['Operadora Credora'],
+                    $row['EOT Devedora'],
+                    $row['Operadora Devedora'],
+                    $row['Referência'],
+                    $row['Período Tráfego'],
+                    $row['POI'],
+                    $row['Tipo Rel.'],
+                    $row['Descritor'],
+                    $row['Grupo Horário'],
+                    $row['Chamadas'],
+                    $row['Minutos'],
+                );
+            }
+        }
+        $this->fpdf->AliasNbPages();
+        $this->fpdf->AddPage();
+    
+        $this->fpdf->SetFont('Arial', '', 15);
+        $this->fpdf->SetXY(60, 5);
+        $this->fpdf->Cell(100, 10, "Detraf Report " . date('Y-m-d'));
+    
+        $this->fpdf->SetY(20);
+        $this->fpdf->SetFont('Arial', '', 7);
+        $this->fpdf->SetFillColor(255, 255, 255);
+        $this->fpdf->lMargin = 2;
+    
+        $dimensions = $this->fpdf->export_pdf($outbound_array, "7");
+        $this->fpdf->Output('DETRAF_' . date("Y-m-d") . '.pdf', "D");
     }
 
     function send_email()
@@ -319,10 +392,23 @@ class Detraf extends MX_Controller
                 );
             }
         }
+        if (empty($search_arr['eot_credora'])) {
+        $search_arr['eot_credora'] = $search_arr['eot_devedora'];
+        } 
+        else {
+        $search_arr['eot_credora'] = $search_arr['eot_credora'];
 
-        $filename    = 'DETRAF_' . $search_arr['eot_credora'] . '_'
-                     . str_replace('-', '', $search_arr['data_inicio']) . '_'
-                     . str_replace('-', '', $search_arr['data_fim']) . '.csv';
+        }
+        $filename = sprintf(
+            'DETRAF_%s_%s_%s.csv',
+            $search_arr['eot_credora'],
+            substr($search_arr['data_inicio'], 0, 10),
+            substr($search_arr['data_fim'], 0, 10)
+        );
+
+        $filename = str_replace('-', '', $filename);
+        $this->flux_log->write_log('search_arr', json_encode($search_arr));
+        $this->flux_log->write_log('filename', json_encode($filename));
 
         $attach_path = getcwd() . '/attachments/' . $filename;
 
@@ -409,17 +495,61 @@ class Detraf extends MX_Controller
 
     function _email_body($search_arr)
     {
+    $eot     = htmlspecialchars($search_arr['eot_credora']);
+    $inicio  = htmlspecialchars($search_arr['data_inicio']);
+    $fim     = htmlspecialchars($search_arr['data_fim']);
+    $gerado  = date('d/m/Y H:i:s');
+
         return '
-        <html><body style="font-family:Arial,sans-serif;font-size:13px;color:#333">
-        <h3 style="color:#2c6fad">Relatorio DETRAF - FluxSBC</h3>
-        <table cellpadding="6" cellspacing="0" style="border-collapse:collapse">
-            <tr><td style="font-weight:bold">EOT Credora:</td><td>' . htmlspecialchars($search_arr['eot_credora']) . '</td></tr>
-            <tr><td style="font-weight:bold">Periodo:</td><td>' . htmlspecialchars($search_arr['data_inicio']) . ' a ' . htmlspecialchars($search_arr['data_fim']) . '</td></tr>
+    <html>
+    <body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:20px 0;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+                        
+                        <!-- Header -->
+                        <tr>
+                            <td style="background:#2c6fad;color:#ffffff;padding:15px 20px;font-size:16px;font-weight:bold;">
+                                Relatório DETRAF - FluxSBC
+                            </td>
+                        </tr>
+
+                        <!-- Content -->
+                        <tr>
+                            <td style="padding:20px;">
+                                
+                                <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
+                                    <tr>
+                                        <td style="font-weight:bold;color:#555;width:150px;">EOT Credora</td>
+                                        <td style="color:#333;">' . $eot . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:bold;color:#555;">Período</td>
+                                        <td style="color:#333;">' . $inicio . ' até ' . $fim . '</td>
+                                    </tr>
         </table>
-        <p>O relatorio DETRAF esta anexo a este e-mail no formato CSV.</p>
-        <hr style="border:1px solid #eee;margin-top:20px">
-        <small style="color:#999">FluxSBC - gerado em ' . date('d/m/Y H:i:s') . '</small>
-        </body></html>';
+
+                                <p style="margin-top:20px;color:#444;">
+                                    O relatório DETRAF está anexado neste e-mail no formato <strong>CSV</strong>.
+                                </p>
+
+                            </td>
+                        </tr>
+
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background:#fafafa;padding:15px 20px;font-size:11px;color:#888;border-top:1px solid #eee;">
+                                FluxSBC • Gerado em ' . $gerado . '
+                            </td>
+                        </tr>
+
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>';
     }
     
     function detraf_contestacao()
