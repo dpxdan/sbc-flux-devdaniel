@@ -692,7 +692,10 @@ normalize_freeswitch ()
         elif [[ $DIST = "DEBIAN10" || $DIST = "DEBIAN11" ]]; then
                 cp -rf ${FLUX_SOURCE_DIR}/web_interface/nginx/deb_fs.conf /etc/nginx/conf.d/fs.conf
                 chown -Rf root.root ${WWWDIR}/fs
-                chmod -Rf 755 ${WWWDIR}/fs
+                chmod -Rf 755 ${WWWDIR}/fs                
+                /bin/systemctl stop freeswitch
+                cp ${FLUX_SOURCE_DIR}/freeswitch/init/freeswitch.debian.service /etc/systemd/system/freeswitch.service
+                /bin/systemctl daemon-reload                
                 /bin/systemctl restart freeswitch
                 /bin/systemctl enable freeswitch
         elif  [ ${DIST} = "CENTOS" ]; then

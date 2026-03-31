@@ -7707,3 +7707,9 @@ msgstr "Informe o número inicial com DDD, seguido de \":\" e mais quatro dígit
 
 msgid "Enter the number that will be used as the caller identification."
 msgstr "Informe o número que será usado como identificação de chamada."
+
+msgid "Display recordings in forms"
+msgstr "Exibir gravações nos formulários"
+
+msgid "Display Recordings"
+msgstr "Exibir Gravações"

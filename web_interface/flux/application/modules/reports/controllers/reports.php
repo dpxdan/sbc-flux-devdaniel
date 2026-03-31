@@ -117,23 +117,32 @@ class Reports extends MX_Controller
                     $uid = rtrim($uid, $value['calltype'] . '_' . $value['accountid']);
                 }
                 $file_name = $this->config->item('recordings_path') . $uid . ".wav";
+                if ($is_recording == 0) {
                 if (file_exists($file_name) && $value['calltype'] != 'FAX') {
                     $billseconds = $value['billseconds'];
                     $url = base_url() . "reports/customerReport_recording_download/" . $uid . ".wav";
                     $play_img_url = base_url() . "assets/images/play_file.png";
                     $pause_img_url = base_url() . "assets/images/pause.png";
                     $action = '<audio id="myAudio_' . $uid . '">
-					<source src="' . $url . '" type="audio/mpeg">
+					<source src="' . $url . '" type="audio/wav">
 					Your browser does not support the audio element.
 					</audio>';
                     $action .= "<button onclick='playAudio(\"$uid\",\"$billseconds\")' type='button' class='btnplay'  id='play_" . $uid . "'  style='display:block;margin:0px 0 0 25px;border:0px !important; float:left; padding:0px'><img src=" . $play_img_url . " height='25px' width='25px' style='cursor: pointer;'/></button>";
 
                     $action .= "<button onclick='pauseAudio(\"$uid\")' type='button'  class='btnplay' id='pause_" . $uid . "' style='display: none;margin:0px 0 0 25px;border:0px !important; float:left;padding:0px'><img src=" . $pause_img_url . " height='25px' width='25px' style='cursor: pointer;'/></button>";
                     $recording = ($is_recording == 0) ? '<a title="Recording file" href="' . $url . '"><img src="' . base_url() . 'assets/images/download.png" height="20px" width="20px"/></a>' : '<img src="' . base_url() . 'assets/images/false.png" height="20px" alt="file not found" width="20px"/>';
-                } else {
-                    $recording = '<img src="' . base_url() . 'assets/images/false.png" height="20px" title="Record file is not available" width="20px"/>';
-                    $action = '<img src="' . base_url() . 'assets/images/false.png" height="20px" title="Play file is not available" width="20px"/>';
                 }
+                else {
+                    $recording = '<img src="' . base_url() . 'assets/images/false.png" height="20px" title="'.gettext("The call recording file is not available.").'" width="20px"/>';
+                    $action = '<img src="' . base_url() . 'assets/images/false.png" height="20px" title="'.gettext("Play file is not available.").'" width="20px"/>';
+                }
+                }
+                else {
+                    $recording = '<img src="' . base_url() . 'assets/images/false.png" height="20px" title="'.gettext("The call recording feature is not enabled for this account.").'" width="20px"/>';
+                    $action = '<img src="' . base_url() . 'assets/images/false.png" height="20px" title="'.gettext("Play file is not available.").'" width="20px"/>';
+                
+                }
+
                 if ($accountinfo['type'] == 1) {
                     $json_data['rows'][] = array(
                         'cell' => array(
