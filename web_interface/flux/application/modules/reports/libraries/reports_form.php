@@ -1410,17 +1410,19 @@ class Reports_form extends common
     function build_report_list_for_customer()
     {
         $logintype = $this->CI->session->userdata('userlevel_logintype');
-        // $recording = array(
-        //     gettext("Recording"),
-        //     "127",
-        //     "recording",
-        //     "",
-        //     "",
-        //     "",
-        //     "",
-        //     "false",
-        //     ""
-        // );
+        $show_recording = $this->CI->common->get_field_name('value', 'system', array("name" => "show_recording"));
+        if ($show_recording == 0) {
+         $recording = array(
+         gettext("Recording"),
+         "127",
+         "recording",
+         "",
+         "",
+         "",
+         "",
+         "false",
+         ""
+        );
         if ($logintype != 1) {
             $account_info = $accountinfo = $this->CI->session->userdata('accountinfo');
             $currency_id = $account_info['currency_id'];
@@ -1612,13 +1614,13 @@ class Reports_form extends common
                     "center"
                 ),
 
-                // $recording
+                $recording
             ));
         } 
         else {
             $account_info = $accountinfo = $this->CI->session->userdata('accountinfo');
             $currency_id = $account_info['currency_id'];
-            $currency = $this->CI->common->get_field_name('currency', 'currency', $currency_id);
+            $currency = $this->CI->common->get_field_name('currency', 'currency', $currency_id);            
             $grid_field_arr = json_encode(array(
                 array(
                     gettext("Date"),
@@ -1786,10 +1788,376 @@ class Reports_form extends common
                     "center"
                 ),
 
-                // $recording
+                $recording
             ));
         }
-
+        }
+        else {
+        if ($logintype != 1) {
+            $account_info = $accountinfo = $this->CI->session->userdata('accountinfo');
+            $currency_id = $account_info['currency_id'];
+            $currency = $this->CI->common->get_field_name('currency', 'currency', $currency_id);
+            $account_data = $this->CI->session->userdata("accountinfo");
+            $grid_field_arr = json_encode(array(
+                array(
+                    gettext("Date"),
+                    "85",
+                    "callstart",
+                    "callstart",
+                    "callstart",
+                    "convert_GMT_to",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Caller ID"),
+                    "80",
+                    "callerid",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Called Number"),
+                    "90",
+                    "callednum",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("SIP User"),
+                    "80",
+                    "sip_user",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Code"),
+                    "71",
+                    "pattern",
+                    "pattern",
+                    "",
+                    "get_only_numeric_val",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Destination"),
+                    "90",
+                    "notes",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+				   gettext("Carrier"),
+				   "100",
+				   "carrier_id",
+				   "",
+				   "",
+				   "",
+				   "",
+				   "true",
+				   "center"
+			   ),
+                array(
+                    gettext("Duration"),
+                    "80",
+                    "billseconds",
+                    "customer_cdr_list_search",
+                    "billseconds",
+                    "convert_to_show_in",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Block Duration"),
+                    "80",
+                    "block_billseconds",
+                    "customer_cdr_list_search",
+                    "block_billseconds",
+                    "convert_to_show_in",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Debit")." ($currency)",
+                    "75",
+                    "debit",
+                    "debit",
+                    "debit",
+                    "convert_to_currency",
+                    "",
+                    "true",
+                    "right"
+                ),
+                array(
+                    gettext("Cost")." ($currency)",
+                    "75",
+                    "cost",
+                    "cost",
+                    "cost",
+                    "convert_to_currency_account",
+                    "",
+                    "true",
+                    "right"
+                ),
+                array(
+                    gettext("Disposition")." [Q.850]",
+                    "130",
+                    "disposition",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Account"),
+                    "100",
+                    "accountid",
+                    "first_name,last_name,number,company_name",
+                    "accounts",
+                    "build_concat_string",
+                    "",
+                    "false",
+                    "center"
+                ),
+                array(
+                    gettext("Trunk"),
+                    "85",
+                    "trunk_id",
+                    "name",
+                    "trunks",
+                    "get_field_name",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Rate Group"),
+                    "90",
+                    "pricelist_id",
+                    "name",
+                    "pricelists",
+                    "get_field_name",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Call Type"),
+                    "85",
+                    "calltype",
+                    "",
+                    "",
+                    ""
+                ),
+                array(
+                    gettext("Direction"),
+                    "90",
+                    "call_direction",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                )                
+            ));
+        } 
+        else {
+            $account_info = $accountinfo = $this->CI->session->userdata('accountinfo');
+            $currency_id = $account_info['currency_id'];
+            $currency = $this->CI->common->get_field_name('currency', 'currency', $currency_id);            
+            $grid_field_arr = json_encode(array(
+                array(
+                    gettext("Date"),
+                    "100",
+                    "callstart",
+                    "callstart",
+                    "callstart",
+                    "convert_GMT_to",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Caller ID"),
+                    "100",
+                    "callerid",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Called Number"),
+                    "103",
+                    "callednum",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("SIP User"),
+                    "80",
+                    "sip_user",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Code"),
+                    "55",
+                    "pattern",
+                    "pattern",
+                    "",
+                    "get_only_numeric_val",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Destination"),
+                    "80",
+                    "notes",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+				   gettext("Carrier"),
+				   "100",
+				   "carrier_id",
+				   "",
+				   "",
+				   "",
+				   "",
+				   "true",
+				   "center"
+			   ),
+                array(
+                    gettext("Duration"),
+                    "70",
+                    "billseconds",
+                    "customer_cdr_list_search",
+                    "billseconds",
+                    "convert_to_show_in",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Block Duration"),
+                    "80",
+                    "block_billseconds",
+                    "customer_cdr_list_search",
+                    "block_billseconds",
+                    "convert_to_show_in",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Debit")."($currency)",
+                    "75",
+                    "debit",
+                    "debit",
+                    "debit",
+                    "convert_to_currency",
+                    "",
+                    "true",
+                    "right"
+                ),
+                array(
+                    gettext("Cost")."($currency)",
+                    "75",
+                    "cost",
+                    "cost",
+                    "cost",
+                    "convert_to_currency",
+                    "",
+                    "true",
+                    "right"
+                ),
+                array(
+                    gettext("Disposition")." [Q.850]",
+                    "130",
+                    "disposition",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Account"),
+                    "110",
+                    "accountid",
+                    "first_name,last_name,number,company_name",
+                    "accounts",
+                    "build_concat_string",
+                    "",
+                    "false",
+                    "center"
+                ),
+                array(
+                    gettext("Rate Group"),
+                    "80",
+                    "pricelist_id",
+                    "name",
+                    "pricelists",
+                    "get_field_name",
+                    "",
+                    "true",
+                    "center"
+                ),
+                array(
+                    gettext("Direction"),
+                    "80",
+                    "call_direction",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "true",
+                    "center"
+                )                
+            ));
+        }
+        }
         return $grid_field_arr;
     }
 
