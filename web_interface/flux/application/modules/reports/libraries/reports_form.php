@@ -1496,16 +1496,16 @@ class Reports_form extends common
                     "center"
                 ),
                 array(
-				   gettext("Carrier"),
-				   "100",
-				   "carrier_id",
-				   "",
-				   "",
-				   "",
-				   "",
-				   "true",
-				   "center"
-			   ),
+                   gettext("Carrier"),
+                   "100",
+                   "carrier_id",
+                   "",
+                   "",
+                   "",
+                   "",
+                   "true",
+                   "center"
+               ),
                 array(
                     gettext("Duration"),
                     "80",
@@ -1689,16 +1689,16 @@ class Reports_form extends common
                     "center"
                 ),
                 array(
-				   gettext("Carrier"),
-				   "100",
-				   "carrier_id",
-				   "",
-				   "",
-				   "",
-				   "",
-				   "true",
-				   "center"
-			   ),
+                   gettext("Carrier"),
+                   "100",
+                   "carrier_id",
+                   "",
+                   "",
+                   "",
+                   "",
+                   "true",
+                   "center"
+               ),
                 array(
                     gettext("Duration"),
                     "70",
@@ -1866,16 +1866,16 @@ class Reports_form extends common
                     "center"
                 ),
                 array(
-				   gettext("Carrier"),
-				   "100",
-				   "carrier_id",
-				   "",
-				   "",
-				   "",
-				   "",
-				   "true",
-				   "center"
-			   ),
+                   gettext("Carrier"),
+                   "100",
+                   "carrier_id",
+                   "",
+                   "",
+                   "",
+                   "",
+                   "true",
+                   "center"
+               ),
                 array(
                     gettext("Duration"),
                     "80",
@@ -2057,16 +2057,16 @@ class Reports_form extends common
                     "center"
                 ),
                 array(
-				   gettext("Carrier"),
-				   "100",
-				   "carrier_id",
-				   "",
-				   "",
-				   "",
-				   "",
-				   "true",
-				   "center"
-			   ),
+                   gettext("Carrier"),
+                   "100",
+                   "carrier_id",
+                   "",
+                   "",
+                   "",
+                   "",
+                   "true",
+                   "center"
+               ),
                 array(
                     gettext("Duration"),
                     "70",
@@ -2549,9 +2549,9 @@ class Reports_form extends common
             array(
                 gettext("Carrier"),
                 "200",
-			   "carrier_id",
-			   "carrier_name,carrier_rn1",
-			   "carrier_routing",
+                "carrier_id",
+                "carrier_name,carrier_rn1",
+                "carrier_routing",
                 "build_concat_carrier",
                 "",
                 "false",
@@ -2590,7 +2590,6 @@ class Reports_form extends common
                 "true",
                 "right"
             ),
-
             array(
                 gettext("Disposition")." [Q.850]",
                 "200",
