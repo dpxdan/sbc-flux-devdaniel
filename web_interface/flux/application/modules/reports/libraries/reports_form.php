@@ -1410,7 +1410,7 @@ class Reports_form extends common
     function build_report_list_for_customer()
     {
         $logintype = $this->CI->session->userdata('userlevel_logintype');
-        $show_recording = $this->CI->common->get_field_name('value', 'system', array("name" => "show_recording"));
+        $show_recording = $this->CI->session->userdata('show_recordings');
         if ($show_recording == 0) {
          $recording = array(
          gettext("Recording"),

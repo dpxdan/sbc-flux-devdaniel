@@ -285,7 +285,6 @@ payment_transaction.transaction_id,invoice_details.charge_type,invoice_details.d
         return $query;
     }
 
-
     function get_customer_refillreport($flag, $accountid, $start = 0, $limit = 0)
     {
         $this->db_model->build_search('cdr_refill_search', 'payment_transaction.');
@@ -339,5 +338,16 @@ payment_transaction.transaction_id,invoice_details.charge_type,invoice_details.d
             $query = $this->db_model->countQuery("*,order_id as orderid", "commission", $where);
         }
         return $query;
+    }
+    
+    function get_show_recordings()
+    {
+        $show_recordings = $this->common->get_field_name('value', 'system', array("name" => "show_recording"));
+        if (isset($show_recordings) && $show_recordings != "") {
+        return $show_recordings;
+        } 
+        else {
+        return 1;
+        }   
     }
 }
