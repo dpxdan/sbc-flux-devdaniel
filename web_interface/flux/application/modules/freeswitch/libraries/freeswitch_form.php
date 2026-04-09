@@ -1393,6 +1393,16 @@ class Freeswitch_form extends common
                 "",
                 "",
                 "delete"
+            ),
+            array(
+                gettext("Export"),
+                "btn btn-xing",
+                "fa fa-upload fa-lg",
+                "button_action",
+                "/freeswitch/fssipdevices_export_data_xls",
+                'single',
+                "",
+                "export"
             )
         ));
         return $buttons_json;

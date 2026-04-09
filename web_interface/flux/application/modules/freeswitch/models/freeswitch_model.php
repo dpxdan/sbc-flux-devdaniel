@@ -259,9 +259,7 @@ class Freeswitch_model extends CI_Model
                         'vm_keep_local_after_email' => $vars_new['vm-keep-local-after-email'],
                         'effective_caller_id_number' => $vars->effective_caller_id_number,
                         'password' => $passowrds->password,
-                        // FLUXUPDATE-943 Start
                         'live_status' => $value['live_status']
-                        // FLUXUPDATE-943 END
                     );
                 }
             }

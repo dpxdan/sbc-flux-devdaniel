@@ -32,8 +32,11 @@ class Freeswitch extends MX_Controller
         $this->load->library("freeswitch_form");
         $this->load->library('flux/form', 'freeswitch_form');
         $this->load->library('flux/permission');
+        $this->load->library('csvreader');
         $this->load->library('flux_log');
         $this->load->library('freeswitch_lib');
+        $this->load->library('fpdf');
+        $this->load->library('pdf');
         $this->load->library('FLUX_Sms');
         $this->load->model('freeswitch_model');
 
@@ -403,6 +406,56 @@ class Freeswitch extends MX_Controller
             );
         }
         echo json_encode($json_data);
+    }
+
+    function fssipdevices_export_data_xls()
+    {
+    
+        $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
+        $json_data = $paging_data["json_paging"];
+        $query = $this->freeswitch_model->fs_retrieve_sip_user(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
+            
+        $outbound_array = array();
+        ob_clean();
+    
+        $outbound_array[] = array(
+            gettext('ID'),
+            gettext('Username'),
+            gettext('Password'),
+            gettext('Account'),
+            gettext('Status'),
+            gettext('Created Date'),
+            gettext('SIP Profile'),
+            gettext('Caller Name'),
+            gettext('Password').' '.gettext('Voicemail'),
+            gettext('Voicemail'),
+            gettext('Caller Number'),
+            gettext('Modified Date')
+        );
+        $rows = is_array($query) ? $query : ($query && $query->num_rows() > 0 ? $query->result_array() : []);
+        
+        if (!empty($rows)) {
+            foreach ($rows as $row) {
+                $outbound_array[] = array(
+                    $row['id'],
+                    $row['username'],
+                    $row['password'],
+                    $row['accountid'],
+                    $row['status'],
+                    $row['creation_date'],
+                    $row['sip_profile_id'],
+                    $row['effective_caller_id_name'],
+                    $row['voicemail_password'],
+                    $row['voicemail_enabled'],
+                    $row['effective_caller_id_number'],
+                    $row['last_modified_date']
+                );
+            }
+        }
+    
+        $this->load->helper('csv');
+        $filename = 'SIPDevices_' . date("Y-m-d") . '.csv';        
+        array_to_csv($outbound_array, $filename);
     }
 
     function get_domain_fssipdevices($accountid)
