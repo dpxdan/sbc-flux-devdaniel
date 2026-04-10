@@ -734,7 +734,7 @@ class DID extends MX_Controller
     function did_download_sample_file($file_name)
     {
         $this->load->helper('download');
-        $full_path = base_url() . "assets/Rates_File/" . $file_name . ".csv";
+        $full_path = "./assets/Rates_File/" . $file_name . ".csv";
         ob_clean();
         $arrContextOptions = array(
             "ssl" => array(
