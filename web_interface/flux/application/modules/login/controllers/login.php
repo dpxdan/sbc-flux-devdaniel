@@ -88,21 +88,6 @@ class Login extends MX_Controller
                     $addon_status = $this->db_model->countQuery("*", "addons", array(
                         'package_name' => 'pbx'
                     ));
-                    $this->flux_log->write_log('login', json_encode($_SERVER));
-                    if ($addon_status != '99' && $result['type'] != '1000' && $result['id'] != '100') {
-                        $multidomain = $this->db_model->getSelect("*", "domain,domains_to_accounts", array(
-                            'domain' => $_SERVER["HTTP_HOST"],
-                            'domains_to_accounts.accountid' => $result['id'],
-                            'domain.status' => 0
-                        ));
-                        $multidomain_result = $multidomain->result_array();
-                        if (! empty($multidomain_result)) {
-                            $user_multi_level = 0;
-                        } 
-                        else {
-                            $user_multi_level = 1;
-                        }
-                    }
                     if ($user_multi_level == 0) {
 
                         $logintype = $result['type'] == - 1 ? 2 : $result['type'];

@@ -2199,46 +2199,46 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		);
 		return $status_array;
 	}
-	function build_concat_string($select, $table, $id_where = '') {
-			$select_params = explode ( ',', $select );
-			$where = array (
-					"1"
+	function build_concat_string($select, $table, $id_where = '')
+	{
+		$select_params = explode(',', $select);
+		$where = array(
+			"1"
+		);
+		if ($id_where != '') {
+			$where = array(
+				"id" => $id_where
 			);
-			if ($id_where != '') {
-				$where = array (
-						"id" => $id_where
-				);
-			}
-			$select_params = explode ( ',', $select );
-			if (isset ( $select_params [3] ) && !empty($select_params [3]) ) {
-				$cnt_str = " $select_params[3],'(',$select_params[2],')' ";
-			}
-			else{
-				if (isset ( $select_params [2] )) {
-					$cnt_str = " $select_params[0],' ',$select_params[1],' ','(',$select_params[2],')' ";
-				} 
-				else {
-					$cnt_str = " $select_params[0],' (',$select_params[1],')' ";
-				}
-			}
-			$select     = isset($select_params[3]) ? $select_params[3] : $select_params[0];
-			$drp_array  = $this->CI->db_model->getSelect($select, $table, $where);
-			$drp_array  = $drp_array->result();
-			
-			if (empty($drp_array[0]->company_name)) {
-			    if (isset($select_params[2])) {
-			        $cnt_str = " $select_params[0],' ',$select_params[1],' ','(',$select_params[2],')' ";
-			    } else {
-			        $cnt_str = " $select_params[0],' (',$select_params[1],')' ";
-			    }
-			}
-			$select = "concat($cnt_str) as $select_params[0] ";
-			$drp_array = $this->CI->db_model->getSelect ( $select, $table, $where );
-			$drp_array = $drp_array->result ();
-			if (isset ( $drp_array [0] )) {
-				return $drp_array [0]->{$select_params [0]};
+		}
+		$select_params = explode(',', $select);
+		if (isset($select_params[3]) && !empty($select_params[3])) {
+			$cnt_str = " $select_params[3],'(',$select_params[2],')' ";
+		} else {
+			if (isset($select_params[2])) {
+				$cnt_str = " $select_params[0],' ',$select_params[1],' ','(',$select_params[2],')' ";
+			} else {
+				$cnt_str = " $select_params[0],' (',$select_params[1],')' ";
 			}
 		}
+		$select		= isset($select_params[3]) ? $select_params[3] : $select_params[0];
+		$drp_array	= $this->CI->db_model->getSelect($select, $table, $where);
+		$drp_array	= $drp_array->result();
+
+		if (empty($drp_array[0]->company_name)) {
+
+			if (isset($select_params[2])) {
+				$cnt_str = " $select_params[0],' ',$select_params[1],' ','(',$select_params[2],')' ";
+			} else {
+				$cnt_str = " $select_params[0],' (',$select_params[1],')' ";
+			}
+		}
+		$select = "concat($cnt_str) as $select_params[0] ";
+		$drp_array = $this->CI->db_model->getSelect($select, $table, $where);
+		$drp_array = $drp_array->result();
+		if (isset($drp_array[0])) {
+			return $drp_array[0]->{$select_params[0]};
+		}
+	}
 	function build_concat_string_carrier($select, $table, $id_where = '') {
 		$select_params = explode ( ',', $select );
 		$where = array (

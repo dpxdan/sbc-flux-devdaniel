@@ -1391,7 +1391,7 @@ function create_formatted_date($startdate, $enddate, $timezone, $timevisibly)
                                             <?php
                                             $query_result = isset($low_balance_accounts) ? $low_balance_accounts : null;
 
-                                            if ($query_result->num_rows() > 0) {
+                                            if ($query_result && $query_result->num_rows() > 0) {
                                                 $account_data = $query_result->result_array();
 
                                                 foreach ($account_data as $data_key => $accountinformation) {
