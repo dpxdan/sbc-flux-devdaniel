@@ -47,7 +47,7 @@ class Summary extends MX_Controller
         $data['search_flag'] = true;
         $session_info = $this->session->userdata('customersummary_reports_search');
         $accountinfo = $this->session->userdata('accountinfo');
-        $reseller_id = $accountinfo['type'] == 1 ? $accountinfo['id'] : 1;
+        $reseller_id = $accountinfo['type'] == 1 ? $accountinfo['id'] : 0;
         $accountlist = $this->db_model->build_dropdown_deleted('id,IF(`deleted`=1,IF( company_name = "",concat( first_name, " ", last_name, " ", "(", number, ")^" ), concat( company_name, " ", "(", number, ")^" )), IF( company_name = "",concat( first_name, " ", last_name, " ", "(", number, ")" ), concat( company_name, " ", "(", number, ")" ))) as number', 'accounts', 'where_arr', array(
             'reseller_id' => $reseller_id,
             "type" => "GLOBAL"
