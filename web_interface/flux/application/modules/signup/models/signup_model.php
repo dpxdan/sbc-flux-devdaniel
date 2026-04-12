@@ -35,13 +35,247 @@ class Signup_model extends CI_Model
 
     function get_rate()
     {
-        $data = array();
         $this->load->database();
         $this->db->select("id,name");
         $this->db->from('pricelists');
         $this->db->where("status", "0");
         $query = $this->db->get();
         return $query->row();
+    }
+
+    function get_currency_by_code($currency)
+    {
+        return (array) $this->db->get_where('currency', array('currency' => $currency))->first_row();
+    }
+
+    function get_invoice_conf_account_by_domain($domain, $http_host)
+    {
+        $this->db->select('accountid');
+        $this->db->like('domain', $domain);
+        $this->db->or_like('domain', $http_host);
+        return (array) $this->db->get('invoice_conf')->first_row();
+    }
+
+    function get_account_type($account_id)
+    {
+        $this->db->select('type');
+        return (array) $this->db->get_where('accounts', array('id' => $account_id))->first_row();
+    }
+
+    function get_active_account_by_id($account_id)
+    {
+        $this->db->select('*');
+        $this->db->where(array(
+            'deleted' => '0',
+            'status' => '0',
+            'id' => $account_id
+        ));
+        return (array) $this->db->get('accounts')->first_row();
+    }
+
+    function count_active_accounts_by_number($number)
+    {
+        $this->db->select('count(id) as count');
+        $this->db->where(array(
+            'number' => $number,
+            'deleted' => '0'
+        ));
+        return (array) $this->db->get('accounts')->first_row();
+    }
+
+    function count_active_accounts_by_email($email)
+    {
+        $this->db->select('count(id) as count');
+        $this->db->where(array(
+            'email' => $email,
+            'deleted' => '0'
+        ));
+        return (array) $this->db->get('accounts')->first_row();
+    }
+
+    function get_account_unverified($where)
+    {
+        return (array) $this->db->get_where('account_unverified', $where)->first_row();
+    }
+
+    function update_account_unverified($where, $data)
+    {
+        $this->db->where($where);
+        return $this->db->update('account_unverified', $data);
+    }
+
+    function update_account_unverified_by_id($id, $data)
+    {
+        $this->db->where('id', $id);
+        return $this->db->update('account_unverified', $data);
+    }
+
+    function insert_account_unverified($data)
+    {
+        $this->db->insert('account_unverified', $data);
+        return $this->db->insert_id();
+    }
+
+    function get_account_unverified_brief_by_id($id)
+    {
+        $this->db->select('number,creation_date,email');
+        return (array) $this->db->get_where('account_unverified', array('id' => $id))->first_row();
+    }
+
+    function get_signup_inactive_account($account_id)
+    {
+        return (array) $this->db->get_where('accounts', array(
+            'id' => $account_id,
+            'deleted' => '1',
+            'status' => '1'
+        ))->first_row();
+    }
+
+    function get_account_by_id($account_id)
+    {
+        return (array) $this->db->get_where('accounts', array('id' => $account_id))->first_row();
+    }
+
+    function get_invoice_conf_by_domain($domain, $http_host)
+    {
+        $this->db->select('*');
+        $this->db->like('domain', $domain);
+        $this->db->or_like('domain', $http_host);
+        $res = $this->db->get_where('invoice_conf');
+        $result = $res->result_array();
+        return !empty($result) ? $result[0] : array();
+    }
+
+    function get_invoice_conf_with_default($domain, $http_host)
+    {
+        $this->db->like('domain', $domain);
+        $this->db->or_like('domain', $http_host);
+        $this->db->or_where('accountid', 1);
+        $this->db->order_by('id', 'desc');
+        $this->db->limit(1);
+        return (array) $this->db->get_where('invoice_conf')->first_row();
+    }
+
+    function get_countrycode_array()
+    {
+        $this->db->select('*');
+        $countrycode_info = $this->db->get('countrycode')->result_array();
+        $countrycode_array = array();
+        foreach ($countrycode_info as $value) {
+            $countrycode_array[$value['id']] = $value['countrycode'];
+        }
+        return $countrycode_array;
+    }
+
+    function get_terms_and_conditions()
+    {
+        $this->db->where('name', 'url');
+        $this->db->where('field_type', 'default_system_input');
+        $this->db->where('group_title', 'term_and_condition');
+        $this->db->or_where('field_type', 'textarea');
+        $res = $this->db->get_where('system');
+        return $res->result_array();
+    }
+
+    function get_default_template($name)
+    {
+        return (array) $this->db->get_where('default_templates', array('name' => $name))->first_row();
+    }
+
+    function insert_mail_detail($data)
+    {
+        return $this->db->insert('mail_details', $data);
+    }
+
+    function insert_otp_number($data)
+    {
+        return $this->db->insert('otp_number', $data);
+    }
+
+    function get_account_by_number_and_email($number, $email)
+    {
+        $this->db->where('number', $number);
+        $this->db->where('email', $email);
+        return (array) $this->db->get_where('accounts')->first_row();
+    }
+
+    function get_account_unverified_by_number_and_email($number, $email)
+    {
+        $this->db->where('number', $number);
+        $this->db->where('email', $email);
+        return (array) $this->db->get_where('account_unverified')->first_row();
+    }
+
+    function get_pricelist_by_reseller_id($reseller_id)
+    {
+        $this->db->select('id');
+        return (array) $this->db->get_where('pricelists', array('reseller_id' => $reseller_id))->first_row();
+    }
+
+    function get_localization_by_country_id($country_id)
+    {
+        $this->db->select('id,country_id');
+        return (array) $this->db->get_where('localization', array('country_id' => $country_id))->first_row();
+    }
+
+    function update_account_password($account_id, $password)
+    {
+        $this->db->where('id', $account_id);
+        return $this->db->update('accounts', array('password' => $password));
+    }
+
+    function update_sip_device_password($account_id, $username, $data)
+    {
+        $this->db->where('accountid', $account_id);
+        $this->db->where('username', $username);
+        return $this->db->update('sip_devices', $data);
+    }
+
+    function get_account_unverified_by_number($number)
+    {
+        return (array) $this->db->get_where('account_unverified', array('number' => $number))->first_row();
+    }
+
+    function update_account_unverified_by_number_and_email($number, $email, $data)
+    {
+        $this->db->where('number', $number);
+        $this->db->where('email', $email);
+        return $this->db->update('account_unverified', $data);
+    }
+
+    function count_accounts_by_email_or_number($email)
+    {
+        $this->db->from('accounts');
+        $this->db->where('email', $email);
+        $this->db->or_where('number', $email);
+        return $this->db->count_all_results();
+    }
+
+    function get_forgot_password_accounts($email, $number)
+    {
+        $this->db->where_in('type', array('0', '1', '3'));
+        $this->db->where(array('email' => $email));
+        $this->db->where('number', $number);
+        $this->db->order_by('id', 'DESC');
+        $query = $this->db->get('accounts');
+        $result = $query->result_array();
+        return array(
+            'count' => $query->num_rows(),
+            'row' => !empty($result) ? $result[0] : array()
+        );
+    }
+
+    function update_account_pass_link_status($email, $status)
+    {
+        $this->db->where(array('email' => $email));
+        return $this->db->update('accounts', array('pass_link_status' => $status));
+    }
+
+    function update_account_unverified_by_number_or_email($value, $data)
+    {
+        $this->db->where('number', $value);
+        $this->db->or_where('email', $value);
+        return $this->db->update('account_unverified', $data);
     }
 
     function add_user($data)
@@ -55,7 +289,7 @@ class Signup_model extends CI_Model
         $this->db->insert("accounts", $data);
         $last_id = $this->db->insert_id();
         $tax = common_model::$global_config['system_config']['tax_type'];
-        if (! empty($tax)) {
+        if (!empty($tax)) {
             $query = "select id as taxes_id,taxes_priority from taxes where id IN($tax)";
             $result = $this->db->query($query);
             if ($result->num_rows() > 0) {
@@ -67,7 +301,7 @@ class Signup_model extends CI_Model
                     $tax_array[$i]['taxes_id'] = $value['taxes_id'];
                     $tax_array[$i]['taxes_priority'] = $value['taxes_priority'];
                     $tax_array[$i]['accountid'] = $last_id;
-                    $i ++;
+                    $i++;
                 }
                 $this->db->insert_batch("taxes_to_accounts", $tax_array);
             }

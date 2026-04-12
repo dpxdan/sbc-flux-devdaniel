@@ -75,6 +75,31 @@ $tooltip_data = array(
 	"customer_form_timezone_id" => "Fuso horário do cliente. NOTA: O FluxSBC não suporta o horário de verão por padrão. Será necessário alterar manualmente o fuso horário da conta para lidar com isso.",
 
 	"customer_form_currency_id" => "Definir a moeda para as novas contas.",
+	
+	"customer_form_parent_id" => "Definir a conta vinculada.",
+	
+	"customer_form_rms_canais_ilimitado" => "Definir o tipo de canais.",
+	
+	"customer_form_rms_endereco_numero" => "Definir o número do endereço.",
+	
+	"customer_form_rms_bairro" => "Definir o bairro do endereço.",
+	
+	"customer_form_location" => "Definir o tipo de localização da conta.",
+	
+	"customer_form_rms_tipo_cliente" => "Definir o tipo de cliente.",
+	
+	"customer_form_rms_fantasia" => "Definir o nome fantasia da conta.",
+	
+	"customer_form_rms_inscricao_estadual" => "Definir a inscrição estadual da conta.",
+	
+	"customer_form_simei" => "Definir o simples nacional.",
+	
+	"customer_form_rms_rateplan_0800" => "Definir o Rate Plan 0800.",
+	
+	"customer_form_rms_rateplan_400x" => "Definir o Rate Plan 400.",
+	
+	"customer_form_rms_rateplan_numeracao" => "Definir a numeração de Rate Plan.",
+	
 	//PROFILE SECTION SECTION END FOR CUSTOMER
 
 	//BILLING SECTION SECTION START FOR CUSTOMER
@@ -131,6 +156,8 @@ $tooltip_data = array(
 	"customer_form_tax_id" => "Impostos aplicáveis na fatura.",
 
 	"customer_bulk_form_sweep_id" => "Agenda de faturamento para a geração de faturas.",
+	
+	"customer_form_block_status" => "Define o nível de bloqueio de chamadas para esta conta. 'Saída' restringe apenas chamadas originadas. 'Total' bloqueia todas as chamadas e o acesso ao sistema.",
 
 	"reseller_form_reseller_id" => "O revendedor é simplesmente o pai deste cliente específico. Se a conta precisa ser criada para o administrador, selecione a opção administrador. Se a conta for adicionada a um revendedor, selecione a conta do revendedor para que o perfil do cliente seja adicionado ao revendedor selecionado.",
 

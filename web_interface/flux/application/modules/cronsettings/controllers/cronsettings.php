@@ -139,8 +139,6 @@ class Cronsettings extends MX_Controller
                     ));
                     exit();
                 } else {
-                    $this->db->where('id', $add_array['id']);
-                    $did_info = (array) $this->db->get('cron_settings')->first_row();
                     unset($add_array['last_execution_date']);  
                     $this->cronsettings_model->edit_cron($add_array, $add_array['id']);
                     echo json_encode(array(
@@ -176,9 +174,7 @@ class Cronsettings extends MX_Controller
     function cronsettings_multiple_delete()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN (" . $ids . ")";
-        $this->db->where($where);
-        echo $this->db->delete("cron_settings");
+        echo $this->cronsettings_model->delete_multiple_cronsettings($ids);
     }
 }
 ?>

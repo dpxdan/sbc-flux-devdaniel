@@ -26,6 +26,7 @@ class Summary_form extends common
     function __construct()
     {
         $this->CI = & get_instance();
+        $this->CI->load->library ( 'flux_log' );
     }
 
     function get_providersummary_search_form()
@@ -184,8 +185,9 @@ class Summary_form extends common
         $currency = $this->CI->common->get_field_name('currency', 'currency', $currency_id);
 
         $new_arr = array();
-        if ($this->CI->session->userdata('advance_search') == '1') {
+        if ($this->CI->session->userdata('advance_search') == '1') {        
             $search_array = $this->CI->session->userdata('providersummary_reports_search');
+            $this->CI->flux_log->write_log("advance_search", json_encode($search_array));
             if (isset($search_array['time']) && ! empty($search_array['time'])) {
                 $new_arr[] = array(
                     $search_array['time'],
@@ -207,7 +209,8 @@ class Summary_form extends common
                         "accounts",
                         "build_concat_string"
                     );
-                } elseif ($first_column_groupby == 'pattern') {
+                } 
+                elseif ($first_column_groupby == 'pattern') {
                     $new_arr[] = array(
                         gettext("Code"),
                         "65",
@@ -224,7 +227,8 @@ class Summary_form extends common
                         "",
                         ""
                     );
-                } elseif ($first_column_groupby == 'trunk_id') {
+                } 
+                elseif ($first_column_groupby == 'trunk_id') {
                     $new_arr[] = array(
                         gettext("Trunk"),
                         "151",
@@ -233,7 +237,8 @@ class Summary_form extends common
                         "trunks",
                         "get_field_name"
                     );
-                } elseif ($first_column_groupby == 'package_id') {
+                } 
+                elseif ($first_column_groupby == 'package_id') {
                     $new_arr[] = array(
                         gettext("Package"),
                         "151",
@@ -255,7 +260,8 @@ class Summary_form extends common
                         "accounts",
                         "build_concat_string"
                     );
-                } elseif ($third_column_groupby == 'pattern') {
+                } 
+                elseif ($third_column_groupby == 'pattern') {
                     $new_arr[] = array(
                         gettext("Code"),
                         "65",
@@ -272,7 +278,8 @@ class Summary_form extends common
                         "",
                         ""
                     );
-                } elseif ($third_column_groupby == 'trunk_id') {
+                } 
+                elseif ($third_column_groupby == 'trunk_id') {
                     $new_arr[] = array(
                         gettext("Trunk"),
                         "151",
@@ -281,7 +288,8 @@ class Summary_form extends common
                         "trunks",
                         "get_field_name"
                     );
-                } elseif ($third_column_groupby == 'package_id') {
+                } 
+                elseif ($third_column_groupby == 'package_id') {
                     $new_arr[] = array(
                         gettext("Package"),
                         "151",
@@ -303,7 +311,8 @@ class Summary_form extends common
                         "accounts",
                         "build_concat_string"
                     );
-                } elseif ($fifth_column_groupby == 'pattern') {
+                } 
+                elseif ($fifth_column_groupby == 'pattern') {
                     $new_arr[] = array(
                         gettext("Code"),
                         "65",
@@ -320,7 +329,8 @@ class Summary_form extends common
                         "",
                         ""
                     );
-                } elseif ($fifth_column_groupby == 'trunk_id') {
+                } 
+                elseif ($fifth_column_groupby == 'trunk_id') {
                     $new_arr[] = array(
                         gettext("Trunk"),
                         "151",
@@ -329,7 +339,8 @@ class Summary_form extends common
                         "trunks",
                         "get_field_name"
                     );
-                } elseif ($fifth_column_groupby == 'package_id') {
+                } 
+                elseif ($fifth_column_groupby == 'package_id') {
                     $new_arr[] = array(
                         gettext("Package"),
                         "151",
@@ -364,8 +375,11 @@ class Summary_form extends common
                 "130",
                 "description",
                 "",
-                "",
-                ""
+            	"",
+            	"",
+            	"",
+            	"true",
+            	"center",
             ),
             array(
                 gettext("Duration"),
@@ -784,6 +798,23 @@ class Summary_form extends common
                 )
             ),
             array(
+				gettext ( 'Carriers' ),
+                'carrier_id',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please select carrier first',
+                'carrier_id',
+                'carrier_name,carrier_rn1',
+                'carrier_routing',
+                'build_concat_carrier_select_dropdown',
+                'where_arr',
+                array(
+                    "carrier_rn1 >" => "0"
+                )
+            ),
+            array(
                 gettext('Code'),
                 'INPUT',
                 array(
@@ -1180,7 +1211,8 @@ class Summary_form extends common
 		    ),
 
 	);
-	}else if((isset($session_info['groupby_1']) && $session_info['groupby_1'] == "product_id") || (isset($session_info['groupby_2']) && $session_info['groupby_2'] == "product_id" )){
+	}
+	else if((isset($session_info['groupby_1']) && $session_info['groupby_1'] == "product_id") || (isset($session_info['groupby_2']) && $session_info['groupby_2'] == "product_id" )){
 
 	$new_column_arr = $new_column_arr;
 	$column_arr = array(
@@ -1256,7 +1288,8 @@ class Summary_form extends common
 		        "right"
 		    ),
 	);
-	}else if((isset($session_info['groupby_1']) && $session_info['groupby_1'] == "accountid") || (isset($session_info['groupby_2']) && $session_info['groupby_2'] == "accountid" )){ 
+	}
+	else if((isset($session_info['groupby_1']) && $session_info['groupby_1'] == "accountid") || (isset($session_info['groupby_2']) && $session_info['groupby_2'] == "accountid" )){ 
 	$new_column_arr = $new_column_arr;
 	$column_arr = array(
 		
@@ -1372,6 +1405,7 @@ class Summary_form extends common
 	$grid_field_arr = json_encode(array_merge($new_column_arr, $column_arr));
         return $grid_field_arr;
     }
+    
     function build_grid_buttons_products_summary()
     {
         $buttons_json = json_encode(array(
@@ -1381,6 +1415,683 @@ class Summary_form extends common
                 "fa fa-upload fa-lg",
                 "button_action",
                 "/summary/product_export_csv/",
+                'single',
+                "",
+                "export"
+            )
+        ));
+        return $buttons_json;
+    }
+    
+    function get_carriersummary_search_form_old()
+    {
+        $form['forms'] = array(
+            '',
+            array(
+                'id' => "carriersummary_search"
+            )
+        );
+        $form['Search'] = array(
+            array(
+                gettext('From Date'),
+                'INPUT',
+                array(
+                    'name' => 'callstart[]',
+                    'id' => 'customer_from_date',
+                    'size' => '20',
+                    'class' => "text field "
+                ),
+                '',
+                'tOOL TIP',
+                '',
+                'start_date[start_date-date]'
+            ),
+            array(
+                gettext('To Date'),
+                'INPUT',
+                array(
+                    'name' => 'callstart[]',
+                    'id' => 'customer_to_date',
+                    'size' => '20',
+                    'class' => "text field "
+                ),
+                '',
+                'tOOL TIP',
+                '',
+                'end_date[end_date-date]'
+            ),
+            array(
+                gettext('Account'),
+                'carrier_id',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Enter account number',
+                'id',
+                'IF(`deleted`=1,concat( first_name, " ", last_name, " ", "(", number, ")^" ),concat( first_name, " ", last_name, " ", "(", number, ")" )) as number',
+                'accounts',
+                'build_dropdown_deleted',
+                'where_arr',
+                array(
+                    "reseller_id" => "0",
+                    "type" => "3"
+                )
+            ),
+            array(
+                gettext('Trunk'),
+                'trunk_id',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Enter account number',
+                'id',
+                'IF(`status`=2, concat(name,"","^"),name) as name',
+                'trunks',
+                'build_dropdown_deleted',
+                '',
+                array(
+                    "status" => "1"
+                )
+            ),
+            array(
+                gettext('Code'),
+                'INPUT',
+                array(
+                    'name' => 'pattern[pattern]',
+                    'value' => '',
+                    'size' => '20',
+                    'class' => "text field "
+                ),
+                '',
+                'Tool tips info',
+                '1',
+                'pattern[pattern-string]',
+                '',
+                '',
+                '',
+                'search_string_type',
+                ''
+            ),
+            array(
+                gettext('Code Destination'),
+                'INPUT',
+                array(
+                    'name' => 'notes[notes]',
+                    'value' => '',
+                    'size' => '20',
+                    'class' => "text field "
+                ),
+                '',
+                'Tool tips info',
+                '1',
+                'notes[notes-string]',
+                '',
+                '',
+                '',
+                'search_string_type',
+                ''
+            ),
+            array(
+                '',
+                'HIDDEN',
+                'ajax_search',
+                '1',
+                '',
+                '',
+                ''
+            ),
+            array(
+                '',
+                'HIDDEN',
+                'advance_search',
+                '1',
+                '',
+                '',
+                ''
+            )
+        );
+        $form['button_search'] = array(
+            'name' => 'action',
+            'id' => "carriersummary_search_btn",
+            'content' => gettext('Search'),
+            'value' => 'save',
+            'type' => 'button',
+            'class' => 'btn btn-line-parrot pull-right'
+        );
+        $form['button_reset'] = array(
+            'name' => 'action',
+            'id' => "id_reset",
+            'content' => gettext('Clear'),
+            'value' => 'cancel',
+            'type' => 'reset',
+            'class' => 'btn btn-line-sky pull-right margin-x-10'
+        );
+
+        return $form;
+    }
+
+    function build_carriersummary_old()
+    {
+        $account_info = $accountinfo = $this->CI->session->userdata('accountinfo');
+        $currency_id = $account_info['currency_id'];
+        $currency = $this->CI->common->get_field_name('currency', 'currency', $currency_id);
+
+        $new_arr = array();
+        if ($this->CI->session->userdata('advance_search') == '1') {
+            $search_array = $this->CI->session->userdata('carriersummary_reports_search');
+            if (isset($search_array['time']) && ! empty($search_array['time'])) {
+                $new_arr[] = array(
+                    $search_array['time'],
+                    "151",
+                    $search_array['time'] . "(callstart)",
+                    "",
+                    "",
+                    ""
+                );
+            }
+            if (isset($search_array['groupby_1']) && ! empty($search_array['groupby_1'])) {
+                $first_column_groupby = $search_array['groupby_1'];
+                if ($first_column_groupby == 'carrier_id') {
+                    $new_arr[] = array(
+                        gettext("Account"),
+                        "151",
+                        "carrier_id",
+                        "first_name,last_name,number",
+                        "accounts",
+                        "build_concat_string"
+                    );
+                } elseif ($first_column_groupby == 'pattern') {
+                    $new_arr[] = array(
+                        gettext("Code"),
+                        "65",
+                        "pattern",
+                        "pattern",
+                        "",
+                        "get_only_numeric_val"
+                    );
+                    $new_arr[] = array(
+                        gettext("Destination"),
+                        "85",
+                        "notes",
+                        "",
+                        "",
+                        ""
+                    );
+                } elseif ($first_column_groupby == 'trunk_id') {
+                    $new_arr[] = array(
+                        gettext("Trunk"),
+                        "151",
+                        "trunk_id",
+                        "name",
+                        "trunks",
+                        "get_field_name"
+                    );
+                } elseif ($first_column_groupby == 'package_id') {
+                    $new_arr[] = array(
+                        gettext("Package"),
+                        "151",
+                        "package_id",
+                        "first_name,last_name,number",
+                        "accounts",
+                        "build_concat_string"
+                    );
+                }
+            }
+            if (isset($search_array['groupby_2']) && ! empty($search_array['groupby_2'])) {
+                $third_column_groupby = $search_array['groupby_2'];
+                if ($third_column_groupby == 'carrier_id') {
+                    $new_arr[] = array(
+                        gettext("Account"),
+                        "151",
+                        "carrier_id",
+                        "first_name,last_name,number",
+                        "accounts",
+                        "build_concat_string"
+                    );
+                } elseif ($third_column_groupby == 'pattern') {
+                    $new_arr[] = array(
+                        gettext("Code"),
+                        "65",
+                        "pattern",
+                        "pattern",
+                        "",
+                        "get_only_numeric_val"
+                    );
+                    $new_arr[] = array(
+                        gettext("Destination"),
+                        "85",
+                        "notes",
+                        "",
+                        "",
+                        ""
+                    );
+                } elseif ($third_column_groupby == 'trunk_id') {
+                    $new_arr[] = array(
+                        gettext("Trunk"),
+                        "151",
+                        "trunk_id",
+                        "name",
+                        "trunks",
+                        "get_field_name"
+                    );
+                } elseif ($third_column_groupby == 'package_id') {
+                    $new_arr[] = array(
+                        gettext("Package"),
+                        "151",
+                        "package_id",
+                        "first_name,last_name,number",
+                        "accounts",
+                        "build_concat_string"
+                    );
+                }
+            }
+            if (isset($search_array['groupby_3']) && ! empty($search_array['groupby_3'])) {
+                $fifth_column_groupby = $search_array['groupby_3'];
+                if ($fifth_column_groupby == 'carrier_id') {
+                    $new_arr[] = array(
+                        gettext("Account"),
+                        "151",
+                        "carrier_id",
+                        "first_name,last_name,number",
+                        "accounts",
+                        "build_concat_string"
+                    );
+                } elseif ($fifth_column_groupby == 'pattern') {
+                    $new_arr[] = array(
+                        gettext("Code"),
+                        "65",
+                        "pattern",
+                        "pattern",
+                        "",
+                        "get_only_numeric_val"
+                    );
+                    $new_arr[] = array(
+                        gettext("Destination"),
+                        "85",
+                        "notes",
+                        "",
+                        "",
+                        ""
+                    );
+                } elseif ($fifth_column_groupby == 'trunk_id') {
+                    $new_arr[] = array(
+                        gettext("Trunk"),
+                        "151",
+                        "trunk_id",
+                        "name",
+                        "trunks",
+                        "get_field_name"
+                    );
+                } elseif ($fifth_column_groupby == 'package_id') {
+                    $new_arr[] = array(
+                        gettext("Package"),
+                        "151",
+                        "package_id",
+                        "first_name,last_name,number",
+                        "accounts",
+                        "build_concat_string"
+                    );
+                }
+            }
+        }
+        if (empty($new_arr))
+            $new_arr[] = array(
+                gettext("Account"),
+                "300",
+                "carrier_id",
+                "first_name,last_name,number",
+                "accounts",
+                "build_concat_string"
+            );
+        $fixed_arr = array(
+            array(
+                gettext("Attempted Calls"),
+                "130",
+                "attempted_calls",
+                "",
+                "",
+                ""
+            ),
+            array(
+                gettext("Completed Calls"),
+                "130",
+                "description",
+                "",
+                "",
+                ""
+            ),
+            array(
+                gettext("Duration"),
+                "85",
+                "billable",
+                '',
+                '',
+                ''
+            ),
+            array(
+                gettext("Block Duration"),
+                "85",
+                "block_duration",
+                '',
+                '',
+                ''
+            ),
+            array(
+                gettext("ASR"),
+                "83",
+                "asr",
+                '',
+                '',
+                ''
+            ),
+            array(
+                gettext("ACD"),
+                "83",
+                "acd  ",
+                '',
+                '',
+                ''
+            ),
+            array(
+                gettext("MCD"),
+                "83",
+                "mcd",
+                '',
+                '',
+                ''
+            ),
+            array(
+                gettext("Billable"),
+                "102",
+                "billable",
+                '',
+                '',
+                ''
+            ),
+            array(
+                gettext("Cost")." <br/>($currency)",
+                "117",
+                "cost",
+                '',
+                '',
+                ''
+            )
+        );
+        $grid_field_arr = json_encode(array_merge($new_arr, $fixed_arr));
+        return $grid_field_arr;
+    }
+    
+    function get_carriersummary_search_form()
+    {
+    $form['forms'] = array(
+        '',
+        array(
+            'id' => "carriersummary_search"
+        )
+    );
+    $form['Search'] = array(
+        array(
+            gettext('From Date'),
+            'INPUT',
+            array(
+                'name' => 'callstart[]',
+                'id'   => 'customer_from_date',
+                'size' => '20',
+                'class' => "text field "
+            ),
+            '',
+            'tOOL TIP',
+            '',
+            'start_date[start_date-date]'
+        ),
+        array(
+            gettext('To Date'),
+            'INPUT',
+            array(
+                'name' => 'callstart[]',
+                'id'   => 'customer_to_date',
+                'size' => '20',
+                'class' => "text field "
+            ),
+            '',
+            'tOOL TIP',
+            '',
+            'end_date[end_date-date]'
+        ),
+        array(
+            gettext('Carrier'),
+            'carrier_id',
+            'SELECT',
+            '',
+            '',
+            'tOOL TIP',
+            'Please Enter carrier',
+            'carrier_id',
+            'carrier_name',
+            'carrier_routing',
+            'build_dropdown',
+            '',
+            array()
+        ),
+        array(
+            gettext('Trunk'),
+            'trunk_id',
+            'SELECT',
+            '',
+            '',
+            'tOOL TIP',
+            'Please Enter trunk',
+            'id',
+            'IF(`status`=2, concat(name,"","^"),name) as name',
+            'trunks',
+            'build_dropdown_deleted',
+            '',
+            array(
+                "status" => "1"
+            )
+        ),
+        array(
+            gettext('Code'),
+            'INPUT',
+            array(
+                'name'  => 'pattern[pattern]',
+                'value' => '',
+                'size'  => '20',
+                'class' => "text field "
+            ),
+            '',
+            'Tool tips info',
+            '1',
+            'pattern[pattern-string]',
+            '',
+            '',
+            '',
+            'search_string_type',
+            ''
+        ),
+        array(
+            gettext('Code Destination'),
+            'INPUT',
+            array(
+                'name'  => 'notes[notes]',
+                'value' => '',
+                'size'  => '20',
+                'class' => "text field "
+            ),
+            '',
+            'Tool tips info',
+            '1',
+            'notes[notes-string]',
+            '',
+            '',
+            '',
+            'search_string_type',
+            ''
+        ),
+        array(
+            '',
+            'HIDDEN',
+            'ajax_search',
+            '1',
+            '',
+            '',
+            ''
+        ),
+        array(
+            '',
+            'HIDDEN',
+            'advance_search',
+            '1',
+            '',
+            '',
+            ''
+        )
+    );
+    $form['button_search'] = array(
+        'name'    => 'action',
+        'id'      => "carriersummary_search_btn",
+        'content' => gettext('Search'),
+        'value'   => 'save',
+        'type'    => 'button',
+        'class'   => 'btn btn-line-parrot pull-right'
+    );
+    $form['button_reset'] = array(
+        'name'    => 'action',
+        'id'      => "id_reset",
+        'content' => gettext('Clear'),
+        'value'   => 'cancel',
+        'type'    => 'reset',
+        'class'   => 'btn btn-line-sky pull-right margin-x-10'
+    );
+
+    return $form;
+}
+
+    function build_carriersummary()
+    {
+        $account_info = $this->CI->session->userdata('accountinfo');
+        $currency_id  = $account_info['currency_id'];
+        $currency     = $this->CI->common->get_field_name('currency', 'currency', $currency_id);
+    
+        $new_arr = array();
+    
+        if ($this->CI->session->userdata('advance_search') == '1') {
+            $search_array = $this->CI->session->userdata('carriersummary_reports_search');
+    
+            if (isset($search_array['time']) && ! empty($search_array['time'])) {
+                $new_arr[] = array(
+                    $search_array['time'],
+                    "151",
+                    $search_array['time'] . "(callstart)",
+                    "",
+                    "",
+                    ""
+                );
+            }
+    
+            $groupby_keys = array('groupby_1', 'groupby_2', 'groupby_3');
+            foreach ($groupby_keys as $key) {
+                if (isset($search_array[$key]) && ! empty($search_array[$key])) {
+                    $groupby_val = $search_array[$key];
+                    if ($groupby_val == 'carrier_id') {
+                        $new_arr[] = array(
+                            gettext("Carrier"),
+                            "151",
+                            "carrier_id",
+                            "carrier_name",
+                            "carrier_routing",
+                            "get_field_name"
+                        );
+                    } elseif ($groupby_val == 'pattern') {
+                        $new_arr[] = array(
+                            gettext("Code"),
+                            "65",
+                            "pattern",
+                            "pattern",
+                            "",
+                            "get_only_numeric_val"
+                        );
+                        $new_arr[] = array(
+                            gettext("Destination"),
+                            "85",
+                            "notes",
+                            "",
+                            "",
+                            ""
+                        );
+                    } elseif ($groupby_val == 'trunk_id') {
+                        $new_arr[] = array(
+                            gettext("Trunk"),
+                            "151",
+                            "trunk_id",
+                            "name",
+                            "trunks",
+                            "get_field_name"
+                        );
+                    } elseif ($groupby_val == 'package_id') {
+                        $new_arr[] = array(
+                            gettext("Package"),
+                            "151",
+                            "package_id",
+                            "name",
+                            "products",
+                            "get_field_name"
+                        );
+                    } elseif ($groupby_val == 'accountid') {
+                        $new_arr[] = array(
+                            gettext("Account"),
+                            "151",
+                            "accountid",
+                            "first_name,last_name,number",
+                            "accounts",
+                            "build_concat_string"
+                        );
+                    } elseif ($groupby_val == 'sip_user') {
+                        $new_arr[] = array(gettext("SIP User"), "151", "", "", "", "");
+                    } elseif ($groupby_val == 'call_direction') {
+                        $new_arr[] = array(gettext("Direction"), "151", "", "", "", "");
+                    }
+                }
+            }
+        }
+    
+        if (empty($new_arr)) {
+            $new_arr[] = array(
+                gettext("Carrier"),
+                "300",
+                "carrier_id",
+                "carrier_name",
+                "carrier_routing",
+                "get_field_name"
+            );
+        }
+    
+        $fixed_arr = array(
+            array(gettext("Attempted Calls"),  "130", "attempted_calls", "", "", ""),
+            array(gettext("Completed Calls"),  "130", "description",     "", "", ""),
+            array(gettext("Duration"),         "85",  "billable",        '', '', ''),
+            array(gettext("Block Duration"),   "85",  "block_duration",  '', '', ''),
+            array(gettext("ASR"),              "83",  "asr",             '', '', ''),
+            array(gettext("ACD"),              "83",  "acd",             '', '', ''),
+            array(gettext("MCD"),              "83",  "mcd",             '', '', ''),
+            array(gettext("Billable"),         "102", "billable",        '', '', ''),
+            array(gettext("Cost") . " <br/>($currency)", "117", "cost", '', '', '')
+        );
+    
+        return json_encode(array_merge($new_arr, $fixed_arr));
+    }
+
+    function build_grid_buttons_carriersummary()
+    {
+        $buttons_json = json_encode(array(
+            array(
+                gettext("Export"),
+                "btn btn-xing",
+                "fa fa-upload fa-lg",
+                "button_action",
+                "/summary/carrier_export_csv/",
                 'single',
                 "",
                 "export"

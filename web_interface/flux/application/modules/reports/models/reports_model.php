@@ -186,12 +186,15 @@ class Reports_model extends CI_Model
         return $result;
     }
 
-    function users_cdrs_list($flag, $accountid, $entity_type, $start, $limit)
+    function users_cdrs_list($flag, $accountid, $entity_type, $start, $limit, $like_str = null)
     {
         $where = "callstart >= '" . date('Y-m-d 00:00:00') . "' AND callstart <='" . date('Y-m-d 23:59:59') . "' AND ";
         $account_type = $entity_type == 'provider' ? 'provider_id' : 'accountid';
         $where .= "accountid = '" . $accountid . "' ";
         $table = $entity_type == 'reseller' ? 'reseller_cdrs' : 'cdrs';
+        if (!empty($like_str)) {
+            $this->db->where($like_str);
+        }
         if ($flag) {
             $query = $this->db_model->select("*", $table, $where, "callstart", "DESC", $limit, $start);
         } else {
@@ -285,7 +288,7 @@ payment_transaction.transaction_id,invoice_details.charge_type,invoice_details.d
         return $query;
     }
 
-    function get_customer_refillreport($flag, $accountid, $start = 0, $limit = 0)
+    function get_customer_refillreport($flag, $accountid, $start = 0, $limit = 0, $like_str = null)
     {
         $this->db_model->build_search('cdr_refill_search', 'payment_transaction.');
         $accountinfo = $this->session->userdata('accountinfo');
@@ -307,6 +310,9 @@ payment_transaction.transaction_id,invoice_details.charge_type,invoice_details.d
         }
         $where = "(invoice_details.charge_type= 'Voucher' OR invoice_details.charge_type='REFILL ')";
         $this->db->where("payment_transaction.accountid", $accountid);
+        if (!empty($like_str)) {
+            $this->db->where($like_str);
+        }
 
         if ($flag) {
             $this->db->order_by("payment_transaction.date", "desc");
@@ -339,15 +345,156 @@ payment_transaction.transaction_id,invoice_details.charge_type,invoice_details.d
         }
         return $query;
     }
-    
+
+    function get_pricelist_map($ids)
+    {
+        if (empty($ids)) {
+            return array();
+        }
+        $this->db->select('id,name');
+        $this->db->where("id IN (" . $ids . ")", null, false);
+        $result = $this->db->get('pricelists')->result_array();
+        $response = array();
+        foreach ($result as $value) {
+            $response[$value['id']] = $value['name'];
+        }
+        return $response;
+    }
+
+    function get_carrier_map($ids)
+    {
+        if (empty($ids)) {
+            return array();
+        }
+        $this->db->select('carrier_id,carrier_name,carrier_rn1');
+        $this->db->where("carrier_id IN (" . $ids . ")", null, false);
+        $this->db->group_by('carrier_id');
+        $result = $this->db->get('carrier_routing')->result_array();
+        $response = array();
+        foreach ($result as $value) {
+            $response[$value['carrier_id']] = $value['carrier_name'] . ' (' . $value['carrier_rn1'] . ')';
+        }
+        return $response;
+    }
+
+    function get_trunk_map($ids)
+    {
+        if (empty($ids)) {
+            return array();
+        }
+        $this->db->select('id,name');
+        $this->db->where("id IN (" . $ids . ")", null, false);
+        $result = $this->db->get('trunks')->result_array();
+        $response = array();
+        foreach ($result as $value) {
+            $response[$value['id']] = $value['name'];
+        }
+        return $response;
+    }
+
+    function get_account_display_map($ids)
+    {
+        return $this->get_account_cdr_lookup($ids, false, true);
+    }
+
+    function get_account_cdr_lookup($ids, $include_recording = false, $display_only = false)
+    {
+        if (empty($ids)) {
+            return $display_only ? array() : array('display' => array(), 'is_recording' => array());
+        }
+        $select = $include_recording ? 'id,number,first_name,last_name,is_recording' : 'id,number,first_name,last_name';
+        $this->db->select($select);
+        $this->db->where("id IN (" . $ids . ")", null, false);
+        $result = $this->db->get('accounts')->result_array();
+        $display = array();
+        $is_recording = array();
+        foreach ($result as $value) {
+            $display[$value['id']] = $value['first_name'] . " " . $value['last_name'] . ' (' . $value['number'] . ')';
+            if ($include_recording) {
+                $is_recording[$value['id']] = $value['is_recording'];
+            }
+        }
+        if ($display_only) {
+            return $display;
+        }
+        return array('display' => $display, 'is_recording' => $is_recording);
+    }
+
+    function get_reseller_account_display_map($reseller_id)
+    {
+        $this->db->select("concat(first_name,' ',last_name,' ','(',number,')') as first_name,id", false);
+        $this->db->where('reseller_id', $reseller_id);
+        $this->db->where('type NOT IN (-1,2,4)', null, false);
+        $account_res = $this->db->get('accounts')->result_array();
+        $response = array();
+        foreach ($account_res as $value) {
+            $response[$value['id']] = $value['first_name'];
+        }
+        return $response;
+    }
+
+    function get_global_accounts_by_reseller($reseller_id)
+    {
+        return $this->db->get_where('accounts', array(
+            'reseller_id' => $reseller_id,
+            'status' => 0,
+            'type' => 'GLOBAL'
+        ))->result_array();
+    }
+
+    function get_currency_name($currency_id)
+    {
+        return $this->common->get_field_name('currency', 'currency', $currency_id);
+    }
+
+    function get_account_display_by_id($account_id)
+    {
+        $account = $this->db_model->getSelect('*', 'accounts', array('id' => $account_id));
+        if ($account->num_rows() > 0) {
+            $account_array = $account->result_array();
+            return $account_array[0]['first_name'] . " " . $account_array[0]['last_name'] . ' (' . $account_array[0]['number'] . ')';
+        }
+        return 'Anonymous';
+    }
+
+    function get_account_display_with_company($account_id)
+    {
+        $account = $this->db_model->getSelect('*', 'accounts', array('id' => $account_id));
+        if ($account->num_rows() > 0) {
+            $account_array = $account->result_array();
+            if (isset($account_array[0]['company_name']) && !empty($account_array[0]['company_name'])) {
+                return $account_array[0]['company_name'] . ' (' . $account_array[0]['number'] . ')';
+            }
+            return $account_array[0]['first_name'] . " " . $account_array[0]['last_name'] . ' (' . $account_array[0]['number'] . ')';
+        }
+        return 'Anonymous';
+    }
+
+    function get_account_email($account_id)
+    {
+        return $this->common->get_field_name('email', 'accounts', array('id' => $account_id));
+    }
+
+    function get_account_concat_value($fields, $account_id)
+    {
+        return $this->common->get_field_name_coma_new($fields, 'accounts', $account_id);
+    }
+
+    function get_product_name($product_id)
+    {
+        return $this->common->get_field_name('name', 'products', $product_id);
+    }
+
     function get_show_recordings()
     {
         $show_recordings = $this->common->get_field_name('value', 'system', array("name" => "show_recording"));
         if (isset($show_recordings) && $show_recordings != "") {
         return $show_recordings;
-        } 
-        else {
+        } else {
         return 1;
-        }   
+        }
+        
+        
     }
+
 }

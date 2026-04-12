@@ -68,6 +68,63 @@ class trunk_model extends CI_Model
         ));
         $this->db->where('trunk_id', $id);
         $this->db->delete('outbound_routes');
+        $this->db->delete("routing", array(
+            "trunk_id" => $id
+        ));
         return true;
     }
+
+    function normalize_ids($selected_ids)
+    {
+        return array_values(array_filter(array_map('intval', array_map('trim', explode(',', $selected_ids)))));
+    }
+
+    function delete_multiple_trunks($selected_ids)
+    {
+        $ids = $this->normalize_ids($selected_ids);
+        if (empty($ids)) {
+            return false;
+        }
+        $update_data = array('status' => '2');
+        $this->db->where_in('trunk_id', $ids);
+        $this->db->delete('outbound_routes');
+        $this->db->where_in('id', $ids);
+        return $this->db->update('trunks', $update_data);
+    }
+
+    function get_trunk_delete_summary($selected_ids)
+    {
+        $ids = $this->normalize_ids($selected_ids);
+        $data = array('selected_ids' => $selected_ids);
+        if (empty($ids)) {
+            return $data;
+        }
+        $trunk_arr = array();
+        $this->db->select('id,name');
+        $this->db->where_in('id', $ids);
+        foreach ($this->db->get('trunks')->result_array() as $value) {
+            $trunk_arr[$value['id']]['name'] = $value['name'];
+        }
+        $this->db->where_in('trunk_id', $ids);
+        $this->db->select('count(id) as cnt,trunk_id');
+        $this->db->group_by('trunk_id');
+        $outbound_routes_res = $this->db->get('outbound_routes');
+        if ($outbound_routes_res->num_rows() > 0) {
+            foreach ($outbound_routes_res->result_array() as $value) {
+                $trunk_arr[$value['trunk_id']]['outbound_routes'] = $value['cnt'];
+            }
+        }
+        $str = null;
+        foreach ($trunk_arr as $value) {
+            if (isset($value['outbound_routes'])) {
+                $str .= $value['name'] . "trunk using by " . $value['outbound_routes'] . " termination rates 
+";
+            }
+        }
+        if (! empty($str)) {
+            $data['str'] = $str;
+        }
+        return $data;
+    }
+
 }

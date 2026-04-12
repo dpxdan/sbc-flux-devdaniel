@@ -200,8 +200,7 @@ class Permissions extends MX_Controller
     {
         $ids = $this->input->post("selected_ids", true);
         $where = "id IN ($ids)";
-        $this->db->delete("permissions", $where);
-        echo TRUE;
+        echo $this->permissions_model->delete_multiple_permissions($ids);
     }
 }
 

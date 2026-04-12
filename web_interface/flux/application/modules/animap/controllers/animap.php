@@ -227,9 +227,7 @@ class Animap extends MX_Controller
     function animap_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("ani_map");
+        echo $this->animap_model->delete_multiple_animap($ids);
     }
 
     function reseller_customerlist()
@@ -238,10 +236,7 @@ class Animap extends MX_Controller
         $reseller_id = $add_array['reseller_id'];
         $accountinfo = $this->session->userdata("accountinfo");
         $reseller_id = $accountinfo['type'] == 1 || $accountinfo['type'] == 5 ? $accountinfo['id'] : $reseller_id;
-        $accounts_result = $this->db->get_where('accounts', array(
-            "reseller_id" => $reseller_id,
-            "type" => "GLOBAL"
-        ));
+        $accounts_result = $this->animap_model->get_reseller_customer_accounts($reseller_id);
         if ($accounts_result->num_rows() > 0) {
             $accounts_result_array = $accounts_result->result_array();
             foreach ($accounts_result_array as $key => $value) {

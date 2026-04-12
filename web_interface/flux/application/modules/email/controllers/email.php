@@ -77,82 +77,7 @@ class Email extends MX_Controller
         $add_array = $add_array->result_array();
         $add_array = $add_array[0];
         $data['page_title'] = gettext('Resand Email');
-        $where = array(
-            'id' => $add_array['id']
-        );
-        $account = $this->db_model->getSelect("*", "mail_details", $where);
-        foreach ($account->result_array() as $key => $value) {
-            $edit_data = $value;
-        }
-        $add_array = array(
-            'accountid' => $edit_data['accountid'],
-            'subject' => $add_array['subject'],
-            'body' => $add_array['body'],
-            'from' => $edit_data['from'],
-            'to' => $edit_data['to'],
-            'status' => $edit_data['status'],
-            'template' => $edit_data['template'],
-            'sms_body' => $edit_data['sms_body'],
-            'to_number' => $edit_data['to_number'],
-            'attachment' => $edit_data['attachment']
-        );
-        $this->email_re_send($add_array);
-        $this->session->set_flashdata('flux_errormsg', gettext('Email resend successfully!'));
-        redirect(base_url() . 'email/email_history_list/');
-    }
-
-    function email_resend_edit($edit_id = '')
-    {
-        $this->permission->check_web_record_permission($edit_id, 'mail_details', "email/email_history_list/");
-        $data['page_title'] = gettext('Resend Email');
-        $where = array(
-            'id' => $edit_id
-        );
-        $account = $this->db_model->getSelect("*", "mail_details", $where);
-        if ($account->num_rows() > 0) {
-            foreach ($account->result_array() as $key => $value) {
-                $edit_data = $value;
-            }
-            $data['maildata'] = $edit_data['attachment'];
-            $data['form'] = $this->form->build_form($this->email_form->get_form_fields_email_edit(), $edit_data);
-            $this->load->view('view_email_add_edit', $data);
-        } else {
-            redirect(base_url() . 'email/email_history_list/');
-        }
-    }
-
-    function email_resend_edit_customer($edit_id = '')
-    {
-        $data['page_title'] = gettext('Resent Email');
-        $where = array(
-            'id' => $edit_id
-        );
-        $account = $this->db_model->getSelect("*", "mail_details", $where);
-        if ($account->num_rows() > 0) {
-            foreach ($account->result_array() as $key => $value) {
-                $edit_data = $value;
-            }
-            $data['maildata'] = $edit_data['attachment'];
-            $data['form'] = $this->form->build_form($this->email_form->get_form_fields_email_view_cus_edit(), $edit_data);
-            $this->load->view('view_email_add_edit', $data);
-        } else {
-            redirect(base_url() . 'email/email_history_list/');
-        }
-    }
-
-    function email_resend_customer($edit_id = '') {
-        $add_array = $this->input->post();
-        $data['page_title'] = gettext('Resand Email');
-        $where = array(
-            'id' => $add_array['id']
-        );
-	$this->db->order_by('id', 'desc');
-	$this->db->limit(1);
-        $email_array = (array)$this->db->get_where("mail_details", $where)->first_row();
-	unset($email_array['id']);
-	$email_array['status'] = 1;
-	$email_array['date'] = gmdate('Y-m-d H:i:s');
-	$this->db->insert('mail_details',$email_array);
+        $email_array = $this->email_model->resend_customer_email($add_array['id']);
         $this->load->module('accounts/accounts');
         $this->session->set_flashdata('flux_errormsg', gettext('Email Resend Successfully!'));
         redirect(base_url() . 'accounts/customer_emailhistory/' . $email_array['accountid'].'/');
@@ -309,6 +234,7 @@ class Email extends MX_Controller
         $this->load->module('accounts/accounts');
         redirect(base_url() . 'accounts/customer_edit/' . $value['accountid']);
     }
+    
     function email_history_list()
     {
         $data['logintype'] = $this->session->userdata('logintype');
@@ -321,6 +247,7 @@ class Email extends MX_Controller
         $data['form_search'] = $this->form->build_serach_form($this->email_form->get_email_history_search_form());
         $this->load->view('view_email_list', $data);
     }
+    
     function email_history_list_json()
     {
         $data['logintype'] = $this->session->userdata('logintype');
@@ -349,9 +276,7 @@ class Email extends MX_Controller
     function email_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("email");
+        echo $this->email_model->delete_multiple_emails($ids);
     }
 
     function email_send_multipal()
@@ -405,6 +330,26 @@ class Email extends MX_Controller
             ob_clean();
             flush();
             readfile(getcwd() . '/attachments/' . $file_name);
+        }
+    }
+    
+    function email_resend_edit($edit_id = '')
+    {
+        $this->permission->check_web_record_permission($edit_id, 'mail_details', "email/email_history_list/");
+        $data['page_title'] = gettext('Resend Email');
+        $where = array(
+            'id' => $edit_id
+        );
+        $account = $this->db_model->getSelect("*", "mail_details", $where);
+        if ($account->num_rows() > 0) {
+            foreach ($account->result_array() as $key => $value) {
+                $edit_data = $value;
+            }
+            $data['maildata'] = $edit_data['attachment'];
+            $data['form'] = $this->form->build_form($this->email_form->get_form_fields_email_edit(), $edit_data);
+            $this->load->view('view_email_add_edit', $data);
+        } else {
+            redirect(base_url() . 'email/email_history_list/');
         }
     }
 }

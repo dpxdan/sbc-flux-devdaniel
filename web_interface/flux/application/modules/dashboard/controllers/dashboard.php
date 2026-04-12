@@ -371,7 +371,7 @@ class dashboard extends MX_Controller {
 		}
 		
 		$today_query = 'select SUM(total_calls) as total_calls, SUM(debit) as total_debit, SUM(cost) as total_cost, (SUM(debit-cost))as profit, MAX(mcd)as mcd, IFNULL(ROUND(100.0 * SUM(total_answered_call)/SUM(total_calls),2),0) AS ASR,(SUM(billseconds) / SUM(total_answered_call)) as ACD from cdrs_day_by_summary where reseller_id="'.$reseller_id.'" and calldate <= "'.$today_end_date.'" and calldate >= "'.$today_start_date.'"';
-		$result = $this->db->query($today_query);
+		$result = $this->dashboard_model->execute_query($today_query);
 		$today_result = (array) $result->first_row();
 		
 		if($today_result['mcd'] == ""){$today_result['mcd'] = "0";}
@@ -394,7 +394,7 @@ class dashboard extends MX_Controller {
 		}
 		
 		$this_month_query = 'select SUM(total_calls) as total_calls_month, SUM(debit) as total_debit_month, SUM(cost) as total_cost_month, (SUM(debit-cost))as profit_month, MAX(mcd)as mcd_month, IFNULL(ROUND(100.0 * SUM(total_answered_call)/SUM(total_calls),2),0) AS ASR_month,(SUM(billseconds) / SUM(total_answered_call)) as ACD_month from cdrs_day_by_summary where reseller_id="'.$reseller_id.'" and calldate <= "'.$end_date.'" and calldate >= "'.$start_date.'"';
-		$month_result = $this->db->query($this_month_query);
+		$month_result = $this->dashboard_model->execute_query($this_month_query);
 		$this_month_result = (array) $month_result->first_row();
 		$result_array = array_merge($today_result,$this_month_result);
 		
@@ -446,7 +446,7 @@ class dashboard extends MX_Controller {
 			$reseller_id = "0";
 		}
 		$query = 'Select count(*) as count from accounts where creation <= "'.$end_date.'" and creation >= "'.$start_date.'" and reseller_id="'.$reseller_id.'"';
-		$result = $this->db->query($query);
+		$result = $this->dashboard_model->execute_query($query);
 		$count = (array) $result->first_row();
 		if($count['count'] == "" OR $count['count'] == NULL){
 			$count['count'] =0;
@@ -475,7 +475,7 @@ class dashboard extends MX_Controller {
 			$reseller_id = "0";
 		}
 		$query = 'Select SUM(total_calls) as total_calls from cdrs_day_by_summary where calldate <= "'.$end_date.'" and calldate >= "'.$start_date.'" and reseller_id="'.$reseller_id.'"';
-		$result = $this->db->query($query);
+		$result = $this->dashboard_model->execute_query($query);
 		$count = (array) $result->first_row();
 		if($count['total_calls'] == "" OR $count['total_calls'] == NULL){
 			$count['total_calls'] =0;
@@ -504,7 +504,7 @@ class dashboard extends MX_Controller {
 			$reseller_id = "0";
 		}
 		$query = 'Select count(*) as count from orders where order_date <= "'.$end_date.'" and order_date >= "'.$start_date.'" and reseller_id="'.$reseller_id.'"';
-		$result = $this->db->query($query);
+		$result = $this->dashboard_model->execute_query($query);
 		$count = (array) $result->first_row();
 		if($count['count'] == "" OR $count['count'] == NULL){
 			$count['count'] =0;
@@ -533,7 +533,7 @@ class dashboard extends MX_Controller {
 				$reseller_id = "0";
 			}
 			$query = 'Select count(*) as count from view_status_pedidos where order_status <> "Pedido Ativo" and order_date <= "'.$end_date.'" and order_date >= "'.$start_date.'" and reseller_id="'.$reseller_id.'"';
-			$result = $this->db->query($query);
+			$result = $this->dashboard_model->execute_query($query);
 			$count = (array) $result->first_row();
 			if($count['count'] == "" OR $count['count'] == NULL){
 				$count['count'] =0;
@@ -562,7 +562,7 @@ class dashboard extends MX_Controller {
 			$reseller_id = "0";
 		}
 		$query = 'Select sum(amount) as total_refill_amount from payment_transaction where date <= "'.$end_date.'" and date >= "'.$start_date.'" and reseller_id="'.$reseller_id.'"';
-		$result = $this->db->query($query);
+		$result = $this->dashboard_model->execute_query($query);
 		$result_array = (array) $result->first_row();
 		if($result_array['total_refill_amount'] == "" OR $result_array['total_refill_amount'] == NULL){
 			$result_refill['total_refill_amount'] = $this->common_model->calculate_currency_customer(0);
@@ -579,7 +579,7 @@ class dashboard extends MX_Controller {
 				$reseller_id = "0";
 			}
 			$query_refill = 'Select sum(amount) as today_refill_amount from payment_transaction where date >= "'.date("Y-m-d 00:00:00").'" and date <= "'.date("Y-m-d 23:59:59").'" and reseller_id="'.$reseller_id.'"';
-			$result_refill = $this->db->query($query_refill);
+			$result_refill = $this->dashboard_model->execute_query($query_refill);
 			$result_refill = (array) $result_refill->first_row();
 			if($result_refill['today_refill_amount'] == "" OR $result_refill['today_refill_amount'] == NULL){
 				$result_array['today_refill_amount'] =$this->common_model->calculate_currency(0);
@@ -588,7 +588,7 @@ class dashboard extends MX_Controller {
 			}
 			
 			$query_order = 'Select count(*) as order_count from orders where order_date <= "'.date("Y-m-d 23:59:59").'" and order_date >= "'.date("Y-m-d 00:00:00").'" and reseller_id="'.$reseller_id.'"';
-			$result_order = $this->db->query($query_order);
+			$result_order = $this->dashboard_model->execute_query($query_order);
 			$count = (array) $result_order->first_row();
 			if($count['order_count'] == "" OR $count['order_count'] == NULL){
 				$result_array['today_order_count'] = 0;
@@ -597,7 +597,7 @@ class dashboard extends MX_Controller {
 			}
 			
 			$query_fail_order = 'Select count(*) as order_fail_count from view_status_pedidos where order_status <> "Pedido Ativo" and  order_date <= "'.date("Y-m-d 23:59:59").'" and order_date >= "'.date("Y-m-d 00:00:00").'" and reseller_id="'.$reseller_id.'"';
-						$result_fail_order = $this->db->query($query_fail_order);
+						$result_fail_order = $this->dashboard_model->execute_query($query_fail_order);
 						$count = (array) $result_fail_order->first_row();
 						if($count['order_fail_count'] == "" OR $count['order_fail_count'] == NULL){
 							$result_array['today_order_fail_count'] = 0;
@@ -607,7 +607,7 @@ class dashboard extends MX_Controller {
 			
 			
 			$query = 'Select count(*) as account_count from accounts where creation <= "'.date("Y-m-d 23:59:59").'" and creation >= "'.date("Y-m-d 00:00:00").'" and reseller_id="'.$reseller_id.'" and status="0" and deleted="0"';
-			$result = $this->db->query($query);
+			$result = $this->dashboard_model->execute_query($query);
 			$count = (array) $result->first_row();
 			if($count['account_count'] == "" OR $count['account_count'] == NULL){
 				$result_array['today_account_count'] = 0;
@@ -616,7 +616,7 @@ class dashboard extends MX_Controller {
 			}
 			
 			$query = 'Select SUM(total_calls) as total_calls from cdrs_day_by_summary where calldate <= "'.date("Y-m-d 23:59:59").'" and calldate >= "'.date("Y-m-d 00:00:00").'" and reseller_id="'.$reseller_id.'"';
-			$result = $this->db->query($query);
+			$result = $this->dashboard_model->execute_query($query);
 			$count = (array) $result->first_row();
 			if($count['total_calls'] == "" OR $count['total_calls'] == NULL){
 				$result_array['today_total_calls'] = 0;

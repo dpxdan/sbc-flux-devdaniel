@@ -131,5 +131,11 @@ class Dashboard_model extends CI_Model {
 	  
 		return $this->db->query ( $select_query );
 	}
+
+
+	function execute_query($query) {
+		return $this->db->query($query);
+	}
+
 }
 ?>

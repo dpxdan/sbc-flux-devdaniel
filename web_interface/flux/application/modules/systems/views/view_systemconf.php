@@ -4,33 +4,29 @@
 <script type="text/javascript"
 	src="<?php echo base_url(); ?>assets/ck/ckeditor/ckeditor.js"></script>
 <script type="text/javascript"
-	src="<?php echo base_url(); ?>assets/ck/ckfinder/ckfinder.js"></script>
-<script type="text/javascript"
 	src="<?php echo base_url(); ?>assets/ck/ckeditor/adapters/jquery.js"></script>
 <script type="text/javascript"
 	src="<?php echo base_url(); ?>assets/markup/markitup/sets/default/set.js"></script>
 <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/jquery.validate.min.js"></script>
 
 <script>
-$ (document).ready(function(){
-	$('a[rel*=facebox]').facebox();
-	$('[data-toggle="tooltip"]').tooltip();
-    CKEDITOR.replace('text');
-    CKEDITOR.config.width = '100%';
-});
-</script>
-<script type="text/javascript">
-$(function() {
-  	$('#term_condition').markItUp(mySettings);
+
+$(document).ready(function() {
+    var elementExists = document.getElementById('editor1');
+    if (elementExists) {
+        $('a[rel*=facebox]').facebox();
+        $('[data-toggle="tooltip"]').tooltip();
+        CKEDITOR.replace('text');
+        CKEDITOR.config.width = '100%';
+    }
 });
 
 </script>
-
 
 <?php endblock() ?>
 
 <?php startblock('page-title') ?>
-    <?php echo ucfirst($group_title).' - '.$page_title?>
+    <?php echo ucfirst($page_title)?>
 <?php endblock() ?>
 <?php startblock('content')?>
 <style>
@@ -255,13 +251,13 @@ function check_validation()
 																	 <label title="<?php echo str_replace('smtp',"SMTP",$val['comment']);?>" data-toggle="tooltip" data-placement="right" data-html="true" class="p-0 control-label"><?php echo gettext($val['display_name']);?> * </label> -->
 																	 <?php if($group_title=="term_and_condition"){
 																		if($val['name']=="text"){
-															echo'<div class="col-md-12 text-center"> OR </div>';
+															echo'<div class="col-md-12 text-center">';?> <?php echo gettext('OR');?> <?php echo '</div>';
 														}
 																	 echo "<div class='row'>";
 																	 }
 																	 ?>
 																	 <?php if($group_title=="term_and_condition"){ ?>
-																	 	<div class="col-md-12 col-sm-12 form-group h-auto pt-4">
+																	 	<div class="col-md-12 col-sm-12 form-group h-auto pt-4" id="editor1">
 																	 		<?php }else{ ?>
 																	 	<div class="col-md-4 col-sm-12 form-group ">
 																	 	<?php } ?>

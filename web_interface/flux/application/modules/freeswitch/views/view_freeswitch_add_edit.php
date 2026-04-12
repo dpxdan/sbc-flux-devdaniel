@@ -5,6 +5,13 @@
 <link href="<?php echo base_url(); ?>assets/css/facebox.css"
 	rel="stylesheet" media="all" />
 <script type="text/javascript">
+$(document).ready(function () {
+    $('#ha1_field').on('mouseenter', function () {
+        $(this).attr('type', 'text');
+    }).on('mouseleave', function () {
+        $(this).attr('type', 'password');
+    });
+});
     $("#submit").click(function(){
         submit_form("sipdevices_form");
     });

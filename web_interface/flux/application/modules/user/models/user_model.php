@@ -658,6 +658,499 @@ class user_model extends CI_Model
         $this->db->where("id", $data['id']);
         return $this->db->update("dids", $data);
     }
+
+    function reset_empty_payment_transactions($accountid)
+    {
+        $this->db->where(array(
+            "amount" => "0",
+            "actual_amount" => "0",
+            "user_currency" => "",
+            "accountid" => $accountid
+        ));
+        return $this->db->delete("payment_transaction");
+    }
+
+    function create_payment_transaction($data)
+    {
+        return $this->db->insert("payment_transaction", $data);
+    }
+
+    function is_active_account($account_id)
+    {
+        return (array) $this->db->get_where('accounts', array(
+            'id' => $account_id,
+            'deleted' => 0,
+            'status' => 0
+        ))->first_row();
+    }
+
+    function get_dashboard_products($account_info, $limit = 10)
+    {
+        if ($account_info['reseller_id'] > 0) {
+            $this->db->where("products.product_category IN (1,2)", null, false);
+            return $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,products.buy_cost,products.can_purchase,products.can_resell,products.commission,reseller_products.price,reseller_products.setup_fee,products.billing_type,products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id,reseller_products.setup_fee,reseller_products.is_optin', array(
+                'reseller_products.status' => 0,
+                'products.can_purchase' => 0,
+                'products.is_deleted' => 0,
+                'reseller_products.account_id' => $account_info['reseller_id']
+            ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', $limit, '', 'desc', 'products.id');
+        }
+        $this->db->where("products.product_category IN (1,2)", null, false);
+        return $this->db_model->select('*', 'products', array(
+            'status' => 0,
+            'can_purchase' => 0,
+            'is_deleted' => 0,
+            'reseller_id' => 0
+        ), 'id', 'desc', $limit, '');
+    }
+
+    function get_dashboard_packages($pricelist_id, $limit = 10)
+    {
+        $this->db->where('pricelist_id', $pricelist_id);
+        $this->db->select('*');
+        return $this->db->get('packages', $limit);
+    }
+
+    function get_dashboard_recent_invoices($accountid, $limit = 10)
+    {
+        $this->db->where('accountid', $accountid);
+        $this->db->where('confirm', 1);
+        $this->db->select('*');
+        $this->db->order_by('generate_date', 'desc');
+        return $this->db->get('invoices', $limit);
+    }
+
+    function get_dashboard_recent_subscriptions($accountid, $limit = 10)
+    {
+        $this->db->where('accountid', $accountid);
+        $this->db->select('*');
+        $this->db->order_by('assign_date', 'desc');
+        $result = $this->db->get('charge_to_account', $limit);
+        $charges = array();
+        if ($result->num_rows() > 0) {
+            $charge_ids = array();
+            foreach ($result->result_array() as $row) {
+                if (!empty($row['charge_id'])) {
+                    $charge_ids[] = $row['charge_id'];
+                }
+            }
+            if (!empty($charge_ids)) {
+                $this->db->where_in('id', array_unique($charge_ids));
+                $this->db->select('id,description,sweep_id');
+                foreach ($this->db->get('charges')->result_array() as $row) {
+                    $charges[$row['id']] = $row;
+                }
+            }
+        }
+        return array('subscriptions' => $result, 'charges' => $charges);
+    }
+
+    function refresh_session_account($account_id)
+    {
+        return (array) $this->db->get_where('accounts', array(
+            'id' => $account_id
+        ))->first_row();
+    }
+
+    function get_did_info($did_id, $fields = '*')
+    {
+        $this->db->select($fields);
+        return (array) $this->db->get_where('dids', array(
+            'id' => $did_id
+        ))->first_row();
+    }
+
+    function update_user_did($did_id, $update_arr, $did_number = '', $reseller_id = 0)
+    {
+        $this->db->update('dids', $update_arr, array(
+            'id' => $did_id
+        ));
+        if ($reseller_id > 0 && $did_number !== '') {
+            $this->db->update('reseller_pricing', $update_arr, array(
+                'note' => $did_number
+            ));
+        }
+        return true;
+    }
+
+    function get_refill_coupon_options($reseller_id)
+    {
+        return $this->db->query("SELECT id,CONCAT(number,'(',amount,')') as details,number FROM refill_coupon WHERE status = '0' and reseller_id=?", array($reseller_id));
+    }
+
+    function get_refill_coupon($reseller_id, $number)
+    {
+        $this->db->where('reseller_id', $reseller_id);
+        $this->db->where('number', $number);
+        $this->db->select('*');
+        return $this->db->get('refill_coupon');
+    }
+
+    function mark_refill_coupon_used($number, $account_id, $date)
+    {
+        $this->db->where('number', $number);
+        return $this->db->update('refill_coupon', array(
+            'status' => 2,
+            'account_id' => $account_id,
+            'firstused' => $date
+        ));
+    }
+
+    function get_currency_info($currency_id)
+    {
+        return (array) $this->db->get_where('currency', array(
+            'id' => $currency_id
+        ))->first_row();
+    }
+
+    function get_invoice_conf_by_account($accountid)
+    {
+        return (array) $this->db->get_where('invoice_conf', array(
+            'accountid' => $accountid
+        ))->first_row();
+    }
+
+    function clear_invoice_logo_by_account($accountid)
+    {
+        $invoiceconf = $this->db_model->getSelect('*', 'invoice_conf', array(
+            'accountid' => $accountid
+        ));
+        $result = $invoiceconf->result_array();
+        if (empty($result)) {
+            return false;
+        }
+        $logo = $result[0]['logo'];
+        $this->db->where(array('logo' => $logo));
+        return $this->db->update('invoice_conf', array('logo' => ''));
+    }
+
+    function update_account_password_and_device($accountinfo, $account_id, $password_encode, $new_password)
+    {
+        $this->db->where('id', $account_id);
+        $this->db->update('accounts', array(
+            'password' => $password_encode
+        ));
+
+        $this->db->where('accountid', $accountinfo['id']);
+        $this->db->where('username', $accountinfo['number']);
+        $sip_info = (array) $this->db->get_where('sip_devices')->first_row();
+        if (!empty($sip_info)) {
+            $did_params = (array) json_decode($sip_info['dir_params'], true);
+            $sipdevice_array = array(
+                'dir_params' => json_encode(array(
+                    'password' => $new_password,
+                    'vm-enabled' => 'true',
+                    'vm-password' => isset($did_params['vm-password']) ? $did_params['vm-password'] : '',
+                    'vm-mailto' => isset($did_params['vm-mailto']) ? $did_params['vm-mailto'] : '',
+                    'vm-attach-file' => 'true',
+                    'vm-keep-local-after-email' => 'true',
+                    'vm-email-all-messages' => 'true'
+                ))
+            );
+            $this->db->where('accountid', $accountinfo['id']);
+            $this->db->where('username', $accountinfo['number']);
+            $this->db->update('sip_devices', $sipdevice_array);
+        }
+        return true;
+    }
+
+    function get_invoice_details_summary($accountid)
+    {
+        $this->db->where('accountid', $accountid);
+        $this->db->select('*');
+        return $this->db->get('invoice_details');
+    }
+
+    function get_purchase_did_data($country_id, $provience, $city, $account_data)
+    {
+        $data = array(
+            'state_list' => array(),
+            'city_list' => array(),
+            'did_rows' => array()
+        );
+
+        if ($country_id != '') {
+            $this->db->where('province NOT LIKE', '');
+            $state_list = $this->db_model->getSelect('distinct(province)', 'dids', array(
+                'country_id' => $country_id
+            ));
+            foreach ($state_list->result_array() as $row) {
+                foreach ($row as $value) {
+                    $data['state_list'][] = $value;
+                }
+            }
+
+            if ($provience == '') {
+                $this->db->where('city NOT LIKE', '');
+                $city_list = $this->db_model->getSelect('city', 'dids', array(
+                    'country_id' => $country_id
+                ));
+                foreach ($city_list->result_array() as $row) {
+                    foreach ($row as $value) {
+                        $data['city_list'][] = $value;
+                    }
+                }
+            }
+        }
+
+        if ($provience != '') {
+            $this->db->where('city NOT LIKE', '');
+            $city_list = $this->db_model->getSelect('distinct(city)', 'dids', array(
+                'province' => $provience,
+                'country_id' => $country_id
+            ));
+            $data['city_list'] = array();
+            foreach ($city_list->result_array() as $row) {
+                foreach ($row as $value) {
+                    $data['city_list'][] = $value;
+                }
+            }
+        }
+
+        if ($account_data['reseller_id'] > 0) {
+            $this->db->select('dids.id, dids.number, reseller_products.setup_fee, reseller_products.price');
+            $this->db->where('dids.accountid', 0);
+            $this->db->where('dids.parent_id', $account_data['reseller_id']);
+            $this->db->where('dids.country_id', $country_id);
+            if ($provience != '') {
+                $this->db->where('dids.province', $provience);
+            }
+            if ($city != '') {
+                $this->db->where('dids.city', $city);
+            }
+            $this->db->where('dids.status', 0);
+            $this->db->from('dids');
+            $this->db->join('reseller_products', 'dids.product_id = reseller_products.product_id');
+            $data['did_rows'] = (array) $this->db->get()->result_array();
+        } else {
+            $this->db->select('dids.id, dids.number,products.setup_fee,products.price');
+            $this->db->where('dids.accountid', '0');
+            $this->db->where('dids.parent_id', $account_data['reseller_id']);
+            $this->db->where('dids.country_id', $country_id);
+            if ($provience != '') {
+                $this->db->where('dids.province', $provience);
+            }
+            if ($city != '') {
+                $this->db->where('dids.city', $city);
+            }
+            $this->db->where('dids.status', 0);
+            $this->db->from('dids');
+            $this->db->join('products', 'dids.product_id = products.id');
+            $data['did_rows'] = (array) $this->db->get()->result_array();
+        }
+
+        return $data;
+    }
+
+    function get_fund_transfer_context($accountid)
+    {
+        $account = (array) $this->db->get_where('accounts', array(
+            'id' => $accountid
+        ))->first_row();
+        $currency = array();
+        if (!empty($account)) {
+            $currency = (array) $this->db->get_where('currency', array(
+                'id' => $account['currency_id']
+            ))->first_row();
+        }
+        return array('account' => $account, 'currency' => $currency);
+    }
+
+    function find_transfer_target_account($account_number)
+    {
+        return (array) $this->db->get_where('accounts', array(
+            'number' => $account_number,
+            'status' => 0,
+            'deleted' => 0
+        ), 1)->first_row();
+    }
+
+    function get_system_config_row($name)
+    {
+        return (array) $this->db->get_where('system', array(
+            'name' => $name
+        ), 1)->first_row();
+    }
+
+    function get_speed_dial_map($account_id)
+    {
+        $speeddial_res = $this->db->get_where('speed_dial', array(
+            'accountid' => $account_id
+        ));
+        $speeddial_info = array();
+        if ($speeddial_res->num_rows() > 0) {
+            foreach ($speeddial_res->result_array() as $value) {
+                $speeddial_info[$value['speed_num']] = $value['number'];
+            }
+        }
+        return $speeddial_info;
+    }
+
+    function save_speed_dial_number($accountid, $speed_num, $number)
+    {
+        $this->db->select('count(id) as count');
+        $this->db->where(array('accountid' => $accountid));
+        $speed_dial_result = (array) $this->db->get('speed_dial')->first_row();
+        if ((int) $speed_dial_result['count'] === 0) {
+            $data = array();
+            for ($i = 0; $i <= 9; $i++) {
+                $dest_number = ((string) $speed_num === (string) $i) ? $number : '';
+                $data[$i] = array(
+                    'number' => $dest_number,
+                    'speed_num' => $i,
+                    'accountid' => $accountid
+                );
+            }
+            $this->db->insert_batch('speed_dial', $data);
+            return 'added';
+        }
+        $this->db->where('speed_num', $speed_num);
+        $this->db->where('accountid', $accountid);
+        $this->db->update('speed_dial', array(
+            'number' => $number
+        ));
+        return 'updated';
+    }
+
+    function clear_speed_dial_number($accountid, $speed_num)
+    {
+        $this->db->where('speed_num', $speed_num);
+        $this->db->where('accountid', $accountid);
+        return $this->db->update('speed_dial', array(
+            'number' => ''
+        ));
+    }
+
+    function get_pin_info($accountid)
+    {
+        $this->db->where('id', $accountid);
+        $this->db->select('*');
+        return $this->db->get('accounts');
+    }
+
+    function delete_ip_maps_by_ids($ids)
+    {
+        $ids = preg_replace('/[^0-9,]/', '', (string) $ids);
+        if ($ids === '') {
+            return false;
+        }
+        $this->db->where("id IN ($ids)", null, false);
+        return $this->db->delete('ip_map');
+    }
+
+    function count_ip_map($ip, $prefix)
+    {
+        $this->db->where('ip', $ip);
+        $this->db->where('prefix', $prefix);
+        $this->db->select('count(ip) as count');
+        return (array) $this->db->get('ip_map')->first_row();
+    }
+
+    function delete_ani_maps_by_ids($ids)
+    {
+        $ids = preg_replace('/[^0-9,]/', '', (string) $ids);
+        if ($ids === '') {
+            return false;
+        }
+        $this->db->where("id IN ($ids)", null, false);
+        return $this->db->delete('ani_map');
+    }
+
+    function get_sip_device_username($id)
+    {
+        $this->db->select('username');
+        return (array) $this->db->get_where('sip_devices', array(
+            'id' => $id
+        ))->first_row();
+    }
+
+    function delete_sip_device($id)
+    {
+        return $this->db->delete('sip_devices', array(
+            'id' => $id
+        ));
+    }
+
+    function delete_sip_devices_by_ids($ids)
+    {
+        $ids = preg_replace('/[^0-9,]/', '', (string) $ids);
+        if ($ids === '') {
+            return false;
+        }
+        $where = "id IN ($ids)";
+        return $this->db->delete('sip_devices', $where);
+    }
+
+    function count_animap_number($number)
+    {
+        $this->db->where('number', $number);
+        $this->db->select('count(id) as count');
+        $cnt_result = $this->db->get('ani_map')->first_row();
+        return isset($cnt_result->count) ? (int) $cnt_result->count : 0;
+    }
+
+    function insert_animap($accountinfo, $number)
+    {
+        return $this->db->insert('ani_map', array(
+            'number' => $number,
+            'accountid' => $accountinfo['id'],
+            'context' => 'default',
+            'reseller_id' => $accountinfo['reseller_id'],
+            'creation_date' => gmdate('Y-m-d H:i:s'),
+            'last_modified_date' => gmdate('Y-m-d H:i:s')
+        ));
+    }
+
+    function get_charge_map($charge_ids)
+    {
+        $charges = array();
+        if (empty($charge_ids)) {
+            return $charges;
+        }
+        $this->db->where_in('id', array_unique($charge_ids));
+        $this->db->select('id,description,sweep_id');
+        foreach ($this->db->get('charges')->result_array() as $row) {
+            $charges[$row['id']] = $row;
+        }
+        return $charges;
+    }
+
+    function add_ip_map($add_array)
+    {
+        return $this->db->insert('ip_map', $add_array);
+    }
+
+    function delete_ip_map($id)
+    {
+        return $this->db->delete('ip_map', array(
+            'id' => $id
+        ));
+    }
+
+    function get_account_by_number($number)
+    {
+        return (array) $this->db->get_where('accounts', array(
+            'number' => $number,
+            'status' => 0,
+            'deleted' => 0
+        ), 1)->first_row();
+    }
+
+    function count_user_animap($accountid)
+    {
+        return $this->db_model->countQuery('*', 'ani_map', array(
+            'accountid' => $accountid
+        ));
+    }
+
+    function get_user_animap_list($accountid, $limit, $start)
+    {
+        return $this->db_model->select('*', 'ani_map', array(
+            'accountid' => $accountid
+        ), 'id', 'ASC', $limit, $start);
+    }
+
+
 }
 
 ?>

@@ -125,4 +125,12 @@ class Refill_coupon_model extends CI_Model
         $result = $result->result_array();
         return $result;
     }
+
+
+    function delete_multiple_refill_coupon($ids)
+    {
+        $this->db->where("id IN (" . $ids . ")");
+        return $this->db->delete("refill_coupon");
+    }
+
 }

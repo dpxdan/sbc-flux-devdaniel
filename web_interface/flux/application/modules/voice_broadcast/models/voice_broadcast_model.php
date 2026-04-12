@@ -54,4 +54,28 @@ class voice_broadcast_model extends CI_Model {
 		return true;
 	}
 
+
+
+	function get_customer_accounts_by_reseller($reseller_id) {
+		return $this->db->get_where('accounts', array(
+			"reseller_id" => $reseller_id,
+			"status" => 0,
+			"deleted" => 0,
+			"type" => 0
+		));
+	}
+
+	function get_sip_devices_by_account($accountid) {
+		return $this->db->get_where('sip_devices', array(
+			"accountid" => $accountid,
+			"status" => 0,
+		));
+	}
+
+	function delete_multiple_voice_broadcast($selected_ids) {
+		$where = 'IN (' . $selected_ids . ')';
+		$this->db->where('id ' . $where);
+		return $this->db->delete('voice_broadcast');
+	}
+
 }

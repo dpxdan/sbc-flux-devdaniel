@@ -80,11 +80,11 @@ $(document).ready(function(){
     method: 'GET',
     dataType: 'json',
 	colModel : [
-		{display: 'User Name', name: 'username', width: 200, sortable: false, align: 'center'},
-		{display: 'Domain', name: 'domain', width: 190, sortable: false, align: 'center'},
-		{display: 'Contact', name: 'contact', width: 400, sortable: false, align: 'center'},
-                {display: 'Socket', name: 'socket', width: 220, sortable: false, align: 'center'},
-		{display: 'Expires', name: 'expires', width: 195, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("User Name"); ?>', name: 'username', width: 200, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Domain"); ?>', name: 'domain', width: 190, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Contact"); ?>', name: 'contact', width: 400, sortable: false, align: 'center'},
+        {display: '<?php echo gettext("Socket"); ?>', name: 'socket', width: 220, sortable: false, align: 'center'},
+		{display: '<?php echo gettext("Expires"); ?>', name: 'expires', width: 195, sortable: false, align: 'center'},
 		],
 
 	nowrap: false,
@@ -135,32 +135,32 @@ function myFunction() {
 <section class="slice color-three">
 	<div class="w-section inverse p-0">
 		<div id="floating-label" class="card col-md-12 px-0 pb-4">
-			<h3 class="bg-secondary text-light p-2 rounded-top">Opensips Devices</h3>
+			<h3 class="bg-secondary text-light p-2 rounded-top"><?php echo gettext('SIP Devices'); ?></h3>
 	 	<form method="POST" action="" enctype="multipart/form-data" id="ListForm1" name="extension">
 
 
 			<div class="col-md-6 form-group">
-				<label class="col-md-12 p-0 control-label">Refresh Time:</label>
+				<label class="col-md-12 p-0 control-label"><?php echo gettext('Refresh Time'); ?>:</label>
 					<select class="col-md-12 form-control form-control-lg selectpicker"  name="host_id" id="host_id" onchange="this.form.submit()" >
 
   	    <?php
 		if($_POST['second_reload'] == ''){
 	      ?>
-		<option value="15" <?php if(isset($result['value']) && (15 == $result['value']))echo 'selected';?>>15 Second</option>
-		<option value="30" <?php if(isset($result['value']) && (30 == $result['value']))echo 'selected';?>>30 Second</option>
-		<option value="60" <?php if(isset($result['value']) && (60 == $result['value']))echo 'selected';?>>1 minute</option>
-		<option value="120" <?php if(isset($result['value']) && (120 == $result['value']))echo 'selected';?>>2 Minute</option>
-		<option value="180" <?php if(isset($result['value']) && (180 == $result['value']))echo 'selected';?>>3 Minute</option>
+		<option value="15" <?php if(isset($result['value']) && (15 == $result['value']))echo 'selected';?>>15 <?php echo gettext('Seconds'); ?></option>
+		<option value="30" <?php if(isset($result['value']) && (30 == $result['value']))echo 'selected';?>>30 <?php echo gettext('Seconds'); ?></option>
+		<option value="60" <?php if(isset($result['value']) && (60 == $result['value']))echo 'selected';?>>1 <?php echo gettext('Minute'); ?></option>
+		<option value="120" <?php if(isset($result['value']) && (120 == $result['value']))echo 'selected';?>>2 <?php echo gettext('Minutes'); ?></option>
+		<option value="180" <?php if(isset($result['value']) && (180 == $result['value']))echo 'selected';?>>3 <?php echo gettext('Minutes'); ?></option>
      		
 	     <?php
 		}
 		else{
 	     ?>
-		<option value="15" <?php if(isset($_POST['second_reload']) && (15 == $_POST['second_reload']))echo 'selected';?>>15 Second</option>
-		<option value="30" <?php if(isset($_POST['second_reload']) && (30 == $_POST['second_reload']))echo 'selected';?>>30 Second</option>
-		<option value="60" <?php if(isset($_POST['second_reload']) && (60 == $_POST['second_reload']))echo 'selected';?>>1 Minute</option>
-		<option value="120" <?php if(isset($_POST['second_reload']) && (120 == $_POST['second_reload']))echo 'selected';?>>2 Minute</option>
-		<option value="180" <?php if(isset($_POST['second_reload']) && (180 == $_POST['second_reload']))echo 'selected';?>>3 Minute</option>
+		<option value="15" <?php if(isset($_POST['second_reload']) && (15 == $_POST['second_reload']))echo 'selected';?>>15 <?php echo gettext('Seconds'); ?></option>
+		<option value="30" <?php if(isset($_POST['second_reload']) && (30 == $_POST['second_reload']))echo 'selected';?>>30 <?php echo gettext('Seconds'); ?></option>
+		<option value="60" <?php if(isset($_POST['second_reload']) && (60 == $_POST['second_reload']))echo 'selected';?>>1 <?php echo gettext('Minute'); ?></option>
+		<option value="120" <?php if(isset($_POST['second_reload']) && (120 == $_POST['second_reload']))echo 'selected';?>>2 <?php echo gettext('Minutes'); ?></option>
+		<option value="180" <?php if(isset($_POST['second_reload']) && (180 == $_POST['second_reload']))echo 'selected';?>>3 <?php echo gettext('Minutes'); ?></option>
 
   	      <?php
 		}

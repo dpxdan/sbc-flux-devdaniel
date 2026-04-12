@@ -15,6 +15,7 @@
         $('.checkall').click(function () { 
                 $('.chkRefNos').prop('checked', $(this).prop('checked')); 
         });
+//	$(".tDiv").addClass("mt-0").removeClass("tDiv"); 
 	$(".reseller_id_search_drp").change(function(){
                 if(this.value!=""){
 					$.ajax({
@@ -57,13 +58,22 @@ $permissioninfo = $this->session->userdata('permissioninfo');
 	</div>
 </section>
 
+
+
+
+
 <section class="slice color-three">
 	<div class="w-section inverse p-0">
 		<div class="card col-md-12 pb-4">
 			<table id="fs_sip_devices_grid" align="left" style="display: none;"></table>
-					</div>
-				</div>
+		</div>
+	</div>
 </section>
 
-<? endblock() ?>
+
+
+
+
+<? endblock() ?>	
+
 <? end_extend() ?>  

@@ -26,8 +26,9 @@ class Freeswitch_model extends CI_Model
 
     function __construct()
     {
-        parent::__construct();
-    }
+		parent::__construct();
+        $this->load->library('flux_log');
+	}
 
     function get_sipdevices_list($flag, $accountid = "", $entitytype = '', $start = "", $limit = "")
     {
@@ -137,6 +138,7 @@ class Freeswitch_model extends CI_Model
 
     function edit_freeswith($add_array, $id)
     {
+        $this->flux_log->write_log('edit_freeswith', json_encode($add_array));
         $this->db->select('accountid');
         $accountid = (array) $this->db->get_where('sip_devices', array(
             "username" => $add_array['fs_username']
@@ -160,10 +162,22 @@ class Freeswitch_model extends CI_Model
             $add_array['sip_profile_id'] = $this->common->get_field_name('id', 'sip_profiles', array(
                 'name' => 'default'
             ));
+            
         }
+
         $add_array['status'] = isset($add_array['status']) ? $add_array['status'] : "0";
+        $add_array['sip_domain'] = $this->common->get_field_name('domain', 'domain', array(
+                        'id' => $add_array['sip_domain_id']
+                    ));
         $accountid = $log_type == 1 ? $accountid['accountid'] : $add_array['accountcode'];
         $accountcode = (isset($add_array['accountcode'])) ? $add_array['accountcode'] : $accountid;
+        // Busca o domain do sip_profile para calcular ha1
+        $profile = (array) $this->db->select('domain_name')
+            ->get_where('sip_profiles', ['id' => $add_array['sip_profile_id']])
+            ->first_row();
+        $domain = !empty($add_array['sip_domain']) ? $add_array['sip_domain'] : '';
+        
+        $ha1 = md5($add_array['fs_username'] . ':' . $domain . ':' . $add_array['fs_password']);
         $new_array = array(
             'last_modified_date' => gmdate('Y-m-d H:i:s'),
             'username' => $add_array['fs_username'],
@@ -172,7 +186,10 @@ class Freeswitch_model extends CI_Model
             'dir_params' => json_encode($parms_array),
             'dir_vars' => json_encode($parms_array_vars),
             'sip_profile_id' => $add_array['sip_profile_id'],
-            'codec' => $add_array['codec']
+            'codec' => $add_array['codec'],
+            'ha1' => $ha1,
+            'domain' => $add_array['sip_domain'],
+            'sip_domain_id' => $add_array['sip_domain_id']
 
         );
 
@@ -209,7 +226,10 @@ class Freeswitch_model extends CI_Model
                 'vm_keep_local_after_email' => $vars_new['vm-keep-local-after-email'],
                 'vm_send_all_message' => $vars_new['vm-email-all-messages'],
                 'effective_caller_id_number' => $vars->effective_caller_id_number,
-                'fs_password' => $passowrds->password
+                'fs_password' => $passowrds->password,
+                'ha1'         => $value['ha1'],
+                'domain' => $value['domain'],
+                'sip_domain_id' => $value['sip_domain_id'],
             );
         }
         return $query;
@@ -259,7 +279,10 @@ class Freeswitch_model extends CI_Model
                         'vm_keep_local_after_email' => $vars_new['vm-keep-local-after-email'],
                         'effective_caller_id_number' => $vars->effective_caller_id_number,
                         'password' => $passowrds->password,
-                        'live_status' => $value['live_status']
+                        'live_status' => $value['live_status'],
+                        'ha1'         => $value['ha1'],
+                        'domain' => $value['domain'],
+                        'sip_domain_id' => $value['sip_domain_id']
                     );
                 }
             }
@@ -403,4 +426,125 @@ class Freeswitch_model extends CI_Model
 
         return $query;
     }
+    function get_sip_device_username($id)
+    {
+        $this->db->select('username');
+        $result = (array) $this->db->get_where('sip_devices', array('id' => $id))->first_row();
+        return isset($result['username']) ? $result['username'] : '';
+    }
+
+    function get_active_sip_profile_names()
+    {
+        return $this->db->query("SELECT name FROM sip_profiles where status = 0")->result_array();
+    }
+
+    function delete_sip_devices_by_ids($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where, null, false);
+        return $this->db->delete('sip_devices');
+    }
+
+    function update_gateway($gateway_id, $insert_arr)
+    {
+        $this->db->select('name,sip_profile_id');
+        $old_gateway_info = (array) $this->db->get_where('gateways', array('id' => $gateway_id))->first_row();
+        $updated = $this->db->update('gateways', $insert_arr, array('id' => $gateway_id));
+        $new_profile_id = isset($insert_arr['sip_profile_id']) ? $insert_arr['sip_profile_id'] : $old_gateway_info['sip_profile_id'];
+        $this->db->select('name,sip_ip');
+        $old_sip_profile_info = (array) $this->db->get_where('sip_profiles', array('id' => $old_gateway_info['sip_profile_id']))->first_row();
+        $this->db->select('name,sip_ip');
+        $sip_profile_info = (array) $this->db->get_where('sip_profiles', array('id' => $new_profile_id))->first_row();
+        return array(
+            'updated' => $updated,
+            'old_gateway_info' => $old_gateway_info,
+            'old_sip_profile_info' => $old_sip_profile_info,
+            'sip_profile_info' => $sip_profile_info
+        );
+    }
+
+    function add_gateway($insert_arr)
+    {
+        $inserted = $this->db->insert('gateways', $insert_arr);
+        $this->db->select('name,sip_ip');
+        $sip_profile_info = (array) $this->db->get_where('sip_profiles', array('id' => $insert_arr['sip_profile_id']))->first_row();
+        return array(
+            'inserted' => $inserted,
+            'sip_profile_info' => $sip_profile_info
+        );
+    }
+
+    function get_gateway_delete_context($gateway_id)
+    {
+        $this->db->select('name,sip_profile_id');
+        $gateway_info = (array) $this->db->get_where('gateways', array('id' => $gateway_id))->first_row();
+        $this->db->select('name,sip_ip');
+        $profile_info = (array) $this->db->get_where('sip_profiles', array('id' => $gateway_info['sip_profile_id']))->first_row();
+        return array(
+            'gateway_info' => $gateway_info,
+            'profile_info' => $profile_info
+        );
+    }
+
+    function delete_gateway($gateway_id)
+    {
+        return $this->db_model->delete('gateways', array('id' => $gateway_id));
+    }
+
+    function get_gateway_bulk_delete_context($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where, null, false);
+        $this->db->select('group_concat(sip_profile_id) as sip_profile_id');
+        $this->db->from('gateways');
+        $sip_profile_ids = (array) $this->db->get()->first_row();
+        $sip_profile_arr = array();
+        if (!empty($sip_profile_ids['sip_profile_id'])) {
+            $this->db->select('id,name,sip_ip');
+            $this->db->where("id IN (" . $sip_profile_ids['sip_profile_id'] . ")", null, false);
+            $this->db->from('sip_profiles');
+            $result_array = $this->db->get()->result_array();
+            foreach ($result_array as $value) {
+                $sip_profile_arr[$value['id']] = array(
+                    'name' => $value['name'],
+                    'sip_ip' => $value['sip_ip']
+                );
+            }
+        }
+        $this->db->select('id,name,sip_profile_id');
+        $this->db->where($where, null, false);
+        $this->db->from('gateways');
+        $gateway_info = $this->db->get()->result_array();
+        return array(
+            'sip_profile_arr' => $sip_profile_arr,
+            'gateway_info' => $gateway_info
+        );
+    }
+
+    function delete_gateways_by_ids($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where, null, false);
+        return $this->db->delete('gateways');
+    }
+
+
+    function delete_sip_profiles_by_ids($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where, null, false);
+        return $this->db->delete('sip_profiles');
+    }
+
+    function add_sip_profile($data)
+    {
+        return $this->db->insert('sip_profiles', $data);
+    }
+
+    function update_sip_profile($id, $data)
+    {
+        return $this->db->update('sip_profiles', $data, array('id' => $id));
+    }
+
+
 }

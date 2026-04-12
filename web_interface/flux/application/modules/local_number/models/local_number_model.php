@@ -179,4 +179,117 @@ class local_number_model extends CI_Model {
 		$affected_row = $this->db->affected_rows ();
 		return $affected_row;
 	}
+
+	private function get_id_list($ids) {
+		if (is_array($ids)) {
+			$ids = implode(',', $ids);
+		}
+		$parts = array_filter(array_map('trim', explode(',', $ids)), 'strlen');
+		$parts = array_map('intval', $parts);
+		return array_values(array_filter($parts, function($value) {
+			return $value > 0;
+		}));
+	}
+
+	function delete_multiple_local_numbers($ids) {
+		$id_list = $this->get_id_list($ids);
+		if (empty($id_list)) {
+			return false;
+		}
+		$this->db->where_in('id', $id_list);
+		return $this->db->delete('local_number');
+	}
+
+	function get_local_number_destination_list($account_id, $instant_search = '', $limit = 0, $start = 0, $count_only = false, $fields = '*') {
+		if ($count_only) {
+			$this->db->select('COUNT(*) AS total', false);
+		} else {
+			$this->db->select($fields, false);
+		}
+		$this->db->from('local_number_destination');
+		$this->db->where('account_id', $account_id);
+		if (!empty($instant_search)) {
+			$this->db->group_start();
+			$this->db->like('destination_name', $instant_search);
+			$this->db->or_like('destination_number', $instant_search);
+			$this->db->group_end();
+		}
+		if (!$count_only) {
+			$this->db->order_by('id', 'ASC');
+			if ((int) $limit > 0) {
+				$this->db->limit((int) $limit, (int) $start);
+			}
+		}
+		$query = $this->db->get();
+		if ($count_only) {
+			$row = $query->row_array();
+			return isset($row['total']) ? (int) $row['total'] : 0;
+		}
+		return $query;
+	}
+
+	function get_available_local_numbers($account_id, $city, $province, $country_id) {
+		$this->db->from('local_number');
+		$this->db->where('city', $city);
+		$this->db->where('province', $province);
+		$this->db->where('country_id', $country_id);
+		$this->db->where('status', 0);
+		$this->db->where("id NOT IN (SELECT local_number_id FROM local_number_destination WHERE account_id=" . (int) $account_id . ")", null, false);
+		return $this->db->get();
+	}
+
+	function add_destination_with_speed_dial($local_number_id, $account_id, $destination_name, $destination_number, $creation_date) {
+		$insert_array = array(
+			'local_number_id' => $local_number_id,
+			'account_id' => $account_id,
+			'destination_name' => $destination_name,
+			'destination_number' => $destination_number,
+			'creation_date' => $creation_date
+		);
+		$this->db->insert('local_number_destination', $insert_array);
+		$row = $this->db->get_where('local_number', array('id' => $local_number_id))->row();
+		if ($row) {
+			$this->db->insert('speed_dial', array(
+				'accountid' => $account_id,
+				'speed_num' => $row->number,
+				'number' => $destination_number
+			));
+		}
+		return true;
+	}
+
+	function remove_destination_with_speed_dial($id) {
+		$query = $this->db->get_where('local_number_destination', array('id' => $id));
+		$destination = $query->row();
+		if ($destination) {
+			$this->db->where('number', $destination->destination_number);
+			$this->db->delete('speed_dial');
+		}
+		$this->db->where('id', $id);
+		return $this->db->delete('local_number_destination');
+	}
+
+	function delete_multiple_destinations_with_speed_dial($ids) {
+		$id_list = $this->get_id_list($ids);
+		if (empty($id_list)) {
+			return false;
+		}
+		$this->db->select('local_number_id,destination_number');
+		$this->db->from('local_number_destination');
+		$this->db->where_in('id', $id_list);
+		$query = $this->db->get();
+		foreach ($query->result_array() as $value) {
+			$local_number = $this->db->get_where('local_number', array('id' => $value['local_number_id']))->row();
+			if ($local_number) {
+				$this->db->where(array(
+					'speed_num' => $local_number->number,
+					'number' => $value['destination_number']
+				));
+				$this->db->delete('speed_dial');
+			}
+		}
+		$this->db->where_in('id', $id_list);
+		return $this->db->delete('local_number_destination');
+	}
+
 }

@@ -96,4 +96,21 @@ class ANIMAP_model extends CI_Model
         $this->db->delete("ani_map");
         return true;
     }
+
+
+    function delete_multiple_animap($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where);
+        return $this->db->delete("ani_map");
+    }
+
+    function get_reseller_customer_accounts($reseller_id)
+    {
+        return $this->db->get_where('accounts', array(
+            "reseller_id" => $reseller_id,
+            "type" => "GLOBAL"
+        ));
+    }
+
 }

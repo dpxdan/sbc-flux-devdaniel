@@ -56,7 +56,7 @@ class Automated_report extends MX_Controller
             $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
             $json_data = $paging_data["json_paging"];
             $query = $this->automated_report_model->getcustomer_automated_report_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
-            // echo $this->db->last_query(); die;
+            // consulta debug removida do controller
             $grid_fields = json_decode($this->automated_report_form->build_automated_report_list_for_admin());
             $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
             echo json_encode($json_data);
@@ -168,9 +168,7 @@ class Automated_report extends MX_Controller
         {
              //sandip roles and permission
             $ids = $this->input->post("selected_ids", true);
-            $where = "id IN ($ids)";
-            $this->db->delete("automated_reports", $where);
-            echo TRUE;
+            echo $this->automated_report_model->delete_multiple_automated_reports($ids);
         }
         function automated_report_list_search() {
             $ajax_search = $this->input->post('ajax_search', 0);

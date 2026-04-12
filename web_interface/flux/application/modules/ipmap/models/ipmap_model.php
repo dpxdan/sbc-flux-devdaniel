@@ -123,4 +123,42 @@ class IPMAP_model extends CI_Model
         $this->db->delete("ip_map");
         return true;
     }
+
+    function find_duplicate_ipmap($prefix, $ip, $exclude_id = null)
+    {
+        $this->db->select('prefix,ip');
+        $this->db->where(array(
+            'prefix' => $prefix,
+            'ip' => $ip
+        ));
+        if ($exclude_id !== null && $exclude_id !== '') {
+            $this->db->where('id <>', $exclude_id);
+        }
+        return (array) $this->db->get('ip_map')->first_row();
+    }
+
+    function normalize_ids($selected_ids)
+    {
+        return array_values(array_filter(array_map('intval', array_map('trim', explode(',', $selected_ids)))));
+    }
+
+    function delete_multiple_ipmaps($ids)
+    {
+        $id_list = $this->normalize_ids($ids);
+        if (empty($id_list)) {
+            return false;
+        }
+        $this->db->where_in('id', $id_list);
+        return $this->db->delete("ip_map");
+    }
+
+    function get_reseller_customer_accounts($reseller_id)
+    {
+        $query = $this->db->get_where('accounts', array(
+            "reseller_id" => $reseller_id,
+            "type" => "GLOBAL"
+        ));
+        return $query->num_rows() > 0 ? $query->result_array() : array();
+    }
+
 }

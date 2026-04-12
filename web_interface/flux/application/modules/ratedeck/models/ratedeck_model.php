@@ -96,4 +96,12 @@ class Ratedeck_model extends CI_Model
         $query = $this->db->get();
         return $query;
     }
+
+
+    function delete_multiple_ratedeck($ids)
+    {
+        $this->db->where("id IN (" . $ids . ")");
+        return $this->db->delete("ratedeck");
+    }
+
 }

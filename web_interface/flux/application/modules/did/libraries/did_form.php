@@ -205,6 +205,21 @@ class did_form extends common
                 ''
             ),
             array(
+                gettext('Reverse Rate'),
+                'reverse_rate',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                '',
+                '',
+                '',
+                '',
+                'set_did_reverse_type_search',
+                '',
+                ''
+            ),
+            array(
                 gettext('Destination'),
                 'INPUT',
                 array(
@@ -633,6 +648,17 @@ class did_form extends common
                 "",
                 "true",
                 "right"
+            ),
+            array(
+                gettext("Reverse Rate"),
+                "110",
+                "reverse_rate",
+                "reverse_rate",
+                "reverse_rate",
+                "get_did_reverse_rate",
+                "",
+                "true",
+                "left"
             ),
             array(
                 gettext("Billing Type"),

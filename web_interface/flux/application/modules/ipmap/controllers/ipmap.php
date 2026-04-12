@@ -91,13 +91,7 @@ class IPMAP extends MX_Controller
                 echo $data['validation_errors'];
                 exit();
             }
-            $this->db->select('prefix,ip');
-            $this->db->where([
-                'prefix' => $add_array['prefix'],
-                'ip' => $add_array['ip'],
-                'id <>' => $add_array['id']
-            ]);
-            $ip_prefix = (array) $this->db->get('ip_map')->first_row();
+            $ip_prefix = $this->ipmap_model->find_duplicate_ipmap($add_array['prefix'], $add_array['ip'], $add_array['id']);
             if (! empty($ip_prefix)) {
                 echo json_encode(array(
                     "prefix_error" => gettext("The Prefix field must contain a unique value."),
@@ -125,12 +119,7 @@ class IPMAP extends MX_Controller
                 echo $data['validation_errors'];
                 exit();
             }
-            $this->db->select('prefix,ip');
-            $this->db->where([
-                'prefix' => $add_array['prefix'],
-                'ip' => $add_array['ip']
-            ]);
-            $ip_prefix = (array) $this->db->get('ip_map')->first_row();
+            $ip_prefix = $this->ipmap_model->find_duplicate_ipmap($add_array['prefix'], $add_array['ip']);
 
             if (! empty($ip_prefix)) {
                 echo json_encode(array(
@@ -304,9 +293,7 @@ class IPMAP extends MX_Controller
     function ipmap_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("ip_map");
+        echo $this->ipmap_model->delete_multiple_ipmaps($ids);
     }
 
     function reseller_customerlist()
@@ -315,12 +302,8 @@ class IPMAP extends MX_Controller
         $reseller_id = $add_array['reseller_id'];
         $accountinfo = $this->session->userdata("accountinfo");
         $reseller_id = $accountinfo['type'] == 1 || $accountinfo['type'] == 5 ? $accountinfo['id'] : $reseller_id;
-        $accounts_result = $this->db->get_where('accounts', array(
-            "reseller_id" => $reseller_id,
-            "type" => "GLOBAL"
-        ));
-        if ($accounts_result->num_rows() > 0) {
-            $accounts_result_array = $accounts_result->result_array();
+        $accounts_result_array = $this->ipmap_model->get_reseller_customer_accounts($reseller_id);
+        if (! empty($accounts_result_array)) {
             foreach ($accounts_result_array as $key => $value) {
                 echo "<option value=" . $value['id'] . ">" . $value['first_name'] . " " . $value['last_name'] . "(" . $value['number'] . ")</option>";
             }

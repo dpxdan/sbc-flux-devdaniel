@@ -303,70 +303,67 @@ class DID extends MX_Controller
         redirect(base_url() . 'did/did_available_list/');
     }
 
-    function did_resellerdid_save()
-    {
-        $add_array = $this->input->post();
 
-        $productid = $this->input->post('product_id');
-        $accountinfo = $this->session->userdata("accountinfo");
-        if ($productid != '' && $productid != 0) {
-            $did_id = $this->common->get_field_name("id", "dids", array(
-                "product_id" => $productid
+function did_resellerdid_save()
+{
+    $add_array = $this->input->post();
+
+    $productid = $this->input->post('product_id');
+    $accountinfo = $this->session->userdata("accountinfo");
+    if ($productid != '' && $productid != 0) {
+        $did_id = $this->common->get_field_name("id", "dids", array(
+            "product_id" => $productid
+        ));
+        $did_result = $this->did_lib->did_billing_process($this->session->userdata, $accountinfo['id'], $did_id, '', $add_array);
+        if ($did_result[0] == "SUCCESS") {
+            $product_info = $this->db_model->getSelect("*", " products", array(
+                'id' => $productid,
+                'status' => 0
             ));
-            $did_result = $this->did_lib->did_billing_process($this->session->userdata, $accountinfo['id'], $did_id, '', $add_array);
-            if ($did_result[0] == "SUCCESS") {
-                $product_info = $this->db_model->getSelect("*", " products", array(
-                    'id' => $productid,
-                    'status' => 0
-                ));
-                if ($product_info->num_rows > 0) {
-                    $product_info = $product_info->result_array()[0];
-                    $add_array['billing_type'] = $product_info['billing_type'];
-                    $add_array['billing_days'] = $product_info['billing_days'];
-                    $add_array['commission'] = $product_info['commission'];
-                    $add_array['free_minutes'] = isset($product_info['free_minutes']) ? $product_info['free_minutes'] : 0;
-                    if (($accountinfo['reseller_id'] > 0 || $accountinfo['type'] == 1) && $accountinfo['is_distributor'] == 0) {
-                        $add_array['buy_cost'] = $this->common_model->add_calculate_currency($add_array['product_buy_cost'], "", '', false, false);
-                    } else {
-                        $add_array['buy_cost'] = $product_info['buy_cost'];
-                    }
-
-                    if ($accountinfo['is_distributor'] == 0) {
-                        $add_array['price'] = isset($add_array['price']) ? $this->common_model->add_calculate_currency($add_array['price'], "", '', false, false) : $this->common_model->add_calculate_currency($product_info['price'], "", '', false, false);
-                        $add_array['setup_fee'] = isset($add_array['setup_fee']) ? $this->common_model->add_calculate_currency($add_array['setup_fee'], "", '', false, false) : $this->common_model->add_calculate_currency($product_info['setup_fee'], "", '', false, false);
-                    } else {
-                        $add_array['price'] = $product_info['price'];
-                        $add_array['setup_fee'] = $product_info['setup_fee'];
-                    }
-
-                    $query = "INSERT INTO reseller_products (product_id, account_id, reseller_id, buy_cost,commission, setup_fee, price, free_minutes, billing_type, billing_days, status, is_optin,is_owner,optin_date)
-		VALUES($productid," . $accountinfo['id'] . "," . $accountinfo['reseller_id'] . "," . $add_array['buy_cost'] . "," . $add_array['commission'] . "," . $add_array['setup_fee'] . "," . $add_array['price'] . "," . $add_array['free_minutes'] . "," . $add_array['billing_type'] . "," . $add_array['billing_days'] . ", 0, 0, 1, '" . gmdate('Y-m-d H:i:s') . "') ON DUPLICATE KEY UPDATE product_id = VALUES(product_id), account_id = VALUES(account_id), reseller_id = VALUES(reseller_id),buy_cost = VALUES(buy_cost),commission = VALUES(commission), setup_fee = VALUES(setup_fee), price = VALUES(price), free_minutes = VALUES(free_minutes), billing_type = VALUES(billing_type), billing_days = VALUES(billing_days), status = VALUES(status), is_optin = VALUES(is_optin), is_owner = VALUES(is_owner), optin_date = VALUES(optin_date)";
-                    $query = $this->db->query($query);
-                    $add_array['is_parent_billing'] = 'false';
-                    $add_array['payment_by'] = "Account Balance";
-                    $add_array['create_invoice'] = "false";
-                    $order_id = $this->order->confirm_order($add_array, $accountinfo['id'], $accountinfo);
-
-                    if ($order_id != '') {
-                        $this->db->where("product_id", $productid);
-                        $this->db->update("dids", array(
-                            "parent_id" => $accountinfo['id']
-                        ));
-                    }
-                    $flux_flash_message_type = ($did_result[0] == "SUCCESS") ? "flux_errormsg" : "flux_notification";
-                    $this->session->set_flashdata($flux_flash_message_type, gettext($did_result[1]));
+            if ($product_info->num_rows > 0) {
+                $product_info = $product_info->result_array()[0];
+                $add_array['billing_type'] = $product_info['billing_type'];
+                $add_array['billing_days'] = $product_info['billing_days'];
+                $add_array['commission'] = $product_info['commission'];
+                $add_array['free_minutes'] = isset($product_info['free_minutes']) ? $product_info['free_minutes'] : 0;
+                if (($accountinfo['reseller_id'] > 0 || $accountinfo['type'] == 1) && $accountinfo['is_distributor'] == 0) {
+                    $add_array['buy_cost'] = $this->common_model->add_calculate_currency($add_array['product_buy_cost'], "", '', false, false);
+                } else {
+                    $add_array['buy_cost'] = $product_info['buy_cost'];
                 }
-            } else {
 
+                if ($accountinfo['is_distributor'] == 0) {
+                    $add_array['price'] = isset($add_array['price']) ? $this->common_model->add_calculate_currency($add_array['price'], "", '', false, false) : $this->common_model->add_calculate_currency($product_info['price'], "", '', false, false);
+                    $add_array['setup_fee'] = isset($add_array['setup_fee']) ? $this->common_model->add_calculate_currency($add_array['setup_fee'], "", '', false, false) : $this->common_model->add_calculate_currency($product_info['setup_fee'], "", '', false, false);
+                } else {
+                    $add_array['price'] = $product_info['price'];
+                    $add_array['setup_fee'] = $product_info['setup_fee'];
+                }
+
+                $this->did_model->upsert_reseller_product($productid, $accountinfo, $add_array);
+                $add_array['is_parent_billing'] = 'false';
+                $add_array['payment_by'] = "Account Balance";
+                $add_array['create_invoice'] = "false";
+                $order_id = $this->order->confirm_order($add_array, $accountinfo['id'], $accountinfo);
+
+                if ($order_id != '') {
+                    $this->did_model->update_did_parent_by_product($productid, $accountinfo['id']);
+                }
                 $flux_flash_message_type = ($did_result[0] == "SUCCESS") ? "flux_errormsg" : "flux_notification";
                 $this->session->set_flashdata($flux_flash_message_type, gettext($did_result[1]));
             }
-            redirect(base_url() . 'did/did_available_list/');
         } else {
-            $this->session->set_flashdata('flux_notification', gettext('Product Not Found!'));
-            redirect(base_url() . 'did/did_available_list/');
+
+            $flux_flash_message_type = ($did_result[0] == "SUCCESS") ? "flux_errormsg" : "flux_notification";
+            $this->session->set_flashdata($flux_flash_message_type, gettext($did_result[1]));
         }
+        redirect(base_url() . 'did/did_available_list/');
+    } else {
+        $this->session->set_flashdata('flux_notification', gettext('Product Not Found!'));
+        redirect(base_url() . 'did/did_available_list/');
     }
+}
+
 
     function did_assgin_reseller($id)
     {
@@ -399,178 +396,90 @@ class DID extends MX_Controller
         }
     }
 
-    function did_assign_number()
-    {
-        $add_array = $this->input->post();
-        if (! empty($add_array) && $add_array['accountid'] > 0) {
-            $accountinfo = $this->session->userdata("accountinfo");
-            $add_array['is_parent_billing'] = 'false';
-            $add_array['payment_by'] = 0;
-            $account_info = $this->db_model->getSelect("*", "accounts", array(
-                "id" => $add_array["accountid"],
-                "status" => 0,
-                "deleted" => 0
-            ));
-            if ($account_info->num_rows > 0) {
-                $accountdata = $account_info->result_array()[0];
-                $balance = $accountdata['posttoexternal'] == 1 ? $accountdata['credit_limit'] - ($accountdata['balance']) : $accountdata['balance'];
-                if ($this->session->userdata('logintype') == 1 || $this->session->userdata('logintype') == 5) {
-                    $where = array(
-                        'product_id' => $add_array['product_id']
-                    );
-                    $product_info = (array) $this->db->get_where("reseller_products", $where)->result_array()[0];
-                } else {
-                    $where = array(
-                        'id' => $add_array['product_id']
-                    );
-                    $product_info = (array) $this->db->get_where("products", $where)->result_array()[0];
-                }
-                if (! empty($product_info)) {
-                    $total_amt = $product_info['price'] + $product_info['setup_fee'];
 
-                    $total_amt = $this->common->convert_to_currency('', '', $total_amt);
-                    $did_id = $this->common->get_field_name("id","dids",array("product_id"=>$add_array['product_id']));
-                    $this->load->library('did_lib');
-                    $accountdata['logintype'] = $accountdata['type'];
-                    $did_result = $this->did_lib->did_billing_process($accountdata, $add_array["accountid"], $did_id);
-                    if ($balance >= $total_amt) {
-                        $add_array['invoice_type'] = "debit";
-                        $add_array['payment_by'] = "Account Balance";
-                        $add_array['charge_type'] = "DID";
-                        $add_array['is_update_balance'] = "true";
-                        $add_array['create_invoice'] = "false";
-                        $order_id = $this->order->confirm_order($add_array, $add_array['accountid'], $accountinfo);
-                        if ($order_id > 0) {
-                            $this->db->where("product_id", $add_array['product_id']);
-                            $this->db->update("dids", array(
-                                "accountid" => $add_array['accountid']
-                            ));
-                            $this->session->set_flashdata('flux_errormsg', gettext('DID Assign Successfully !'));
-                        }
-                    } else {
-                        $this->session->set_flashdata('flux_notification', gettext('Insufficient Balance !'));
-                        redirect(base_url() . 'did/did_list/');
+function did_assign_number()
+{
+    $add_array = $this->input->post();
+    if (! empty($add_array) && $add_array['accountid'] > 0) {
+        $accountinfo = $this->session->userdata("accountinfo");
+        $add_array['is_parent_billing'] = 'false';
+        $add_array['payment_by'] = 0;
+        $account_info = $this->db_model->getSelect("*", "accounts", array(
+            "id" => $add_array["accountid"],
+            "status" => 0,
+            "deleted" => 0
+        ));
+        if ($account_info->num_rows > 0) {
+            $accountdata = $account_info->result_array()[0];
+            $balance = $accountdata['posttoexternal'] == 1 ? $accountdata['credit_limit'] - ($accountdata['balance']) : $accountdata['balance'];
+            $product_info = $this->did_model->get_assignment_product_info($add_array['product_id'], ($this->session->userdata('logintype') == 1 || $this->session->userdata('logintype') == 5));
+            if (! empty($product_info)) {
+                $total_amt = $product_info['price'] + $product_info['setup_fee'];
+
+                $total_amt = $this->common->convert_to_currency('', '', $total_amt);
+                $did_id = $this->common->get_field_name("id","dids",array("product_id"=>$add_array['product_id']));
+                $this->load->library('did_lib');
+                $accountdata['logintype'] = $accountdata['type'];
+                $did_result = $this->did_lib->did_billing_process($accountdata, $add_array["accountid"], $did_id);
+                if ($balance >= $total_amt) {
+                    $add_array['invoice_type'] = "debit";
+                    $add_array['payment_by'] = "Account Balance";
+                    $add_array['charge_type'] = "DID";
+                    $add_array['is_update_balance'] = "true";
+                    $add_array['create_invoice'] = "false";
+                    $order_id = $this->order->confirm_order($add_array, $add_array['accountid'], $accountinfo);
+                    if ($order_id > 0) {
+                        $this->did_model->update_did_account_by_product($add_array['product_id'], $add_array['accountid']);
+                        $this->session->set_flashdata('flux_errormsg', gettext('DID Assign Successfully !'));
                     }
-                }
-            } else {
-                $this->session->set_flashdata('flux_notification', gettext('Account Not Found!'));
-                redirect(base_url() . 'did/did_list/');
-            }
-        }
-        redirect(base_url() . 'did/did_list/');
-    }
-
-    function did_list_release($id)
-    {
-        $accountinfo = $this->session->userdata('accountinfo');
-        $where = array(
-            'id' => $id
-        );
-        $did_info = (array) $this->db->get_where("dids", $where)->result_array()[0];
-        if($did_info['accountid'] > 0){
-            $where = array(
-            'id' => $did_info['accountid']
-            );
-            }
-        else{
-            $where = array(
-            'id' => $did_info['parent_id']
-            );
-            }
-            $accountinfo = (array) $this->db->get_where("accounts", $where)->result_array()[0];
-        $this->did_model->did_number_release($did_info, $accountinfo, 'release');
-        $did_info['product_name'] = $did_info['number'];
-
-        $final_array = array_merge($did_info, $accountinfo);
-        $final_array['id'] = $accountinfo['id'];
-        $final_array['next_billing_date'] = gmdate('Y-m-d H:i:s');
-        $this->did_lib->did_release($final_array);
-        $this->session->set_flashdata('flux_errormsg', gettext('DID Released Successfully!'));
-        redirect(base_url() . 'did/did_list/');
-    }
-
-    function did_delete_multiple()
-    {
-        $ids = $this->input->post("selected_ids", true);
-        $did_info_details = array();
-        $accountinfo = $this->session->userdata('accountinfo');
-        $where = "product_id IN ($ids)";
-        $did_info = (array) $this->db->get_where("dids", $where)->result_array();
-        foreach ($did_info as $key => $value) {
-            $this->did_model->did_number_release($value, $accountinfo, 'remove');
-            if ($this->session->userdata['userlevel_logintype'] == '1' || $this->session->userdata['userlevel_logintype'] == '5') {
-                if ($accountinfo['reseller_id'] > 0) {
-                    $this->db->where($where);
-                    $this->db->where('reseller_id', $accountinfo['reseller_id']);
-                    $this->db->where('account_id', $accountinfo['id']);
-                    $this->db->delete("reseller_products");
-                    $this->db->where($where);
-                    $this->db->update("dids", array(
-                        'parent_id' => $accountinfo['reseller_id']
-                    ));
                 } else {
-                    $this->db->where($where);
-                    $this->db->where('account_id', $accountinfo['id']);
-                    $this->db->delete("reseller_products");
-                }
-            } else {
-
-                if ($this->session->userdata['userlevel_logintype'] == '-1' || $this->session->userdata['userlevel_logintype'] == '2') {
-                    $category_name = '';
-                    $acc_id = '';
-                    $order_items_id = '';
-                    $order_id = '';
-                    $did_delete = array();
-                    $product_category_details = array();
-                    $product_category_details_result = array();
-                    $product_category_details = $this->db_model->getSelect("name,product_category", "products", array(
-                        "id" => $value['product_id']
-                    ));
-
-                    if ($product_category_details->num_rows > 0) {
-                        $product_category_details_result = $product_category_details->result_array()[0];
-
-                        $did_delete['product_name'] = $product_category_details_result['name'];
-
-                        $category_name = $this->common->get_field_name("name", "category", array(
-                            "id" => $product_category_details_result['product_category']
-                        ));
-                        $acc_id = $this->common->get_field_name("accountid", "order_items", array(
-                            "product_id" => $value['product_id']
-                        ));
-                        $order_items_id = $this->common->get_field_name("order_id", "order_items", array(
-                            "product_id" => $value['product_id']
-                        ));
-                        $order_id = $this->common->get_field_name("order_id", "orders", array(
-                            "id" => $order_items_id
-                        ));
-                       
-                        $did_delete['category_name'] = $category_name;
-                        $did_delete['next_billing_date'] = gmdate('Y-m-d H:i:s');
-                        $acc_info_result = array();
-                        $did_delete['order_id'] = $order_id;
-                        $acc_info = $this->db_model->getSelect("id,number,first_name,last_name,company_name,email,reseller_id", "accounts", array(
-                            "id" => $acc_id
-                        ));
-
-                        if ($acc_info->num_rows > 0) {
-                            $acc_info_result = $acc_info->result_array()[0];
-                            $final_array = array_merge($acc_info_result, $did_delete);
-                            $this->common->mail_to_users('product_release', $final_array);
-                        }
-                    }
-                    $whr = "id IN ($ids)";
-                    $this->db->where($whr);
-                    $this->db->delete('products');
-                    $this->db->where(array(
-                        "id" => $value['id']
-                    ));
-                    $this->db->delete('dids');
+                    $this->session->set_flashdata('flux_notification', gettext('Insufficient Balance !'));
+                    redirect(base_url() . 'did/did_list/');
                 }
             }
+        } else {
+            $this->session->set_flashdata('flux_notification', gettext('Account Not Found!'));
+            redirect(base_url() . 'did/did_list/');
         }
-        echo "DIDs";
     }
+    redirect(base_url() . 'did/did_list/');
+}
+
+
+
+function did_list_release($id)
+{
+    $context = $this->did_model->get_did_release_context($id);
+    $did_info = $context['did_info'];
+    $accountinfo = $context['accountinfo'];
+    $this->did_model->did_number_release($did_info, $accountinfo, 'release');
+    $did_info['product_name'] = $did_info['number'];
+
+    $final_array = array_merge($did_info, $accountinfo);
+    $final_array['id'] = $accountinfo['id'];
+    $final_array['next_billing_date'] = gmdate('Y-m-d H:i:s');
+    $this->common->mail_to_users('product_release', $final_array);
+    $this->session->set_flashdata('flux_errormsg', gettext('DID Released Successfully!'));
+    redirect(base_url() . 'did/did_list/');
+}
+
+
+
+function did_delete_multiple()
+{
+    $ids = $this->input->post("selected_ids", true);
+    $accountinfo = $this->session->userdata('accountinfo');
+    $did_info = $this->did_model->get_dids_by_product_ids($ids);
+    foreach ($did_info as $key => $value) {
+        $this->did_model->did_number_release($value, $accountinfo, 'remove');
+        $mail_payload = $this->did_model->cleanup_released_dids($ids, $accountinfo, $value);
+        if (!empty($mail_payload)) {
+            $this->common->mail_to_users('product_release', $mail_payload);
+        }
+    }
+    echo "DIDs";
+}
+
 
     function did_forward($id = '')
     {
@@ -633,108 +542,26 @@ class DID extends MX_Controller
         }
     }
 
-    function customer_did($accountid, $accounttype)
 
-    {
-        $json_data = array();
-        $instant_search = $this->session->userdata('left_panel_search_' . $accounttype . '_did');
-        $account_arr = (array) $this->db->get_where('accounts', array(
-            "id" => $accountid
-        ))->first_row();
-        $field_name = $accounttype == "reseller" ? "parent_id" : 'accountid';
-	
-        if ($account_arr['reseller_id'] != 0) {
-           
-        if ($accounttype == 'reseller') {
-	$like_str ="";
-        $like_str = ! empty($instant_search) ? "(dids.number like '%$instant_search%'
-					OR  dids.init_inc like '%$instant_search%'
-					OR  dids.inc like '%$instant_search%'
-					OR  dids.cost like '%$instant_search%'
-					OR  dids.includedseconds like '%$instant_search%'
-					OR  reseller_products.setup_fee like '%$instant_search%'
-					OR  reseller_products.price like '%$instant_search%'
-					OR  dids.connectcost like '%$instant_search%'
-					OR  dids.province like '%$instant_search%'
-					OR  dids.city like '%$instant_search%'
-					    )" : null;
-		$this->db->where('dids.accountid',$accountid);
-		$this->db->where('dids.parent_id',$account_arr['reseller_id']);
-		$this->db->where('dids.status',0);
-		 if (! empty($like_str)){		
-                	$this->db->where($like_str);
-	         }
-                $count_result = $this->db_model->getJionQueryCount('dids', 'dids.id,dids.product_id,dids.number,reseller_products.buy_cost,reseller_products.commission,reseller_products.price,reseller_products.billing_type,reseller_products.setup_fee,reseller_products.billing_days,reseller_products.product_id', 'reseller_products', 'dids.product_id=reseller_products.product_id', 'inner', "", "", 'DESC', 'dids.id');
-                $paging_data = $this->form->load_grid_config($count_result['count'], $_GET['rp'], $_GET['page']);
-                $json_data = $paging_data["json_paging"];
-                $query = $this->db_model->getJionQuery('dids', 'dids.id,dids.product_id,dids.number,reseller_products.buy_cost,reseller_products.commission,reseller_products.price,reseller_products.billing_type,reseller_products.setup_fee,reseller_products.billing_days,reseller_products.product_id',  'reseller_products', 'dids.product_id=reseller_products.product_id', 'inner', $paging_data["paging"]["page_no"], $paging_data["paging"]["start"], 'DESC', 'dids.id');
-            } else { 
-                $str1 = '';
-                $like_str1 = ! empty($instant_search) ? "(dids.number like '%$instant_search%'
-                                                    OR dids.inc like '%$instant_search%'
-                                                    OR dids.cost like '%$instant_search%'
-                                                    OR dids.includedseconds like '%$instant_search%'
-                                                    OR reseller_products.setup_fee like '%$instant_search%'
-                                                    OR reseller_products.price like '%$instant_search%'
-                                                    OR dids.connectcost like '%$instant_search%'
-                                                    OR dids.province like '%$instant_search%'
-						    OR dids.city like '%$instant_search%'
-                                                        )" : null;
-               
-		$this->db->where('dids.accountid',$accountid);
-		$this->db->where('dids.parent_id',$account_arr['reseller_id']);
-		$this->db->where('dids.status',0);
-		 if (! empty($like_str1)){
-               		 $str1 = $like_str1;
-			$this->db->where($str1);
-		}	
-               $count_result = (array) $this->db->query('SELECT  COUNT(*) as count,  reseller_products.setup_fee, reseller_products.price FROM dids  INNER JOIN reseller_products  ON dids.product_id = reseller_products.product_id')->first_row();
+function customer_did($accountid, $accounttype)
 
+{
+    $json_data = array();
+    $instant_search = $this->session->userdata('left_panel_search_' . $accounttype . '_did');
+    $listing = $this->did_model->get_customer_did_listing($accountid, $accounttype, $instant_search, $_GET['rp'], $_GET['page']);
+    $paging_data = $this->form->load_grid_config($listing['count'], $_GET['rp'], $_GET['page']);
+    $json_data = $paging_data["json_paging"];
+    $query = $listing['query'];
+    $did_grid_fields = json_decode($this->did_form->build_did_list_for_customer($accountid, $accounttype));
+    $json_data['rows'] = $this->form->build_grid($query, $did_grid_fields);
+    echo json_encode($json_data);
+}
 
-                $paging_data = $this->form->load_grid_config($count_result['count'], $_GET['rp'], $_GET['page']);
-                $json_data = $paging_data["json_paging"];
-		
-		$query = $this->db_model->getJionQuery('dids', 'dids.id as did_id,dids.product_id as id,dids.number,dids.cost,dids.inc,dids.country_id,dids.call_type,dids.extensions,dids.connectcost,dids.init_inc,dids.includedseconds,reseller_products.buy_cost,reseller_products.commission,reseller_products.setup_fee,reseller_products.price,reseller_products.billing_type,reseller_products.billing_days,reseller_products.status,dids.last_modified_date,dids.city,dids.province',  '','reseller_products','dids.product_id=reseller_products.product_id', 'inner',$paging_data["paging"]["page_no"],$paging_data["paging"]["start"],'DESC','dids.id');
-
-            }
-        } else {
-            $like_str = ! empty($instant_search) ? "(dids.number like '%$instant_search%'
-                                                    OR dids.inc like '%$instant_search%'
-                                                    OR dids.cost like '%$instant_search%'
-                                                    OR dids.includedseconds like '%$instant_search%'
-                                                    OR dids.setup like '%$instant_search%'
-                                                    OR dids.monthlycost like '%$instant_search%'
-                                                    OR dids.connectcost like '%$instant_search%'
-                                                    OR  dids.province like '%$instant_search%'
-						    OR  dids.city like '%$instant_search%'
-                                                        )" : null;
-            if (! empty($like_str)){
-                $this->db->where($like_str);
-	    }
-            $where = array(
-                $field_name => $accountid
-            );
-
-		$count_all = $this->db_model->getJionQueryCount('dids', 'dids.id as did_id,dids.product_id as id,dids.number,dids.cost,dids.inc,dids.country_id,dids.call_type,dids.extensions,dids.connectcost,dids.init_inc,dids.includedseconds,products.buy_cost,products.commission,products.setup_fee,products.price,products.billing_type,products.billing_days,products.status,dids.last_modified_date,dids.city,dids.province',  $where,'products','dids.product_id=products.id', 'inner',"","",'DESC','dids.id');
-            $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
-            $json_data = $paging_data["json_paging"];
-            if (! empty($like_str)){
-                $this->db->where($like_str);
-	    }
-
-		$query = $this->db_model->getJionQuery('dids', 'dids.id as did_id,dids.product_id as id,dids.number,dids.cost,dids.inc,dids.country_id,dids.call_type,dids.extensions,dids.connectcost,dids.init_inc,dids.includedseconds,products.buy_cost,products.commission,products.setup_fee,products.price,products.billing_type,products.billing_days,products.status,dids.last_modified_date,dids.city,dids.province',  $where,'products','dids.product_id=products.id', 'inner',$paging_data["paging"]["page_no"],$paging_data["paging"]["start"],'DESC','dids.id');
-		
-		 
-        }
-        $did_grid_fields = json_decode($this->did_form->build_did_list_for_customer($accountid, $accounttype));
-        $json_data['rows'] = $this->form->build_grid($query, $did_grid_fields);
-        echo json_encode($json_data);
-    }
 
     function did_download_sample_file($file_name)
     {
         $this->load->helper('download');
-        $full_path = "./assets/Rates_File/" . $file_name . ".csv";
+        $full_path = base_url() . "assets/Rates_File/" . $file_name . ".csv";
         ob_clean();
         $arrContextOptions = array(
             "ssl" => array(
@@ -757,10 +584,9 @@ class DID extends MX_Controller
             $this->session->set_userdata('import_did_csv_error', "");
         }
         $accountinfo = $this->session->userdata('accountinfo');
-        $this->db->where('id', $accountinfo['currency_id']);
-        $this->db->select('currency');
-        $currency_info = (array) $this->db->get('currency')->first_row();
-        $data['fields'] = gettext("DID,Country,Account,Cost / Min(" . $currency_info['currency'] . "),Initial Increment,Increment,Setup Fee(" . $currency_info['currency'] . "),Monthly Fee(" . $currency_info['currency'] . "),Call Type,Destination");
+        $currency_info = $this->did_model->get_currency_info($accountinfo['currency_id']);
+//        $data['fields'] = gettext("DID,Country,Account,Cost / Min(" . $currency_info['currency'] . "),Initial Increment,Increment,Setup Fee(" . $currency_info['currency'] . "),Monthly Fee(" . $currency_info['currency'] . "),Call Type,Destination");
+        $data['fields'] = gettext("DID,Country,Account,Cost/Min,Initial Increment,Increment,Setup Fee,Monthly Fee,Call Type,Destination,Area Code,Reverse Rate,Rate Group,Leg Timeout,Max Channels");
         $this->load->view('view_import_did', $data);
     }
 
@@ -769,9 +595,7 @@ class DID extends MX_Controller
         $data['page_title'] = gettext('Import DIDs');
         $config_did_array = $this->config->item('DID-rates-field');
         $accountinfo = $this->session->userdata('accountinfo');
-        $this->db->where('id', $accountinfo['currency_id']);
-        $this->db->select('currency');
-        $currency_info = (array) $this->db->get('currency')->first_row();
+        $currency_info = $this->did_model->get_currency_info($accountinfo['currency_id']);
         foreach ($config_did_array as $key => $value) {
             $key = str_replace('CURRENCY', $currency_info['currency'], $key);
             $did_fields_array[$key] = $value;
@@ -853,6 +677,12 @@ class DID extends MX_Controller
                 $csv_data['monthlycost'] = ! empty($csv_data['monthlycost']) && is_numeric($csv_data['monthlycost']) && $csv_data['monthlycost'] > 0 ? $csv_data['monthlycost'] : 0;
                 $csv_data['connectcost'] = ! empty($csv_data['connectcost']) && is_numeric($csv_data['connectcost']) && $csv_data['connectcost'] > 0 ? $csv_data['connectcost'] : 0;
                 $csv_data['inc'] = isset($csv_data['inc']) ? $csv_data['inc'] : 0;
+                $csv_data['area_code'] = isset($csv_data['area_code']) ? $csv_data['area_code'] : 0;                
+                $csv_data['reverse_rate'] = isset($csv_data['reverse_rate']) ? $csv_data['reverse_rate'] : 0;
+                $csv_data['rate_group'] = isset($csv_data['rate_group']) ? $csv_data['rate_group'] : 0;                
+                $csv_data['maxchannels'] = isset($csv_data['maxchannels']) ? $csv_data['maxchannels'] : 0;
+                $csv_data['leg_timeout'] = isset($csv_data['leg_timeout']) ? $csv_data['leg_timeout'] : 0;
+                
                 $str = $this->data_validate($csv_data);
                 if ($str != "") {
                     $invalid_array[$i] = $csv_data;
@@ -868,13 +698,7 @@ class DID extends MX_Controller
                                 $invalid_array[$i]['error'] = 'Duplicate DID found from database';
                             } else {
                                 if ($csv_data['accountid'] > 0) {
-                                    $this->db->where('type IN(0,1,3)');
-                                    $this->db->where('reseller_id', 0);
-                                    $this->db->where('deleted', 0);
-                                    $this->db->where('status', 0);
-                                    $account_info = (array) $this->db->get_where('accounts', array(
-                                        "number" => $csv_data['accountid']
-                                    ))->first_row();
+                                    $account_info = $this->did_model->get_import_account_by_number($csv_data['accountid']);
                                     if ($account_info) {
                                         $account_balance = $this->db_model->get_available_bal($account_info);
                                         $setup = $this->common_model->add_calculate_currency($csv_data['setup'], '', '', false, false);
@@ -969,7 +793,7 @@ class DID extends MX_Controller
             $data['provider_id'] = $provider_id;
             $data['import_record_count'] = count($new_final_arr) + count($reseller_array);
             $data['failure_count'] = count($invalid_array) - 1;
-            $data['page_title'] = gettext('DID Import Error');
+            $data['page_title'] = gettext('DID Import Result');
             $this->load->view('view_import_error', $data);
         } else {
             $this->session->set_flashdata('flux_errormsg', gettext('Total').' ' . count($new_final_arr) .' '. gettext('DIDs Imported Successfully!'));

@@ -273,8 +273,7 @@ class custom_rates extends MX_Controller {
 				}
 				$add_array['trunk_id'] = implode(",",$trunk_array);
 				
-				$this->db->where('routes_id',$add_array['id']);
-				$this->db->delete('routing');	
+				$this->custom_rates_model->delete_routing_by_route($add_array['id']);	
 				
 				if(isset($add_array['routing_type']) && $add_array['routing_type'] == 1){
 					$this->origination_set_force_routing($add_array,$add_array['id']);
@@ -341,7 +340,7 @@ class custom_rates extends MX_Controller {
 					"trunk_id"=>$value,
 					"percentage"=>$percentage[$key],
 				);
-				$this->db->insert("routing", $insert_array);
+				$this->custom_rates_model->add_routing($insert_array);
 			}
 		}
 	}
@@ -425,7 +424,7 @@ class custom_rates extends MX_Controller {
 				$k = $k-1;
 			}
 			$qr = "select destination from 	ratedeck where (".$wherestr.") order by LENGTH (pattern) DESC";
-			$destination = $this->db->query($qr);
+			$destination = $this->custom_rates_model->get_ratedeck_destination_by_pattern_query($qr);
 			if($destination->num_rows() >0){
 				$destination = $destination->result_array();
 				$destination =$destination[0];
@@ -451,15 +450,10 @@ class custom_rates extends MX_Controller {
 		);
 		$instant_search = $this->session->userdata ( 'left_panel_search_' . $accounttype . '_pattern' );
 		$like_str = ! empty ( $instant_search ) ? "(blocked_patterns like '%$instant_search%'  OR  destination like '%$instant_search%' )" : null;
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-		$count_all = $this->db_model->countQuery ( "*", "block_patterns", $where );
+		$count_all = $this->custom_rates_model->get_customer_block_pattern_list_count($where, $like_str);
 		$paging_data = $this->form->load_grid_config ( $count_all, $_GET ['rp'], $_GET ['page'] );
 		$json_data = $paging_data ["json_paging"];
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-		$this->db->limit($paging_data ["paging"] ["page_no"],$paging_data ["paging"] ["start"]);
-		$pattern_data = $this->db_model->getSelect ( "*", "block_patterns", $where, "id", "ASC", $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"] );
+		$pattern_data = $this->custom_rates_model->get_customer_block_pattern_list($where, $like_str, $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"]);
 		$grid_fields = json_decode ( $this->custom_rates_form->build_pattern_list_for_customer ( $accountid, $accounttype ) );
 		$json_data ['rows'] = $this->form->build_grid ( $pattern_data, $grid_fields );
 		echo json_encode ( $json_data );
@@ -467,9 +461,7 @@ class custom_rates extends MX_Controller {
 	
 	function custom_rate_delete_multiple() {
 		$ids = $this->input->post ( "selected_ids", true );
-		$where = "id IN ($ids)";
-		$this->db->where ( $where );
-		echo $this->db->delete ( "routes" );
+		echo $this->custom_rates_model->delete_multiple_custom_rates($ids);
 	}
 	function user_custom_rate_list_json() {
 		$json_data = array ();

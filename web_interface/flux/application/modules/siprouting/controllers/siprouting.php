@@ -304,9 +304,7 @@ class Siprouting extends MX_Controller {
 		$accountinfo = $this->session->userdata ( "accountinfo" );
 		$account_id=isset($add_array['accountid']) ? $add_array['accountid'] :$accountinfo['id'];
 		$reseller_id=$this->common->get_field_name("reseller_id", "accounts", array("id" => $account_id));
-		$this->db->where_in('reseller_id',array("-1",$reseller_id));
-		$this->db->where_in('accountid',array("0",$account_id));
-		$query=$this->db->get('pbx_music_on_hold');
+		$query = $this->siprouting_model->get_music_on_hold_by_account($reseller_id, $account_id);
 		$dropdown_params= array("name" => "music_on_hold" ,"id" => "music_on_hold", "class" => "form-control selectpicker form-control-lg music_on_hold col-md-3");
 		$pbx_plan = $this->db_model->countQuery("*", "addons", array(
 			"package_name" => "pbx_plans"
@@ -327,7 +325,7 @@ class Siprouting extends MX_Controller {
 				$music_on_hold_arr[$value['id'].',0'] =  $value['name'];
 			}
 		}
-		$recording_query =$this->db->get_where('pbx_recording',array("accountid"=>$account_id));
+		$recording_query = $this->siprouting_model->get_recordings_by_account($account_id);
 		if($recording_query->num_rows > 0){
 			$recording_result=$recording_query->result_array();
 			foreach ($recording_result as $key=>$value) {		

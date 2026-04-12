@@ -276,4 +276,57 @@ class api_endpoints_model extends CI_Model
         }
         return $query;
     }
+
+
+    function get_active_account($account_id)
+    {
+        return (array) $this->db->get_where("accounts", array(
+            "id" => $account_id,
+            "deleted" => "0",
+            "status" => "0"
+        ))->first_row();
+    }
+
+    function delete_multiple_partners($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where);
+        return $this->db->delete("api_partners");
+    }
+
+    function delete_multiple_partner_endpoints($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where);
+        return $this->db->delete("endpoints");
+    }
+
+    function delete_multiple_api_endpoints($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where);
+        return $this->db->delete("api_endpoints");
+    }
+
+    function add_endpoint_relation($insert_array)
+    {
+        return $this->db->insert("endpoints", $insert_array);
+    }
+
+    function get_endpoint_by_id($endpoint_id)
+    {
+        return $this->db->get_where('endpoints', array('id' => $endpoint_id));
+    }
+
+    function log_api_test_request($request_data)
+    {
+        $this->db->insert('api_test_requests', $request_data);
+        return $this->db->insert_id();
+    }
+
+    function log_api_test_response($response_data)
+    {
+        return $this->db->insert('api_test_responses', $response_data);
+    }
+
 }

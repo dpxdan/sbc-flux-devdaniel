@@ -93,4 +93,41 @@ class Taxes_model extends CI_Model
             'id' => $id
         ));
     }
+
+    function get_tax_by_id($id)
+    {
+        $this->db->select('taxes_description');
+        $this->db->where('id', $id);
+        return (array) $this->db->get('taxes')->first_row();
+    }
+
+    function normalize_ids($selected_ids)
+    {
+        return array_values(array_filter(array_map('intval', array_map('trim', explode(',', $selected_ids)))));
+    }
+
+    function delete_multiple_taxes($ids, $tax_options, $taxes_array)
+    {
+        foreach ($tax_options as $value) {
+            if (isset($taxes_array[$value])) {
+                $query = "Update `system` set value=REPLACE(value,'$value','')";
+                $this->db->query($query);
+                $query = "Update `system` set value=REPLACE(value,',,',',')";
+                $this->db->query($query);
+                $query = "Update `system` set value=REPLACE(value,',,',',')";
+                $this->db->query($query);
+            }
+        }
+        $query = "UPDATE `system` SET value = TRIM(BOTH ',' FROM value) where name='tax_type'";
+        $this->db->query($query);
+        $id_list = $this->normalize_ids($ids);
+        if (empty($id_list)) {
+            return false;
+        }
+        $this->db->where_in('taxes_id', $id_list);
+        $this->db->delete('taxes_to_accounts');
+        $this->db->where_in('id', $id_list);
+        return $this->db->delete("taxes");
+    }
+
 }

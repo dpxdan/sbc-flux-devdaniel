@@ -289,9 +289,7 @@ class rates_model extends CI_Model
         }
         $add_array['pattern'] = "^" . $add_array['pattern'] . ".*";
 
-        $this->insert_if_not_exitst($add_array, "routes");
-
-        return true;
+        return $this->insert_if_not_exitst($add_array, "routes");
     }
 
     function edit_origination_rate($data, $id)
@@ -463,10 +461,9 @@ class rates_model extends CI_Model
         foreach ($add_array as $key => $value) {
             if ($key != 'id') {
                 $insert_key .= $key . ",";
-                // $insert_value .= "'" . mysqli_real_escape_string ( $db, $value ) . "',";
-                // $update_str .= $key . " = '" . mysqli_real_escape_string ( $db, $value ) . "',";
-                $insert_value .= "'" . $value . "',";
-                $update_str .= $key . " = '" . $value . "',";
+                $escaped_value = mysqli_real_escape_string($db, $value);
+                $insert_value .= "'" . $escaped_value . "',";
+                $update_str .= $key . " = '" . $escaped_value . "',";
             }
         }
         $insert_key = rtrim($insert_key, ",");
@@ -475,6 +472,103 @@ class rates_model extends CI_Model
         $insert_str .= $insert_key . ") values" . "(" . $insert_value . ")  ON DUPLICATE KEY UPDATE $update_str";
 
         $this->db->query($insert_str);
+        $insert_id = $this->db->insert_id();
+        if ($insert_id > 0) {
+            return $insert_id;
+        }
+        if ($table_name === 'routes') {
+            $this->db->select('id');
+            $this->db->where('pattern', $add_array['pattern']);
+            if (isset($add_array['pricelist_id'])) {
+                $this->db->where('pricelist_id', $add_array['pricelist_id']);
+            }
+            $row = (array) $this->db->get($table_name)->first_row();
+            return isset($row['id']) ? $row['id'] : 0;
+        }
+        return 0;
+    }
+
+
+    function get_currency_by_id($currency_id)
+    {
+        $this->db->where('id', $currency_id);
+        $this->db->select('currency');
+        return (array) $this->db->get('currency')->first_row();
+    }
+
+    function delete_routing_by_route($route_id)
+    {
+        $this->db->where('routes_id', $route_id);
+        return $this->db->delete('routing');
+    }
+
+    function set_origination_force_routing($add_array, $routes_id)
+    {
+        $trunk_id = explode(",", $add_array['trunk_id']);
+        $percentage = explode(",", $add_array['percentage']);
+        foreach ($trunk_id as $key => $value) {
+            if ($value != 0) {
+                $insert_array = array(
+                    "routes_id" => $routes_id,
+                    "pricelist_id" => 0,
+                    "trunk_id" => $value,
+                    "percentage" => isset($percentage[$key]) ? $percentage[$key] : 0
+                );
+                $this->db->insert("routing", $insert_array);
+            }
+        }
+        return true;
+    }
+
+    function get_customer_block_pattern_list($flag, $accountid, $instant_search = '', $start = 0, $limit = 0)
+    {
+        $where = array('accountid' => $accountid);
+        $like_str = ! empty($instant_search) ? "(blocked_patterns like '%$instant_search%'  OR  destination like '%$instant_search%' )" : null;
+        if (! empty($like_str)) {
+            $this->db->where($like_str);
+        }
+        if ($flag) {
+            return $this->db_model->getSelect("*", "block_patterns", $where, "id", "ASC", $limit, $start);
+        }
+        return $this->db_model->countQuery("*", "block_patterns", $where);
+    }
+
+    function normalize_ids($selected_ids)
+    {
+        return array_values(array_filter(array_map('intval', array_map('trim', explode(',', $selected_ids)))));
+    }
+
+    function delete_multiple_termination_rates($ids)
+    {
+        $id_list = $this->normalize_ids($ids);
+        if (empty($id_list)) {
+            return false;
+        }
+        $this->db->where_in('id', $id_list);
+        return $this->db->delete("outbound_routes");
+    }
+
+    function delete_multiple_origination_rates($ids)
+    {
+        $id_list = $this->normalize_ids($ids);
+        if (empty($id_list)) {
+            return false;
+        }
+        $this->db->where_in('id', $id_list);
+        return $this->db->delete("routes");
+    }
+
+    function get_active_pricelist_by_id($id)
+    {
+        $result = $this->db->get_where('pricelists', array(
+            "id" => $id,
+            "status" => 0
+        ));
+        if ($result->num_rows() > 0) {
+            $rows = $result->result_array();
+            return $rows[0];
+        }
+        return array();
     }
 
     function get_ratedeck_details($pattern)

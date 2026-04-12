@@ -241,7 +241,7 @@ class Email_form extends common
         );
         $form['button_save'] = array(
             'name' => 'action',
-            'content' => gettext('Sent'),
+            'content' => gettext('Send'),
             'value' => 'save',
             'id' => 'button',
             'type' => 'submit',

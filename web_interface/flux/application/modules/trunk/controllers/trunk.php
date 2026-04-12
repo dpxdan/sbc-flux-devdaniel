@@ -167,9 +167,6 @@ class Trunk extends MX_Controller
     function trunk_remove($id)
     {
         $this->trunk_model->remove_trunk($id);
-        $this->db->delete("routing", array(
-            "trunk_id" => $id
-        ));
         $this->session->set_flashdata('flux_notification', gettext('Trunk removed successfully!'));
         redirect(base_url() . 'trunk/trunk_list/');
     }
@@ -179,43 +176,9 @@ class Trunk extends MX_Controller
         $add_array = $this->input->post();
         $where = 'IN (' . $add_array['selected_ids'] . ')';
         if (isset($add_array['flag'])) {
-            $update_data = array(
-                'status' => '2'
-            );
-            $this->db->where('trunk_id ' . $where);
-            $this->db->delete('outbound_routes');
-            $this->db->where('id ' . $where);
-            $this->db->update('trunks', $update_data);
-            echo TRUE;
+            echo $this->trunk_model->delete_multiple_trunks($add_array['selected_ids']);
         } else {
-            $trunk_arr = array();
-            $this->db->select('id,name');
-            $this->db->where('id ' . $where);
-            $trunk_res = $this->db->get('trunks');
-            $trunk_res = $trunk_res->result_array();
-            foreach ($trunk_res as $value) {
-                $trunk_arr[$value['id']]['name'] = $value['name'];
-            }
-            $this->db->where('trunk_id ' . $where);
-            $this->db->select('count(id) as cnt,trunk_id');
-            $this->db->group_by('trunk_id');
-            $outbound_routes_res = $this->db->get('outbound_routes');
-            if ($outbound_routes_res->num_rows() > 0) {
-                $outbound_routes_res = $outbound_routes_res->result_array();
-                foreach ($outbound_routes_res as $key => $value) {
-                    $trunk_arr[$value['trunk_id']]['outbound_routes'] = $value['cnt'];
-                }
-            }
-            $str = null;
-            foreach ($trunk_arr as $key => $value) {
-                if (isset($value['outbound_routes'])) {
-                    $str .= $value['name'] . "trunk using by " . $value['outbound_routes'] . " termination rates \n";
-                }
-            }
-            if (! empty($str)) {
-                $data['str'] = $str;
-            }
-            $data['selected_ids'] = $add_array['selected_ids'];
+            $data = $this->trunk_model->get_trunk_delete_summary($add_array['selected_ids']);
             echo json_encode($data);
         }
     }

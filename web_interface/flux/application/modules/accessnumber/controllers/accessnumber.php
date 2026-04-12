@@ -41,11 +41,7 @@ class Accessnumber extends CI_Controller
     function accessnumber_list()
     {
         $accountinfo = $this->session->userdata("accountinfo");
-        $account_arr = (array) $this->db->get_where("accounts", array(
-            "id" => $accountinfo['id'],
-            "deleted" => "0",
-            "status" => "0"
-        ))->first_row();
+        $account_arr = $this->accessnumber_model->get_active_account($accountinfo['id']);
         if (empty($account_arr)) {
             $this->session->sess_destroy();
             $this->load->helper('cookie');
@@ -162,9 +158,7 @@ class Accessnumber extends CI_Controller
     function accessnumber_remove($id)
     {
         $this->accessnumber_model->remove_accessnumber($id);
-        $this->db->delete("accessnumber", array(
-            "access_number" => $id
-        ));
+        $this->accessnumber_model->remove_accessnumber_by_number($id);
         $this->session->set_flashdata('flux_notification', gettext('Accessnumber Removed Successfully!'));
         redirect(base_url() . 'accessnumber/accessnumber_list/');
     }
@@ -172,9 +166,7 @@ class Accessnumber extends CI_Controller
     function accessnumber_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("accessnumber");
+        echo $this->accessnumber_model->delete_multiple_accessnumber($ids);
     }
 
     function accessnumber_export_data_xls()

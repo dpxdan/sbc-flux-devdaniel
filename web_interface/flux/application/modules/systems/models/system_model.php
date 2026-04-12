@@ -510,4 +510,98 @@ class System_model extends CI_Model
         $this->db->insert("timezone", $add_array);
         return true;
     }
+
+    function delete_multiple_records($table, $ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where);
+        return $this->db->delete($table);
+    }
+
+    function delete_record($table, $where)
+    {
+        $this->db->where($where);
+        return $this->db->delete($table);
+    }
+
+    function build_backup_filename()
+    {
+        return $this->db->database . "_" . date("YmdHms") . ".sql.gz";
+    }
+
+    function get_database_connection_info()
+    {
+        return array(
+            'database' => $this->db->database,
+            'username' => $this->db->username,
+            'password' => $this->db->password,
+            'hostname' => $this->db->hostname
+        );
+    }
+
+    function get_languages_by_ids($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where);
+        return $this->db->get('languages')->result_array();
+    }
+
+    function get_default_language_record()
+    {
+        $this->db->where('name', 'default_language');
+        return $this->db->get('system');
+    }
+
+    function save_default_language($language_name)
+    {
+        $lang_update = array(
+            'display_name' => 'Default Language',
+            'group_title' => 'global',
+            'sub_group' => 'General',
+            'is_display' => 1,
+            'value' => $language_name
+        );
+        $query = $this->get_default_language_record();
+        if ($query->num_rows() > 0) {
+            $this->db->where('name', 'default_language');
+            $this->db->update('system', $lang_update);
+        } else {
+            $data = $lang_update;
+            $data['name'] = 'default_language';
+            $this->db->insert('system', $data);
+        }
+        return true;
+    }
+
+    function get_language_by_id($id)
+    {
+        return $this->db->get_where('languages', array(
+            'id' => $id
+        ))->first_row();
+    }
+
+    function drop_translation_column($localename)
+    {
+        if ($this->db->field_exists($localename, 'translations')) {
+            $this->db->query('ALTER TABLE translations DROP `' . $localename . '` ');
+            return true;
+        }
+        return false;
+    }
+
+    function get_translation_fields()
+    {
+        return $this->db->list_fields('translations');
+    }
+
+    function get_all_languages()
+    {
+        return $this->db->get('languages')->result_array();
+    }
+
+    function get_translation_rows_by_columns($select_columns)
+    {
+        $this->db->select($select_columns);
+        return $this->db->get('translations')->result_array();
+    }
 }

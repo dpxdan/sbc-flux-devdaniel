@@ -395,5 +395,255 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 	  }
 
 	}
+	function get_product_category_dropdown($logintype){
+		if ($logintype == 1 || $logintype == 5){
+			$categoryinfo = $this->db_model->getSelect("GROUP_CONCAT(id) as id","category","code NOT IN ('REFILL','DID','PACKAGE')");
+			$categoryinfo_arr = $categoryinfo->result_array();
+			if($categoryinfo->num_rows > 0 && !empty($categoryinfo_arr[0]['id'])){
+				$where_arr['where'] = $this->db->where("id IN (".$categoryinfo_arr[0]['id'].")", NULL, false);
+				return $this->db_model->build_dropdown_products("id,name,code", "category", "", $where_arr);
+			}
+			return array();
+		}
+
+		return $this->db_model->build_dropdown_products("id,name,code,description", "category", "", "");
+	}
+
+	function get_existing_accounts_for_assignment($reseller_id, $product_rate_group){
+		if (empty($product_rate_group)) {
+			return array();
+		}
+		$this->db->select("*");
+		$this->db->from("accounts");
+		$this->db->where(array("status"=>0,"deleted"=>0,"type"=>0,"reseller_id"=>$reseller_id));
+		$this->db->where_in("pricelist_id", $product_rate_group);
+		$query = $this->db->get();
+		return $query->num_rows() > 0 ? $query->result_array() : array();
+	}
+
+	function get_active_customer_account($account_id){
+		$query = $this->db_model->getSelect("*", "accounts", array("id"=>$account_id,"status"=>0,"deleted"=>0,"type"=>0));
+		return $query->num_rows() > 0 ? $query->result_array()[0] : array();
+	}
+
+	function delete_selected_package_patterns($ids){
+		$ids = preg_replace('/[^0-9,]/', '', (string)$ids);
+		if ($ids === '') {
+			return false;
+		}
+		$where = "id IN ($ids)";
+		return $this->db->delete("package_patterns", $where);
+	}
+
+	private function apply_available_package_pattern_filters($productid, $reseller_id, $search = array()){
+		$where = '(pattern NOT IN (select DISTINCT patterns from package_patterns where product_id = "' . (int)$productid . '" and reseller_id = "'.(int)$reseller_id.'"))';
+		$this->db->where($where);
+		if (!empty($search['destination_rategroups'])) {
+			$this->db->where_in('pricelist_id', $search['destination_rategroups']);
+		}
+		if (!empty($search['destination_countries'])) {
+			$this->db->where_in('country_id', $search['destination_countries']);
+		}
+		if (!empty($search['destination_calltypes'])) {
+			$this->db->where_in('call_type', $search['destination_calltypes']);
+		}
+		if (isset($search['code']) && $search['code'] !== '') {
+			$this->db->where('pattern', '^'.$search['code'].'.*');
+		}
+		if (isset($search['destination']) && $search['destination'] !== '') {
+			$this->db->where('comment', $search['destination']);
+		}
+	}
+
+	function count_available_package_pattern_routes($productid, $reseller_id, $search = array()){
+		$this->apply_available_package_pattern_filters($productid, $reseller_id, is_array($search) ? $search : array());
+		return $this->db->count_all_results('routes');
+	}
+
+	function get_available_package_pattern_routes($productid, $reseller_id, $search = array(), $limit = null, $start = null){
+		$this->apply_available_package_pattern_filters($productid, $reseller_id, is_array($search) ? $search : array());
+		$this->db->select('*');
+		$this->db->from('routes');
+		if ($limit !== null && $start !== null) {
+			$this->db->limit($limit, $start);
+		}
+		return $this->db->get();
+	}
+
+	function delete_product_pattern($productid, $id){
+		return $this->db->delete("package_patterns", array("id" => $id, "product_id" => $productid));
+	}
+
+	function bulk_delete_products($ids, $accountinfo){
+		$ids = preg_replace('/[^0-9,]/', '', (string)$ids);
+		if ($ids === '') {
+			return;
+		}
+		$where = "id IN ($ids)";
+		if($this->session->userdata('logintype') == 1){
+			$this->db->where("product_id IN (".$ids.")", NULL, false);
+			$product_info = (array) $this->db->get("reseller_products")->result_array();
+			if(!empty($product_info)){
+				foreach($product_info as $value){
+					if($value['account_id'] == $accountinfo['id']){
+						$this->db->where("id",$value['product_id']);
+						$this->db->update("products",array("is_deleted"=>1));
+					}
+					$this->db->where("id",$value['id']);
+					$this->db->update("reseller_products",array("is_optin"=>1));
+				}
+			}
+		}else{
+			$product_info = (array) $this->db->get_where("products", $where)->result_array();
+			if(!empty($product_info)){
+				foreach($product_info as $value){
+					$where_arr['where'] = "product_id=".$value['id'];
+					$order_item = $this->db_model->getSelect("*", "order_items", $where_arr);
+					if($order_item->num_rows == 0){
+						$this->db->where("id", $value['id']);
+						if($this->session->userdata ['logintype'] == '1'){
+							$this->db->where("created_by", $accountinfo['id']);
+						}
+						$this->db->update("products",array("is_deleted"=>1));
+						$this->db->where("product_id", $value['id']);
+						$this->db->update("reseller_products",array("is_optin"=>1,"modified_date"=>gmdate("Y-m-d H:i:s")));
+					}
+				}
+			}
+		}
+	}
+
+	private function apply_product_pattern_search($productid, $instant_search = ''){
+		$where = array("product_id" => $productid);
+		if (!empty($instant_search)) {
+			$like_str = "(pattern like '%".$this->db->escape_like_str($instant_search)."%' OR patterns like '%".$this->db->escape_like_str($instant_search)."%' OR increment like '%".$this->db->escape_like_str($instant_search)."%')";
+			$this->db->where($like_str, NULL, false);
+		}
+		return $where;
+	}
+
+	function count_product_patterns($productid, $instant_search = ''){
+		$where = $this->apply_product_pattern_search($productid, $instant_search);
+		return $this->db_model->countQuery("*", "package_patterns", $where);
+	}
+
+	function get_product_patterns($productid, $instant_search = '', $limit = 0, $start = 0){
+		$where = $this->apply_product_pattern_search($productid, $instant_search);
+		return $this->db_model->select("*", "package_patterns", $where, "id", "ASC", $limit, $start);
+	}
+
+	private function get_product_search_categoryinfo(){
+		$categoryinfo = $this->db_model->getSelect("GROUP_CONCAT('''',id,'''') as id","category","code NOT IN ('REFILL','DID')");
+		if($categoryinfo->num_rows > 0 ){
+			return $categoryinfo->result_array()[0]['id'];
+		}
+		return "''";
+	}
+
+	function count_customer_products($accountid, $instant_search = ''){
+		$select = "products.id as id,order_items.id as id1,products.name,order_items.price,order_items.free_minutes,order_items.setup_fee,order_items.billing_type,order_items.billing_days";
+		$table = "products";
+		$jionTable = array('order_items','accounts');
+		$jionCondition = array('products.id = order_items.product_id','accounts.id = order_items.accountid');
+		$type = array('left','inner');
+		$categoryinfo = $this->get_product_search_categoryinfo();
+		if (!empty($instant_search)) {
+			$like_str = "(products.name like '%".$this->db->escape_like_str($instant_search)."%' OR  products.price like '%".$this->db->escape_like_str($instant_search)."%' OR  IF(order_items.billing_type=0, 'One Time', 'Recurring') like '%".$this->db->escape_like_str($instant_search)."%' OR  order_items.billing_days like '%".$this->db->escape_like_str($instant_search)."%' OR  products.free_minutes like '%".$this->db->escape_like_str($instant_search)."%')";
+			$this->db->where($like_str, NULL, false);
+		}
+		$this->db->where("order_items.accountid",$accountid);
+		$this->db->where("order_items.is_terminated",0);
+		$this->db->where("products.product_category IN (".$categoryinfo.")",NULL, false);
+		return $this->db_model->getCountWithJion($table, $select, '', $jionTable, $jionCondition, $type);
+	}
+
+	function get_customer_products($accountid, $instant_search = '', $limit = 0, $start = 0){
+		$select = "products.id as id,order_items.id as id1,products.name,order_items.price,order_items.free_minutes,order_items.setup_fee,order_items.billing_type,order_items.billing_days";
+		$table = "products";
+		$jionTable = array('order_items','accounts');
+		$jionCondition = array('products.id = order_items.product_id','accounts.id = order_items.accountid');
+		$type = array('left','inner');
+		$categoryinfo = $this->get_product_search_categoryinfo();
+		if (!empty($instant_search)) {
+			$like_str = "(products.name like '%".$this->db->escape_like_str($instant_search)."%' OR  products.price like '%".$this->db->escape_like_str($instant_search)."%' OR  IF(order_items.billing_type=0, 'One Time', 'Recurring') like '%".$this->db->escape_like_str($instant_search)."%' OR  order_items.billing_days like '%".$this->db->escape_like_str($instant_search)."%' OR  products.free_minutes like '%".$this->db->escape_like_str($instant_search)."%')";
+			$this->db->where($like_str, NULL, false);
+		}
+		$this->db->where("order_items.accountid",$accountid);
+		$this->db->where("order_items.is_terminated",0);
+		$this->db->where("products.product_category IN (".$categoryinfo.")",NULL, false);
+		return $this->db_model->getAllJionQuery($table, $select, '', $jionTable, $jionCondition, $type, $limit, $start, "ASC", 'id', "");
+	}
+
+	function get_reseller_optin_product_info($productid, $accountinfo, $for_save = false){
+		if($accountinfo['reseller_id'] > 0){
+			$temp_where = '(`reseller_products`.`account_id` = '.$accountinfo['reseller_id'].' AND `reseller_products`.`is_optin` = 0 OR `reseller_products`.`account_id` = '.$accountinfo['reseller_id'].' AND `reseller_products`.`is_owner` = 0)';
+			$this->db->where($temp_where);
+			$select = $for_save ? ' products.id,products.name,products.product_category,reseller_products.buy_cost,products.commission,reseller_products.price,reseller_products.billing_type,reseller_products.billing_days,reseller_products.setup_fee,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id' : ' products.id,products.name,products.product_category,products.buy_cost,products.country_id,products.commission,reseller_products.price,reseller_products.billing_type,reseller_products.billing_days,reseller_products.setup_fee,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id';
+			$product_info = $this->db_model->getJionQuery('products', $select, array('reseller_products.product_id'=>$productid), 'reseller_products','products.id=reseller_products.product_id', 'inner', '' ,'','DESC','products.id');
+		}else{
+			$product_info = $this->db_model->getSelect ( "*", " products", array ('id' => $productid,'status'=>0));
+		}
+		if ($product_info->num_rows > 0) {
+			return (array) ($for_save ? $product_info->result_array()[0] : $product_info->first_row());
+		}
+		return array();
+	}
+
+	function save_reseller_option($productid, $add_array, $accountinfo){
+		$product_info = $this->get_reseller_optin_product_info($productid, $accountinfo, true);
+		if(empty($product_info)){
+			return false;
+		}
+		$add_array['billing_type'] = $product_info['billing_type'];
+		$add_array['billing_days'] = $product_info['billing_days'];
+		$add_array['commission'] = $product_info['commission'];
+		$add_array['free_minutes'] = $product_info['free_minutes'];
+		if(($accountinfo['reseller_id'] > 0 || $accountinfo['type'] == 1) && $accountinfo['is_distributor'] == 0 ){
+			$add_array['buy_cost'] = $this->common_model->add_calculate_currency ($add_array['product_buy_cost'], "", '', false, false );
+		}else{
+			$add_array['buy_cost'] = $product_info['buy_cost'];
+		}
+		if($accountinfo['is_distributor'] == 0){
+			$add_array['price']  = isset($add_array['price']) ? $this->common_model->add_calculate_currency ($add_array['price'], "", '', false, false ) : $this->common_model->add_calculate_currency ($product_info['price'], "", '', false, false );
+			$add_array['setup_fee']  = isset($add_array['setup_fee']) ? $this->common_model->add_calculate_currency ($add_array['setup_fee'], "", '', false, false ) : $this->common_model->add_calculate_currency ($product_info['setup_fee'], "", '', false, false );
+		}else{
+			$add_array['price']  = $product_info['price'];
+			$add_array['setup_fee']  = $product_info['setup_fee'];
+		}
+		$now = gmdate("Y-m-d H:i:s");
+		$query = "INSERT INTO reseller_products (product_id, account_id, reseller_id,country_id,commission, setup_fee, price, free_minutes,buy_cost,billing_type, billing_days, status, is_optin,is_owner,optin_date,modified_date)
+	VALUES(".(int)$productid.",".(int)$accountinfo['id'].", ".(int)$accountinfo['reseller_id'].", ".(int)$add_array['country_id'].",".$add_array['commission'].",'".$add_array['setup_fee']."','".$add_array['price']."',".$add_array['free_minutes'].",".$add_array['buy_cost'].",".$add_array['billing_type'].",".$add_array['billing_days'].", 0, 0, 1, '".$now."','".$now."') ON DUPLICATE KEY UPDATE product_id = VALUES(product_id), account_id = VALUES(account_id), reseller_id = VALUES(reseller_id), commission = VALUES(commission), setup_fee = VALUES(setup_fee), price = VALUES(price), free_minutes = VALUES(free_minutes), buy_cost = VALUES(buy_cost),billing_type = VALUES(billing_type), billing_days = VALUES(billing_days), status = VALUES(status), is_optin = VALUES(is_optin), is_owner = VALUES(is_owner), optin_date = VALUES(optin_date),modified_date = VALUES(modified_date)";
+		return $this->db->query($query);
+	}
+
+	function toggle_product_optin($product_id, $status, $accountinfo){
+		if($status == 'true'){
+			$reseller_products_array = array(
+				"product_id"=>$product_id,
+				"account_id"=>$accountinfo['id'],
+				"reseller_id"=>isset($accountinfo ['reseller_id'])?$accountinfo ['reseller_id']:0,
+				"status"=>0,
+				"creation_date"=>gmdate("Y-m-d H:i:s")
+			);
+			$this->db->insert("reseller_products", $reseller_products_array);
+			return true;
+		}
+		if($status == 'false'){
+			$orders = $this->db_model->getSelect("*","order_items",array("product_id"=>$product_id));
+			if($orders->num_rows == 0){
+				$this->db->where("product_id",$product_id);
+				$this->db->delete("reseller_products");
+			}else{
+				$this->db->where("product_id",$product_id);
+				$this->db->update("reseller_products",array("status"=>1));
+			}
+		}
+		return true;
+	}
+
+	function get_active_account($account_id){
+		return (array)$this->db->get_where("accounts",array("id"=>$account_id,"deleted"=>"0","status"=>"0"))->first_row();
+	}
+
 }
 ?>

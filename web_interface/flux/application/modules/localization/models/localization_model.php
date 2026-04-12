@@ -60,4 +60,13 @@ class Localization_model extends CI_Model
         $this->db->where("id", $id);
         $this->db->delete("localization");
     }
+
+
+    function delete_multiple_localization($ids)
+    {
+        $where = "id IN (" . $ids . ")";
+        $this->db->where($where);
+        return $this->db->delete("localization");
+    }
+
 }

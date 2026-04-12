@@ -212,12 +212,7 @@ class calltype extends MX_Controller
     function calltype_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $update_data = array(
-            'status' => '2'
-        );
-        $this->db->where($where);
-        echo $this->db->update('calltype', $update_data);
+        echo $this->calltype_model->delete_multiple_calltype($ids);
     }
 }
 

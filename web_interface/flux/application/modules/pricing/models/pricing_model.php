@@ -188,4 +188,138 @@ class pricing_model extends CI_Model
 
         return $this->db->insert_id();
     }
+
+    function normalize_ids($selected_ids)
+    {
+        return array_values(array_filter(array_map('intval', array_map('trim', explode(',', $selected_ids)))));
+    }
+
+    function delete_routing_by_pricelist($pricelist_id)
+    {
+        return $this->db->delete("routing", array("pricelist_id" => $pricelist_id));
+    }
+
+    function set_force_routing($priceid, $trunkid)
+    {
+        foreach ((array) $trunkid as $id) {
+            $routing_arr = array(
+                "trunk_id" => $id,
+                "pricelist_id" => $priceid
+            );
+            $this->db->insert("routing", $routing_arr);
+        }
+        return true;
+    }
+
+    function delete_multiple_pricelists($selected_ids)
+    {
+        $ids = $this->normalize_ids($selected_ids);
+        if (empty($ids)) {
+            return false;
+        }
+        $update_data = array('status' => '2');
+        $this->db->where_in('pricelist_id', $ids);
+        $this->db->delete('routes');
+        $this->db->where_in('pricelist_id', $ids);
+        $this->db->delete('routing');
+        $this->db->where_in('id', $ids);
+        return $this->db->update('pricelists', $update_data);
+    }
+
+    function get_pricelist_delete_summary($selected_ids)
+    {
+        $ids = $this->normalize_ids($selected_ids);
+        $data = array('selected_ids' => $selected_ids);
+        if (empty($ids)) {
+            return $data;
+        }
+        $pricelist_arr = array();
+        $this->db->select('id,name');
+        $this->db->where_in('id', $ids);
+        foreach ($this->db->get('pricelists')->result_array() as $value) {
+            $pricelist_arr[$value['id']]['name'] = $value['name'];
+        }
+        $this->db->where_in('pricelist_id', $ids);
+        $this->db->where('deleted', 0);
+        $this->db->select('count(id) as cnt,pricelist_id');
+        $this->db->group_by('pricelist_id');
+        $account_res = $this->db->get('accounts');
+        if ($account_res->num_rows() > 0) {
+            foreach ($account_res->result_array() as $value) {
+                $pricelist_arr[$value['pricelist_id']]['account'] = $value['cnt'];
+            }
+        }
+        $this->db->where_in('pricelist_id', $ids);
+        $this->db->select('count(id) as cnt,pricelist_id');
+        $this->db->group_by('pricelist_id');
+        $routes_res = $this->db->get('routes');
+        if ($routes_res->num_rows() > 0) {
+            foreach ($routes_res->result_array() as $value) {
+                $pricelist_arr[$value['pricelist_id']]['routes'] = $value['cnt'];
+            }
+        }
+        $str = null;
+        foreach ($pricelist_arr as $value) {
+            $custom_str = null;
+            if (isset($value['account']) || isset($value['routes'])) {
+                if (isset($value['account'])) {
+                    $custom_str .= $value['account'] . " accounts and ";
+                }
+                if (isset($value['routes'])) {
+                    $custom_str .= $value['routes'] . " origination rates and ";
+                }
+                $str .= " Rate group Name : " . $value['name'] . " using by " . rtrim($custom_str, " and ") . "
+";
+            }
+        }
+        if (! empty($str)) {
+            $data['str'] = $str;
+        }
+        return $data;
+    }
+
+    function duplicate_pricelist($selected_pricegroup_id, $new_name)
+    {
+        $this->db->where('id', $selected_pricegroup_id);
+        $this->db->select('*');
+        $price_grp_res = $this->db->get('pricelists');
+        if ($price_grp_res->num_rows() <= 0) {
+            return false;
+        }
+        $price_grp = $price_grp_res->row_array();
+        $add_price_array = array(
+            'name' => $new_name,
+            'markup' => $price_grp['markup'],
+            'routing_prefix' => $price_grp['routing_prefix'],
+            'routing_type' => $price_grp['routing_type'],
+            'initially_increment' => $price_grp['initially_increment'],
+            'inc' => $price_grp['inc'],
+            'status' => $price_grp['status'],
+            'reseller_id' => $price_grp['reseller_id'],
+            'creation_date' => date('Y-m-d H:i:s')
+        );
+        $insert_id = $this->add_price($add_price_array);
+        $this->db->where('pricelist_id', $price_grp['id']);
+        $this->db->select('*');
+        $routes_grp_res = $this->db->get('routes');
+        if ($routes_grp_res->num_rows() > 0) {
+            foreach ($routes_grp_res->result_array() as $value) {
+                unset($value['id']);
+                $value['pricelist_id'] = $insert_id;
+                $this->add_origination($value);
+            }
+        }
+        return true;
+    }
+
+    function delete_multiple_refactors($selected_ids)
+    {
+        $ids = $this->normalize_ids($selected_ids);
+        if (empty($ids)) {
+            return false;
+        }
+        $this->db->where_in('id', $ids);
+        return $this->db->delete('refactor');
+    }
+
 }

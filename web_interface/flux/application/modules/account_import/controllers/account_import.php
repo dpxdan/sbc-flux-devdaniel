@@ -31,6 +31,8 @@ class Account_import extends MX_Controller
         $this->load->library('flux/form');
         $this->load->library('flux/permission');
         $this->load->library('FLUX_Sms');
+        $this->load->model('account_import_model');
+        $this->load->library('flux_log');
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
     }
@@ -39,6 +41,7 @@ class Account_import extends MX_Controller
     {
         $data['page_title'] = gettext('Import Customer Using Field Mapper');
         $data['config_array'] = $this->_create_common_array();
+        $data['all_domains']   = $this->account_import_model->get_all_active_domains();
         $this->session->set_userdata('import_customer_mapper_csv', "");
         $this->session->set_userdata('import_customer_mapper_csv_error', "");
         $data['invoice_date'] = gmdate("d") > 28 ? gmdate("28") : gmdate("d");
@@ -111,7 +114,6 @@ class Account_import extends MX_Controller
                                 $actual_file_name = "FluxSBC-Customer-import" . date("Y-m-d H:i:s") . "." . $ext;
                                 $actual_file_name = str_replace(' ', '-', $actual_file_name);
                                 $actual_file_name = str_replace(':', '-', $actual_file_name);
-                                $default_value_array = array();
                                 if (move_uploaded_file($uploadedFile, $full_path . $actual_file_name)) {
                                     array_unshift($file_data, $field_select);
                                     $data['csv_tmp_data'] = $file_data;
@@ -147,15 +149,17 @@ class Account_import extends MX_Controller
             $data['error'] = $error;
         }
         $data['config_array'] = $this->_create_common_array();
+        $data['all_domains']  = $this->account_import_model->get_all_active_domains();
+        $this->flux_log->write_log('customer_import_preview', json_encode($data));
         $this->load->view('view_import_customer_mapper', $data);
     }
 
     function customer_import_data()
     {
         $add_array = $this->input->post();
+        $this->flux_log->write_log('customer_import_data_post', json_encode($add_array));
         $tax_id = Common_model::$global_config['system_config']['tax_type'];
         $this->load->library("flux/signup_lib");
-        $default_fields = '';
         $default_fields = (unserialize($add_array['post_array']));
         $current_date = gmdate("Y-m-d H:i:s");
         $config_array = $this->config->item('Customers-mapper-fields');
@@ -166,11 +170,7 @@ class Account_import extends MX_Controller
         $customer_file_name = $this->session->userdata('import_customer_mapper_csv');
         $csv_tmp_data = $this->common->csv_to_array($full_path . $customer_file_name);
         $i = 0;
-        $this->db->select("id,name");
-        $pricelist_result = $this->db->get_where('pricelists', array(
-            "reseller_id" => $reseller_id,
-            "status" => 0
-        ))->result_array();
+        $pricelist_result = $this->account_import_model->get_active_pricelists($reseller_id);
         $pricelist_id_array = array();
         if (! empty($pricelist_result)) {
             foreach ($pricelist_result as $key => $value) {
@@ -178,7 +178,7 @@ class Account_import extends MX_Controller
             }
         }
         $is_recording_array = $this->common->custom_status_recording();
-        $sweepid_result = $this->db->get_where('sweeplist')->result_array();
+        $sweepid_result = $this->account_import_model->get_sweeplist();
         $sweep_id_array = array();
         if (! empty($sweepid_result)) {
             foreach ($sweepid_result as $key => $value) {
@@ -194,31 +194,20 @@ class Account_import extends MX_Controller
         $number_array = $this->common->find_uniq_rendno_accno($cardlength, 'number', 'accounts', '', $count_data);
         $username_array = $number_array = $this->common->find_uniq_rendno_accno($cardlength, 'username', 'sip_devices', '', $count_data);
         $i = 0;
-        $sip_profile_result = (array) $this->db->get_where("sip_profiles", array(
-            'status' => "0"
-        ))->first_row();
+        $sip_profile_result = $this->account_import_model->get_first_active_sip_profile();
         $sip_profile_id = $sip_profile_result['id'];
         $sip_device_array = array();
         $sip_username_array = array();
         $invoice_details_array = array();
         $number = array();
+        $domain_id = array();
         $email = array();
-        if (! empty($csv_tmp_data)) {
-            $this->db->select('id');
-            $this->db->order_by('id', 'DESC');
-            $this->db->limit(1);
-            $customer_invoice_info = (array) $this->db->get('invoices')->first_row();
-            if (empty($customer_invoice_info)) {
-                $customer_invoice_info['invoiceid'] = "00001";
-            }
-            $where = "accountid IN ('" . $reseller_id . "','1')";
-            $this->db->where($where);
-            $this->db->select('invoice_prefix,interval');
-            $this->db->order_by('accountid', 'desc');
-            $this->db->limit(1);
-            $invoiceconf = $this->db->get('invoice_conf');
-            $invoiceconf = (array) $invoiceconf->first_row();
 
+        $default_domain_ids = isset($default_fields['default_domain_ids'])
+            ? array_map('intval', (array) $default_fields['default_domain_ids'])
+            : array();
+
+        if (! empty($csv_tmp_data)) {
             $count = 0;
             $invalid_count = 0;
             foreach ($csv_tmp_data as $key => $csv_data) {
@@ -226,11 +215,7 @@ class Account_import extends MX_Controller
                 $error = null;
                 $invalid_flag = FALSE;
                 if (! empty($add_array["number-select"]) && $csv_data[$add_array["number-select"]] && is_numeric($csv_data[$add_array["number-select"]]) && ! isset($number[$csv_data[$add_array["number-select"]]])) {
-                    $this->db->select('id');
-                    $number_result = (array) $this->db->get_where('accounts', array(
-                        'number' => $csv_data[$add_array["number-select"]],
-                        "deleted" => 0
-                    ))->first_row();
+                    $number_result = $this->account_import_model->get_existing_account_by_number($csv_data[$add_array["number-select"]]);
                     if (empty($number_result)) {
                         $new_array['number'] = $csv_data[$add_array["number-select"]];
                         $number[$new_array['number']] = $new_array['number'];
@@ -241,11 +226,7 @@ class Account_import extends MX_Controller
                     $invalid_flag = TRUE;
                 }
                 if (! empty($add_array["email-select"]) && $csv_data[$add_array["email-select"]] && ! isset($email[$csv_data[$add_array["email-select"]]])) {
-                    $this->db->select('id');
-                    $email_result = (array) $this->db->get_where('accounts', array(
-                        'email' => $csv_data[$add_array["email-select"]],
-                        "deleted" => 0
-                    ))->first_row();
+                    $email_result = $this->account_import_model->get_existing_account_by_email($csv_data[$add_array["email-select"]]);
                     if (empty($email_result)) {
                         if($add_array["email-select"] == "Email"){
                             $new_array['email'] = $csv_data[$add_array["email-select"]];
@@ -335,24 +316,36 @@ class Account_import extends MX_Controller
 
                     $final_new_array=$new_array;
                     unset($final_new_array['balance']);
-                    $this->db->insert('accounts', $final_new_array);
+                    $accountid = $this->account_import_model->insert_account($final_new_array);
 
-                    $accountid = $this->db->insert_id();
+                    if ($accountid > 0) {
+                        $row_domain_ids = array();
+
+                        if (! empty($add_array["domain_name-select"]) && ! empty($csv_data[$add_array["domain_name-select"]])) {
+                            $csv_names    = array_filter(array_map('trim', explode(',', $csv_data[$add_array["domain_name-select"]])));
+                            $found        = $this->account_import_model->get_domains_by_names($csv_names);
+                            $row_domain_ids = array_column($found, 'id');
+                        }
+
+                        if (empty($row_domain_ids) && ! empty($default_domain_ids)) {
+                            $row_domain_ids = $default_domain_ids;
+                        }
+
+                        if (! empty($row_domain_ids)) {
+                            $this->flux_log->write_log('insert_account_domains', json_encode($row_domain_ids));
+                            $this->account_import_model->insert_account_domains($accountid, $row_domain_ids);
+                        }
+                    }
+
                     if ($default_fields['sipdevice_flag'] == 0 && $accountid > 0) {
                         $username = $username_array[$i];
                         if (! empty($add_array["sip_username-select"]) && isset($csv_data[$add_array["sip_username-select"]]) && ! isset($sip_username_array[$csv_data[$add_array["sip_username-select"]]])) {
-                            $this->db->select('id');
-                            $sipdevice_result = $this->db->get_where('sip_devices', array(
-                                'username' => $csv_data[$add_array["sip_username-select"]]
-                            ))->first_row();
+                            $sipdevice_result = $this->account_import_model->get_existing_sip_device($csv_data[$add_array["sip_username-select"]]);
                             if (empty($sipdevice_result)) {
                                 $username = $csv_data[$add_array["sip_username-select"]];
                             } else {
                                 if ($add_array['sip_username'] == 'number') {
-                                    $this->db->select('id');
-                                    $sipdevice_result = $this->db->get_where('sip_devices', array(
-                                        'username' => $add_array['sip_username']
-                                    ))->first_row();
+                                    $sipdevice_result = $this->account_import_model->get_existing_sip_device($add_array['sip_username']);
                                     if (empty($sipdevice_result)) {
                                         $username = $csv_data[$add_array["sip_username-select"]];
                                     } else {
@@ -364,10 +357,7 @@ class Account_import extends MX_Controller
                             }
                         } else {
                             if ($add_array['sip_username'] == 'number' && ! isset($sip_username_array[$new_array['number']])) {
-                                $this->db->select('id');
-                                $sipdevice_result = $this->db->get_where('sip_devices', array(
-                                    'username' => $new_array['number']
-                                ))->first_row();
+                                $sipdevice_result = $this->account_import_model->get_existing_sip_device($new_array['number']);
                                 if (empty($sipdevice_result)) {
                                     $username = $new_array['number'];
                                 } else {
@@ -418,13 +408,13 @@ class Account_import extends MX_Controller
                 $i ++;
             }
             if (! empty($sip_device_array)) {
-                $this->db->insert_batch('sip_devices', $sip_device_array);
+                $this->account_import_model->insert_sip_devices_batch($sip_device_array);
             }
         }
         $data = array();
         $data['invalid_count'] = $invalid_count;
         $data['count'] = $count;
-        $data['page_title'] = gettext("Account Import Error");
+        $data['page_title'] = gettext("Account Import Result");
         $this->load->view('view_import_error', $data);
     }
 
@@ -436,12 +426,7 @@ class Account_import extends MX_Controller
 
         $accountinfo = $this->session->userdata('accountinfo');
         $reseller_id = $accountinfo['type'] == 1 ? $accountinfo['id'] : 0;
-        $this->db->select("id,name");
-
-        $pricelist_result = $this->db->get_where('pricelists', array(
-            "reseller_id" => $reseller_id,
-            "status" => 0
-        ))->result_array();
+        $pricelist_result = $this->account_import_model->get_active_pricelists($reseller_id);
         $pricelist_id_array = array();
         if (! empty($pricelist_result)) {
             foreach ($pricelist_result as $key => $value) {
@@ -449,7 +434,7 @@ class Account_import extends MX_Controller
             }
         }
 
-        $sweepid_result = $this->db->get_where('sweeplist')->result_array();
+        $sweepid_result = $this->account_import_model->get_sweeplist();
         $sweep_id_array = array();
         if (! empty($sweepid_result)) {
             foreach ($sweepid_result as $key => $value) {
@@ -457,9 +442,7 @@ class Account_import extends MX_Controller
             }
         }
 
-        $localization_result = $this->db->get_where('localization', array(
-            "status" => 0
-        ))->result_array();
+        $localization_result = $this->account_import_model->get_active_localizations();
 
         $localization_array = array();
         if (! empty($localization_result)) {
@@ -471,14 +454,14 @@ class Account_import extends MX_Controller
         $custom_status_array = $this->common->custom_status();
         $cli_pool_array = $this->common->set_cli_pool();
 
-        $timezone_result = $this->db->get_where('timezone')->result_array();
+        $timezone_result = $this->account_import_model->get_timezones();
         $timezone_array = array();
         if (! empty($timezone_result)) {
             foreach ($timezone_result as $key => $value) {
                 $timezone_array[$value['id']] = gettext($value['timezone_name']);
             }
         }
-        $country_result = $this->db->get_where('countrycode')->result_array();
+        $country_result = $this->account_import_model->get_countries();
         $country_array = array();
         if (! empty($country_result)) {
             foreach ($country_result as $key => $value) {
@@ -486,7 +469,7 @@ class Account_import extends MX_Controller
             }
         }
 
-        $currency_result = $this->db->get_where('currency')->result_array();
+        $currency_result = $this->account_import_model->get_currencies();
         $currency_array = array();
         $default_currency_id = 1;
         if (! empty($currency_result)) {
@@ -497,9 +480,7 @@ class Account_import extends MX_Controller
                 }
             }
         }
-        $tax_result = $this->db->get_where('taxes', array(
-            "reseller_id" => $reseller_id
-        ))->result_array();
+        $tax_result = $this->account_import_model->get_taxes_by_reseller($reseller_id);
         $tax_array = array();
         if (! empty($tax_result)) {
             foreach ($tax_result as $key => $value) {
@@ -518,15 +499,14 @@ class Account_import extends MX_Controller
                 $current_value = isset($add_array[$value]) ? $add_array[$value] : Common_model::$global_config['system_config']['default_signup_rategroup'];
                 $custom_array[$value] = form_dropdown($params_arr, $pricelist_id_array, $current_value);
             }
-
+            if ($value == "tax_id") {
+                $current_value        = isset($add_array[$value]) ? $add_array[$value] : '';
+                $custom_array[$value] = form_dropdown($params_arr, $tax_array, $current_value);
+            }
             if ($value == "localization_id") {
                 $localization_value = isset($add_array[$value]) ? $add_array[$value] : Common_model::$global_config['system_config']['localization_id'];
-                if($localization_value == 0){
                     $custom_array[$value] =form_dropdown($params_arr, $localization_array, $localization_value);
-                }else{
-                    $custom_array[$value] = form_dropdown($params_arr, $localization_array, $localization_value);
                 }
-            }
             if ($value == "timezone_id") {
                 $current_value = isset($add_array[$value]) ? $add_array[$value] : Common_model::$global_config['system_config']['default_timezone'];
                 $custom_array[$value] = form_dropdown($params_arr, $timezone_array, $current_value);
@@ -575,7 +555,10 @@ class Account_import extends MX_Controller
                 $current_value = isset($add_array[$value]) ? $add_array[$value] : Common_model::$global_config['system_config']['notify_flag'];
                 $custom_array[$value] = form_dropdown($params_arr, $custom_status_array, $current_value);
             }
-
+            // default_domain_ids é renderizado diretamente na view como multi-select
+            if ($value == "default_domain_ids") {
+                continue;
+            }
             if ($value == "posttoexternal") {
                 $current_value = isset($add_array[$value]) ? $add_array[$value] : '';
                 $custom_array[$value] = form_dropdown($params_arr, $this->common->set_account_type(), $current_value);
@@ -642,7 +625,7 @@ class Account_import extends MX_Controller
     function customer_import_type()
     {
         $custom_value = "sweep_id";
-        $sweepid_result = $this->db->get_where('sweeplist')->result_array();
+        $sweepid_result = $this->account_import_model->get_sweeplist();
         $sweep_id_array = array();
         if (! empty($sweepid_result)) {
             foreach ($sweepid_result as $key => $value) {

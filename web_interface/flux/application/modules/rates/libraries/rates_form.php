@@ -2567,6 +2567,16 @@ class rates_form extends common
                 'single',
                 "",
                 "export"
+            ),
+            array(
+                gettext("Export PDF"),
+                "btn btn-xing",
+                "fa fa-download fa-lg",
+                "button_action",
+                "/rates/termination_rate_export_cdr_pdf/",
+                'single',
+                "",
+                "export"
             )
         ));
         return $buttons_json;

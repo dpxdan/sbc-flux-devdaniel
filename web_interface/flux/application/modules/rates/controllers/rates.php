@@ -103,9 +103,7 @@ class Rates extends MX_Controller
         $currency = $this->common->get_field_name('currency', 'currency', $currency_id);
         $data['currency'] = $currency;
         $config_termination_rate_array = $this->config->item('Termination-rates-field');
-        $this->db->where('id', $account_info['currency_id']);
-        $this->db->select('currency');
-        $currency_info = (array) $this->db->get('currency')->first_row();
+        $currency_info = $this->rates_model->get_currency_by_id($account_info['currency_id']);
         foreach ($config_termination_rate_array as $key => $value) {
             $key = str_replace('CURRENCY', $currency_info['currency'], $key);
             $new_final_arr_key[$key] = $value;
@@ -307,9 +305,7 @@ class Rates extends MX_Controller
         }
         $get_extension = strpos($_FILES['origination_rate_import']['name'], '.');
         $config_orignination_rate_array = $this->config->item('Origination-rates-field');
-        $this->db->where('id', $account_info['currency_id']);
-        $this->db->select('currency');
-        $currency_info = (array) $this->db->get('currency')->first_row();
+        $currency_info = $this->rates_model->get_currency_by_id($account_info['currency_id']);
         foreach ($config_orignination_rate_array as $key => $value) {
             $key = str_replace('CURRENCY', $currency_info['currency'], $key);
             $new_final_arr_key[$key] = $value;
@@ -655,8 +651,7 @@ class Rates extends MX_Controller
                     $trunk_array = array();
                     $add_array['trunk_id'] = ($add_array['trunk_id'] > 0)?$add_array['trunk_id']:0;
 
-                    $this->db->where('routes_id', $add_array['id']);
-                    $this->db->delete('routing');
+                    $this->rates_model->delete_routing_by_route($add_array['id']);
 
                     if (isset($add_array['routing_type']) && $add_array['routing_type'] == 1) {
                         $this->origination_set_force_routing($add_array, $add_array['id']);
@@ -706,20 +701,7 @@ class Rates extends MX_Controller
 
     function origination_set_force_routing($add_array, $routes_id)
     {
-        $trunk_id = explode(",", $add_array['trunk_id']);
-        $percentage = explode(",", $add_array['percentage']);
-        $trunk_count = count($trunk_id);
-        foreach ($trunk_id as $key => $value) {
-            if ($value != 0) {
-                $insert_array = array(
-                    "routes_id" => $routes_id,
-                    "pricelist_id" => 0,
-                    "trunk_id" => $value,
-                    "percentage" => $percentage[$key]
-                );
-                $this->db->insert("routing", $insert_array);
-            }
-        }
+        $this->rates_model->set_origination_force_routing($add_array, $routes_id);
     }
 
     function origination_rates_list_search()
@@ -880,20 +862,11 @@ class Rates extends MX_Controller
     function customer_block_pattern_list($accountid, $accounttype)
     {
         $json_data = array();
-        $where = array(
-            'accountid' => $accountid
-        );
         $instant_search = $this->session->userdata('left_panel_search_' . $accounttype . '_pattern');
-        $like_str = ! empty($instant_search) ? "(blocked_patterns like '%$instant_search%'  OR  destination like '%$instant_search%' )" : null;
-        if (! empty($like_str))
-            $this->db->where($like_str);
-        $count_all = $this->db_model->countQuery("*", "block_patterns", $where);
+        $count_all = $this->rates_model->get_customer_block_pattern_list(false, $accountid, $instant_search);
         $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
         $json_data = $paging_data["json_paging"];
-        if (! empty($like_str))
-            $this->db->where($like_str);
-        $this->db->limit($paging_data["paging"]["page_no"], $paging_data["paging"]["start"]);
-        $pattern_data = $this->db_model->getSelect("*", "block_patterns", $where, "id", "ASC", $paging_data["paging"]["page_no"], $paging_data["paging"]["start"]);
+        $pattern_data = $this->rates_model->get_customer_block_pattern_list(true, $accountid, $instant_search, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
         $grid_fields = json_decode($this->rates_form->build_pattern_list_for_customer($accountid, $accounttype));
         $json_data['rows'] = $this->form->build_grid($pattern_data, $grid_fields);
         echo json_encode($json_data);
@@ -903,9 +876,7 @@ class Rates extends MX_Controller
     {
         $ids = $this->input->post("selected_ids", true);
         if (isset($ids) && $ids != "") {
-            $where = "id IN ($ids)";
-            $this->db->where($where);
-            echo $this->db->delete("outbound_routes");
+            echo $this->rates_model->delete_multiple_termination_rates($ids);
         } else {
             $this->session->set_flashdata('flux_notification', gettext('Permission Denied!'));
             redirect(base_url() . 'rates/termination_rates_list/');
@@ -916,9 +887,7 @@ class Rates extends MX_Controller
     {
         $ids = $this->input->post("selected_ids", true);
         if (isset($ids) && $ids != "") {
-            $where = "id IN ($ids)";
-            $this->db->where($where);
-            echo $this->db->delete("routes");
+            echo $this->rates_model->delete_multiple_origination_rates($ids);
         } else {
             $this->session->set_flashdata('flux_notification', gettext('Permission Denied!'));
             redirect(base_url() . 'rates/origination_rates_list/');
@@ -1519,9 +1488,7 @@ class Rates extends MX_Controller
         $currency = $this->common->get_field_name('currency', 'currency', $currency_id);
         $data['currency'] = $currency;
         $new_final_arr_key = $this->config->item('Termination-rates-field');
-        $this->db->where('id', $account_info['currency_id']);
-        $this->db->select('currency');
-        $currency_info = (array) $this->db->get('currency')->first_row();
+        $currency_info = $this->rates_model->get_currency_by_id($account_info['currency_id']);
 
         foreach ($new_final_arr_key as $key => $val) {
             $key = str_replace('CURRENCY', $currency_info['currency'], $key);
@@ -1741,16 +1708,9 @@ class Rates extends MX_Controller
     {
         $add_array = $this->input->post();
         $id = $add_array['id'];
-        $pricelist_result = $this->db->get_where('pricelists', array(
-            "id" => $id,
-            "status" => 0
-        ));
-        if ($pricelist_result->num_rows() > 0) {
-            $pricelist_result_array = $pricelist_result->result_array();
-
-            if (count($pricelist_result_array) > 0) {
-                echo json_encode($pricelist_result_array[0]);
-            }
+        $pricelist_result_array = $this->rates_model->get_active_pricelist_by_id($id);
+        if (! empty($pricelist_result_array)) {
+            echo json_encode($pricelist_result_array);
         }
         exit();
     }

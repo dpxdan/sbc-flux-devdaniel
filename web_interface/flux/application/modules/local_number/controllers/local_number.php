@@ -101,22 +101,7 @@ class Local_number extends MX_Controller {
 		$file = file_get_contents ( $full_path, false, stream_context_create ( $arrContextOptions ) );
 		force_download ( "samplefile.csv", $file );
 	}
-/*	function local_number_import() {
-		$data ['page_title'] = gettext ( 'Import Local Number' );
-		$this->session->set_userdata ( 'import_local_number_rate_csv', "" );
-		$error_data = $this->session->userdata ( 'import_local_number_csv_error' );
-		$full_path = $this->config->item ( 'rates-file-path' );
-		if (file_exists ( $full_path . $error_data ) && $error_data != "") {
-			unlink ( $full_path . $error_data );
-			$this->session->set_userdata ( 'import_local_number_csv_error', "" );
-		}
-		$accountinfo = $this->session->userdata ( 'accountinfo' );
-		$this->db->where ( 'id', $accountinfo ['currency_id'] );
-		$this->db->select ( 'currency' );
-		$currency_info = ( array ) $this->db->get ( 'currency' )->first_row ();
-		$data ['fields'] = "Number,Country,Province/State,City,Status";
-		$this->load->view ( 'view_import_local_number', $data );
-	}*/
+
 
 
 	function local_number_import() {
@@ -418,10 +403,7 @@ class Local_number extends MX_Controller {
 	}
 	function local_number_delete_multiple() {
 		$add_array = $this->input->post ();
-		$where = 'IN (' . $add_array ['selected_ids'] . ')';
-		$this->db->where ( 'id ' . $where );
-		$this->db->delete ( 'local_number' );
-		echo TRUE;
+		echo $this->local_number_model->delete_multiple_local_numbers($add_array['selected_ids']);
 	}
 	function local_number_forwarding($edit_id){
 		$data ['page_title'] = gettext ( "Local number" );
@@ -469,25 +451,10 @@ class Local_number extends MX_Controller {
 	function local_number_forwarding_json($edit_id='',$accounttype='customer') {
 		$json_data = array ();
 		$instant_search = $this->session->userdata ( 'left_panel_search_' . $accounttype . '_local_number' );
-		$account_arr = ( array ) $this->db->get_where ( 'accounts', array (
-				"id" => $edit_id 
-		) )->first_row ();
-
-		$like_str = ! empty ( $instant_search ) ? "(destination_name like '%$instant_search%'
-					OR  destination_number like '%$instant_search%'
-					    )" : null;
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-		$where = array (
-				"account_id" => $edit_id 
-		);
-		$count_all = $this->db_model->countQuery ( "*", "local_number_destination", $where );
+		$count_all = $this->local_number_model->get_local_number_destination_list($edit_id, $instant_search, 0, 0, true);
 		$paging_data = $this->form->load_grid_config ( $count_all, $_GET ['rp'], $_GET ['page'] );
 		$json_data = $paging_data ["json_paging"];
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-
-		$query = $this->db_model->select ( "*", "local_number_destination", $where, "id", "ASC", $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"] );
+		$query = $this->local_number_model->get_local_number_destination_list($edit_id, $instant_search, $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"], false, '*');
 
 		$did_grid_fields = json_decode ( $this->local_number_form->local_number_customer_grid ($edit_id) );
 		$json_data ['rows'] = $this->form->build_grid ( $query, $did_grid_fields );
@@ -550,9 +517,7 @@ class Local_number extends MX_Controller {
 		$city        = $_POST ['city'];
 		$province    = $_POST ['province'];
 
-		//$local_number_list = $this->db->query ("SELECT t1.id, t1.number FROM `local_number` as t1 INNER JOIN local_number_destination as t2 ON t1.id != t2.local_number_id WHERE `city` =  '$city' AND `province` =  '$province' AND `country_id` =  '$country_id' AND `status` =  '0'");
-		$q = " SELECT * FROM  local_number where  id NOT IN(select  local_number_id from local_number_destination where account_id = '$account_id' ) and `city` =  '$city' AND `province` =  '$province' AND `country_id` =  '$country_id' AND `status` =  '0'";
-		$local_number_list = $this->db->query($q);
+		$local_number_list = $this->local_number_model->get_available_local_numbers($account_id, $city, $province, $country_id);
 
 		$local_arr = array ();
 		if ($local_number_list->num_rows () > 0) {
@@ -573,50 +538,20 @@ class Local_number extends MX_Controller {
 	function local_number_action($type,$edit_id) {
 
 		if($type == 'add') {
-			$insert_array = array(
-						"local_number_id"=> $_POST['local_number_id'],
-						"account_id"=> $edit_id,
-						"destination_name"=> $_POST['name'],
-						"destination_number"=> $_POST['number'],
-						"creation_date"=> gmdate('Y-m-d H:i:s')
-					);
-			$this->db->insert('local_number_destination',$insert_array);
+			$this->local_number_model->add_destination_with_speed_dial($_POST['local_number_id'], $edit_id, $_POST['name'], $_POST['number'], gmdate('Y-m-d H:i:s'));
 		}
-		$row = $this->db->get_where('local_number', array('id' => $_POST['local_number_id']))->row();
-
-		$insert_array_speeddial = array(
-					"accountid" => $edit_id,
-					"speed_num" => $row->number,
-					"number"    => $_POST['number']
-				);
-		$this->db->insert('speed_dial',$insert_array_speeddial);
 		$this->session->set_flashdata ( 'flux_errormsg', ' Local number forwarding successfully!' );
 		redirect ( base_url () . 'accounts/customer_local_number_forwarding/'.$edit_id.'/' );
 	}
 
 	function local_number_destination_remove($edit_id,$id) {
-/* harsh s for remove speed dial along with local number destination */
-		$query = $this->db->get_where('local_number_destination', array('id' => $id));
-		$query = $query->first_row();
-		$speed_dial_num = $query->destination_number;
-		$this->db->where('number',$speed_dial_num);
-		$this->db->delete('speed_dial');
-		
-		$this->db->where('id',$id);
-		$this->db->delete('local_number_destination');
+		$this->local_number_model->remove_destination_with_speed_dial($id);
 		$this->session->set_flashdata ( 'flux_notification', 'Local number removed successfully!' );
 		redirect ( base_url () . 'accounts/customer_local_number_forwarding/'.$edit_id.'/' );
 	}
 
 	function local_number_destination_customer_remove($edit_id,$id) {
-/* harsh s for remove speed dial along with local number destination */
-		$query = $this->db->get_where('local_number_destination', array('id' => $id));
-		$query = $query->first_row();
-		$speed_dial_num = $query->destination_number;
-		$this->db->where('number',$speed_dial_num);
-		$this->db->delete('speed_dial');
-		$this->db->where('id',$id);
-		$this->db->delete('local_number_destination');
+		$this->local_number_model->remove_destination_with_speed_dial($id);
 		$this->session->set_flashdata ( 'flux_notification', 'Local number removed successfully!' );
 		redirect ( base_url () . 'local_number/local_number_list_customer/' );
 	}
@@ -694,32 +629,8 @@ class Local_number extends MX_Controller {
 	}
 
 	function local_number_delete_multiple_custoemr() {
-	$ids   = $this->input->post ( "selected_ids", true );
-    $this->db->select('local_number_id,destination_number');
-    $this->db->from('local_number_destination');
-    $this->db->where("id IN ($ids)");
-    $query = $this->db->get();
-
-	if ( $query->num_rows() > 0 ) {
-        $row = $query->result_array();
-		$where = array();
-        foreach ($row as $key => $value) {
-        	$where ['id'] = $value ['local_number_id'];
-        	$local_number = $this->db_model->getSelect ( "number", "local_number", $where );
-        	$local_number = $local_number->first_row();
-        	$local_number = $local_number->number;
-        	$where_speeddial = array(
-				'speed_num' => $local_number,
-				"number"    => $value ['destination_number']
-        	);
-			$this->db->where($where_speeddial);
-			$this->db->delete('speed_dial');
-        }
-    }
-
-		$where = "id IN ($ids)";
-		$this->db->where ( $where );
-		echo $this->db->delete ( "local_number_destination" );
+		$ids   = $this->input->post ( "selected_ids", true );
+		echo $this->local_number_model->delete_multiple_destinations_with_speed_dial($ids);
 	}
 
     function customer_local_number_forwarding($edit_id) {
@@ -789,22 +700,10 @@ class Local_number extends MX_Controller {
 
 		$json_data      = array ();
 		$instant_search = $this->session->userdata ( 'left_panel_search_' . $accounttype . '_local_number' );
-		$account_arr    = ( array ) $this->db->get_where ( 'accounts', array (
-								"id" => $edit_id ) )->first_row ();
-		$like_str       = ! empty ( $instant_search ) ? "(destination_name like '%$instant_search%'
-					OR  destination_number like '%$instant_search%'
-					    )" : null;
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-		$where = array (
-				"account_id" => $edit_id 
-		);
-		$count_all    = $this->db_model->countQuery ( "local_number_id,destination_name,destination_number,creation_date", "local_number_destination", $where );
+		$count_all = $this->local_number_model->get_local_number_destination_list($edit_id, $instant_search, 0, 0, true, 'local_number_id,destination_name,destination_number,creation_date');
 		$paging_data = $this->form->load_grid_config ( $count_all, $_GET ['rp'], $_GET ['page'] );
 		$json_data   = $paging_data ["json_paging"];
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-		$query       = $this->db_model->select ( "id,local_number_id,destination_name,destination_number,creation_date", "local_number_destination", $where, "id", "ASC", $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"] );
+		$query = $this->local_number_model->get_local_number_destination_list($edit_id, $instant_search, $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"], false, 'id,local_number_id,destination_name,destination_number,creation_date');
 
 		$did_grid_fields    = json_decode ( $this->local_number_form->local_number_customerportalleftpanel_grid_admin ($edit_id) );
 		$json_data ['rows'] = $this->form->build_grid ( $query, $did_grid_fields );
@@ -964,22 +863,7 @@ class Local_number extends MX_Controller {
 		$accountinfo = $this->session->userdata ( 'accountinfo' );
 		$edit_id = $accountinfo['id'];
 		if($type == 'add') {
-			$insert_array = array(
-						"local_number_id"=> $_POST['local_number_id1'],
-						"account_id"=> $edit_id,
-						"destination_name"=> $_POST['name'],
-						"destination_number"=> $_POST['number'],
-						"creation_date"=> gmdate('Y-m-d H:i:s')
-					);
-			$this->db->insert('local_number_destination',$insert_array);
-
-			$row = $this->db->get_where('local_number', array('id' => $_POST['local_number_id1']))->row();
-			$insert_array_speeddial = array(
-					"accountid" => $edit_id,
-					"speed_num" => $row->number,
-					"number"    => $_POST['number']
-				);
-			$this->db->insert('speed_dial',$insert_array_speeddial);
+			$this->local_number_model->add_destination_with_speed_dial($_POST['local_number_id1'], $edit_id, $_POST['name'], $_POST['number'], gmdate('Y-m-d H:i:s'));
 		}
 		$this->session->set_flashdata ( 'flux_errormsg', ' Local number forwarding successfully!' );
 		redirect ( base_url () . 'local_number/local_number_list_customer/' );

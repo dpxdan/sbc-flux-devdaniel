@@ -179,8 +179,7 @@ class Refill_coupon extends MX_Controller
 
     function refill_coupon_list_delete()
     {
-        $this->db->where("id IN (" . $this->input->post("selected_ids", true) . ")");
-        echo $this->db->delete("refill_coupon");
+        echo $this->refill_coupon_model->delete_multiple_refill_coupon($this->input->post("selected_ids", true));
     }
 
     function refill_coupon_export()

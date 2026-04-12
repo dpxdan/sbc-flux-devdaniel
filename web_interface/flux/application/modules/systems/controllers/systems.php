@@ -332,9 +332,7 @@ class Systems extends MX_Controller
     function timezone_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("timezone");
+        echo $this->system_model->delete_multiple_records("timezone", $ids);
     }
 
     function update()
@@ -661,9 +659,7 @@ class Systems extends MX_Controller
     function country_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("countrycode");
+        echo $this->system_model->delete_multiple_records("countrycode", $ids);
     }
 
     function currency_list()
@@ -790,9 +786,7 @@ class Systems extends MX_Controller
     function currency_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("currency");
+        echo $this->system_model->delete_multiple_records("currency", $ids);
     }
 
     function database_backup()
@@ -800,7 +794,7 @@ class Systems extends MX_Controller
         $data = array();
         $data['username'] = $this->session->userdata('user_name');
         $data['page_title'] = gettext('Database Backup');
-        $filename = $this->db->database . "_" . date("YmdHms") . ".sql.gz";
+        $filename = $this->system_model->build_backup_filename();
         $data['form'] = $this->form->build_form($this->system_form->get_backup_database_form_fields($filename), '');
         $this->load->view('view_database_backup', $data);
     }
@@ -817,10 +811,11 @@ class Systems extends MX_Controller
                 echo $data['validation_errors'];
                 exit();
             } else {
-                $db_name = $this->db->database;
-                $db_username = $this->db->username;
-                $db_password = $this->db->password;
-                $db_hostname = $this->db->hostname;
+                $db_info = $this->system_model->get_database_connection_info();
+                $db_name = $db_info['database'];
+                $db_username = $db_info['username'];
+                $db_password = $db_info['password'];
+                $db_hostname = $db_info['hostname'];
                 $filename = $add_array['path'];
                 $backup_file = DATABASE_DIRECTORY . $filename;
                 if (substr($backup_file, - 3) == '.gz') {
@@ -880,10 +875,11 @@ class Systems extends MX_Controller
         $result = $this->system_model->get_backup_data($id);
         $result_array = $result->result_array();
         if ($result->num_rows() > 0) {
-            $db_name = $this->db->database;
-            $db_username = $this->db->username;
-            $db_password = $this->db->password;
-            $db_hostname = $this->db->hostname;
+            $db_info = $this->system_model->get_database_connection_info();
+            $db_name = $db_info['database'];
+            $db_username = $db_info['username'];
+            $db_password = $db_info['password'];
+            $db_hostname = $db_info['hostname'];
             $path = DATABASE_DIRECTORY . $result_array[0]['path'];
             if (file_exists($path)) {
                 if (substr($path, - 3) == '.gz') {
@@ -979,8 +975,7 @@ class Systems extends MX_Controller
         $where = array(
             'id' => $id
         );
-        $this->db->where($where);
-        $this->db->delete("backup_database");
+        $this->system_model->delete_record("backup_database", $where);
 
         $this->session->set_flashdata('flux_errormsg', gettext('Database backup deleted successfully.'));
         redirect(base_url() . 'systems/database_restore/');
@@ -990,9 +985,7 @@ class Systems extends MX_Controller
     function database_backup_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("backup_database");
+        echo $this->system_model->delete_multiple_records("backup_database", $ids);
     }
 
     function languages_list()
@@ -1058,9 +1051,7 @@ class Systems extends MX_Controller
         }
         $ids=rtrim($ids,',');
         if($ids != ''){
-            $where = "id IN ($ids)";
-            $this->db->where($where);
-            $result=$this->db->get("languages")->result_array();
+            $result = $this->system_model->get_languages_by_ids($ids);
             $select_columns='';
             if(!empty($result)){
                 foreach ($result as $key => $value) {
@@ -1069,8 +1060,7 @@ class Systems extends MX_Controller
                 }
                 $select_columns=rtrim($select_columns,',');
                 $final_csv_array[] = $languagename_selected;
-                $this->db->select($select_columns);
-                $translation_query=$this->db->get("translations")->result_array();
+                $translation_query = $this->system_model->get_translation_rows_by_columns($select_columns);
                 $columns=explode(',',$select_columns);
                 if(!empty($translation_query)){
                     foreach ($translation_query as $key => $value) {
@@ -1118,8 +1108,7 @@ class Systems extends MX_Controller
         $data['username'] = $this->session->userdata('user_name');
         $data['flag'] = 'create';
         $data['page_title'] = gettext('Set Default Language');
-        $this->db->where("name", 'default_language');
-        $query = $this->db->get("system");
+        $query = $this->system_model->get_default_language_record();
         $language=array();
         if($query->num_rows() > 0){
             $languges_result=(array)$query->first_row();
@@ -1129,30 +1118,7 @@ class Systems extends MX_Controller
         $this->load->view('view_languages_default', $data);
     }
     function languages_set_default(){
-        $this->db->where("name", 'default_language');
-        $query = $this->db->get("system");
-        if($query->num_rows() > 0){                                   
-        $lang_update = array(       				
-						"display_name"=>'Default Language',
-						"group_title"=>'global',
-						"sub_group"=>'General',
-						"is_display"=>1,
-						"value"=>$this->input->post('name')
-						);	
-		$this->db->where('name','default_language');
-		$this->db->update("system",$lang_update);
-        }
-        else{
-            $data=array(
-                "name"=>"default_language",
-                "display_name"=>'Default Language',
-				"group_title"=>'global',
-				"sub_group"=>'General',
-                "value"=>$this->input->post('name'), 
-                "is_display"=>1 
-            );
-            $this->db->insert('system', $data);
-        }
+        $this->system_model->save_default_language($this->input->post('name'));
         echo json_encode(array(
             "SUCCESS" => $this->input->post('name').' '.gettext('Languages updated successfully!')
         ));
@@ -1179,20 +1145,14 @@ class Systems extends MX_Controller
             $new_array[] = $value;
         }
         foreach ($new_array as $key => $value) {
-            $query = $this->db->get_where('languages', array(
-                'id' => $value
-            ));
-            $localedata = $query->first_row();
+            $localedata = $this->system_model->get_language_by_id($value);
             $localename = $localedata->locale;
-            if ($this->db->field_exists($localename, 'translations')) {
-                $this->db->query('ALTER TABLE translations DROP `' . $localename . '` ');
-            } else {
+            if (! $this->system_model->drop_translation_column($localename)) {
                 redirect(base_url() . 'systems/languages_list/');
                 exit();
             }
         }
-        $this->db->where($where);
-        echo $this->db->delete("languages");
+        echo $this->system_model->delete_multiple_records("languages", $ids);
     }
 
     function languages_save()
@@ -1310,11 +1270,9 @@ class Systems extends MX_Controller
         $data['page_title'] = gettext('Create Translation Languages');
         $data['username'] = $this->session->userdata('user_name');
         $data['flag'] = 'create';
-        $fields_data = $this->db->list_fields('translations');
+        $fields_data = $this->system_model->get_translation_fields();
         unset($fields_data['0']);
-        $this->db->from('languages');
-        $query = $this->db->get();
-        $query = $query->result_array();
+        $query = $this->system_model->get_all_languages();
         $this->load->view('view_translation_add', $data);
     }
 
@@ -1330,9 +1288,7 @@ class Systems extends MX_Controller
     function translation_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("translations");
+        echo $this->system_model->delete_multiple_records("translations", $ids);
     }
 
     function translation_save()

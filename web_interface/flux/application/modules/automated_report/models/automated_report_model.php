@@ -50,4 +50,12 @@ class Automated_report_model extends CI_Model
             $this->db->insert("automated_reports", $add_array);
             return true;
         }
+
+
+        function delete_multiple_automated_reports($ids)
+        {
+            $where = "id IN ($ids)";
+            return $this->db->delete("automated_reports", $where);
+        }
+
 }

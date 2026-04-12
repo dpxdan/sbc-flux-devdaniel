@@ -93,5 +93,35 @@ class Email_model extends CI_Model
         return $query;
     }
 
+
+    function resend_customer_email($id)
+    {
+        $this->db->order_by('id', 'desc');
+        $this->db->limit(1);
+        $email_array = (array) $this->db->get_where("mail_details", array(
+            'id' => $id
+        ))->first_row();
+        unset($email_array['id']);
+        $email_array['status'] = 1;
+        $email_array['date'] = gmdate('Y-m-d H:i:s');
+        $this->db->insert('mail_details', $email_array);
+        return $email_array;
+    }
+
+    function normalize_ids($selected_ids)
+    {
+        return array_values(array_filter(array_map('intval', array_map('trim', explode(',', $selected_ids)))));
+    }
+
+    function delete_multiple_emails($ids)
+    {
+        $id_list = $this->normalize_ids($ids);
+        if (empty($id_list)) {
+            return false;
+        }
+        $this->db->where_in('id', $id_list);
+        return $this->db->delete("mail_details");
+    }
+
 }
 

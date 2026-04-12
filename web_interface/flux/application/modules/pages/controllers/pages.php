@@ -31,37 +31,26 @@ class Pages extends MX_Controller {
 			$this->load->library ( 'flux/order');
 			$this->load->library('session');
 			$this->load->library ('FLUX_Sms');
+			$this->load->model('pages_model');
 	}
-
-	
-  function services($category= '')
-  {
+	function services($category= '')
+	{
 			$post=$this->input->post();
 			$accountinfo=$this->session->userdata ( "accountinfo" );
 			$account_info = $this->session->userdata ( 'token' );
 			$accountinfo = ((isset($account_info)) && $account_info != '')?$account_info:$this->session->userdata ( "accountinfo" );
 			$category = ($category== "")?1:$category;
-			$query = "select * from category  where code <> 'DID' and code <> 'REFILL' order by FIELD(id, '3', '1', '2')";
-			$product_category = $this->db->query($query);
-		if($product_category->num_rows > 0){
+			$country_id = !empty($post['country_id']) ? $post['country_id'] : null;
+			$product_category = $this->pages_model->get_service_categories();
+		if($product_category->num_rows() > 0){
 			$data['product_category'] = $product_category->result_array();
 			
 			if($accountinfo['reseller_id'] > 0 && $category != 3 ){ 
-				if(empty($post['country_id'])){
-					$temp_where = '(`reseller_products`.`is_optin` = 0 OR `reseller_products`.`is_owner` = 0)';
-				}else{
-					$temp_where = '((`reseller_products`.`country_id` = '.$post['country_id'].' ) AND (`reseller_products`.`is_optin` = 0 OR `reseller_products`.`is_owner` = 0))';
-				}
-				$this->db->where($temp_where);
-				$productdata = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,products.country_id,products.buy_cost,products.commission,reseller_products.setup_fee,reseller_products.price,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array('reseller_products.status'=>0,'products.can_purchase'=>0,'products.is_deleted'=>0,'products.product_category'=>$category,'reseller_products.account_id'=>$accountinfo['reseller_id']), 'reseller_products','products.id=reseller_products.product_id', 'inner','','','desc','products.id');
+				$productdata = $this->pages_model->get_reseller_service_products($accountinfo['reseller_id'], $category, $country_id);
 			}else{
-				if(empty($post['country_id'])){
-					$productdata = $this->db_model->select("*","products",array("product_category"=>$category,'status'=>0,'can_purchase'=>0,'is_deleted'=>0,'reseller_id'=>0),"id","desc","","");
-				}else{
-					$productdata = $this->db_model->select("*","products",array("product_category"=>$category,'status'=>0,'can_purchase'=>0,'is_deleted'=>0,'reseller_id'=>0,'country_id'=>$post['country_id']),"id","desc","","");
-				}
+				$productdata = $this->pages_model->get_public_service_products($category, $country_id);
 			}
-			if($productdata->num_rows > 0){
+			if($productdata->num_rows() > 0){
 				$data['productdata'] = $productdata->result_array();
 			}else{
 				if($category == '1'){
@@ -84,15 +73,9 @@ class Pages extends MX_Controller {
 	{
 		$data ['page_title'] = gettext ( 'TopUp' );
 		$accountinfo = ((isset($accountinfo)) && $accountinfo != '')?$accountinfo:$this->session->userdata ( "accountinfo" );
-		$this->db->select('*');
-		$this->db->from('products');
-		$this->db->where('product_category','3');
-		$this->db->where('is_deleted','0');
-		$this->db->where('status','0');
-		$this->db->where('can_purchase','0');
-		$productdata=$this->db->get();
+		$productdata = $this->pages_model->get_topup_products();
 
-		if($productdata->num_rows > 0){
+		if($productdata->num_rows() > 0){
 			$data['productdata'] = $productdata->result_array();
 			foreach ($productdata->result_array() as $key => $value) {
 				$currency = $this->common->get_field_name ( 'currency', 'currency', $accountinfo ["currency_id"] );
@@ -341,7 +324,7 @@ class Pages extends MX_Controller {
   
   function oerder_request_form($oreder_req_result,$product_info,$accountid)
   {
-		$accountinfo=(array)$this->db->get_where("accounts",array("id"=>$accountid))->first_row();
+		$accountinfo = $this->pages_model->get_account_by_id($accountid);
 		$accountinfo = ((isset($accountinfo)) && $accountinfo != '')?$accountinfo:$this->session->userdata ( "accountinfo" );
 		$system_config = common_model::$global_config ['system_config'];
 		$reseller_id = ($accountinfo['reseller_id'] > 0) ? $accountinfo['reseller_id']: 0;
@@ -410,15 +393,8 @@ class Pages extends MX_Controller {
 		$accountinfo = ((isset($accountinfo)) && $accountinfo != '')?$accountinfo:$this->session->userdata ( "accountinfo" );
     	if (!empty($_POST['id'])) {
 			
-	    	$this->db->select('*');
-			$this->db->from('products');
-			$this->db->where('product_category','3');
-			$this->db->where('id',$_POST['id']);
-			$productdata     = $this->db->get();
-			$productdata     = (array)$productdata->first_row();
-			$account_info    = $this->db_model->getSelect("*","accounts",array("id"=>$accountinfo['id']));
-			$account_info    = $account_info->result_array();
-			$account_info    = $account_info ['0'];
+	    	$productdata     = $this->pages_model->get_topup_product_by_id($_POST['id']);
+			$account_info    = $this->pages_model->get_account_by_id($accountinfo['id']);
 			$productdata['price']=$this->common_model->calculate_currency ( $productdata['price'], "", '', false, false );
 			
 			$tax_calculation = $this->common_model->calculate_taxes($account_info,$productdata['price']);
@@ -483,19 +459,16 @@ class Pages extends MX_Controller {
 			
 
 		 	$response_arr['item_number'] = base64_decode($response_arr['item_number']); 
-			$this->db->where("orders.order_date >=",date("Y-m-d H:i:s",strtotime("-30 minutes")));
-			$orderarr = $this->order->get_order_details($response_arr['item_number']);
+			$orderarr = $this->pages_model->get_recent_order_with_items($response_arr['item_number'], date("Y-m-d H:i:s",strtotime("-30 minutes")));
 			$product_name = $this->common->get_field_name("name","products",array("id"=>$orderarr['product_id']));
 			if(!empty($orderarr)){ 
 				$orderarr['transaction_id'] = $response_arr['txn_id'];
 				$orderarr['name'] = $product_name;
-				$where = array ('id' => $orderarr['accountid']);
-				$account_info = ( array ) $this->db->get_where( "accounts", $where )->result_array()[0];
+				$account_info = $this->pages_model->get_account_by_id($orderarr['accountid']);
 
 				$tax_calculation=$this->common_model->calculate_taxes($account_info,$orderarr['price']);
 
-				$where = array ('id' => $account_info['currency_id']);
-				$currency_info = ( array ) $this->db->get_where( "currency", $where )->result_array()[0];
+				$currency_info = $this->pages_model->get_currency_by_id($account_info['currency_id']);
 
 				if ((trim($response_arr ["payment_status"]) === "Pending" || trim($response_arr ["payment_status"]) === "Complete" || trim($response_arr ["payment_status"]) === "Completed") ) {
 					$orderarr['payment_by'] = "Paypal";
@@ -553,7 +526,7 @@ class Pages extends MX_Controller {
 						"transaction_details" => json_encode ( $response_arr ),
 						"date" => gmdate("Y-m-d H:i:s")
 					);
-					$paymentid = $this->db->insert ( 'payment_transaction', $payment_trans_array );
+					$paymentid = $this->pages_model->create_payment_transaction($payment_trans_array);
 						
 				}
 				if(isset($orderarr['product_category']) && $orderarr['product_category'] == 3)
@@ -628,16 +601,13 @@ class Pages extends MX_Controller {
 		}
 
 	}
-	
 	function products_purchase()
 	{
 		$accountinfo = $this->session->userdata ( 'token' );
 		$reseller_id = 0 ;
-		$query = " SELECT * FROM `products` where reseller_id =$reseller_id and id NOT IN(select product_id from order_items where accountid=".$accountinfo['id'].")";
 
-		$product_data = array ();
-		$product_data = $this->db->query ( $query );
-		if($product_data->num_rows > 0){
+		$product_data = $this->pages_model->get_available_products_for_account($accountinfo['id'], $reseller_id);
+		if($product_data->num_rows() > 0){
 			$data['product_info'] = $product_data->result_array();
 			$this->load->view("view_products_purchase",$data);
 		}
@@ -656,48 +626,19 @@ class Pages extends MX_Controller {
 	{
 		$accountinfo = $this->session->userdata ( 'token' );
 		$accountinfo = ((isset($accountinfo)) && $accountinfo != '')?$accountinfo:$this->session->userdata ( "accountinfo" );
-		if($accountinfo['reseller_id'] > 0){
-			$this->db->where ( 'reseller_id', $accountinfo['reseller_id']);
-			$this->db->where ( 'number', $refill_coupon_no );
-			$this->db->select ( '*' );
-			$refill_coupon_result = $this->db->get ( 'refill_coupon' );
-
-		}else{
-			$this->db->where ( 'number', $refill_coupon_no );
-			$this->db->select ( '*' );
-			$refill_coupon_result = $this->db->get ( 'refill_coupon' );
-		}
-		if ($refill_coupon_result->num_rows () > 0) {
-			$refill_coupon_result = $refill_coupon_result->result_array ();
-			
-			$refill_coupon_result = $refill_coupon_result [0];
+		$refill_coupon_result = $this->pages_model->get_refill_coupon($refill_coupon_no, $accountinfo['reseller_id']);
+		if (!empty($refill_coupon_result)) {
 			if ($refill_coupon_result ['status'] == 1) {
 				echo json_encode ( 1 );
 			} elseif ($refill_coupon_result ['status'] == 2) {
 				echo json_encode ( 2 );
 			} else {
-				
 				$date = gmdate ( 'Y-m-d H:i:s' );
 				$customer_id=$accountid;
-				$this->db->where ( 'id', $customer_id );
-				$accountinfo = $this->db->get ( 'accounts' );
-				$accountinfo=$accountinfo->row_array ();
+				$accountinfo = $this->pages_model->get_account_by_id($customer_id);
 				$balance =$this->common->get_field_name("balance","accounts",array("id"=>$customer_id));
 				$new_balance = ($accountinfo ["posttoexternal"] == 1) ? ($balance - $refill_coupon_result['amount']) : ($balance +  $refill_coupon_result['amount']);
-				
-				$this->db->where ( 'number', $refill_coupon_no );
-				$refill_coupon_data = array (
-						'status' => 2,
-						"account_id" => $customer_id,
-						'firstused' => $date 
-				);
-				$this->db->update ( 'refill_coupon', $refill_coupon_data );
-				/*$tax_calculation=$this->common_model->calculate_taxes($accountinfo,$refill_coupon_result['amount']);
-				if(isset($tax_calculation['tax']) && !empty($tax_calculation['tax'])){
-					$amount = $refill_coupon_result['amount'] - $tax_calculation['total_tax'];
-				}else{
-					$amount = $refill_coupon_result['amount'];
-				}*/
+				$this->pages_model->mark_refill_coupon_used($refill_coupon_no, $customer_id, $date);
 				$payment_info=array(
 						"price"=>$refill_coupon_result['amount'],
 						"payment_by"=>"Voucher",
@@ -710,16 +651,10 @@ class Pages extends MX_Controller {
 						"is_apply_tax"=>"true"
 
 				);
-				$where = array ('id' => $accountinfo['currency_id']);
-				$currency_info = ( array ) $this->db->get_where( "currency", $where )->result_array()[0];
-				
+				$currency_info = $this->pages_model->get_currency_by_id($accountinfo['currency_id']);
 				$invoiceid=$this->payment->add_payments_transcation($payment_info,$accountinfo,$currency_info);
-				$where = array ('id' => $accountinfo['currency_id']);
-				$currency_info = ( array ) $this->db->get_where( "currency", $where )->result_array()[0];
 				echo json_encode ( 10 );
 				$this->session->set_flashdata ( 'flux_errormsg',  gettext('Refill Coupon amount is Added Successfully' ));
-				
-				
 			}
 		} else {
 			echo json_encode ( 3 );

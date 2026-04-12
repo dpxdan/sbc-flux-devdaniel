@@ -229,4 +229,16 @@ class calltype_model extends CI_Model
 
         return $query;
     }
+
+
+    function delete_multiple_calltype($ids)
+    {
+        $where = "id IN ($ids)";
+        $update_data = array(
+            'status' => '2'
+        );
+        $this->db->where($where);
+        return $this->db->update('calltype', $update_data);
+    }
+
 }

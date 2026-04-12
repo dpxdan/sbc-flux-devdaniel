@@ -29,17 +29,6 @@ class Fsmonitor extends CI_Controller {
         $this->load->helper('xml');
         $this->load->model('fsmonitor_model');
         $db_config = Common_model::$global_config['system_config'];
-
-
-
-        if (Common_model::$global_config['system_config'] ['opensips'] == 0) {
-        $opensipdsn = "mysqli://" . $db_config['opensips_dbuser'] . ":" . $db_config['opensips_dbpass'] . "@" . $db_config['opensips_dbhost'] . "/" . $db_config['opensips_dbname'] . "?char_set=utf8&dbcollat=utf8_general_ci&cache_on=true&cachedir=";
-        $this->opensips_db = $this->load->database($opensipdsn, true);
-
-        	
-        }
-
-
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
            }
@@ -61,9 +50,8 @@ class Fsmonitor extends CI_Controller {
     }
     function opensips_devices_json($id=''){
         $data['page_title'] = 'Edit FluxSBC ';
-         $this->opensips_db->select("*");  
-        $location = $this->opensips_db->get("location");
-        $response=$location->result_array();
+        $db_config = Common_model::$global_config['system_config'];
+        $response = $this->fsmonitor_model->get_opensips_locations_from_config($db_config);
         $json_data = array();
 	$json_data['total']='';
 	if($response != ''){
@@ -83,7 +71,8 @@ class Fsmonitor extends CI_Controller {
 	if(isset($json_data['rows'])){
 		$count = count ($json_data['rows']);
 		$json_data['total'] = $count;
-	}else{
+	}
+	else{
 	   $count = 0;
 		$json_data['row'] = '';
 	}
@@ -223,8 +212,7 @@ class Fsmonitor extends CI_Controller {
 	    $data['fs_data']    = $query->result_array();
 		$this->load->view('customer_registered_extension_report',$data);
     }
-  
-     function reseller_sip_devices_json($id=0){
+    function reseller_sip_devices_json($id=0){
 		$account_info = $accountinfo = $this->session->userdata('accountinfo');
         $command = "api sofia xmlstatus profile default reg";  
         $response = $this->fsmonitor_model->reload_freeswitch($command,$id);
@@ -292,8 +280,7 @@ class Fsmonitor extends CI_Controller {
 		$query              = $this->db_model->getSelect("*", "freeswich_servers", "");
 	    $data['fs_data']    = $query->result_array();
 		$this->load->view('reseller_registered_extension_report',$data);
-    }
-  
+    }  
     function fs_cli_authentication(){
         $data['username'] = $this->session->userdata('user_name');
         $data['page_title'] = 'Authentication';
@@ -529,8 +516,7 @@ class Fsmonitor extends CI_Controller {
         $command = "api show calls";
 	$response='';
 	$calls = array(0=>0);
-	$servers=$this->db->get('freeswich_servers');
-		if($id == 0){
+			if($id == 0){
          	   $servers = $this->db_model->getSelect("*", "freeswich_servers", "");
 	           $servers_data=$servers->result_array();
 	}

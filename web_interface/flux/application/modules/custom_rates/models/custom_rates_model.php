@@ -279,4 +279,40 @@ class custom_rates_model extends CI_Model {
 		return $query;
 		
 	}
+
+
+	function delete_routing_by_route($route_id) {
+		$this->db->where('routes_id', $route_id);
+		return $this->db->delete('routing');
+	}
+
+	function add_routing($insert_array) {
+		return $this->db->insert("routing", $insert_array);
+	}
+
+	function get_ratedeck_destination_by_pattern_query($query) {
+		return $this->db->query($query);
+	}
+
+	function get_customer_block_pattern_list_count($where, $like_str = null) {
+		if (!empty($like_str)) {
+			$this->db->where($like_str);
+		}
+		return $this->db_model->countQuery("*", "block_patterns", $where);
+	}
+
+	function get_customer_block_pattern_list($where, $like_str = null, $limit = 0, $start = 0) {
+		if (!empty($like_str)) {
+			$this->db->where($like_str);
+		}
+		$this->db->limit($limit, $start);
+		return $this->db_model->getSelect("*", "block_patterns", $where, "id", "ASC", $limit, $start);
+	}
+
+	function delete_multiple_custom_rates($ids) {
+		$where = "id IN ($ids)";
+		$this->db->where($where);
+		return $this->db->delete("routes");
+	}
+
 }

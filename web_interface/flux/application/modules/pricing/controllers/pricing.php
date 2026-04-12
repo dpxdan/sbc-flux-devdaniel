@@ -127,10 +127,7 @@ class pricing extends MX_Controller
                         }
                     }
 
-                    $where = array(
-                        "pricelist_id" => $add_array['id']
-                    );
-                    $this->db->delete("routing", $where);
+                    $this->pricing_model->delete_routing_by_pricelist($add_array['id']);
                     if (isset($add_array['trunk_id']) || isset($add_array['routing_type'])) {
                         if (isset($add_array['trunk_id']) || ($add_array['routing_type'] == 2 || $add_array['routing_type'] == 3 || $add_array['routing_type'] == 4)) {
                                 $this->set_force_routing($add_array['id'], $add_array['trunk_id']);
@@ -212,13 +209,7 @@ class pricing extends MX_Controller
 
     function set_force_routing($priceid, $trunkid)
     {
-        foreach ($trunkid as $id) {
-            $routing_arr = array(
-                "trunk_id" => $id,
-                "pricelist_id" => $priceid
-            );
-            $this->db->insert("routing", $routing_arr);
-        }
+        $this->pricing_model->set_force_routing($priceid, $trunkid);
     }
 
     function price_list_search()
@@ -317,63 +308,9 @@ class pricing extends MX_Controller
         $where = 'IN (' . $add_array['selected_ids'] . ')';
         if (! empty($add_array) && isset($add_array['selected_ids'])) {
             if (isset($add_array['flag'])) {
-                $update_data = array(
-                    'status' => '2'
-                );
-                $this->db->where('pricelist_id ' . $where);
-                $this->db->delete('routes');
-                $this->db->delete("routing", array(
-                    "pricelist_id" => $where
-                ));
-                $this->db->where('id ' . $where);
-                echo $this->db->update('pricelists', $update_data);
+                echo $this->pricing_model->delete_multiple_pricelists($add_array['selected_ids']);
             } else {
-                $pricelist_arr = array();
-                $this->db->select('id,name');
-                $this->db->where('id ' . $where);
-                $pricelist_res = $this->db->get('pricelists');
-                $pricelist_res = $pricelist_res->result_array();
-                foreach ($pricelist_res as $value) {
-                    $pricelist_arr[$value['id']]['name'] = $value['name'];
-                }
-                $this->db->where('pricelist_id ' . $where);
-                $this->db->where('deleted', 0);
-                $this->db->select('count(id) as cnt,pricelist_id');
-                $this->db->group_by('pricelist_id');
-                $account_res = $this->db->get('accounts');
-                if ($account_res->num_rows() > 0) {
-                    $account_res = $account_res->result_array();
-                    foreach ($account_res as $key => $value) {
-                        $pricelist_arr[$value['pricelist_id']]['account'] = $value['cnt'];
-                    }
-                }
-                $this->db->where('pricelist_id ' . $where);
-                $this->db->select('count(id) as cnt,pricelist_id');
-                $this->db->group_by('pricelist_id');
-                $routes_res = $this->db->get('routes');
-                if ($routes_res->num_rows() > 0) {
-                    $routes_res = $routes_res->result_array();
-                    foreach ($routes_res as $key => $value) {
-                        $pricelist_arr[$value['pricelist_id']]['routes'] = $value['cnt'];
-                    }
-                }
-                $str = null;
-                foreach ($pricelist_arr as $key => $value) {
-                    $custom_str = null;
-                    if (isset($value['account']) || isset($value['routes'])) {
-                        if (isset($value['account'])) {
-                            $custom_str .= $value['account'] . " accounts and ";
-                        }
-                        if (isset($value['routes'])) {
-                            $custom_str .= $value['routes'] . " origination rates and ";
-                        }
-                        $str .= " Rate group Name : " . $value['name'] . " using by " . rtrim($custom_str, " and ") . "\n";
-                    }
-                }
-                if (! empty($str)) {
-                    $data['str'] = $str;
-                }
-                $data['selected_ids'] = $add_array['selected_ids'];
+                $data = $this->pricing_model->get_pricelist_delete_summary($add_array['selected_ids']);
                 echo json_encode($data);
             }
         } else {
@@ -404,51 +341,11 @@ class pricing extends MX_Controller
         } else {
             if ($add_array['pricelist_id'] != '') {
                 $selected_pricegroup_id = $add_array['pricelist_id'];
-                $this->db->where('id ', $selected_pricegroup_id);
-                $this->db->select('*');
-                $price_grp_res = $this->db->get('pricelists');
-                if ($price_grp_res->num_rows() > 0) {
-                    $price_grp_res = $price_grp_res->result_array();
-                    $new_duplicate_price_group_name = $add_array['name'];
-                    $add_price_array = array(
-                        'name' => $new_duplicate_price_group_name,
-                        'markup' => $price_grp_res['0']['markup'],
-                        'routing_prefix' => $price_grp_res['0']['routing_prefix'],
-                        'routing_type' => $price_grp_res['0']['routing_type'],
-                        'initially_increment' => $price_grp_res['0']['initially_increment'],
-                        'inc' => $price_grp_res['0']['inc'],
-                        'status' => $price_grp_res['0']['status'],
-                        'reseller_id' => $price_grp_res['0']['reseller_id'],
-                        'creation_date' => date('Y-m-d H:i:s')
-                    );
-                    $this->pricing_model->add_price($add_price_array);
-                    $insert_id = $this->db->insert_id();
-                    $rate_group_label_id = $price_grp_res['0']['id'];
-                    $this->db->where('pricelist_id ', $rate_group_label_id);
-                    $this->db->select('*');
-                    $routes_grp_res = $this->db->get('routes');
-                    if ($routes_grp_res->num_rows() > 0) {
-                        $routes_grp_res = $routes_grp_res->result_array();
-                        $data = $routes_grp_res;
-                        foreach ($data as $key => $value) {
-                            $value['pricelist_id'] = $insert_id;
-                            $data1[] = $value;
-                        }
-                        foreach ($data1 as $key => $value) {
-                            unset($value['id']);
-                            $this->pricing_model->add_origination($value);
-                        }
-
-                        echo json_encode(array(
-                            "SUCCESS" => ucfirst($add_array["name"]) .' '. gettext("Duplicate Rate Group Added Successfully!")
-                        ));
-                        die();
-                    } else {
-                        echo json_encode(array(
-                            "SUCCESS" => ucfirst($add_array["name"]) .' '. gettext("Duplicate Rate Group Added Successfully!")
-                        ));
-                        exit();
-                    }
+                if ($this->pricing_model->duplicate_pricelist($selected_pricegroup_id, $add_array['name'])) {
+                    echo json_encode(array(
+                        "SUCCESS" => ucfirst($add_array["name"]) .' '. gettext("Duplicate Rate Group Added Successfully!")
+                    ));
+                    exit();
                 } else {
                     echo gettext("error");
                     exit();
@@ -540,10 +437,7 @@ class pricing extends MX_Controller
                         }
                     }
 
-                    $where = array(
-                        "pricelist_id" => $add_array['id']
-                    );
-                    $this->db->delete("routing", $where);
+                    $this->pricing_model->delete_routing_by_pricelist($add_array['id']);
                     if (isset($add_array['trunk_id']) || isset($add_array['routing_type'])) {
                         if (isset($add_array['trunk_id']) || ($add_array['routing_type'] == 2 || $add_array['routing_type'] == 3 || $add_array['routing_type'] == 4)) {
                                 $this->set_force_routing($add_array['id'], $add_array['trunk_id']);
@@ -608,10 +502,7 @@ class pricing extends MX_Controller
 
         if (! empty($add_array) && isset($add_array['selected_ids'])) {
 
-            $ids = $this->input->post("selected_ids", true);
-            $where = 'IN (' . $add_array['selected_ids'] . ')';
-            $this->db->where('id ' . $where);   
-            echo $this->db->delete('refactor');
+            echo $this->pricing_model->delete_multiple_refactors($add_array['selected_ids']);
         
         } else {
             $this->session->set_flashdata('flux_notification', gettext('Permission Denied!'));

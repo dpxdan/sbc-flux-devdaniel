@@ -15,6 +15,8 @@ $config ['Customers-field'] = array (	'Generate Pin' => 'pin',
 	"Timezone"=>"timezone_id",
 	"Currency"=>"currency_id",
 	"Email Alerts"=>"notify_flag",
+	"Domains"=>"domain_id",
+	'Default Domains'=> 'default_domain_ids',
 	"Tax" =>"tax_id",
 	"Localization" => "localization_id"
 );
@@ -38,7 +40,8 @@ $config ['Customers-mapper-fields'] = array ( "general_info" => array(
 	'Concurrent Calls' => 'maxchannels',
 	'CPS' => "cps",
 	"SIP Username"=>"sip_username",
-	"SIP Password"=>"sip_password"
+	"SIP Password"=>"sip_password",
+	"Domain Name"=>"domain_name"
 )
 );
 

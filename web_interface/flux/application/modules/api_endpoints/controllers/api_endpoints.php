@@ -95,11 +95,7 @@ class api_endpoints extends CI_Controller
     function partners_endpoints_list()
     {
         $accountinfo = $this->session->userdata("accountinfo");
-        $account_arr = (array) $this->db->get_where("accounts", array(
-            "id" => $accountinfo['id'],
-            "deleted" => "0",
-            "status" => "0"
-        ))->first_row();
+        $account_arr = $this->api_endpoints_model->get_active_account($accountinfo['id']);
         if (empty($account_arr)) {
             $this->session->sess_destroy();
             $this->load->helper('cookie');
@@ -131,11 +127,7 @@ class api_endpoints extends CI_Controller
     function partners_list()
     {
         $accountinfo = $this->session->userdata("accountinfo");
-        $account_arr = (array) $this->db->get_where("accounts", array(
-            "id" => $accountinfo['id'],
-            "deleted" => "0",
-            "status" => "0"
-        ))->first_row();
+        $account_arr = $this->api_endpoints_model->get_active_account($accountinfo['id']);
         if (empty($account_arr)) {
             $this->session->sess_destroy();
             $this->load->helper('cookie');
@@ -285,9 +277,7 @@ class api_endpoints extends CI_Controller
 	function partners_delete_multiple()
 	{
 	    $ids = $this->input->post("selected_ids", true);
-	    $where = "id IN ($ids)";
-	    $this->db->where($where);
-	    echo $this->db->delete("api_partners");
+	    echo $this->api_endpoints_model->delete_multiple_partners($ids);
 	}
 
     function partners_endpoints_add($type = "")
@@ -359,9 +349,7 @@ class api_endpoints extends CI_Controller
 	function partners_endpoints_delete_multiple()
 	{
 	    $ids = $this->input->post("selected_ids", true);
-	    $where = "id IN ($ids)";
-	    $this->db->where($where);
-	    echo $this->db->delete("endpoints");
+	    echo $this->api_endpoints_model->delete_multiple_partner_endpoints($ids);
 	}
 
     function api_endpoints_add($type = "")
@@ -459,10 +447,7 @@ class api_endpoints extends CI_Controller
 
     function api_endpoints_remove($id)
     {
-        $this->api_endpoints_model->remove_accessnumber($id);
-        $this->db->delete("api_endpoints", array(
-            "access_number" => $id
-        ));
+        $this->api_endpoints_model->remove_api_endpoints($id);
         $this->session->set_flashdata('flux_notification', gettext('Accessnumber Removed Successfully!'));
         redirect(base_url() . 'api_endpoints/api_endpoints_list/');
     }
@@ -470,9 +455,7 @@ class api_endpoints extends CI_Controller
     function api_endpoints_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("api_endpoints");
+        echo $this->api_endpoints_model->delete_multiple_api_endpoints($ids);
     }
     
     function set_force_endpoint($endpointid, $partnerid)
@@ -482,7 +465,7 @@ class api_endpoints extends CI_Controller
                 "partner_id" => $id,
                 "endpoint_id" => $endpointid
             );
-            $this->db->insert("endpoints", $endpoint_arr);
+            $this->api_endpoints_model->add_endpoint_relation($endpoint_arr);
         }
     }
     
@@ -498,7 +481,7 @@ class api_endpoints extends CI_Controller
                     "partner_id" => $value
 //                    "percentage" => $percentage[$key]
                 );
-                $this->db->insert("endpoints", $insert_array);
+                $this->api_endpoints_model->add_endpoint_relation($insert_array);
             }
         }
     }
@@ -532,8 +515,8 @@ class api_endpoints extends CI_Controller
     {
         $this->permission->check_web_record_permission($edit_id, 'api_endpoints', "api_endpoints/api_activity_list/");
         $endpoint_id = $this->input->post('endpoint_id');
-//        $this->load->database();
-        $query = $this->db->get_where('endpoints', ['id' => $endpoint_id]);
+// carregamento de banco removido do controller
+        $query = $this->api_endpoints_model->get_endpoint_by_id($endpoint_id);
         if ($query->num_rows()) {
             $row = $query->row();
             $base_url = $row->base_url;
@@ -655,8 +638,7 @@ class api_endpoints extends CI_Controller
         'status' => $request_status,
         'created_at' => date('Y-m-d H:i:s')
     );
-    $this->db->insert('api_test_requests', $request_data);
-    $request_id = $this->db->insert_id();
+    $request_id = $this->api_endpoints_model->log_api_test_request($request_data);
 
     if ($http_code != 200 || $http_code != 201) {
     $curl_error = $http_code;
@@ -670,7 +652,7 @@ class api_endpoints extends CI_Controller
         'status' => $request_status,
         'created_at' => date('Y-m-d H:i:s')
     );
-    $this->db->insert('api_test_responses', $response_data);
+    $this->api_endpoints_model->log_api_test_response($response_data);
     
     $this->api_model->save_api_log($url, $body, $response, 'api_test_responses', $http_code );
     $data = [

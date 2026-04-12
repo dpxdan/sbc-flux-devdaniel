@@ -35,6 +35,7 @@ class Addons extends MX_Controller
         $this->load->library('flux/form');
         $this->load->library('flux/permission');
         $this->config->load('addons');
+        $this->load->model('addons_model');
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
     }
@@ -114,9 +115,7 @@ class Addons extends MX_Controller
                 }
             }
         }
-        $query = "select * from addons";
-        $result = $this->db->query($query);
-        $installed_addon_list = $result->result_array();
+        $installed_addon_list = $this->addons_model->get_installed_addons();
         $installed_addons = array();
         for ($i = 0; $i < count($installed_addon_list); $i ++) {
             $installed_addons[$installed_addon_list[$i]['package_name']] = $installed_addon_list[$i];
@@ -142,11 +141,7 @@ class Addons extends MX_Controller
                 $file_list['freeswitch'] = array();
                 $file_list['freeswitch_usr'] = array();
                 if ($action == "update") {
-                    $result = $this->db->query("Select files from addons where package_name='" . $module . "'");
-                    $encoded = (array) $result->first_row();
-                    foreach ($encoded as $key => $val) {
-                        $file_list = json_decode($val, TRUE);
-                    }
+                    $file_list = $this->addons_model->get_addon_files($module);
                 }
                 // ============================ WEB COPY START ======================
                 if (is_dir($addons_path . $type . "/" . $module . "/web_interface/flux")) {
@@ -292,15 +287,11 @@ class Addons extends MX_Controller
                                         $sql = str_replace($custom_statement, "", $sql);
                                         $sql = str_replace("-- start-event", "", $sql);
                                         $sql = str_replace("-- end-event", "", $sql);
-                                        $this->db->db_debug = false;
                                         $custom_statement_break = explode("-- break-event", $custom_statement);
 
                                         foreach ($custom_statement_break as $custom_statement_value) {
-                                            $this->db->query($custom_statement_value);
-                                            $error_no = $this->db->_error_number();
-                                            $error_msg = $this->db->_error_message();
-                                            if ($error_msg != "") {
-                                                $this->db->trans_rollback();
+                                            $statement_result = $this->addons_model->execute_statement($custom_statement_value);
+                                            if (! empty($statement_result['error_msg'])) {
                                                 foreach ($paths_of_decoded_files as $key => $val) {
                                                     foreach ($val as $file_key => $file_path) {
                                                         if ($file_path != "") {
@@ -308,8 +299,8 @@ class Addons extends MX_Controller
                                                         }
                                                     }
                                                 }
-                                                echo "Error Code : " . $error_no . "<br/>";
-                                                echo "Error Message : " . $error_msg . "<br/>";
+                                                echo "Error Code : " . $statement_result['error_no'] . "<br/>";
+                                                echo "Error Message : " . $statement_result['error_msg'] . "<br/>";
                                                 echo "Error in this query : " . $custom_statement_value . "<br/>";
                                                 echo "<a href='" . base_url() . "addons/addons_list/" . $type . "'>Back</a>";
                                                 exit();
@@ -323,39 +314,23 @@ class Addons extends MX_Controller
                             array_pop($sqls);
                             // When we get an error in a query then we have to rollback all the queries which we are inserted.
                             // Limitation: [Using this we have to rollback only insert,update and delete queries.]
-                            // Transaction Start
-                            $this->db->trans_start();
-                            // If we need to rollback queries then we must be set autocommit=0
-                            $this->db->query("SET autocommit=0");
-                            foreach ($sqls as $statement) {
-                                // we need to get error message and error code using de_debug=false.
-                                $this->db->db_debug = false;
-                                $this->db->query($statement);
-                                $error_no = $this->db->_error_number();
-                                $error_msg = $this->db->_error_message();
-                                if ($error_msg != "") {
-                                    // Rollback all the queries when we get any error
-                                    $this->db->trans_rollback();
-                                    if ($action != "update") {
-                                        foreach ($paths_of_decoded_files as $key => $val) {
-                                            foreach ($val as $file_key => $file_path) {
-                                                if ($file_path != "") {
-                                                    exec("/bin/rm -rf " . $file_path, $retval);
-                                                }
+                            $transaction_result = $this->addons_model->execute_statements_in_transaction($sqls);
+                            if (! $transaction_result['success']) {
+                                if ($action != "update") {
+                                    foreach ($paths_of_decoded_files as $key => $val) {
+                                        foreach ($val as $file_key => $file_path) {
+                                            if ($file_path != "") {
+                                                exec("/bin/rm -rf " . $file_path, $retval);
                                             }
                                         }
                                     }
-                                    echo "Error Code : " . $error_no . "<br/>";
-                                    echo "Error Message : " . $error_msg . "<br/>";
-                                    echo "Error in this query : " . $statement . "<br/>";
-                                    echo "<a href='" . base_url() . "addons/addons_list/" . $type . "'>Back</a>";
-                                    exit();
                                 }
+                                echo "Error Code : " . $transaction_result['error_no'] . "<br/>";
+                                echo "Error Message : " . $transaction_result['error_msg'] . "<br/>";
+                                echo "Error in this query : " . $transaction_result['statement'] . "<br/>";
+                                echo "<a href='" . base_url() . "addons/addons_list/" . $type . "'>Back</a>";
+                                exit();
                             }
-                            // Commit queries means queries are successfully run
-                            $this->db->trans_commit();
-                            // Transaction complete
-                            $this->db->trans_complete();
                         }
                     }
                 }
@@ -370,7 +345,7 @@ class Addons extends MX_Controller
                         "last_updated_date" => gmdate("Y-m-d H:i:s"),
                         "files" => $paths_of_file
                     );
-                    $this->db->insert("addons", $insert);
+                    $this->addons_model->insert_addon($insert);
                 } else {
                     $update = array(
                         "version" => $version,
@@ -427,13 +402,8 @@ class Addons extends MX_Controller
 
                     foreach ($sqls as $statement) {
                         $statement = $statement . ";";
-                        // ~ $this->db->query($statement);
-                        $this->db->db_debug = false;
-                        $this->db->query($statement);
-                        $error_no = $this->db->_error_number();
-                        $error_msg = $this->db->_error_message();
-                        if ($error_msg != "") {
-                            $this->db->trans_rollback();
+                        $statement_result = $this->addons_model->execute_statement($statement);
+                        if (! empty($statement_result['error_msg'])) {
                             foreach ($paths_of_decoded_files as $key => $val) {
                                 foreach ($val as $file_key => $file_path) {
                                     if ($file_path != "") {
@@ -441,23 +411,19 @@ class Addons extends MX_Controller
                                     }
                                 }
                             }
-                            echo "Error Code : " . $error_no . "<br/>";
-                            echo "Error Message : " . $error_msg . "<br/>";
-                            echo "Error in this query : " . $statement . "<br/>";
+                            echo "Error Code : " . $statement_result['error_no'] . "<br/>";
+                            echo "Error Message : " . $statement_result['error_msg'] . "<br/>";
+                            echo "Error in this query : " . $statement_result['statement'] . "<br/>";
                             echo "<a href='" . base_url() . "addons/addons_list/" . $type . "'>Back</a>";
                             exit();
                         }
                     }
                 }
-                $result = $this->db->query("Select files from addons where package_name='" . $module . "'");
-                $encoded = (array) $result->first_row();
-                foreach ($encoded as $key => $val) {
-                    $decoded = json_decode($val, TRUE);
-                    foreach ($decoded as $key => $value) {
-                        foreach ($value as $file_key => $file_path) {
-                            if (file_exists($file_path)) {
-                                exec("/bin/rm -rf " . $file_path);
-                            }
+                $decoded = $this->addons_model->get_addon_files($module);
+                foreach ($decoded as $key => $value) {
+                    foreach ($value as $file_key => $file_path) {
+                        if (file_exists($file_path)) {
+                            exec("/bin/rm -rf " . $file_path);
                         }
                     }
                 }
@@ -521,9 +487,7 @@ class Addons extends MX_Controller
         $data_array['license'] = $data->license;
         $data_array['type'] = $type;
 
-        $query = "select * from addons where package_name='" . $package_name . "'";
-        $result = $this->db->query($query);
-        $installed_addon_list = (array) $result->first_row();
+        $installed_addon_list = $this->addons_model->get_addon_by_package($package_name);
 
         // If addon source version is older than installed version then set flag to hide uninstall and update button.
         $data_array['version_error'] = 'false';

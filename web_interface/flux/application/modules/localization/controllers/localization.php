@@ -419,9 +419,7 @@ class Localization extends MX_Controller
     function localization_multiple_delete()
     {
         $ids = $this->input->post("selected_ids", true);
-        $where = "id IN (" . $ids . ")";
-        $this->db->where($where);
-        echo $this->db->delete("localization");
+        echo $this->localization_model->delete_multiple_localization($ids);
     }
 
     function localization_check_global_type($type = '')

@@ -105,12 +105,7 @@ class Voice_broadcast extends MX_Controller {
 		$add_array = $this->input->post();
 		$reseller_id = $add_array['reseller_id'];
 		$accountinfo = $this->session->userdata("accountinfo");
-		$account_result = $this->db->get_where('accounts', array(
-			"reseller_id" => $reseller_id,
-			"status" => 0,
-			"deleted" => 0,
-			"type" => 0
-		));
+		$account_result = $this->voice_broadcast_model->get_customer_accounts_by_reseller($reseller_id);
 		if ($account_result->num_rows() > 0) {
 			$account_result_array = $account_result->result_array();
 			foreach ($account_result_array as $key => $value) {
@@ -130,10 +125,7 @@ class Voice_broadcast extends MX_Controller {
 		$add_array = $this->input->post();
 		$accountid = $add_array['accountid'];
 		$accountinfo = $this->session->userdata("accountinfo");
-		$account_result = $this->db->get_where('sip_devices', array(
-			"accountid" => $accountid,
-			"status" => 0,
-		));
+		$account_result = $this->voice_broadcast_model->get_sip_devices_by_account($accountid);
 		if ($account_result->num_rows() > 0) {
 			$account_result_array = $account_result->result_array();
 			foreach ($account_result_array as $key => $value) {
@@ -321,10 +313,7 @@ class Voice_broadcast extends MX_Controller {
 
 	function voice_broadcast_delete_multiple() {
 		$add_array = $this->input->post ();
-		$where = 'IN (' . $add_array ['selected_ids'] . ')';
-		$this->db->where ( 'id ' . $where );
-		$this->db->delete ( 'voice_broadcast' );
-		echo TRUE;
+		echo $this->voice_broadcast_model->delete_multiple_voice_broadcast($add_array['selected_ids']);
 	}
 
 }

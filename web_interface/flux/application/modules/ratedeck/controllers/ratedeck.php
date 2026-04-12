@@ -194,8 +194,7 @@ class Ratedeck extends MX_Controller
 
     function ratedeck_delete_multiple()
     {
-        $this->db->where("id IN (" . $this->input->post("selected_ids", true) . ")");
-        echo $this->db->delete("ratedeck");
+        echo $this->ratedeck_model->delete_multiple_ratedeck($this->input->post("selected_ids", true));
     }
 
     function ratedeck_export()

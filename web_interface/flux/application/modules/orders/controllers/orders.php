@@ -51,10 +51,7 @@ class Orders extends MX_Controller
         ));
         if ($categoryinfo->num_rows > 0) {
             $categoryinfo = $categoryinfo->result_array()[0]['id'];
-            $accountinfo = $this->session->userdata("accountinfo");
-            $where_arr['where'] = $this->db->where("reseller_id", 0);
-            $where_arr['where'] = $this->db->where("product_category IN (" . $categoryinfo . ")", NULL, false);
-            $this->GetProductitems = $this->db_model->build_dropdown("id,name", "products", "", $where_arr);
+            $this->GetProductitems = $this->orders_model->get_non_refill_product_dropdown($categoryinfo);
         }
     }
 
@@ -125,31 +122,7 @@ class Orders extends MX_Controller
                 "id" => $data['add_array']['product_id']
             ));
         } else {
-            $where_str = "(reseller_products.is_optin=0 OR reseller_products.is_owner=0)";
-            $this->db->where($where_str);
-            if ($accountinfo['reseller_id'] > 0) {
-                $product_data = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,reseller_products.buy_cost,products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                    'products.status' => 0,
-                    'products.id' => $data['add_array']['product_id'],
-                    'reseller_products.account_id' => $accountinfo["id"],
-                    'reseller_products.reseller_id' => $accountinfo["reseller_id"]
-                ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', "", "", 'DESC', 'products.id');
-            } else {
-                if ($data['add_array']['reseller_id'] != '0') {
-                    $product_data = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,reseller_products.buy_cost,products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                        'products.status' => 0,
-                        'products.id' => $data['add_array']['product_id'],
-                        'reseller_products.account_id' => $data['add_array']['reseller_id']
-                    ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', "", "", 'DESC', 'products.id');
-                } 
-                else {
-                    $product_data = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,reseller_products.buy_cost,products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                        'products.status' => 0,
-                        'products.id' => $data['add_array']['product_id'],
-                        'reseller_products.account_id' => $accountinfo['id']
-                    ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', "", "", 'DESC', 'products.id');
-                }
-            }
+            $product_data = $this->orders_model->get_order_add_product_data($accountinfo, $data['add_array']);
         }
         $data['accountinfo'] = $accountinfo;
         if (isset($data['category_list']) && $data['category_list'] != '') {
@@ -167,12 +140,7 @@ class Orders extends MX_Controller
     function orders_delete_multiple()
     {
         $ids = $this->input->post("selected_ids", true);
-        $order_item_where = "order_id IN ($ids)";
-        $this->db->where($order_item_where);
-        $this->db->delete("order_items");
-        $where = "id IN ($ids)";
-        $this->db->where($where);
-        echo $this->db->delete("orders");
+        echo $this->orders_model->delete_multiple_orders($ids);
     }
 
     function orders_save()
@@ -267,15 +235,9 @@ class Orders extends MX_Controller
 
     public function orders_complete($orderid)
     {
-        $this->db->select('order_id');
-        $commission_orderid = (array) $this->db->get_where("commission", array(
-            "id" => $orderid
-        ))->first_row();
+        $commission_orderid = $this->orders_model->get_commission_order_reference($orderid);
         if (! empty($commission_orderid)) {
-            $this->db->select('order_id');
-            $order_id = (array) $this->db->get_where("orders", array(
-                "id" => $commission_orderid['order_id']
-            ))->first_row();
+            $order_id = $this->orders_model->get_order_reference_by_id($commission_orderid['order_id']);
             if (! empty($order_id['order_id']) && $order_id['order_id'] > 0) {
                 $orderid = $order_id['order_id'];
             }
@@ -288,27 +250,11 @@ class Orders extends MX_Controller
             $data['back_url'] = "orders/orders_list/";
         }
         if ($orderid != '') {
-            $this->db->where("orders.id", $orderid);
-            $this->db->or_where("orders.order_id", $orderid);
-            $query = $this->db_model->getJionQuery('orders', '*,orders.order_id as orderid', '', 'order_items', 'orders.id=order_items.order_id', 'inner', '', '', '', '');
+            $query = $this->orders_model->get_order_with_items($orderid);
             if ($query->num_rows > 0) {
                 $data['order_items'] = $query->result_array()[0];
                 if ($this->session->userdata('logintype') == '1' || $this->session->userdata('logintype') == '5') {
-                    $where_str = "(reseller_products.is_optin=0 OR reseller_products.is_owner=0)";
-                    $this->db->where($where_str);
-                    if ($accountinfo['reseller_id'] > 0) {
-                        $product_data = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,reseller_products.status,reseller_products.buy_cost,products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                            'products.status' => 0,
-                            'products.id' => $data['order_items']['product_id'],
-                            'reseller_products.account_id' => $accountinfo["id"],
-                            'reseller_products.reseller_id' => $accountinfo["reseller_id"]
-                        ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', "", "", 'DESC', 'products.id');
-                    } else {
-                        $product_data = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,reseller_products.status,reseller_products.buy_cost,products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                            'products.status' => 0,
-                            'products.id' => $data['order_items']['product_id']
-                        ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', "", "", 'DESC', 'products.id');
-                    }
+                    $product_data = $this->orders_model->get_reseller_product_data($accountinfo, $data['order_items']['product_id']);
                 } else {
                     $product_data = $this->db_model->getSelect("*", "products", array(
                         "id" => $data['order_items']['product_id']
@@ -402,94 +348,15 @@ class Orders extends MX_Controller
         ));
         if ($product_info->num_rows > 0) {
             $product_info = $product_info->result_array()[0]['product_id'];
-            if ($product_info) {
-                $where_arr['where'] = $this->db->where("id  NOT IN (" . $product_info . ")", NULL, false);
-            }
-            if ($this->session->userdata('logintype') == 1) {
-                $where_str = "(reseller_products.is_optin=0 OR reseller_products.is_owner=0)";
-                $this->db->where($where_str);
-                if ($accountinfo['reseller_id'] > 0) {
-                    if ($add_array['reseller_id'] != 0 && $add_array['accountid'] != 0) {
-                        $product_item_list = $this->db_model->getJionQuery('products', ' products.id,products.name,products.product_category,products.buy_cost,products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                            'reseller_products.account_id' => $add_array['reseller_id'],
-                            'reseller_products.reseller_id' => $accountinfo['id'],
-                            'reseller_products.status' => 0,
-                            'products.is_deleted' => 0,
-                            'products.product_category' => $add_array['category_id'],
-                            'reseller_products.is_optin' => 0
-                        ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', '', '', 'DESC', 'products.id');
-                    } else {
-                        $product_item_list = $this->db_model->getJionQuery('products', ' products.id,products.name,products.product_category,products.buy_cost,products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                            'reseller_products.account_id' => $accountinfo['id'],
-                            'reseller_products.reseller_id' => $accountinfo['reseller_id'],
-                            'reseller_products.status' => 0,
-                            'products.product_category' => $add_array['category_id'],
-                            'products.is_deleted' => 0
-                        ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', '', '', 'DESC', 'products.id');
-                    }
-                } else {
-                    if ($add_array['reseller_id'] != 0 && $add_array['accountid'] != 0) {
-                        $product_item_list = $this->db_model->getJionQuery('products', ' products.id,products.name,products.product_category,products.buy_cost,products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                            'reseller_products.account_id' => $add_array['reseller_id'],
-                            'reseller_products.reseller_id' => $accountinfo['id'],
-                            'reseller_products.status' => 0,
-                            'products.product_category' => $add_array['category_id'],
-                            'reseller_products.is_optin' => 0,
-                            'products.is_deleted' => 0
-                        ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', '', '', 'DESC', 'products.id');
-                    } else {
-                        $product_item_list = $this->db_model->getJionQuery('products', ' products.id,products.name,products.product_category,reseller_products.buy_cost,reseller_products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                            'reseller_products.reseller_id' => $accountinfo['reseller_id'],
-                            'reseller_products.account_id' => $accountinfo['id'],
-                            'reseller_products.status' => 0,
-                            'products.product_category' => $add_array['category_id'],
-                            'products.is_deleted' => 0
-                        ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', '', '', 'DESC', 'products.id');
-                    }
+            $product_item_list = $this->orders_model->get_available_product_item_list($add_array, $accountinfo, $this->session->userdata('logintype'), $product_info);
+            if (is_array($product_item_list) && isset($product_item_list[0])) {
+                $mapped_product_list = array();
+                foreach ($product_item_list as $value) {
+                    $mapped_product_list[$value['id']] = $value['name'];
                 }
-                $product_list = $product_item_list->result_array();
-                $product_item_list = array();
-                foreach ($product_list as $value) {
-                    $product_item_list[$value['id']] = $value['name'];
-                }
-                $data['product_item_list'] = $product_item_list;
-                $product_item = array(
-                    "id" => "product_id",
-                    "name" => "product_id",
-                    "class" => "product_id"
-                );
-                $data['product_list'] = form_dropdown_all($product_item, $data['product_item_list'], $add_array['productid'], '');
+                $data['product_item_list'] = $mapped_product_list;
             } else {
-                if ($add_array['reseller_id'] != 0 && $add_array['accountid'] != 0) {
-                    $product_item_list = $this->db_model->getJionQuery('products', ' products.id,products.name,products.product_category,products.buy_cost,products.commission,reseller_products.price,reseller_products.setup_fee,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                        'reseller_products.account_id' => $add_array['reseller_id'],
-                        'reseller_products.status' => 0,
-                        'products.product_category' => $add_array['category_id'],
-                        'reseller_products.is_optin' => 0,
-                        'products.is_deleted' => 0
-                    ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', '', '', 'DESC', 'products.id');
-                    $product_list = $product_item_list->result_array();
-                    $product_item_list = array();
-                    foreach ($product_list as $value) {
-                        $product_item_list[$value['id']] = $value['name'];
-                    }
-                    $data['product_item_list'] = $product_item_list;
-                } else {
-                    $reseller_id = $add_array['reseller_id'] ? $add_array['reseller_id'] : 0;
-                    $where_arr['where'] = $this->db->where(array(
-                        "product_category" => $add_array['category_id']
-                    ));
-                    $where_arr['where'] = $this->db->where(array(
-                        "status" => 0
-                    ));
-                    $where_arr['where'] = $this->db->where(array(
-                        "is_deleted" => 0
-                    ));
-                    $where_arr['where'] = $this->db->where(array(
-                        "reseller_id" => $reseller_id
-                    ));
-                    $data['product_item_list'] = $this->db_model->build_dropdown("id,name", "products", "", $where_arr);
-                }
+                $data['product_item_list'] = $product_item_list;
             }
             $product_item = array(
                 "id" => "product_id",
@@ -567,8 +434,7 @@ class Orders extends MX_Controller
                         "termination_date" => gmdate("" . $update_array['creation'] . " H:i:s"),
                         "termination_note" => $update_array['note']
                     );
-                    $this->db->where("order_id", $order_id);
-                    $this->db->update("order_items", $order_update_array);
+                    $this->orders_model->update_order_items_by_order_id($order_id, $order_update_array);
                     $accountinfo = $this->session->userdata("accountinfo");
                     $data = array();
                     $data = $this->db_model->getSelect("accountid,product_id,product_category", "order_items", array(
@@ -589,7 +455,7 @@ class Orders extends MX_Controller
                             $did_where = array(
                                 'product_id' => $data['product_id']
                             );
-                            $did_info = (array) $this->db->get_where("dids", $did_where)->result_array()[0];
+                            $did_info = $this->orders_model->get_did_by_product($did_where);
                             $this->did_model->did_number_release($did_info, $accountinfo, 'release');
                         } else {
                             $user_info = (array) $user_info->first_row();

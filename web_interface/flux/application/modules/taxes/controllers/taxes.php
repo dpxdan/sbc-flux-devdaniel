@@ -110,11 +110,9 @@ class Taxes extends MX_Controller
     function taxes_delete($id)
     {
         $this->permission->check_web_record_permission($id, 'taxes', 'taxes/taxes_list/');
-        $this->db->select('taxes_description');
-        $this->db->where('id', $id);
-        $taxes_name = (array) $this->db->get('taxes')->first_row();
+        $taxes_name = $this->taxes_model->get_tax_by_id($id);
         $this->taxes_model->remove_taxes($id);
-        $this->session->set_flashdata('flux_notification', $add_array["taxes_description"].' '.gettext('Tax removed successfully!'));
+        $this->session->set_flashdata('flux_notification', $taxes_name['taxes_description'].' '.gettext('Tax removed successfully!'));
 
         redirect(base_url() . 'taxes/taxes_list/');
     }
@@ -180,24 +178,7 @@ class Taxes extends MX_Controller
         $existing_str = "";
         $tax_options = explode(",", $tax_value);
 
-        foreach ($tax_options as $key => $value) {
-            if (isset($taxes_array[$value])) {
-                $query = "Update `system` set value=REPLACE(value,'$value','')";
-                $this->db->query($query);
-                $query = "Update `system` set value=REPLACE(value,',,',',')";
-                $this->db->query($query);
-                $query = "Update `system` set value=REPLACE(value,',,',',')";
-                $this->db->query($query);
-            }
-        }
-        $query = "UPDATE `system` SET value = TRIM(BOTH ',' FROM value) where name='tax_type'";
-        $this->db->query($query);
-        $where = "id IN ($ids)";
-        $taxes_where = "taxes_id IN(" . $ids . ")";
-        $this->db->where($taxes_where);
-        $this->db->delete('taxes_to_accounts');
-        $this->db->where($where);
-        echo $this->db->delete("taxes");
+        echo $this->taxes_model->delete_multiple_taxes($ids, $tax_options, $taxes_array);
     }
 }
 

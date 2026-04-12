@@ -32,6 +32,401 @@ class Freeswitch_form extends common
         $this->CI = & get_instance();
     }
 
+    function get_freeswith_form_fields_new($id = false, $reseller_id = '')
+    {
+        $log_type = $this->CI->session->userdata("logintype");
+        if ($log_type == 10 || $log_type == 13 || $log_type == 11) {
+            $sip_pro = null;
+            $account_type = null;
+            $account_Arr = null;
+        } 
+        else {
+            $sip_pro = array(
+                gettext('SIP Profile'),
+                'sip_profile_id',
+                'SELECT',
+                '',
+                'trim|dropdown|xss_clean',
+                'tOOL TIP',
+                'Please Enter account number',
+                'id',
+                'name',
+                'sip_profiles',
+                'build_dropdown',
+                'where_arr',
+                array(
+                    "status" => "0"
+                )
+            );
+            if ($id > 0) {
+                $account_type = array(
+                    gettext('Reseller'),
+                    'INPUT',
+                    array(
+                        'name' => 'reseller_id',
+                        'readonly' => 'true',
+                        'size' => '20',
+                        'maxlength' => '15',
+                        'class' => "text field medium"
+                    ),
+                    '',
+                    'tOOL TIP',
+                    'Please Enter account number'
+                );
+            } 
+            else {
+                $account_type = array(
+                    gettext('Account Type'),
+                    array(
+                        'name' => 'accounttype',
+                        'id' => 'accounttype',
+                        'class' => '',
+                        'onchange' => 'account_change_add(this.value)'
+                    ),
+                    'SELECT',
+                    '',
+                    '',
+                    'tOOL TIP',
+                    'Please Select Status',
+                    '',
+                    '',
+                    '',
+                    'set_accounttype'
+                );
+            }
+            $account_Arr = array(
+                gettext('Account'),
+                array(
+                    'name' => 'accountcode',
+                    'class' => '',
+                    'id' => 'accountcode'
+                ),
+                'SELECT',
+                '',
+                'trim|dropdown|xss_clean',
+                'tOOL TIP',
+                'Please Enter account number',
+                'id',
+                'first_name,last_name,number',
+                'accounts',
+                'build_concat_dropdown',
+                'where_arr',
+                array(
+                    'reseller_id' => $reseller_id,
+                    'deleted'=>0,
+                    'status'=>0,
+                    'type'=>0
+                )
+            );
+        }
+        $val = $id > 0 ? 'sip_devices.username.' . $id : 'sip_devices.username';
+        $uname_user = $this->CI->common->find_uniq_rendno('10', '', '');
+        $digits = 5;
+        $random_password = rand(pow(10, $digits - 1), pow(10, $digits) - 1);
+        $password = $this->CI->common->generate_password();
+        
+/*        $profile = (array) $this->CI->db_model->getSelect('domain_name')
+            ->get_where('sip_profiles', ['id' => $add_array['sip_profile_id']])
+            ->first_row();
+        $profile = $this->CI->db_model->getSelect("domain_name", "sip_profiles", array(
+            "package_name" => "siprouting"
+        ));
+        $domain = !empty($profile['domain_name']) ? $profile['domain_name'] : '';
+        
+        $ha1 = md5($add_array['fs_username'] . ':' . $domain . ':' . $add_array['fs_password']);
+  */      
+        $domain_name = 'debian-bullseye.local';
+        $a1_hash = md5($uname_user.":".$domain_name.":".$password);
+        if ($id > 0) {
+            $password_field = array(
+                gettext('Password'),
+                'INPUT',
+                array(
+                    'name' => 'fs_password',
+                    'size' => '20',
+                    'id' => 'password1',
+                    'value' => $password,
+                    'class' => "text field medium"
+                ),
+                'trim|required|xss_clean|chk_password_expression',
+                'tOOL TIP',
+                'Please Enter Password',
+                '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_pass align-self-end text-success fa fa-refresh" ></i>'
+            );
+            $ha1_field = array(
+                gettext('HA1 Hash'),
+                'HIDDEN',
+                array(
+                    'name' => 'ha1',
+                    'size' => '20',
+                    'id' => 'ha1_field',
+                    'value' => $a1_hash,
+                    'class' => "text field medium"
+                ),
+                'trim|required|xss_clean|chk_password_expression',
+                'tOOL TIP',
+                'Please Enter Password',
+                '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_pass align-self-end text-success fa fa-refresh" ></i>'
+            );
+            $user_name = array(
+                gettext('Username'),
+                'INPUT',
+                array(
+                    'name' => 'fs_username',
+                    'size' => '20',
+                    'value' => $uname_user,
+                    'id' => 'username',
+                    'class' => "text field medium",
+                    'readonly' => true
+                ),
+                'trim|required|is_unique[' . $val . ']|xss_clean',
+                'tOOL TIP',
+                'Please Enter account number',
+                '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_number align-self-end text-success fa fa-refresh" ></i>'
+            );
+        } 
+        else {
+            $password_field = array(
+                gettext('Password'),
+                'INPUT',
+                array(
+                    'name' => 'fs_password',
+                    'size' => '20',
+                    'id' => 'password1',
+                    'value' => $password,
+                    'class' => "text field medium"
+                ),
+                'trim|required|xss_clean|chk_password_expression',
+                'tOOL TIP',
+                'Please Enter Password',
+                '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_pass align-self-end text-success fa fa-refresh" ></i>'
+            );
+            $ha1_field = array(
+                gettext('HA1 Hash'),
+                'HIDDEN',
+                array(
+                    'name' => 'ha1',
+                    'size' => '20',
+                    'id' => 'ha1_field',
+                    'value' => $a1_hash,
+                    'class' => "text field medium"
+                ),
+                'trim|required|xss_clean|chk_password_expression',
+                'tOOL TIP',
+                'Please Enter Password',
+                '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_pass align-self-end text-success fa fa-refresh" ></i>'
+            );
+            /*$password_field = array(
+                            gettext('Password'),
+                            'INPUT',
+                            array(
+                                'name' => 'fs_password',
+                                'size' => '20',
+                                'id' => 'password1',
+                                'value' => $password,
+                                'class' => "text field medium"
+                            ),
+                            'trim|required|xss_clean|chk_password_expression',
+                            'tOOL TIP',
+                            'Please Enter Password',
+                            '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_pass align-self-end text-success fa fa-refresh" ></i>'
+                        );*/
+            $user_name = array(
+                gettext('Username'),
+                'INPUT',
+                array(
+                    'name' => 'fs_username',
+                    'size' => '20',
+                    'value' => $uname_user,
+                    'id' => 'username',
+                    'class' => "text field medium"
+                ),
+                'trim|required|is_unique[' . $val . ']|xss_clean',
+                'tOOL TIP',
+                'Please Enter account number',
+                '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_number align-self-end text-success fa fa-refresh" ></i>'
+            );
+        }
+        $form['forms'] = array(
+            base_url() . 'freeswitch/fssipdevices_save/',
+            array(
+                "id" => "sipdevices_form",
+                "name" => "sipdevices_form"
+            )
+        );
+        $form[gettext('Device Information')] = array(
+            array(
+                '',
+                'HIDDEN',
+                array(
+                    'name' => 'id'
+                ),
+                '',
+                '',
+                '',
+                ''
+            ),
+            $user_name,
+            $password_field,
+            $ha1_field,
+            $account_type,
+            $account_Arr,
+            array(
+                gettext('Caller Name'),
+                'INPUT',
+                array(
+                    'name' => 'effective_caller_id_name',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                'xss_clean',
+                'tOOL TIP',
+                'Please Enter account number'
+            ),
+            array(
+                gettext('Caller Number'),
+                'INPUT',
+                array(
+                    'name' => 'effective_caller_id_number',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                'xss_clean',
+                'tOOL TIP',
+                'Please Enter account number'
+            ),
+            array(
+                gettext('Status'),
+                'status',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Select Status',
+                '',
+                '',
+                '',
+                'set_status'
+            ),
+            array(
+                gettext('Codec'),
+                'INPUT',
+                array(
+                    'name' => 'codec',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                'xss_clean',
+                'tOOL TIP',
+                'Please Enter account number'
+            ),
+            $sip_pro
+        );
+        $form[gettext('Voicemail Options')] = array(
+            array(
+                gettext('Enable'),
+                'voicemail_enabled',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Enter account number',
+                '',
+                '',
+                '',
+                'set_option_default_false'
+            ),
+
+            array(
+                gettext('Password'),
+                'INPUT',
+                array(
+                    'name' => 'voicemail_password',
+                    'size' => '20',
+                    'value' => $random_password,
+                    'id' => 'random_password',
+                    'class' => "text field medium"
+                ),
+                'trim|xss_clean',
+                'tOOL TIP',
+                'Please Enter Password',
+                '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_password align-self-end text-success fa fa-refresh"></i>'
+            ),
+            array(
+                gettext('Mail To'),
+                'INPUT',
+                array(
+                    'name' => 'voicemail_mail_to',
+                    'size' => '20',
+                    'class' => "text field medium"
+                ),
+                '',
+                'tOOL TIP',
+                'Please Enter account number'
+            ),
+
+            array(
+                gettext('Attach File'),
+                'voicemail_attach_file',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Enter account number',
+                '',
+                '',
+                '',
+                'custom_status_voicemail'
+            ),
+
+            array(
+                gettext('Local After Email'),
+                'vm_keep_local_after_email',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Enter account number',
+                '',
+                '',
+                '',
+                'custom_status_voicemail'
+            ),
+
+            array(
+                gettext('Send all Message'),
+                'vm_send_all_message',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Enter account number',
+                '',
+                '',
+                '',
+                'custom_status_voicemail'
+            )
+        );
+
+        $form['button_cancel'] = array(
+            'name' => 'action',
+            'content' => gettext('Close'),
+            'value' => 'cancel',
+            'type' => 'button',
+            'class' => 'btn btn-secondary ml-2',
+            'onclick' => 'return redirect_page(\'NULL\')'
+        );
+        $form['button_save'] = array(
+            'name' => 'action',
+            'content' => gettext('Save'),
+            'value' => 'save',
+            'id' => 'submit',
+            'type' => 'button',
+            'class' => 'btn btn-success'
+        );
+        return $form;
+    }
+    
     function get_freeswith_form_fields($id = false, $reseller_id = '')
     {
         $log_type = $this->CI->session->userdata("logintype");
@@ -39,6 +434,7 @@ class Freeswitch_form extends common
             $sip_pro = null;
             $account_type = null;
             $account_Arr = null;
+            $sip_domain = null;
         } else {
             $sip_pro = array(
                 gettext('SIP Profile'),
@@ -57,6 +453,23 @@ class Freeswitch_form extends common
                     "status" => "0"
                 )
             );
+            $sip_domain = array(
+                            gettext('SIP Domain'),
+                            'sip_domain_id',
+                            'SELECT',
+                            '',
+                            'trim|dropdown|xss_clean',
+                            'tOOL TIP',
+                            'Please Enter account number',
+                            'id',
+                            'domain',
+                            'domain',
+                            'build_dropdown',
+                            'where_arr',
+                            array(
+                                "status" => "0"
+                            )
+                        );
             if ($id > 0) {
                 $account_type = array(
                     gettext('Reseller'),
@@ -258,7 +671,8 @@ class Freeswitch_form extends common
                 'tOOL TIP',
                 'Please Enter account number'
             ),
-            $sip_pro
+            $sip_pro,
+            $sip_domain
         );
         $form[gettext('Voicemail Options')] = array(
             array(
@@ -274,7 +688,7 @@ class Freeswitch_form extends common
                 '',
                 'set_option_default_false'
             ),
-
+    
             array(
                 gettext('Password'),
                 'INPUT',
@@ -302,7 +716,7 @@ class Freeswitch_form extends common
                 'tOOL TIP',
                 'Please Enter account number'
             ),
-
+    
             array(
                 gettext('Attach File'),
                 'voicemail_attach_file',
@@ -316,7 +730,7 @@ class Freeswitch_form extends common
                 '',
                 'custom_status_voicemail'
             ),
-
+    
             array(
                 gettext('Local After Email'),
                 'vm_keep_local_after_email',
@@ -330,7 +744,7 @@ class Freeswitch_form extends common
                 '',
                 'custom_status_voicemail'
             ),
-
+    
             array(
                 gettext('Send all Message'),
                 'vm_send_all_message',
@@ -345,7 +759,7 @@ class Freeswitch_form extends common
                 'custom_status_voicemail'
             )
         );
-
+    
         $form['button_cancel'] = array(
             'name' => 'action',
             'content' => gettext('Close'),
@@ -1391,7 +1805,7 @@ class Freeswitch_form extends common
                 "button_action",
                 "/freeswitch/fssipdevices_delete_multiple/",
                 "",
-                "",
+                "small",
                 "delete"
             ),
             array(
@@ -2926,7 +3340,6 @@ class Freeswitch_form extends common
 
     function build_devices_list_for_customer()
     {
-         // Jaimin FLUXUPDATE-984
             $status = $this->CI->db_model->countQuery("*", "addons", array(
                 "package_name" => "siprouting"
             ));
@@ -2949,7 +3362,6 @@ class Freeswitch_form extends common
                 }else{
                     $action_array = array();
                 }
-        // End
         $grid_field_arr = json_encode(array(
             array(
                 "<input type='checkbox' name='chkAll' class='ace checkall'/><label class='lbl'></label>",
@@ -3127,7 +3539,8 @@ class Freeswitch_form extends common
                 'Please Enter account number',
                 '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_number align-self-end text-success fa fa-refresh" ></i>'
             );
-        } else {
+        } 
+        else {
             $password_field = array(
                 gettext('Password'),
                 'INPUT',

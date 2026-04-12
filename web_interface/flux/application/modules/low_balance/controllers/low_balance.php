@@ -84,18 +84,8 @@ class Low_balance extends MX_Controller
     function customer_account_change($reseller_id)
     {
         $reseller_id = $reseller_id > 1 ? $reseller_id : '0';
-        $type = array (
-            "0",
-            "1",
-            "3" 
-        );
-        $this->db->where_in('type' , $type);
-        $accounts = $this->db_model->getSelect("*", "accounts", array(
-            'reseller_id' => $reseller_id,
-            'deleted' => 0,
-            'status' => 0
-        ));
-        // echo $this->db->last_query(); exit;
+        $accounts = $this->low_balance_model->get_customer_accounts($reseller_id);
+        // consulta debug removida do controller
         if ($accounts->num_rows > 0) {
             $accounts_data = $accounts->result_array();
             foreach ($accounts_data as $value) {

@@ -97,4 +97,19 @@ class Cronsettings_model extends CI_Model
         $this->db->where("id", $id);
         $this->db->delete("cron_settings");
     }
+
+
+    function get_cron_by_id($id)
+    {
+        $this->db->where('id', $id);
+        return (array) $this->db->get('cron_settings')->first_row();
+    }
+
+    function delete_multiple_cronsettings($ids)
+    {
+        $where = "id IN (" . $ids . ")";
+        $this->db->where($where);
+        return $this->db->delete("cron_settings");
+    }
+
 }

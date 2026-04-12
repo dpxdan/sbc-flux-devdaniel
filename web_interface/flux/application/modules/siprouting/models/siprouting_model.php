@@ -115,4 +115,16 @@ class Siprouting_model extends CI_Model {
 		return $query;
 	}
 	
+
+
+	function get_music_on_hold_by_account($reseller_id, $account_id) {
+		$this->db->where_in('reseller_id', array("-1", $reseller_id));
+		$this->db->where_in('accountid', array("0", $account_id));
+		return $this->db->get('pbx_music_on_hold');
+	}
+
+	function get_recordings_by_account($account_id) {
+		return $this->db->get_where('pbx_recording', array("accountid" => $account_id));
+	}
+
 }

@@ -79,4 +79,30 @@ class Accessnumber_model extends CI_Model
         $affected_row = $this->db->affected_rows();
         return $affected_row;
     }
+
+
+    function get_active_account($account_id)
+    {
+        return (array) $this->db->get_where("accounts", array(
+            "id" => $account_id,
+            "deleted" => "0",
+            "status" => "0"
+        ))->first_row();
+    }
+
+    function remove_accessnumber_by_number($access_number)
+    {
+        $this->db->delete("accessnumber", array(
+            "access_number" => $access_number
+        ));
+        return true;
+    }
+
+    function delete_multiple_accessnumber($ids)
+    {
+        $where = "id IN ($ids)";
+        $this->db->where($where);
+        return $this->db->delete("accessnumber");
+    }
+
 }

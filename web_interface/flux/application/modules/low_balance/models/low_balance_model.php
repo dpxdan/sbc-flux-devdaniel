@@ -54,4 +54,21 @@ class Low_balance_model extends CI_Model
         return $query;
     }
     
+
+
+    function get_customer_accounts($reseller_id)
+    {
+        $type = array(
+            "0",
+            "1",
+            "3"
+        );
+        $this->db->where_in('type', $type);
+        return $this->db_model->getSelect("*", "accounts", array(
+            'reseller_id' => $reseller_id,
+            'deleted' => 0,
+            'status' => 0
+        ));
+    }
+
 }

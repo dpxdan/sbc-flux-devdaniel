@@ -57,7 +57,6 @@ if (! isset($csv_tmp_data)) {
 
 									<div class='col-md-4 form-group'>
 										<label class="p-0 control-label"><?php echo gettext("Generate Pin"); ?></label>	 
-											
 											<?php echo $config_array['pin']; ?>
 										</div>
 									<div class='col-md-4 form-group'>
@@ -77,13 +76,12 @@ if (! isset($csv_tmp_data)) {
 											<?php echo $config_array['sipdevice_flag']; ?> 
 										</div>
 
-
 									<div class='col-md-4 form-group'>
 										<label class="p-0 control-label"><?php echo gettext("Timezone"); ?> </label>	 
 											<?php echo $config_array['timezone_id']; ?> 
 										</div>
 
-										<div class='col-md-4 form-group'>
+									<div class='col-md-4 form-group'>
 										<label class="p-0 control-label"><?php echo gettext("Localization"); ?> </label>	 
 											<?php echo $config_array['localization_id']; ?> 
 										</div>
@@ -121,13 +119,27 @@ if (! isset($csv_tmp_data)) {
 											<?php echo $config_array['charge_per_min']; ?>
 										</div>
 
-
 									<div class='col-md-4 form-group'>
 										<label class="p-0 control-label"><?php echo gettext("Email Alerts ?"); ?> </label>	 
 										<?php echo $config_array['notify_flag']; ?>
 									</div>
 
-
+									<div class='col-md-8 form-group'>
+										<label class="p-0 control-label"><?php echo gettext("Domains"); ?></label>
+										<select name="default_domain_ids[]"
+												id="default_domain_ids"
+												class="selectpicker form-control"
+												multiple
+												data-live-search="true"
+												data-actions-box="true"
+												title="<?php echo gettext('--Select--'); ?>">
+											<?php foreach ($all_domains as $domain): ?>
+												<option value="<?php echo $domain['id']; ?>">
+													<?php echo htmlspecialchars($domain['domain']); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+									</div>
 
 									<div class="col-md-12 form-group">
 										<label class="control-label mb-4"><?php echo gettext("Select the file"); ?></label>
@@ -146,7 +158,6 @@ if (! isset($csv_tmp_data)) {
 										</div>
 									</div>
 
-
 								</div>
 							</div>
 						</div>
@@ -155,8 +166,8 @@ if (! isset($csv_tmp_data)) {
 				<div class="col-md-12">
 					<div class="text-center">
 						<button class="btn btn-success" type="submit" name="action"
-							value="Import"><?php echo gettext("Import");?></button>
-						<a href="<?php echo base_url() . 'accounts/customer_list/' ?>">
+							value="Import"><?php echo gettext("Process");?></button>
+						<a href="<?php echo base_url() . 'account_import/customer_import_mapper/' ?>">
 							<button class="btn btn-secondary mx-2" id="ok" type="button"
 								name="action" value="Cancel"><?php echo gettext("Cancel");?></button>
 						</a>
@@ -170,7 +181,9 @@ if (! isset($csv_tmp_data)) {
 </section>
 <script type="text/javascript" language="javascript">
 	$(document).ready(function() {
-		
+
+		$('#default_domain_ids').selectpicker('refresh');
+
 		$(".sweep_id").change(function(){
 			var sweep_id =$('.sweep_id option:selected').val();
 			if(sweep_id != 0){
@@ -193,8 +206,6 @@ if (! isset($csv_tmp_data)) {
         });
 		$(".sweep_id").change();
 	});
-
-
 </script>
 <?php
 }
@@ -291,7 +302,7 @@ if (!empty($csv_tmp_data)) { ?>
 				value="<?php echo htmlspecialchars($post_array); ?>" /> <input
 				type="hidden" name="mode" value="import_customer_mapper" />
 			<div class="col-12 card">
-				<h2 class="h2 card-header"> <?php echo gettext("Import File Data.");?></h2>
+				<h2 class="h2 card-header"> <?php echo gettext("Data from the imported file");?></h2>
 				<div class="p-4">
 					<div class="table-responsive">
 						<table width="100%" border="1"
@@ -313,8 +324,8 @@ if (!empty($csv_tmp_data)) { ?>
         }
     }
     echo "<tr><td colspan='" . $cnt . "'>
-                     <input type='submit' class='btn btn-success float-left' id='Process' value='".gettext('Process Records')."'/>
-                     <a href='" . base_url() . "accounts/customer_list/'><input type='button' class='btn btn-secondary mx-2 float-left' value='".gettext('Back')."'/></a></td></tr>";
+                     <input type='submit' class='btn btn-success float-left' id='Process' value='".gettext('Import Records')."'/>
+                     <a href='" . base_url() . "account_import/customer_import_mapper/'><input type='button' class='btn btn-secondary mx-2 float-left' value='".gettext('Back')."'/></a></td></tr>";
     ?>
                  </table>
 					</div>
@@ -345,4 +356,3 @@ if (!empty($csv_tmp_data)) { ?>
 endblock() ?>
 <?php
 end_extend() ?>
-

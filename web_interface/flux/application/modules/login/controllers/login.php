@@ -32,9 +32,10 @@ class Login extends MX_Controller
         $this->load->library('encrypt');
         $this->load->model('Auth_model');
         $this->load->model('db_model');
+        $this->load->model('login_model');
         $this->load->library('form_validation');
         $this->load->library('FLUX_Sms');
-        $this->load->library ( 'Invoice_log' );
+        $this->load->library ( 'flux_log' );
         $this->load->library('user_agent');
         $this->load->helper('cookie');
     }
@@ -81,17 +82,14 @@ class Login extends MX_Controller
 
                 if ($user_valid == 1) {
                     $this->session->set_userdata('user_login', TRUE);
-                    $where = "(number = '" . $this->db->escape_str($_POST['username']) . "' OR email = '" . $this->db->escape_str($_POST['username']) . "') and deleted = 0";
-
-                    $result = $this->db_model->getSelect("*", "accounts", $where);
-                    $result = $result->result_array();
-                    $result = $result[0];
+                    $result = $this->login_model->get_account_by_username_or_email($_POST['username']);
 
                     $user_multi_level = 0;
                     $addon_status = $this->db_model->countQuery("*", "addons", array(
                         'package_name' => 'pbx'
                     ));
-                    /*if ($addon_status != '99' && $result['type'] != '0' && $result['id'] != '1') {
+                    $this->flux_log->write_log('login', json_encode($_SERVER));
+                    if ($addon_status != '99' && $result['type'] != '1000' && $result['id'] != '100') {
                         $multidomain = $this->db_model->getSelect("*", "domain,domains_to_accounts", array(
                             'domain' => $_SERVER["HTTP_HOST"],
                             'domains_to_accounts.accountid' => $result['id'],
@@ -104,7 +102,7 @@ class Login extends MX_Controller
                         else {
                             $user_multi_level = 1;
                         }
-                    }*/
+                    }
                     if ($user_multi_level == 0) {
 
                         $logintype = $result['type'] == - 1 ? 2 : $result['type'];
@@ -113,11 +111,7 @@ class Login extends MX_Controller
                         $this->session->set_userdata('userlevel_logintype', $result['type']);
                         $this->session->set_userdata('username', $_POST['username']);
                         $this->session->set_userdata('accountinfo', $result);
-                        $permission_result = $this->db_model->getSelect("*", "permissions", array(
-                            'id' => $result['permission_id']
-                        ));
-                        $permission_result = $permission_result->result_array();
-                        $permission_result = $permission_result[0];
+                        $permission_result = $this->login_model->get_permission($result['permission_id']);
                         $permission_decode = json_decode($permission_result['permissions'], true);
                         $permission_decode['login_type'] = $result['type'];
                         $this->session->set_userdata('permissioninfo', $permission_decode);
@@ -135,7 +129,7 @@ class Login extends MX_Controller
                             "user_agent"=> $this->agent->agent_string(),
                             "ip"=>$this->input->server('REMOTE_ADDR')
                             );
-                        $this->db->insert('login_activity_report', $login_activity_array);
+                        $this->login_model->insert_login_activity($login_activity_array);
                         
                         $accessid = $this->encrypt($this->config->item('private_key'), $result['id'] . $result['type']);
                         $this->session->set_userdata('ipsettings_token', $accessid);
@@ -155,64 +149,11 @@ class Login extends MX_Controller
                             }
                         }
 
-                        $this->db->select("*");
-                        if ($result['type'] == '2' || $result['type'] == '-1') {
-                            $this->db->where(array(
-                                "accountid" => "1"
-                            ));
-                        } 
-                        else if ($result['type'] == '0') {
-                            if ($result['reseller_id'] == 0) {
-                                $this->db->where(array(
-                                    "accountid" => "1"
-                                ));
-                            } else {
-                                $this->db->where(array(
-                                    "accountid" => $result["reseller_id"]
-                                ));
-                            }
-                        } 
-                        else if ($result['type'] == '1') {
-                            if ($result['reseller_id'] == 0) {
-                                $result_invoice = $this->common->get_field_name('id', 'invoice_conf', array(
-                                    "accountid" => $result['id']
-                                ));
-
-                                if ($result_invoice) {
-                                    $this->db->where(array(
-                                        "accountid" => $result["id"]
-                                    ));
-                                } else {
-                                    $this->db->where(array(
-                                        "accountid" => "1"
-                                    ));
-                                }
-                            } else {
-                                $result_invoice = $this->common->get_field_name('id', 'invoice_conf', array(
-                                    "accountid" => $result['reseller_id']
-                                ));
-                                if ($result_invoice) {
-                                    $this->db->where(array(
-                                        "accountid" => $result["reseller_id"]
-                                    ));
-                                } else {
-                                    $this->db->where(array(
-                                        "accountid" => "1"
-                                    ));
-                                }
-                            }
-                        } 
-                        else {
-                            $this->db->where(array(
-                                "accountid" => "1"
-                            ));
-                        }
-                        $res = $this->db->get("invoice_conf");
-                        $logo_arr = $res->result();
-                        $data['user_logo'] = (isset($logo_arr[0]->logo) && $logo_arr[0]->logo != "") ? $logo_arr[0]->accountid . "_" . $logo_arr[0]->logo : "logo.png";
-                        $data['user_header'] = (isset($logo_arr[0]->website_title) && $logo_arr[0]->website_title != "") ? $logo_arr[0]->website_title : "Flux Telecom - Unindo pessoas e negócios Solution";
-                        $data['user_footer'] = (isset($logo_arr[0]->website_footer) && $logo_arr[0]->website_footer != "") ? $logo_arr[0]->website_footer : "Flux Telecom All Rights Reserved.";
-                        $data['user_favicon'] = (isset($logo_arr[0]->favicon) && $logo_arr[0]->favicon != "") ? $logo_arr[0]->accountid . "_" . $logo_arr[0]->favicon : "favicon.ico";
+                        $invoice_conf = $this->login_model->get_invoice_conf_for_account($result);
+                        $data['user_logo'] = (! empty($invoice_conf['logo'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['logo'] : "logo.png";
+                        $data['user_header'] = (! empty($invoice_conf['website_title'])) ? $invoice_conf['website_title'] : "Flux Telecom - Unindo pessoas e negócios Solution";
+                        $data['user_footer'] = (! empty($invoice_conf['website_footer'])) ? $invoice_conf['website_footer'] : "Flux Telecom All Rights Reserved.";
+                        $data['user_favicon'] = (! empty($invoice_conf['favicon'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['favicon'] : "favicon.ico";
                         $this->session->set_userdata('user_logo', $data['user_logo']);
                         $this->session->set_userdata('user_header', $data['user_header']);
                         $this->session->set_userdata('user_footer', $data['user_footer']);
@@ -276,17 +217,11 @@ class Login extends MX_Controller
                 }
 
                 $http_host = $_SERVER["HTTP_HOST"];
-                $this->db->select("*");
-                $this->db->where("domain LIKE '%$domain%'");
-                $this->db->or_where("domain LIKE '%$http_host%'");
-                $this->db->order_by("id", "desc");
-                $this->db->limit(1);
-                $res = $this->db->get("invoice_conf");
-                $logo_arr = $res->result();
-                $data['user_logo'] = (isset($logo_arr[0]->logo) && $logo_arr[0]->logo != "") ? $logo_arr[0]->logo : "logo.png";
-                $data['website_header'] = (isset($logo_arr[0]->website_title) && $logo_arr[0]->website_title != "") ? $logo_arr[0]->website_title : "Flux Telecom - Unindo pessoas e negócios";
-                $data['website_footer'] = (isset($logo_arr[0]->website_footer) && $logo_arr[0]->website_footer != "") ? $logo_arr[0]->website_footer : "Flux Telecom All Rights Reserved.";
-                $data['user_favicon'] = (isset($logo_arr[0]->favicon) && $logo_arr[0]->favicon != "") ? $logo_arr[0]->accountid . "_" . $logo_arr[0]->favicon : "favicon.ico";
+                $invoice_conf = $this->login_model->get_invoice_conf_by_domain($domain, $http_host);
+                $data['user_logo'] = (! empty($invoice_conf['logo'])) ? $invoice_conf['logo'] : "logo.png";
+                $data['website_header'] = (! empty($invoice_conf['website_title'])) ? $invoice_conf['website_title'] : "Flux Telecom - Unindo pessoas e negócios";
+                $data['website_footer'] = (! empty($invoice_conf['website_footer'])) ? $invoice_conf['website_footer'] : "Flux Telecom All Rights Reserved.";
+                $data['user_favicon'] = (! empty($invoice_conf['favicon'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['favicon'] : "favicon.ico";
                 $this->session->set_userdata('user_logo', $data['user_logo']);
                 $this->session->set_userdata('user_header', $data['website_header']);
                 $this->session->set_userdata('user_footer', $data['website_footer']);
@@ -308,19 +243,12 @@ class Login extends MX_Controller
             } else {
                 $custom_domain = "http://" . $_SERVER["HTTP_HOST"];
             }
-            $where = "domain in ('$custom_domain','" . $_SERVER["HTTP_HOST"] . "')";
-            $this->db->select("*");
-            $this->db->where($where);
-            $this->db->or_where("reseller_id", $reseller_id);
-            $this->db->order_by("id", "desc");
-            $this->db->limit(1);
-            $res = $this->db->get("invoice_conf");
-            $logo_arr = $res->result();
+            $invoice_conf = $this->login_model->get_invoice_conf_by_custom_domain_or_reseller($custom_domain, $_SERVER["HTTP_HOST"], $reseller_id);
 
-            $data['user_logo'] = (isset($logo_arr[0]->logo) && $logo_arr[0]->logo != "") ? $logo_arr[0]->accountid . "_" . $logo_arr[0]->logo : "logo.png";
-            $data['user_header'] = (isset($logo_arr[0]->website_title) && $logo_arr[0]->website_title != "") ? $logo_arr[0]->website_title : "Flux Telecom - Unindo pessoas e negócios Solution";
-            $data['user_footer'] = (isset($logo_arr[0]->website_footer) && $logo_arr[0]->website_footer != "") ? $logo_arr[0]->website_footer : "Flux Telecom All Rights Reserved.";
-            $data['user_favicon'] = (isset($logo_arr[0]->favicon) && $logo_arr[0]->favicon != "") ? $logo_arr[0]->accountid . "_" . $logo_arr[0]->favicon : "favicon.ico";
+            $data['user_logo'] = (! empty($invoice_conf['logo'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['logo'] : "logo.png";
+            $data['user_header'] = (! empty($invoice_conf['website_title'])) ? $invoice_conf['website_title'] : "Flux Telecom - Unindo pessoas e negócios Solution";
+            $data['user_footer'] = (! empty($invoice_conf['website_footer'])) ? $invoice_conf['website_footer'] : "Flux Telecom All Rights Reserved.";
+            $data['user_favicon'] = (! empty($invoice_conf['favicon'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['favicon'] : "favicon.ico";
 
             $this->session->set_userdata('user_logo', $data['user_logo']);
             $this->session->set_userdata('user_header', $data['user_header']);
@@ -373,11 +301,7 @@ class Login extends MX_Controller
         if (count($_POST) > 0) {
             $response_arr = $_POST;
 
-            $logger = (array) $this->db->get_where("system", array(
-                "name" => "log_path",
-                "group_title" => "global"
-            ))->first_row();
-            $logger_path = $logger['value'];
+            $logger_path = $this->login_model->get_system_value('log_path', 'global');
             $fp = fopen($logger_path . "flux_payment.log", "a+");
             $date = date("Y-m-d H:i:s");
             fwrite($fp, "====================" . $date . "===============================\n");
@@ -385,43 +309,23 @@ class Login extends MX_Controller
                 fwrite($fp, $key . ":::>" . $value . "\n");
             }
 
-            $payment_transaction = (array) $this->db->get_where("payment_transaction", array(
-                "transaction_details" => $response_arr['item_number'],
-                "amount" => "0",
-                "actual_amount" => "0",
-                "user_currency" => ""
-            ))->first_row();
-            $accountid = $payment_transaction['accountid'];
+            $payment_transaction = $this->login_model->get_pending_payment_transaction($response_arr['item_number']);
+            $accountid = isset($payment_transaction['accountid']) ? $payment_transaction['accountid'] : '';
 
-            $this->db->where(array(
-                "transaction_details" => $response_arr['item_number']
-            ));
-            $this->db->delete("payment_transaction");
+            $this->login_model->delete_pending_payment_transaction($response_arr['item_number']);
 
             $balance_amt = $actual_amount = $response_arr["custom"];
 
-            $paypal_fee = (array) $this->db->get_where("system", array(
-                "name" => "paypal_fee",
-                "group_title" => "paypal"
-            ))->first_row();
-            $paypal_fee = $paypal_fee['value'];
+            $paypal_fee = $this->login_model->get_system_value('paypal_fee', 'paypal');
             $paypalfee = ($paypal_fee == 0) ? '0' : $response_arr["mc_gross"];
 
             if (($response_arr["payment_status"] == "Pending" || $response_arr["payment_status"] == "Complete" || $response_arr["payment_status"] == "Completed") && $accountid != '') {
 
-                $paypal_tax = (array) $this->db->get_where("system", array(
-                    "name" => "paypal_tax",
-                    "group_title" => "paypal"
-                ))->first_row();
-                $paypal_tax = $paypal_tax['value'];
+                $paypal_tax = $this->login_model->get_system_value('paypal_tax', 'paypal');
 
-                $account_data = (array) $this->db->get_where("accounts", array(
-                    "id" => $accountid
-                ))->first_row();
+                $account_data = $this->login_model->get_account_by_id($accountid);
 
-                $currency = (array) $this->db->get_where('currency', array(
-                    "id" => $account_data["currency_id"]
-                ))->first_row();
+                $currency = $this->login_model->get_currency_by_id($account_data["currency_id"]);
                 $date = date('Y-m-d H:i:s');
 
                 $payment_trans_array = array(
@@ -436,7 +340,7 @@ class Login extends MX_Controller
                     "transaction_details" => json_encode($response_arr),
                     "date" => $date
                 );
-                $paymentid = $this->db->insert('payment_transaction', $payment_trans_array);
+                $paymentid = $this->login_model->insert_payment_transaction($payment_trans_array);
                 $parent_id = $account_data['reseller_id'] > 0 ? $account_data['reseller_id'] : '-1';
                 $payment_arr = array(
                     "accountid" => $accountid,
@@ -449,20 +353,10 @@ class Login extends MX_Controller
                     "txn_id" => $response_arr["txn_id"],
                     'payment_date' => gmdate('Y-m-d H:i:s', strtotime($response_arr['payment_date']))
                 );
-                $this->db->insert('payments', $payment_arr);
-                $this->db->select('invoiceid');
-                $this->db->order_by('id', 'desc');
-                $this->db->limit(1);
-                $last_invoice_result = (array) $this->db->get('invoices')->first_row();
-                $last_invoice_ID = isset($last_invoice_result['invoiceid']) && $last_invoice_result['invoiceid'] > 0 ? $last_invoice_result['invoiceid'] : 1;
+                $this->login_model->insert_payment($payment_arr);
+                $last_invoice_ID = $this->login_model->get_last_invoice_number();
                 $reseller_id = $account_data['reseller_id'] > 0 ? $account_data['reseller_id'] : 0;
-                $where = "accountid IN ('" . $reseller_id . "','1')";
-                $this->db->where($where);
-                $this->db->select('*');
-                $this->db->order_by('accountid', 'desc');
-                $this->db->limit(1);
-                $invoiceconf = $this->db->get('invoice_conf');
-                $invoiceconf = (array) $invoiceconf->first_row();
+                $invoiceconf = $this->login_model->get_receipt_invoice_conf($reseller_id);
                 $invoice_prefix = $invoiceconf['invoice_prefix'];
 
                 $due_date = gmdate("Y-m-d H:i:s", strtotime(gmdate("Y-m-d H:i:s") . " +" . $invoiceconf['interval'] . " days"));
@@ -479,7 +373,7 @@ class Login extends MX_Controller
                     'before_balance' => $account_data['balance'],
                     'after_balance' => $account_data['balance'] + $balance_amt
                 );
-                $this->db->insert("invoice_details", $details_insert);
+                $this->login_model->insert_invoice_detail($details_insert);
                 $this->db_model->update_balance($balance_amt, $account_data["id"], "credit");
                 $this->session->set_flashdata('flux_errormsg', 'Payment done successfully!');
                 redirect(base_url() . 'user/user/');
@@ -498,7 +392,7 @@ class Login extends MX_Controller
                     "transaction_details" => json_encode($response_arr),
                     "date" => $date
                 );
-                $paymentid = $this->db->insert('payment_transaction', $payment_trans_array);
+                $paymentid = $this->login_model->insert_payment_transaction($payment_trans_array);
                 $this->session->set_flashdata('flux_notification', gettext('Payment transaction invalid. Please contact Administrator.'));
             }
         }
@@ -507,24 +401,7 @@ class Login extends MX_Controller
 
     function generate_receipt($accountid, $amount, $accountinfo, $last_invoice_ID, $invoice_prefix, $due_date)
     {
-        $invoice_data = array(
-            "accountid" => $accountid,
-            "invoice_prefix" => $invoice_prefix,
-            "invoiceid" => '0000' . $last_invoice_ID,
-            "reseller_id" => $accountinfo['reseller_id'],
-            "invoice_date" => gmdate("Y-m-d H:i:s"),
-            "from_date" => gmdate("Y-m-d H:i:s"),
-            "to_date" => gmdate("Y-m-d H:i:s"),
-            "due_date" => $due_date,
-            "status" => 1,
-            "balance" => $accountinfo['balance'],
-            "amount" => $amount,
-            "type" => 'R',
-            "confirm" => '1'
-        );
-        $this->db->insert("invoices", $invoice_data);
-        $invoiceid = $this->db->insert_id();
-        return $invoiceid;
+        return $this->login_model->generate_receipt($accountid, $amount, $accountinfo, $last_invoice_ID, $invoice_prefix, $due_date);
     }
 
     function get_language_text()
@@ -568,7 +445,7 @@ class Login extends MX_Controller
         $where = array(
             'id' => $select_id
         );
-        $account_res = (array) $this->db->get_where("accounts", $where)->first_row();
+        $account_res = $this->login_model->get_account_by_id($select_id);
         $this->session->sess_destroy();
         redirect(base_url() . "relogin/" . $account_res['id'] . "/" . $accountinfo['id'] . "/");
     }
@@ -579,7 +456,7 @@ class Login extends MX_Controller
         $where = array(
             'id' => $select_id
         );
-        $account_res = (array) $this->db->get_where("accounts", $where)->first_row();
+        $account_res = $this->login_model->get_account_by_id($select_id);
         $this->session->sess_destroy();
         redirect(base_url() . "relogin/" . $account_res['id'] . "/" . $accountinfo['id'] . "/");
     }
@@ -595,13 +472,13 @@ class Login extends MX_Controller
         $where = array(
             'id' => $new_login_id
         );
-        $account_res = (array) $this->db->get_where("accounts", $where)->first_row();
+        $account_res = $this->login_model->get_account_by_id($new_login_id);
         $master_login_details = array();
         if ($master_id != '0') {
             $where = array(
                 'id' => $master_id
             );
-            $admin_res = (array) $this->db->get_where("accounts", $where)->first_row();
+            $admin_res = $this->login_model->get_account_by_id($master_id);
             $master_login_details = array(
                 'master_login_id' => $admin_res['id'],
                 'master_number' => $admin_res['number'],
@@ -609,16 +486,9 @@ class Login extends MX_Controller
             );
         }
         $this->session->set_userdata('user_login', TRUE);
-        $where = "number = '" . $this->db->escape_str($account_res['number']) . "' OR email = '" . $this->db->escape_str($account_res['number']) . "'";
-        $result = $this->db_model->getSelect("*", "accounts", $where);
-        $result = $result->result_array();
-        $result = $result[0];
+        $result = $this->login_model->get_account_by_username_or_email($account_res['number'], true);
 	$password=$this->common->decode($result['password']);
-        $permission_result = $this->db_model->getSelect("*", "permissions", array(
-            'id' => $result['permission_id']
-        ));
-        $permission_result = $permission_result->result_array();
-        $permission_result = $permission_result[0];
+        $permission_result = $this->login_model->get_permission($result['permission_id']);
         $permission_decode = json_decode($permission_result['permissions'], true);
         $permission_decode['login_type'] = $result['type'];
         $logintype = $result['type'] == - 1 ? 2 : $result['type'];
@@ -644,61 +514,11 @@ class Login extends MX_Controller
 
             {}
         }
-        $this->db->select("*");
-        if ($result['type'] == '2' || $result['type'] == '-1') {
-            $this->db->where(array(
-                "accountid" => "1"
-            ));
-        } else if ($result['type'] == '0') {
-            if ($result['reseller_id'] == 0) {
-                $this->db->where(array(
-                    "accountid" => "1"
-                ));
-            } else {
-                $this->db->where(array(
-                    "accountid" => $result["reseller_id"]
-                ));
-            }
-        } else if ($result['type'] == '1') {
-            if ($result['reseller_id'] == 0) {
-                $result_invoice = $this->common->get_field_name('id', 'invoice_conf', array(
-                    "accountid" => $result['id']
-                ));
-
-                if ($result_invoice) {
-                    $this->db->where(array(
-                        "accountid" => $result["id"]
-                    ));
-                } else {
-                    $this->db->where(array(
-                        "accountid" => "1"
-                    ));
-                }
-            } else {
-                $result_invoice = $this->common->get_field_name('id', 'invoice_conf', array(
-                    "accountid" => $result['reseller_id']
-                ));
-                if ($result_invoice) {
-                    $this->db->where(array(
-                        "accountid" => $result["reseller_id"]
-                    ));
-                } else {
-                    $this->db->where(array(
-                        "accountid" => "1"
-                    ));
-                }
-            }
-        } else {
-            $this->db->where(array(
-                "accountid" => "1"
-            ));
-        }
-        $res = $this->db->get("invoice_conf");
-        $logo_arr = $res->result();
-        $data['user_logo'] = (isset($logo_arr[0]->logo) && $logo_arr[0]->logo != "") ? $logo_arr[0]->accountid . "_" . $logo_arr[0]->logo : "logo.png";
-        $data['user_header'] = (isset($logo_arr[0]->website_title) && $logo_arr[0]->website_title != "") ? $logo_arr[0]->website_title : "Flux Telecom - Unindo pessoas e negócios";
-        $data['user_footer'] = (isset($logo_arr[0]->website_footer) && $logo_arr[0]->website_footer != "") ? $logo_arr[0]->website_footer : "Flux Telecom All Rights Reserved.";
-        $data['user_favicon'] = (isset($logo_arr[0]->favicon) && $logo_arr[0]->favicon != "") ? $logo_arr[0]->accountid . "_" . $logo_arr[0]->favicon : "favicon.ico";
+        $invoice_conf = $this->login_model->get_invoice_conf_for_account($result);
+        $data['user_logo'] = (! empty($invoice_conf['logo'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['logo'] : "logo.png";
+        $data['user_header'] = (! empty($invoice_conf['website_title'])) ? $invoice_conf['website_title'] : "Flux Telecom - Unindo pessoas e negócios";
+        $data['user_footer'] = (! empty($invoice_conf['website_footer'])) ? $invoice_conf['website_footer'] : "Flux Telecom All Rights Reserved.";
+        $data['user_favicon'] = (! empty($invoice_conf['favicon'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['favicon'] : "favicon.ico";
         $this->session->set_userdata('user_logo', $data['user_logo']);
         $this->session->set_userdata('user_header', $data['user_header']);
         $this->session->set_userdata('user_footer', $data['user_footer']);

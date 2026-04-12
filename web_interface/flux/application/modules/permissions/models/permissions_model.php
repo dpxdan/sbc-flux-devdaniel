@@ -98,4 +98,12 @@ class permissions_model extends CI_Model
         ));
         return true;
     }
+
+
+    function delete_multiple_permissions($ids)
+    {
+        $where = "id IN ($ids)";
+        return $this->db->delete("permissions", $where);
+    }
+
 }

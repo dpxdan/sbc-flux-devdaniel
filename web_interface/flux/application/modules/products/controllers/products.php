@@ -46,17 +46,7 @@ class Products extends MX_Controller {
 	}
 
 	function get_product_category(){
-		if ($this->session->userdata ( 'logintype' ) == 1 || $this->session->userdata ( 'logintype' ) == 5){
-			$categoryinfo = $this->db_model->getSelect("GROUP_CONCAT(id) as id","category","code NOT IN ('REFILL','DID','PACKAGE')");
-			$categoryinfo_arr = $categoryinfo->result_array()[0]['id']; 
-			if($categoryinfo->num_rows > 0 && $categoryinfo_arr['id'] != ''){ 
-				$where_arr['where'] =$this->db->where("id IN (".$categoryinfo_arr.")",NULL, false);
-				$this->ProductCategory = $this->db_model->build_dropdown_products("id,name,code", "category", "",$where_arr);
-			}
-		}
-		else{
-			$this->ProductCategory = $this->db_model->build_dropdown_products("id,name,code,description", "category", "", "");
-		}
+		$this->ProductCategory = $this->product_model->get_product_category_dropdown($this->session->userdata('logintype'));
 	}
 	function products_list() { 
 		$data['accountinfo']  = $this->session->userdata ( "accountinfo" );
@@ -303,8 +293,8 @@ class Products extends MX_Controller {
 		}
 		$this->form_validation->set_message('max_length', '%s field can not excced  numbers in length %s');
 		if(isset($add_array['id']) && $add_array['id'] != ''){ 
-			$where_arr['where'] = $this->db->where(array("reseller_id"=>$reseller_id));
-			$data['destination_rategroups'] = $this->db_model->build_dropdown("id,name", "pricelists", "", $where_arr);
+			$where_arr = array("reseller_id"=>$reseller_id,"status"=>0);
+			$data['destination_rategroups'] = $this->db_model->build_dropdown("id,name", "pricelists", "where_arr", $where_arr);
 			$product_info = $this->db_model->getSelect ( "*", "products", array ('id' => $add_array['id']));
 			$product_info = ( array ) $product_info->first_row ();
 			$did_acc_id = $this->common->get_field_name("accountid","dids",array("product_id"=>$add_array['id']));
@@ -316,7 +306,7 @@ class Products extends MX_Controller {
 				$data['product_info']['description'] =  isset($add_array['product_description'])?$add_array['product_description']:['description'];
 				$data['product_info']['buy_cost'] = isset($add_array['product_buy_cost'])?$add_array['product_buy_cost']:$product_info['buy_cost'];
 				
-				$data['product_rate_group'] = $this->db_model->build_dropdown("id,name", "pricelists", "", $where_arr);	
+				$data['product_rate_group'] = $this->db_model->build_dropdown("id,name", "pricelists", "where_arr", $where_arr);	
 
 				$data['product_info']['apply_on_rategroups'] = $product_info['apply_on_rategroups'];
 				$data['product_info']['name'] = (isset($add_array['product_name']) && $add_array['product_name'] !='' )?$add_array['product_name']: $product_info['name'];
@@ -361,8 +351,8 @@ class Products extends MX_Controller {
 		else{
 			$category =$data['product_category'][$add_array['product_category']];
 		 	$data['add_array'] = $add_array['product_category'];
-			$where_arr['where'] = $this->db->where(array("reseller_id"=>$reseller_id));
-			$data['product_rate_group'] = $this->db_model->build_dropdown("id,name", "pricelists", "", $where_arr);
+			$where_arr = array("reseller_id"=>$reseller_id, "status"=>0);
+			$data['product_rate_group'] = $this->db_model->build_dropdown("id,name", "pricelists", "where_arr", $where_arr);
 		      if ($this->form_validation->run() == FALSE){  
 				$data['add_array'] = $add_array;
 				
@@ -410,108 +400,57 @@ class Products extends MX_Controller {
 		$productinfo['product_id'] = $product_id;
 		$accountinfo = $this->session->userdata ( "accountinfo" );
 		$reseller_id = $accountinfo ['type'] == 1 ? $accountinfo ['id'] : 0;
-		if($productinfo['apply_on_existing_account'] == 0 && $productinfo['release_no_balance'] == 1 && (isset($productinfo['product_rate_group']) && $productinfo['product_rate_group'] > 0 )){      
-			$this->db->select("*");
-			$this->db->from("accounts");
-			$this->db->where(array("status"=>0,"deleted"=>0,"type"=>0,"reseller_id"=>$reseller_id));
-			$this->db->where_in("pricelist_id",$productinfo['product_rate_group']);
-			$account_info = $this->db->get();
-			if($account_info->num_rows > 0){
-				$account_info = $account_info->result_array();
-				foreach($account_info as $key =>$account)
-				{
-					$customer_data = $this->db_model->getSelect("*","accounts",array("id"=>$account['id'],"status"=>0,"deleted"=>0,"type"=>0));
-					$productinfo['payment_by'] = "Account Balance";
-					$productinfo['create_invoice'] = "true";
-					$last_id = $this->order->confirm_order($productinfo,$account['id'],$accountinfo);
-					if($customer_data->num_rows > 0){
-						$customer_data = $customer_data->result_array()[0];
-						if((isset($productinfo['email_notify']) && $productinfo['email_notify']  == 1) && $last_id > 0){
-							$productinfo['product_category'] = ($productinfo['product_category'] == 1) ? "PACKAGE" : (($productinfo['product_category'] == 2)  ? "SUBSCRIPTION" : "DID");
-							$productinfo['next_billing_date'] = ($productinfo['billing_days'] == 0)?gmdate('Y-m-d 23:59:59', strtotime('+10 years')):gmdate("Y-m-d 23:59:59",strtotime("+".($productinfo['billing_days']-1)." days"));
-							$final_array = array_merge($customer_data,$productinfo);
-							if(isset($productinfo['product_category']) && $productinfo['product_category']==2){
-								$final_array['quantity']=isset($productinfo['quantity'])?$productinfo['quantity']:1;
-							}else{
-								$final_array['quantity']=1;
-							}
-							$final_array['category_name']=$productinfo['product_category'];
-							$final_array['price']=($productinfo['setup_fee']+$productinfo['price']);
-							$final_array['total_price']=($productinfo['setup_fee']+$productinfo['price'])*($final_array['quantity']);
-							$final_array['total_price_amount']=($productinfo['setup_fee']+$productinfo['price']);
-						}
-					}
+		$account_info = $this->product_model->get_existing_accounts_for_assignment($reseller_id, isset($productinfo['product_rate_group']) ? $productinfo['product_rate_group'] : array());
+
+		if (empty($account_info) || $productinfo['apply_on_existing_account'] != 0 || !isset($productinfo['product_rate_group']) || empty($productinfo['product_rate_group'])) {
+			return true;
+		}
+
+		if($productinfo['release_no_balance'] == 1){
+			foreach($account_info as $account){
+				$customer_data = $this->product_model->get_active_customer_account($account['id']);
+				$productinfo['payment_by'] = "Account Balance";
+				$productinfo['create_invoice'] = "true";
+				$last_id = $this->order->confirm_order($productinfo,$account['id'],$accountinfo);
+				if(!empty($customer_data) && isset($productinfo['email_notify']) && $productinfo['email_notify'] == 1 && $last_id > 0){
+					$productinfo['product_category'] = ($productinfo['product_category'] == 1) ? "PACKAGE" : (($productinfo['product_category'] == 2)  ? "SUBSCRIPTION" : "DID");
+					$productinfo['next_billing_date'] = ($productinfo['billing_days'] == 0)?gmdate('Y-m-d 23:59:59', strtotime('+10 years')):gmdate("Y-m-d 23:59:59",strtotime("+".($productinfo['billing_days']-1)." days"));
+					$final_array = array_merge($customer_data,$productinfo);
+					$final_array['quantity'] = (isset($productinfo['product_category']) && $productinfo['product_category']==2) ? (isset($productinfo['quantity'])?$productinfo['quantity']:1) : 1;
+					$final_array['category_name']=$productinfo['product_category'];
+					$final_array['price']=($productinfo['setup_fee']+$productinfo['price']);
+					$final_array['total_price']=($productinfo['setup_fee']+$productinfo['price'])*($final_array['quantity']);
+					$final_array['total_price_amount']=($productinfo['setup_fee']+$productinfo['price']);
 				}
-				
 			}
 			return true;
-	     }
-	     else{ 
-	    	 if($productinfo['apply_on_existing_account'] == 0 && $productinfo['release_no_balance'] == 0 && (isset($productinfo['product_rate_group']) && $productinfo['product_rate_group'] > 0 )){
-		    $total_amt = $productinfo['price'] + $productinfo['setup_fee'];
-		        $this->db->select("*");
-			$this->db->from("accounts");
-			$this->db->where(array("status"=>0,"deleted"=>0,"type"=>0,"reseller_id"=>$reseller_id));
-			$this->db->where_in("pricelist_id",$productinfo['product_rate_group']);
-			$account_info = $this->db->get();
-
-			if($account_info->num_rows > 0){
-				$account_info = $account_info->result_array();
-				foreach($account_info as $key =>$account)
-				{
-
-					$customer_data = $this->db_model->getSelect("*","accounts",array("id"=>$account['id'],"status"=>0,"deleted"=>0,"type"=>0));
-					if($customer_data->num_rows > 0){
-						$customer_data = $customer_data->result_array()[0];		   
-					 }
-
-					$account_balance = $account['posttoexternal'] == 1 ? $account ['credit_limit'] - ($account ['balance']) : $account ['balance'];
-						if($account_balance >= $total_amt ){
-							$productinfo['payment_by'] = "Account Balance";
-							$productinfo['create_invoice'] = "true";
-							$last_id =$this->order->confirm_order($productinfo,$account['id'],$accountinfo);
-
-							if(!empty($customer_data) && isset($productinfo['email_notify'] ) && $productinfo['email_notify'] ==1  && $last_id  > 0 ){
-								   $productinfo['product_category'] = ($productinfo['product_category'] == 1) ? "PACKAGE" : (($productinfo['product_category'] == 2)  ? "SUBSCRIPTION" : "DID");
-								  $productinfo['next_billing_date'] = ($productinfo['billing_days'] = 0)?gmdate('Y-m-d 23:59:59', strtotime('+10 years')):gmdate("Y-m-d 23:59:59",strtotime("+".($productinfo['billing_days']-1)." days"));
-								$final_array = array_merge($customer_data,$productinfo);
-								if(isset($productinfo['product_category']) && $productinfo['product_category']==2){
-								$final_array['quantity']=isset($productinfo['quantity'])?$productinfo['quantity']:1;
-								}else{
-									$final_array['quantity']=1;
-								}
-								$final_array['category_name']=$productinfo['product_category'];
-								$final_array['price']=($productinfo['setup_fee']+$productinfo['price']);
-								$final_array['total_price']=($productinfo['setup_fee']+$productinfo['price'])*($final_array['quantity']);
-								$final_array['total_price_amount']=($productinfo['setup_fee']+$productinfo['price']);
-								$this->common->mail_to_users("product_purchase",$final_array);
-							}
-				
-						}
-			    } 
-				
-			}
-			
 		}
-	     }
-	
-         }
-	function package_product($add_array){ 
-		$SearchArr = '';
-		// if(!empty($this->session->userdata('product_package_pattern_search'))){ 
-		// 	$SearchArr = $this->session->userdata('product_package_pattern_search');
-		// }
-		if(isset($add_array['id']) && $add_array['id']!= ''){
-			$this->product_model->edit_product($add_array,$add_array['id'],$SearchArr);
-		}else{
-			$last_id =$this->product_model->add_product($add_array,$SearchArr);
 
-			if($add_array['apply_on_existing_account'] == 0){
-				$this->assign_product_to_exiting_account($add_array,$last_id);
+		if($productinfo['release_no_balance'] == 0){
+			$total_amt = $productinfo['price'] + $productinfo['setup_fee'];
+			foreach($account_info as $account){
+				$customer_data = $this->product_model->get_active_customer_account($account['id']);
+				$account_balance = $account['posttoexternal'] == 1 ? $account ['credit_limit'] - ($account ['balance']) : $account ['balance'];
+				if($account_balance >= $total_amt ){
+					$productinfo['payment_by'] = "Account Balance";
+					$productinfo['create_invoice'] = "true";
+					$last_id =$this->order->confirm_order($productinfo,$account['id'],$accountinfo);
+					if(!empty($customer_data) && isset($productinfo['email_notify']) && $productinfo['email_notify'] ==1 && $last_id > 0 ){
+						$productinfo['product_category'] = ($productinfo['product_category'] == 1) ? "PACKAGE" : (($productinfo['product_category'] == 2)  ? "SUBSCRIPTION" : "DID");
+						$productinfo['next_billing_date'] = ($productinfo['billing_days'] == 0)?gmdate('Y-m-d 23:59:59', strtotime('+10 years')):gmdate("Y-m-d 23:59:59",strtotime("+".($productinfo['billing_days']-1)." days"));
+						$final_array = array_merge($customer_data,$productinfo);
+						$final_array['quantity'] = (isset($productinfo['product_category']) && $productinfo['product_category']==2) ? (isset($productinfo['quantity'])?$productinfo['quantity']:1) : 1;
+						$final_array['category_name']=$productinfo['product_category'];
+						$final_array['price']=($productinfo['setup_fee']+$productinfo['price']);
+						$final_array['total_price']=($productinfo['setup_fee']+$productinfo['price'])*($final_array['quantity']);
+						$final_array['total_price_amount']=($productinfo['setup_fee']+$productinfo['price']);
+						$this->common->mail_to_users("product_purchase",$final_array);
+					}
+				}
 			}
-			$this->session->set_flashdata ( 'flux_errormsg', gettext('Package created successfully!'));
-			 redirect ( base_url () . 'products/products_edit/'.$last_id.' ' );
 		}
+
+		return true;
 	}
 	function did_product($add_array){ 
 		if(isset($add_array['id']) && $add_array['id']!= ''){
@@ -541,142 +480,29 @@ class Products extends MX_Controller {
 	}
 	function products_patterns_selected_delete() {
 		$ids = $this->input->post ( "selected_ids", true );
-		$where = "id IN ($ids)";
 		unset ( $_POST );
-		echo $this->db->delete ( "package_patterns", $where );
+		echo $this->product_model->delete_selected_package_patterns($ids);
 	}
-	function products_package_pattern($productid){ 
-			$accountinfo = $this->session->userdata ( "accountinfo" );
-			$reseller_id = $accountinfo ['type'] == 1 ? $accountinfo ['id'] : 0;
-		if(!empty($this->session->userdata('product_package_pattern_search'))){
-			$SearchArr = $this->session->userdata('product_package_pattern_search');
-			$country = isset($SearchArr['destination_countries'])?$SearchArr['destination_countries']:'';
-			$rate_group=isset($SearchArr['destination_rategroups'])?$SearchArr['destination_rategroups']:'';
-			$call_type= isset($SearchArr['destination_calltypes'])?$SearchArr['destination_calltypes']:'';
-			$code= $SearchArr['code'];
-			$destination= $SearchArr['destination'] ;
-		
-			$where1 = '(pattern NOT IN (select DISTINCT patterns from package_patterns where product_id = "' . $productid . '" and reseller_id = "'.$reseller_id.'" ))';
-			$this->db->where ( $where1 );
-			if($rate_group !=''){
-				$this->db->where_in('pricelist_id',$rate_group);
-			}if($country!=''){
-				$this->db->where_in('country_id',$country);
-			}if($call_type!=''){
-				$this->db->where_in('call_type',$call_type);
-			}
-			if($code != ''){
-				$code = "^".$code.".*";
-				$this->db->where('pattern',$code);
-			}if($destination != ''){
-				$this->db->where('comment',$destination);
-			}
-		}else{   
-			$where1 = '(pattern NOT IN (select DISTINCT patterns from package_patterns where product_id = "' . $productid . '" ))';
-			$this->db->where ( $where1 );
-		
-		}
-		$this->db->select("*");
-		$this->db->from("routes");
-		$subQuery = $this->db->get();
-		$count_all= $subQuery->num_rows();
-		$paging_data = $this->form->load_grid_config ( $count_all, $_GET ['rp'], $_GET ['page'] );
-		if(!empty($this->session->userdata('product_package_pattern_search'))){
-			$SearchArr = $this->session->userdata('product_package_pattern_search');
-			$country = isset($SearchArr['destination_countries'])?$SearchArr['destination_countries']:'';
-			$rate_group=isset($SearchArr['destination_rategroups'])?$SearchArr['destination_rategroups']:'';
-			$call_type= isset($SearchArr['destination_calltypes'])?$SearchArr['destination_calltypes']:'';
-			$code= $SearchArr['code'];
-			$destination= $SearchArr['destination'] ;
-		
-			$where1 = '(pattern NOT IN (select DISTINCT patterns from package_patterns where product_id = "' . $productid . '" and reseller_id = "'.$reseller_id.'" ))';
-			$this->db->where ( $where1 );
-			if($rate_group !=''){
-				$this->db->where_in('pricelist_id',$rate_group);
-			}if($country!=''){
-				$this->db->where_in('country_id',$country);
-			}if($call_type!=''){
-				$this->db->where_in('call_type',$call_type);
-			}
-			if($code != ''){
-				$code = "^".$code.".*";
-				$this->db->where('pattern',$code);
-			}if($destination != ''){
-				$this->db->where('comment',$destination);
-			}
-		}else{   
-			$where1 = '(pattern NOT IN (select DISTINCT patterns from package_patterns where product_id = "' . $productid . '" ))';
-			$this->db->where ( $where1 );
-		}
-		$this->db->limit ( $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"]);
-		$this->db->select("*");
-		$this->db->from("routes");
-		$subQuery = $this->db->get();
-		$json_data = $paging_data ["json_paging"];
-		$grid_fields = json_decode ( $this->product_form->build_block_pattern_list_for_customer() );
-		$json_data ['rows'] = $this->form->build_grid ( $subQuery, $grid_fields );
-		echo json_encode ( $json_data );
-
+	function products_package_pattern($productid){
+		$accountinfo = $this->session->userdata ( "accountinfo" );
+		$reseller_id = $accountinfo ['type'] == 1 ? $accountinfo ['id'] : 0;
+		$search = $this->session->userdata('product_package_pattern_search');
+		echo $this->product_model->count_available_package_pattern_routes($productid, $reseller_id, !empty($search) ? $search : array());
 	}
-	function products_patterns_delete($productid,$id) { 
-		$this->db->delete ( "package_patterns", array (
-				"id" => $id
-		) );
-		redirect ( base_url () . "products/products_edit/$productid" );
+	function products_patterns_delete($productid,$id) {
+		$this->product_model->delete_product_pattern($productid, $id);
+		redirect ( base_url () . "products/products_edit/" . $productid );
 	}
 	function products_delete($id) {
 		$this->product_model->remove_product ( $id );
 		$this->session->set_flashdata ( 'flux_notification', gettext('Product removed successfully!'));
 		redirect ( base_url () . 'products/products_list/' );
 	}
-	function products_delete_multiple() { 
-		
-        $ids = $this->input->post("selected_ids", true);
-		if($ids != ''){
-			$where = "id IN ($ids)";
-			$accountinfo = $this->session->userdata ( "accountinfo" );
-			$reseller_id = $accountinfo ['reseller_id'] >0 ? $accountinfo ['reseller_id'] : 0;
-			$accountid = $accountinfo ['type'] == 1 ? $accountinfo ['id'] : 0;
-			if ($this->session->userdata ( 'logintype' ) == 1 || $this->session->userdata ( 'logintype' ) == 5) {	
-				$where =$this->db->where("product_id IN (".$ids.")");
-				$product_info = ( array ) $this->db->get_where( "reseller_products", $where )->result_array();
-				foreach ($product_info as $key => $value) {
-					if ($value['is_owner']==  0 ) {
-						
-							$this->db->where ("id",$value['product_id']);
-							$this->db->update("products",array("is_deleted"=>1));
-							$this->db->where ("id",$value['id']);
-							$this->db->update("reseller_products",array("is_optin"=>1));
-						}
-					else{
-						$this->db->update("reseller_products",array("is_optin"=>1));
-						echo TRUE;
-					}
-					 			
-				}
-				
-			}else{
-				$product_info = ( array ) $this->db->get_where( "products", $where )->result_array();
-				foreach($product_info as $key => $value){
-				
-				$where_arr['product_id'] = $value['id'];
-				$where_arr['is_terminated'] = 0;
-				$order_item = $this->db_model->getSelect ( "*", "order_items",$where_arr);
-				$did_where = array("product_id"=>$value['id']);
-					if($order_item->num_rows == 0){
-						$this->db->where("id", $value['id']);
-				        if($accountinfo ['type'] != 2){
-							$this->db->where ("created_by",$accountinfo['id'] );
-						}
-						$this->db->update("products",array("is_deleted"=>1));
-						$this->db->where("product_id", $value['id']);
-						$this->db->update("reseller_products",array("is_optin"=>1,"modified_date"=>gmdate("Y-m-d H:i:s")));
-					
-					}
-				}
-					echo TRUE; 
-			}
-		}
+	function products_delete_multiple() {
+		$ids = $this->input->post ( 'selected_ids', true );
+		$accountinfo = $this->session->userdata ( "accountinfo" );
+		$this->product_model->bulk_delete_products($ids, $accountinfo);
+		unset ( $_POST );
 	}
 	function products_list_search() {
 		$ajax_search = $this->input->post ( 'ajax_search', 0 );
@@ -730,22 +556,13 @@ class Products extends MX_Controller {
 		$this->session->set_userdata ( 'advance_search', 0 );
 		$this->session->set_userdata ( 'product_list_search', "" );
 	}
-	function products_pattern_list_json($productid) { 
+	function products_pattern_list_json($productid) {
 		$json_data = array ();
 		$instant_search = $this->session->userdata ( 'left_panel_search_package_pattern' );
-		$like_str = ! empty ( $instant_search ) ? "(patterns like '%$instant_search%'  OR destination like '%$instant_search%' )" : null;
-
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-		$where = array (
-				'product_id' => $productid 
-		);
-		$count_all = $this->db_model->countQuery ( "*", "package_patterns", $where );
+		$count_all = $this->product_model->count_product_patterns($productid, $instant_search);
 		$paging_data = $this->form->load_grid_config ( $count_all, $_GET ['rp'], $_GET ['page'] );
 		$json_data = $paging_data ["json_paging"];
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-		$pattern_data = $this->db_model->select ( "*", "package_patterns", $where, "id", "ASC", $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"] );
+		$pattern_data = $this->product_model->get_product_patterns($productid, $instant_search, $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"]);
 		$grid_fields = json_decode ( $this->product_form->build_pattern_list_for_customer ( $productid ) );
 		$json_data ['rows'] = $this->form->build_grid ( $pattern_data, $grid_fields );
 		echo json_encode ( $json_data );
@@ -753,37 +570,7 @@ class Products extends MX_Controller {
 	function products_patterns_add_info($productid) {
 		$accountinfo = $this->session->userdata ( "accountinfo" );
 		$reseller_id = $accountinfo ['type'] == 1 ? $accountinfo ['id'] : 0;
-		if(!empty($this->session->userdata('product_package_pattern_search'))){
-			$SearchArr = $this->session->userdata('product_package_pattern_search');
-			$where1 = '(pattern NOT IN (select DISTINCT patterns from package_patterns where product_id = "' . $productid . '" and reseller_id = "'.$reseller_id.'"))';
-			$this->db->where($where1);
-			if(isset($SearchArr['destination_rategroups']) && $SearchArr['destination_rategroups'] != ''){
-				$rate_group=$SearchArr['destination_rategroups'];
-				$this->db->where_in('pricelist_id',$rate_group);
-			}
-			if(isset($SearchArr['destination_countries']) && $SearchArr['destination_countries'] != ''){
-				$country = $SearchArr['destination_countries'];
-				$this->db->where_in('country_id',$country);
-			}
-			if(isset($SearchArr['destination_calltypes']) && $SearchArr['destination_calltypes'] != ''){
-				$call_type= $SearchArr['destination_calltypes'];
-				$this->db->where_in('call_type',$call_type);
-			}
-			if(isset($SearchArr['code']) && $SearchArr['code'] != ''){
-				$code= $SearchArr['code'];
-				$this->db->where('pattern','^'.$code.'.*');
-			}
-			if(isset($SearchArr['destination']) && $SearchArr['destination'] != ''){
-				$destination= $SearchArr['destination'];
-				$this->db->where('comment',$destination);
-			}
-		}else{
-			$where1 = '(pattern NOT IN (select DISTINCT patterns from package_patterns where product_id = "' . $productid . '" and reseller_id = "'.$reseller_id.'"))';
-			$this->db->where($where1);
-		}
-		$this->db->select("*");
-		$this->db->from("routes");
-		$rates = $this->db->get();
+		$rates = $this->product_model->get_available_package_pattern_routes($productid, $reseller_id, $this->session->userdata('product_package_pattern_search'));
 		if($rates->num_rows > 0){
 			$result = $this->product_model->insert_pacakge_pattern ($productid, $rates);
 			if($result == 1){
@@ -797,51 +584,14 @@ class Products extends MX_Controller {
 	}
 	function customer_products_list($accountid, $accounttype) { 
 		$json_data = array ();
-		$select = "products.id as id,order_items.id as id1,products.name,order_items.price,order_items.free_minutes,order_items.setup_fee,order_items.billing_type,order_items.billing_days";
-		$table = "products";
-		$jionTable = array (
-				'order_items',
-				'accounts' 
-		);
-		$jionCondition = array (
-				'products.id = order_items.product_id',
-				'accounts.id = order_items.accountid' 
-		);
-		$type = array (
-				'left',
-				'inner' 
-		);
-		$categoryinfo = $this->db_model->getSelect("GROUP_CONCAT('''',id,'''') as id","category","code NOT IN ('REFILL','DID')");
-		if($categoryinfo->num_rows > 0 ){ 
-				$categoryinfo = $categoryinfo->result_array()[0]['id']; 
-		}
-		$order_type = 'id';
-		$order_by = "ASC";
 		$instant_search = $this->session->userdata ( 'left_panel_search_' . $accounttype . '_products' );
-		$like_str = ! empty ( $instant_search ) ? "(products.name like '%$instant_search%'
-                                            OR  products.price like '%$instant_search%'
-                                            OR  IF(order_items.billing_type=0, 'One Time', 'Recurring') like '%$instant_search%'
-			
-					     OR  order_items.billing_days like '%$instant_search%'
-                                            OR  products.free_minutes like '%$instant_search%')" : null;
-
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-			$this->db->where("order_items.accountid",$accountid );
-			$this->db->where("order_items.is_terminated",0);
-			$this->db->where("products.product_category IN (".$categoryinfo.")",NULL, false);
-			$count_all = $this->db_model->getCountWithJion ( $table, $select, '', $jionTable, $jionCondition, $type );
-			$paging_data = $this->form->load_grid_config ( $count_all, $_GET ['rp'], $_GET ['page'] );
-			$json_data = $paging_data ["json_paging"];
-		if (! empty ( $like_str ))
-			$this->db->where ( $like_str );
-			$this->db->where("order_items.accountid",$accountid );
-			$this->db->where("order_items.is_terminated",0);
-			$this->db->where("products.product_category IN (".$categoryinfo.")",NULL, false);
-			$account_product_list = $this->db_model->getAllJionQuery ( $table, $select, '', $jionTable, $jionCondition, $type, $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"], $order_by, $order_type, "" );
-			$grid_fields = json_decode ( $this->product_form->build_products_list_for_customer ($accountid, $accounttype));
-			$json_data ['rows'] = $this->form->build_grid ( $account_product_list, $grid_fields );
-			echo json_encode ( $json_data );
+		$count_all = $this->product_model->count_customer_products($accountid, $instant_search);
+		$paging_data = $this->form->load_grid_config ( $count_all, $_GET ['rp'], $_GET ['page'] );
+		$json_data = $paging_data ["json_paging"];
+		$account_product_list = $this->product_model->get_customer_products($accountid, $instant_search, $paging_data ["paging"] ["page_no"], $paging_data ["paging"] ["start"]);
+		$grid_fields = json_decode ( $this->product_form->build_products_list_for_customer ($accountid, $accounttype));
+		$json_data ['rows'] = $this->form->build_grid ( $account_product_list, $grid_fields );
+		echo json_encode ( $json_data );
 	}
 	function products_reseller_save(){
 		if(!empty($this->input->post())){ 
@@ -888,95 +638,35 @@ class Products extends MX_Controller {
 		$accountinfo = $this->session->userdata ( "accountinfo" );
 		$data ['page_title'] = gettext ( 'Create Product' );
 		$data['currency'] = $this->common->get_field_name("currency","currency",array("id"=>$accountinfo['currency_id']));
-		if($accountinfo['reseller_id'] > 0){
-			$temp_where = '(`reseller_products`.`account_id` = '.$accountinfo['reseller_id'].' AND `reseller_products`.`is_optin` = 0 OR `reseller_products`.`account_id` = '.$accountinfo['reseller_id'].' AND `reseller_products`.`is_owner` = 0)';
-			$this->db->where($temp_where);
-			$product_info  = $this->db_model->getJionQuery('products',' products.id,products.name,products.product_category,products.buy_cost,products.country_id,products.commission,reseller_products.price,reseller_products.billing_type,reseller_products.billing_days,reseller_products.setup_fee,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id',array('reseller_products.product_id'=>$productid), 'reseller_products','products.id=reseller_products.product_id', 'inner', '' ,'','DESC','products.id');
-		}else{
-			$product_info = $this->db_model->getSelect ( "*", " products", array ('id' => $productid,'status'=>0));
-
-		}
-		if ($product_info->num_rows > 0) {
-			$product_info = ( array ) $product_info->first_row ();
-		}
-			$data['product_info']=$product_info;
-			$data['accountinfo'] = $accountinfo;
-			$this->load->view("view_optin_reseller_product",$data);
+		$product_info = $this->product_model->get_reseller_optin_product_info($productid, $accountinfo, false);
+		$data['product_info']=$product_info;
+		$data['accountinfo'] = $accountinfo;
+		$this->load->view("view_optin_reseller_product",$data);
 	}
 	function products_reseller_option_save(){
 		$add_array = $this->input->post();
 		$productid= $this->input->post('productid');
 		$accountinfo = $this->session->userdata ( "accountinfo" );
-			if($productid != '' &&  $productid != 0){
-				if($accountinfo['reseller_id'] > 0){
-					$temp_where = '(`reseller_products`.`account_id` = '.$accountinfo['reseller_id'].' AND `reseller_products`.`is_optin` = 0 OR `reseller_products`.`account_id` = '.$accountinfo['reseller_id'].' AND `reseller_products`.`is_owner` = 0)';
-					$this->db->where($temp_where);
-					$product_info  = $this->db_model->getJionQuery('products',' products.id,products.name,products.product_category,reseller_products.buy_cost,products.commission,reseller_products.price,reseller_products.billing_type,reseller_products.billing_days,reseller_products.setup_fee,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id',array('reseller_products.product_id'=>$productid), 'reseller_products','products.id=reseller_products.product_id', 'inner', '' ,'','DESC','products.id');
-				}else{
-					$product_info = $this->db_model->getSelect ( "*", " products", array ('id' => $productid,'status'=>0));
-				}
-				if($product_info->num_rows > 0)
-				{
-					$product_info = $product_info->result_array()[0];
-					$add_array['billing_type'] = $product_info['billing_type'];
-					$add_array['billing_days'] = $product_info['billing_days'];
-					$add_array['commission'] = $product_info['commission'];
-					$add_array['free_minutes'] = $product_info['free_minutes'];
-					if(($accountinfo['reseller_id'] > 0 || $accountinfo['type'] == 1) && $accountinfo['is_distributor'] == 0 ){
-						$add_array['buy_cost'] = $this->common_model->add_calculate_currency ($add_array['product_buy_cost'], "", '', false, false );
-					}else{ 
-						$add_array['buy_cost'] = $product_info['buy_cost'] ;
-					}
-					if($accountinfo['is_distributor'] == 0){ 
-						$add_array['price']  = isset($add_array['price'])?$this->common_model->add_calculate_currency ($add_array['price'], "", '', false, false ):$this->common_model->add_calculate_currency ($product_info['price'], "", '', false, false );
-						$add_array['setup_fee']  = isset($add_array['setup_fee'])?$this->common_model->add_calculate_currency ($add_array['setup_fee'], "", '', false, false ):$this->common_model->add_calculate_currency ($product_info['setup_fee'], "", '', false, false );
-					}else{   
-						$add_array['price']  =$product_info['price'];
-						$add_array['setup_fee']  =  $product_info['setup_fee'];
-					}
-				$query = "INSERT INTO reseller_products (product_id, account_id, reseller_id,country_id,commission, setup_fee, price, free_minutes,buy_cost,billing_type, billing_days, status, is_optin,is_owner,optin_date,modified_date)
-	VALUES($productid,".$accountinfo['id'].", ".$accountinfo ['reseller_id'].", ".$add_array ['country_id'].",".$add_array['commission'].",'".$add_array['setup_fee']."','".$add_array['price']."',".$add_array['free_minutes'].",".$add_array['buy_cost'].",".$add_array['billing_type'].",".$add_array['billing_days'].", 0, 0, 1, '".gmdate("Y-m-d H:i:s")."','".gmdate("Y-m-d H:i:s")."') ON DUPLICATE KEY UPDATE product_id = VALUES(product_id), account_id = VALUES(account_id), reseller_id = VALUES(reseller_id), commission = VALUES(commission), setup_fee = VALUES(setup_fee), price = VALUES(price), free_minutes = VALUES(free_minutes), buy_cost = VALUES(buy_cost),billing_type = VALUES(billing_type), billing_days = VALUES(billing_days), status = VALUES(status), is_optin = VALUES(is_optin), is_owner = VALUES(is_owner), optin_date = VALUES(optin_date),modified_date = VALUES(modified_date)";
-				$query = $this->db->query($query);
+		if($productid != '' &&  $productid != 0){
+			if($this->product_model->save_reseller_option($productid, $add_array, $accountinfo)){
 				$this->session->set_flashdata ( 'flux_errormsg', gettext('Product optin successfully!'));
-				redirect ( base_url () . 'products/products_list/' );
-				}
-			}else{
+			}
 			redirect ( base_url () . 'products/products_list/' );
-			}	
+		}else{
+			redirect ( base_url () . 'products/products_list/' );
+		}	
 	}
 	function products_optin(){
 	  if($this->input->post()){
 		$product_id = $this->input->post('product_id');
 		$status = $this->input->post('status');
 		$accountinfo = $this->session->userdata ( "accountinfo" );
-			if($status == 'true'){
-				$reseller_products_array = array(
-							"product_id"=>$product_id,
-							"account_id"=>$accountinfo['id'],
-							"reseller_id"=>isset($accountinfo ['reseller_id'])?$accountinfo ['reseller_id']:0,
-							"status"=>0,
-							"creation_date"=>gmdate("Y-m-d H:i:s")
-						   );
-
-				$this->db->insert ( "reseller_products", $reseller_products_array );
-				$reseller_products_last_id = $this->db->insert_id();
-			} 
-			if($status == 'false'){
-				$orders = $this->db_model->getSelect("*","order_items",array("product_id"=>$product_id));
-				if($orders->num_rows == 0){
-					$this->db->where("product_id",$product_id);
-					$this->db->delete("reseller_products");
-				}else{
-					$this->db->where("product_id",$product_id);
-					$this->db->update("reseller_products",array("status"=>1));			
-				}
-
-			}
+		$this->product_model->toggle_product_optin($product_id, $status, $accountinfo);
 	}
  }
  	function products_topuplist() { 
 		$accountinfo = $this->session->userdata ( "accountinfo" );
-		$account_arr=(array)$this->db->get_where("accounts",array("id"=>$accountinfo['id'],"deleted"=>"0","status"=>"0"))->first_row();
+		$account_arr = $this->product_model->get_active_account($accountinfo['id']);
 		if(empty($account_arr)){
 			$this->session->sess_destroy ();
 			$this->load->helper('cookie');

@@ -267,4 +267,16 @@ function edit_ringgroup($edit_id) {
     $ringgroup=array_merge($ringgroup,isset($destinations) ?$destinations : array());
     return $ringgroup;
 }
+
+
+function delete_multiple_ringgroup($ids) {
+    $where = "id IN ($ids)";
+    $this->db->where($where);
+    return $this->db->delete("pbx_ringgroup");
+}
+
+function create_sip_device($new_array) {
+    return $this->db->insert('sip_devices', $new_array);
+}
+
 }

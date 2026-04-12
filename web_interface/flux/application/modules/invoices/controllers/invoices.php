@@ -236,195 +236,113 @@ class Invoices extends MX_Controller
         echo json_encode($json_data);
     }
 
-    function invoice_download_old($invoiceid)
-    {
-        if ($invoiceid != '' && isset($invoiceid)) {
 
-            $query = $this->db->get_where('view_invoices', array(
-                'id' => $invoiceid
-            ));
-            $invoicedata = $query->first_row();
-            $data['invoicenumber'] = $invoicedata->number;
-	    $posttoexternal = $this->common->get_field_name("posttoexternal","accounts",array("id"=>$invoicedata->accountid));
-	    if($posttoexternal == 0 && $invoicedata->credit > 0 && $invoicedata->credit !=''  ){
-			$data['all_total_count'] = ($invoicedata->credit );
-	    }else{
-            		$data['all_total_count'] = ($invoicedata->debit);
-	    }
-
-	  
-	   $data['this_month_recharges'] =$this->common->currency_decimal(0);
-	   if($posttoexternal == 0 && $invoicedata->credit != "" && $invoicedata->credit > 0 ){
-		        $data['this_month_recharges'] = ($invoicedata->credit - $invoicedata->debit) ; 
-	   }
-		
-	   if($posttoexternal == 1 && $invoicedata->credit != "" && $invoicedata->credit > 0 ){
-			$data['this_month_recharges'] = $invoicedata->credit; 
-	   }
-	
-	    $data['posttoexternal'] = $posttoexternal;
-            $total_calls_amount = "select sum(debit) as debit from invoice_details where charge_type NOT IN('STANDARD') AND  order_item_id = 0 AND  invoiceid ='" . $invoiceid . "'  ";
-            $total_calls_amount = (array) $this->db->query($total_calls_amount)->first_row();
-            if (! empty($total_calls_amount)) {
-                $data['total_calls_amount'] = (float) $total_calls_amount['debit'];
-            } else {
-                $data['total_calls_amount'] = '0.0000';
-            }
-
-            $product_services = "select sum(debit) from invoice_details where  order_item_id > 0 AND is_tax = 0 AND product_category !=3 AND invoiceid ='" . $invoiceid . "' ";
-            $product_services = (array) $this->db->query($product_services)->first_row();
-            $product_services = $product_services['sum(debit)'];
-
-            if ($product_services != "") {
-                $data['product_service_total'] = $this->common->currency_decimal($product_services);
-            } else {
-                $data['product_service_total'] = '0.0000';
-            }
-            $login_info = $this->session->userdata('accountinfo');
-            $data["currency"] = $this->common->get_field_name('currency', 'currency', $login_info["currency_id"]);
-
-            if ($invoicedata->accountid != '' && isset($invoicedata->accountid)) {
-
-                $query = $this->db->get_where('accounts', array(
-                    'id' => $invoicedata->accountid
-                ));
-                $accountsdata = $query->first_row();
-
-                if ($accountsdata->company_name == '') {
-                    $data['fullname'] = $accountsdata->first_name . ' ' . $accountsdata->last_name;
-                } else {
-                    $data['fullname'] = ucfirst($accountsdata->company_name);
-                }
-
-                $data['address_1'] = $accountsdata->address_1;
-                $data['address_2'] = $accountsdata->address_2;
-
-                if ($accountsdata->city != '' && $accountsdata->postal_code != '') {
-                    $data['city_postalcode'] = $accountsdata->city . ' - ' . $accountsdata->postal_code;
-                }
-                if ($accountsdata->city == '' && $accountsdata->postal_code != '') {
-                    $data['city_postalcode'] = $accountsdata->postal_code;
-                }
-                if ($accountsdata->city != '' && $accountsdata->postal_code == '') {
-                    $data['city_postalcode'] = $accountsdata->city;
-                }
-
-                if ($accountsdata->country_id != '0') {
-                    $this->db->select('country');
-                    $this->db->from('countrycode');
-                    $this->db->where('id', $accountsdata->country_id);
-                    $query = $this->db->get();
-                    $country_name = $query->first_row();
-
-                    if ($accountsdata->province != '' && $country_name->country != '') {
-                        $data['province_country'] = $accountsdata->province . ' , ' . $country_name->country;
-                    }
-                    if ($accountsdata->province == '' && $country_name->country != '') {
-                        $data['province_country'] = $country_name->country;
-                    }
-                    if ($accountsdata->province != '' && $country_name->country == '') {
-                        $data['province_country'] = $accountsdata->province;
-                    }
-                } else {
-                    if ($accountsdata->province != '') {
-                        $data['province_country'] = $accountsdata->province;
-                    } else {
-                        $data['province_country'] = '';
-                    }
-                }
-
-                if ($accountsdata->tax_number != '') {
-                    $data['tax_number'] = $accountsdata->tax_number;
-                }
-
-                if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == "on") {
-                    $domain = "https://" . $_SERVER["HTTP_HOST"] . "/";
-                } else {
-                    $domain = "http://" . $_SERVER["HTTP_HOST"] . "/";
-                }
-                $http_host = $_SERVER["HTTP_HOST"];
-                $this->db->select('accountid');
-                $this->db->where("domain LIKE '%$domain%'");
-                $this->db->or_where("domain LIKE '%$http_host%'");
-                $invoice_details = (array) $this->db->get_where("invoice_conf")->first_row();
-                $accountid_invoice = ((!empty($invoice_details)) && ($invoice_details['accountid'] != '')) ? $invoice_details['accountid'] : 1;
-
-                $query = $this->db->get_where('invoice_conf', array(
-                    'accountid' => $accountid_invoice
-                ));
-                $company_data = $query->first_row();
-
-		$logo = explode (".",$company_data->logo);
-		if((!isset($logo[2])) && ($logo[1] == "png")){
-			$sourceFile = FCPATH.'upload/'.$company_data->logo;
-			$DestFile = FCPATH.'upload/'.$logo[0].'.jpg';
-			$filePath = FCPATH.'upload/';
-			$convert_png  = "convert ".$sourceFile." -background white -flatten ".$DestFile;
-			$convert_png_file = system($convert_png, $retval);
-			$company_data->logo = $logo[0].'.jpg';
-		}
-
-                $data['cmp_name'] = $company_data->company_name;
-                $data['cmp_address'] = $company_data->address;
-                $data['cmp_city_zipcode'] = $company_data->city . ' - ' . $company_data->zipcode;
-                $country = $this->common->get_field_name('nicename','countrycode', $company_data->country);
-                $data['cmp_province_country'] = $company_data->province . ' , ' . $country;
-                $data['cmp_telephone'] = $company_data->telephone;
-                $data['cmp_tax'] = $company_data->invoice_taxes_number;
-                $data['cmp_invoice_note'] = $company_data->invoice_note;
-                $data['invoice_date'] = $invoicedata->generate_date;
-                $data['invoice_due_date'] = $invoicedata->due_date;
-                $data['account_number'] = $accountsdata->number;
-                $data['invoice_notes'] = $accountsdata->invoice_note;
-                $data['logo'] = (! empty($company_data->logo)) ? $company_data->logo : 'logo.jpg';
-		
-		$debit_data = $this->common->currency_decimal(0);
-		$debit_data = $this->common->get_field_name("debit","view_invoices",array("id"=>$invoiceid));
-		$data['debit_data'] = $debit_data;
-		
-		if($posttoexternal == 1){
-		        $query = $this->db->get_where('invoice_details', array(
-		            'invoiceid' => $invoiceid,
-		            'is_tax' => '0',
-			    'charge_type <>' =>'INVPAY',
-			    'charge_type <>' =>'REFILL'
-			
-		        ));
-		
-		}else{
-			$query = $this->db->get_where('invoice_details', array(
-		            'invoiceid' => $invoiceid,
-		            'is_tax' => '0',
-			    'charge_type <>' =>'INVPAY'
-		        ));
-
-		}
-                $invoice_details_data = $query->result_array();
-
-                $query = $this->db->get_where('invoice_details', array(
-                    'invoiceid' => $invoiceid,
-                    'is_tax' => '1'
-                ));
-                $invoicetax_details_data = $query->result_array();
-
-                $data['invoicetax_details_data'] = $invoicetax_details_data;
-                $data['invoice_details_data'] = $invoice_details_data;
-            }
-
-            ob_start();
-            $this->load->library('/html2pdf/html2pdf');
-            $this->html2pdf = new HTML2PDF('P', 'A4', 'en');
-            $this->html2pdf->pdf->SetDisplayMode('fullpage');
-            $content = ob_get_clean();
-            ob_clean();
-
-            $content = $this->load->view('view_invoice_template', $data, 'TRUE');
-            $this->html2pdf->pdf->SetDisplayMode('fullpage');
-            $this->html2pdf->writeHTML($content);
-            $this->html2pdf->Output($data['invoicenumber'].'.pdf', "D");
-            exit();
+function invoice_download_old($invoiceid)
+{
+    if ($invoiceid != '' && isset($invoiceid)) {
+        $context = $this->invoices_model->get_invoice_download_context($invoiceid, $_SERVER["HTTP_HOST"], (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == "on"));
+        $invoicedata = $context['invoicedata'];
+        $data['invoicenumber'] = $invoicedata->number;
+        $posttoexternal = $context['posttoexternal'];
+        if($posttoexternal == 0 && $invoicedata->credit > 0 && $invoicedata->credit !=''  ){
+            $data['all_total_count'] = ($invoicedata->credit );
+        }else{
+            $data['all_total_count'] = ($invoicedata->debit);
         }
+
+        $data['this_month_recharges'] =$this->common->currency_decimal(0);
+        if($posttoexternal == 0 && $invoicedata->credit != "" && $invoicedata->credit > 0 ){
+            $data['this_month_recharges'] = ($invoicedata->credit - $invoicedata->debit) ; 
+        }
+
+        if($posttoexternal == 1 && $invoicedata->credit != "" && $invoicedata->credit > 0 ){
+            $data['this_month_recharges'] = $invoicedata->credit; 
+        }
+
+        $data['posttoexternal'] = $posttoexternal;
+        $data['total_calls_amount'] = !empty($context['total_calls_amount']) ? (float) $context['total_calls_amount'] : '0.0000';
+        $data['product_service_total'] = ($context['product_services'] != "") ? $this->common->currency_decimal($context['product_services']) : '0.0000';
+        $login_info = $this->session->userdata('accountinfo');
+        $data["currency"] = $this->common->get_field_name('currency', 'currency', $login_info["currency_id"]);
+
+        if ($invoicedata->accountid != '' && isset($invoicedata->accountid)) {
+            $accountsdata = $context['accountsdata'];
+
+            if ($accountsdata->company_name == '') {
+                $data['fullname'] = $accountsdata->first_name . ' ' . $accountsdata->last_name;
+            } else {
+                $data['fullname'] = ucfirst($accountsdata->company_name);
+            }
+
+            $data['address_1'] = $accountsdata->address_1;
+            $data['address_2'] = $accountsdata->address_2;
+
+            if ($accountsdata->city != '' && $accountsdata->postal_code != '') {
+                $data['city_postalcode'] = $accountsdata->city . ' - ' . $accountsdata->postal_code;
+            }
+            if ($accountsdata->city == '' && $accountsdata->postal_code != '') {
+                $data['city_postalcode'] = $accountsdata->postal_code;
+            }
+            if ($accountsdata->city != '' && $accountsdata->postal_code == '') {
+                $data['city_postalcode'] = $accountsdata->city;
+            }
+
+            if ($accountsdata->country_id != '0') {
+                if ($accountsdata->province != '' && $context['country_name'] != '') {
+                    $data['province_country'] = $accountsdata->province . ' , ' . $context['country_name'];
+                }
+                if ($accountsdata->province == '' && $context['country_name'] != '') {
+                    $data['province_country'] = $context['country_name'];
+                }
+                if ($accountsdata->province != '' && $context['country_name'] == '') {
+                    $data['province_country'] = $accountsdata->province;
+                }
+            } else {
+                $data['province_country'] = ($accountsdata->province != '') ? $accountsdata->province : '';
+            }
+
+            if ($accountsdata->tax_number != '') {
+                $data['tax_number'] = $accountsdata->tax_number;
+            }
+
+            $company_data = $context['company_data'];
+            $logo = explode (".",$company_data->logo);
+            if((!isset($logo[2])) && isset($logo[1]) && ($logo[1] == "png")){
+                $sourceFile = FCPATH.'upload/'.$company_data->logo;
+                $DestFile = FCPATH.'upload/'.$logo[0].'.jpg';
+                $convert_png  = "convert ".$sourceFile." -background white -flatten ".$DestFile;
+                $convert_png_file = system($convert_png, $retval);
+                $company_data->logo = $logo[0].'.jpg';
+            }
+
+            $data['cmp_name'] = $company_data->company_name;
+            $data['cmp_address'] = $company_data->address;
+            $data['cmp_city_zipcode'] = $company_data->city . ' - ' . $company_data->zipcode;
+            $country = $this->common->get_field_name('nicename','countrycode', $company_data->country);
+            $data['cmp_province_country'] = $company_data->province . ' , ' . $country;
+            $data['cmp_telephone'] = $company_data->telephone;
+            $data['cmp_tax'] = $company_data->invoice_taxes_number;
+            $data['cmp_invoice_note'] = $company_data->invoice_note;
+            $data['invoice_date'] = $invoicedata->generate_date;
+            $data['invoice_due_date'] = $invoicedata->due_date;
+            $data['account_number'] = $accountsdata->number;
+            $data['invoice_notes'] = $accountsdata->invoice_note;
+            $data['logo'] = (! empty($company_data->logo)) ? $company_data->logo : 'logo.jpg';
+            $data['debit_data'] = $context['debit_data'];
+            $data['invoicetax_details_data'] = $context['invoicetax_details_data'];
+            $data['invoice_details_data'] = $context['invoice_details_data'];
+        }
+
+        ob_start();
+        $this->load->library('/html2pdf/html2pdf');
+        $this->html2pdf = new HTML2PDF('P', 'A4', 'en');
+        $this->html2pdf->pdf->SetDisplayMode('fullpage');
+        $html = $this->load->view('view_invoice_pdf_template', $data, true);
+        $this->html2pdf->writeHTML($html);
+        $this->html2pdf->Output('invoice.pdf');
     }
+}
+
     
     function invoice_list_search()
     {
@@ -476,9 +394,7 @@ class Invoices extends MX_Controller
             "type" => 'R',
             "confirm" => '1'
         );
-        $this->db->insert("invoices", $invoice_data);
-        $invoiceid = $this->db->insert_id();
-        return $invoiceid;
+        return $this->invoices_model->create_receipt_invoice($invoice_data);
     }
 
     function invoice_manually_edit($id)
@@ -490,8 +406,10 @@ class Invoices extends MX_Controller
         }
         $data['total_tax_dis'] = 0;
         $data['total_credit_dis'] = 0;
-        $query = "SELECT  * from invoice_details where generate_type=1 AND invoiceid='$id' ";
-        $invoice_total_query = $this->db->query($query);
+        $invoice_total_query = $this->db_model->getSelect("*", "invoice_details", array(
+            "generate_type" => 1,
+            "invoiceid" => $id
+        ));
 
         $data['count'] = 0;
         $data['row_count'] = 5;
@@ -625,7 +543,7 @@ class Invoices extends MX_Controller
             if ($invoice_details->num_rows > 0) {
                 $count = $invoice_details->num_rows();
                 $invoice_details = $invoice_details->result_array();
-                $data['accountdata'] = (array) $this->db->get_where("accounts", array(
+                $data['accountdata'] = (array) $this->db_model->getSelect("*", "accounts", array(
                     "id" => $invoices['accountid']
                 ))->result_array()[0];
                 $data['invoices'] = $invoices;
@@ -702,8 +620,10 @@ class Invoices extends MX_Controller
                     "accountid" => $invoices['accountid']
                 ));
                 $data['taxes_count'] = $taxes->num_rows();
-                $query = "SELECT  * from invoice_details where invoiceid='$id' and generate_type=0 ORDER BY id ASC";
-                $invoice_total_query = $this->db->query($query);
+                $invoice_total_query = $this->db_model->getSelect("*", "invoice_details", array(
+                    "invoiceid" => $id,
+                    "generate_type" => 0
+                ));
                 $data['auto_count'] = 0;
                 if ($invoice_total_query->num_rows() > 0) {
                     $data['auto_count'] = $invoice_total_query->num_rows();
@@ -727,260 +647,38 @@ class Invoices extends MX_Controller
         $this->load->view('view_invoice_edit_automatically', $data);
     }
 
-    function invoice_manually_payment_edit_save()
-    {
-        $response_arr = $_POST;
-        if (isset($response_arr['save'])) {
-            $confirm = 0;
-        } else {
-            $confirm = 1;
-        }
-        $where = array(
-            'invoiceid' => $response_arr['invoiceid'],
-            'generate_type' => 1
-        );
-        $this->db->where($where);
-        $this->db->delete("invoice_details");
-        $final_bal = 0;
-        $final_tax_bal = 0;
-        $account_balance = $this->common->get_field_name('balance', 'accounts', $response_arr['accountid']);
 
-        if ($response_arr['taxes_count'] > 0) {
-            for ($a = 0; $a < $response_arr['taxes_count']; $a ++) {
-                $add_arr = array(
-                    'accountid' => $response_arr['accountid'],
-                    'reseller_id' => $response_arr['reseller_id'],
-                    'invoiceid' => $response_arr['invoiceid'],
-                    'order_item_id' => 0,
-                    'generate_type' => 1,
-                    'is_tax' => 1,
-                    'description' => $response_arr['description_total_tax_input_' . $a],
-                    'debit' => $this->common_model->add_calculate_currency($response_arr['abc_total_tax_input_' . $a], "", "", true, false),
-                    'created_date' => gmdate("Y-m-d H:i:s")
-                );
-                $final_tax_bal += $this->common_model->add_calculate_currency($response_arr['abc_total_tax_input_' . $a], "", "", true, false);
-                $this->db->insert("invoice_details", $add_arr);
-            }
-        }
-
-        for ($i = 1; $i <= $response_arr['row_count']; $i ++) {
-            if ($response_arr['invoice_amount_' . $i] != '') {
-                $add_arr = array(
-                    'accountid' => $response_arr['accountid'],
-                    'reseller_id' => $response_arr['reseller_id'],
-                    'invoiceid' => $response_arr['invoiceid'],
-                    'order_item_id' => 0,
-                    'generate_type' => 1,
-                    'description' => $response_arr['invoice_description_' . $i],
-                    'debit' => $this->common_model->add_calculate_currency($response_arr['invoice_amount_' . $i], "", "", true, false),
-                    'created_date' => $response_arr['invoice_from_date_' . $i]
-                );
-
-                $this->db->insert("invoice_details", $add_arr);
-            }
-            $final_bal += $this->common_model->add_calculate_currency($response_arr['invoice_amount_' . $i], "", "", true, false);
-        }
-        $data = array(
-            'confirm' => $confirm,
-            'notes' => $response_arr['invoice_notes']
-        );
-        $this->db->where("id", $response_arr['invoiceid']);
-        $this->db->update("invoices", $data);
-        if ($confirm == 1) {
-
-            $account_data = $this->db_model->getSelect("*", "accounts", array(
-                "id" => $response_arr["accountid"]
-            ));
-            $account_data = $account_data->result_array();
-
-            $account_balance = $this->common->get_field_name('balance', 'accounts', $response_arr['accountid']);
-            $account_balance = ($account_data[0]['posttoexternal'] == 1) ? ($account_data[0]['credit_limit'] - $account_balance) : $account_balance;
-
-            $invoice_details = $this->db_model->getSelect("*", "invoice_details", array(
-                "invoiceid" => $response_arr["invoiceid"]
-            ));
-            if ($invoice_details->num_rows() > 0) {
-                $invoice_details_res = $invoice_details->result_array();
-                $after_bal = 0;
-
-                foreach ($invoice_details_res as $details_key => $details_value) {
-                    if ($details_value['debit'] > 0) {
-
-                        $before_balance_add = $account_balance - $after_bal;
-                        $after_balance_add = $before_balance_add - $details_value['debit'];
-                        $after_bal += $details_value['debit'];
-                    } else {
-                        $before_balance_add = $account_balance - $after_bal;
-                        $after_balance_add = $before_balance_add + $details_value['credit'];
-                        $after_bal += $details_value['credit'];
-                    }
-                    $balnace_update = array(
-                        'before_balance' => $before_balance_add,
-                        'after_balance' => $after_balance_add
-                    );
-
-                    $this->db->where("id", $details_value['id']);
-                    $this->db->update("invoice_details", $balnace_update);
-                }
-            }
-            $this->db->where("id", $response_arr['accountid']);
-            $act_status = 0;
-            if ($bal_data < 0 && $account_data[0]['posttoexternal'] == 0) {
-                $act_status = 1;
-            }
-
-            $amount = $this->common_model->add_calculate_currency($response_arr['total_val_final'], "", "", true, false);
-            $query = "update accounts set balance =  IF(posttoexternal=1,balance+" . $amount . ",balance-" . $amount . ") where id ='" . $response_arr['accountid'] . "'";
-            $this->db->query($query);
-
-            // Ashish FLUXUPDATE-748
-            $invoice_prefix = $this->common->get_field_name("prefix","invoices",array("id"=>$response_arr["invoiceid"]));
-            $invoice_prefix_id = $this->common->get_field_name("number","invoices",array("id"=>$response_arr["invoiceid"]));
-            $due_date = $this->common->get_field_name("due_date","invoices",array("id"=>$response_arr["invoiceid"]));
-
-            $mail_array["invoice_number"] = $invoice_prefix . $invoice_prefix_id;
-            // Ashish FLUXUPDATE-748 End
-            $mail_array["amount"] = $response_arr['total_val_final'];
-            // $mail_array["due_date"] = $details_value['due_date'];
-            // Ashish FLUXUPDATE-748
-            $mail_array["due_date"] = $due_date;
-            // Ashish FLUXUPDATE-748 End
-            $accountdata = $account_data[0];
-            $final_array = array_merge($accountdata, $mail_array);
-            // Ashish FLUXUPDATE-748
-            $generate_date = (array)$this->db->get_where('invoices',array("id"=>$response_arr["invoiceid"]))->first_row();
-            $final_array['generate_date'] = $generate_date['generate_date'];
-            // Ashish FLUXUPDATE-748 End
-            $this->common->mail_to_users("new_invoice", $final_array);
-        }
-
-        $this->session->set_flashdata('flux_errormsg', gettext('Invoice updated successfully!'));
-        redirect(base_url() . 'invoices/invoice_list/');
+function invoice_manually_payment_edit_save()
+{
+    $response_arr = $_POST;
+    $confirm = isset($response_arr['save']) ? 0 : 1;
+    $mail_context = $this->invoices_model->save_manual_invoice_edit($response_arr, $confirm);
+    if ($confirm == 1 && !empty($mail_context)) {
+        $invoice_prefix = $mail_context['invoice']['prefix'];
+        $invoice_prefix_id = $mail_context['invoice']['number'];
+        $due_date = $mail_context['invoice']['due_date'];
+        $mail_array["invoice_number"] = $invoice_prefix . $invoice_prefix_id;
+        $mail_array["amount"] = $response_arr['total_val_final'];
+        $mail_array["due_date"] = $due_date;
+        $final_array = array_merge($mail_context['account_data'], $mail_array);
+        $final_array['generate_date'] = $mail_context['invoice']['generate_date'];
+        $this->common->mail_to_users("new_invoice", $final_array);
     }
+    $this->session->set_flashdata('flux_errormsg', gettext('Invoice updated successfully!'));
+    redirect(base_url() . 'invoices/invoice_list/');
+}
 
-    function invoice_automatically_payment_edit_save()
-    {
-        $response_arr = $_POST;
 
-        if (isset($response_arr['save'])) {
-            $confirm = 0;
-        } else {
-            $confirm = 1;
-        }
-        $where = array(
-            'invoiceid' => $response_arr['invoiceid'],
-            'generate_type' => 1
-        );
-        $this->db->where($where);
-        $this->db->delete("invoice_details");
-        foreach ($response_arr['auto_invoice_date'] as $key => $val) {
-            $data = array(
-                'debit' => $this->common_model->add_calculate_currency($response_arr['auto_invoice_amount'][$key], "", "", true, false),
-                'created_date' => $response_arr['auto_invoice_date'][$key],
-                'description' => $response_arr['auto_invoice_description'][$key],
-                'generate_type' => 0
-            );
 
-            $this->db->where("id", $key);
-            $this->db->update("invoice_details", $data);
-        }
+function invoice_automatically_payment_edit_save()
+{
+    $response_arr = $_POST;
+    $confirm = isset($response_arr['save']) ? 0 : 1;
+    $this->invoices_model->save_auto_invoice_edit($response_arr, $confirm);
+    $this->session->set_flashdata('flux_errormsg', gettext('Invoice updated successfully!'));
+    redirect(base_url() . 'invoices/invoice_list/');
+}
 
-        $final_bal = 0;
-        $final_tax_bal = 0;
-        $account_balance = $this->common->get_field_name('balance', 'accounts', $response_arr['accountid']);
-        if ($response_arr['taxes_count'] > 0) {
-            for ($a = 0; $a < $response_arr['taxes_count']; $a ++) {
-
-                $update_arr = array(
-                    'debit' => $this->common_model->add_calculate_currency($response_arr['total_tax_id_' . $a], "", "", true, false)
-                );
-                $final_tax_bal += $this->common_model->add_calculate_currency($response_arr['total_tax_id_' . $a], "", "", true, false);
-                $arr_update = array(
-
-                    'id' => $response_arr['description_total_tax_input_' . $a]
-                );
-                $this->db->where($arr_update);
-                $this->db->update("invoice_details", $update_arr);
-            }
-        }
-        for ($i = 1; $i <= $response_arr['row_count']; $i ++) {
-            if ($response_arr['invoice_amount_' . $i] != '') {
-                $add_arr = array(
-                    'accountid' => $response_arr['accountid'],
-                    'reseller_id' => $response_arr['reseller_id'],
-                    'invoiceid' => $response_arr['invoiceid'],
-                    'order_item_id' => 0,
-                    'generate_type' => 1,
-                    'description' => $response_arr['invoice_description_' . $i],
-                    'debit' => $this->common_model->add_calculate_currency($response_arr['invoice_amount_' . $i], "", "", true, false),
-                    'created_date' => $response_arr['invoice_from_date_' . $i]
-                );
-                $this->db->insert("invoice_details", $add_arr);
-            }
-        }
-
-        $query = "select  sum(debit) as credit from invoice_details where invoiceid = " . $response_arr['invoiceid'];
-        $invoice_total_query = $this->db->query($query);
-        $invoice_total_query = $invoice_total_query->result_array();
-        $data = array(
-
-            'confirm' => $confirm,
-            'notes' => $response_arr['invoice_notes']
-        );
-        $this->db->where("id", $response_arr['invoiceid']);
-        $this->db->update("invoices", $data);
-        if ($confirm == 1) {
-            $invoice_details = $this->db_model->getSelect("*", "invoice_details", array(
-                "invoiceid" => $response_arr["invoiceid"]
-            ));
-            if ($invoice_details->num_rows() > 0) {
-                $invoice_details_res = $invoice_details->result_array();
-                $after_bal = 0;
-                foreach ($invoice_details_res as $details_key => $details_value) {
-                    if ($details_value['charge_type'] != 'STANDARD') {
-                        $before_balance_add = $account_balance - $after_bal;
-                        $after_balance_add = $before_balance_add - $details_value['debit'];
-                        $balnace_update = array(
-                            'before_balance' => $before_balance_add,
-                            'after_balance' => $after_balance_add
-                        );
-                        $after_bal += $details_value['debit'];
-                        $this->db->where("id", $details_value['id']);
-                        $this->db->update("invoice_details", $balnace_update);
-                    }
-                }
-            }
-            $account_data = $this->db_model->getSelect("*", "accounts", array(
-                "id" => $response_arr["accountid"]
-            ));
-            $account_data = $account_data->result_array();
-            $invoice_not_deduct = $this->db_model->getSelect("*", "invoice_details", array(
-                "invoiceid" => $response_arr['invoiceid']
-            ));
-            $standard_call_balance = 0;
-            $invoice_not_deduct = $invoice_not_deduct->result_array();
-            foreach ($invoice_not_deduct as $key => $invoice_nodeduct_val) {
-                if ($invoice_nodeduct_val['charge_type'] == 'STANDARD') {
-                    $standard_call_balance = $invoice_nodeduct_val['debit'];
-                }
-            }
-
-            if ($account_data[0]['posttoexternal'] == 1) {
-                $finaldeduct_bal = $response_arr['total_val_final'] - $standard_call_balance;
-                $bal_data = $account_data[0]['balance'] - $finaldeduct_bal;
-            } else {
-                $bal_data = 0;
-            }
-
-            $this->db->where("id", $response_arr['accountid']);
-            $balance_data = array(
-                'balance' => $bal_data
-            );
-            $this->db->update("accounts", $balance_data);
-        }
-        $this->session->set_flashdata('flux_errormsg', gettext('Invoice updated successfully!'));
-        redirect(base_url() . 'invoices/invoice_list/');
-    }
 
     function invoice_send_notification($invoice_id, $accountdata, $inv_flag)
     {
@@ -1037,8 +735,9 @@ class Invoices extends MX_Controller
             $invoice_info = $invoice[0];
             $data['invoice_info'] = $invoice_info;
 
-            $query = "SELECT  * from invoice_details where  invoiceid='$id' ORDER BY created_date ASC";
-            $invoice_detail_info = $this->db->query($query);
+            $invoice_detail_info = $this->db_model->getSelect("*", "invoice_details", array(
+                "invoiceid" => $id
+            ));
 
             if ($invoice_detail_info->num_rows() > 0) {
                 $data['invoice_detail_info'] = $invoice_detail_info->result_array();
@@ -1153,8 +852,9 @@ class Invoices extends MX_Controller
                     $debit = $invoice_total_query[0]['debit'];
                     $debit = number_format($debit, 2);
 
-                    $query = "select  sum(credit) as credit,exchange_rate,base_currency,account_currency from invoice_details where invoiceid = " . $invoice_id . " Group By invoiceid";
-                    $invoice_total_query = $this->db->query($query);
+                    $invoice_total_query = $this->db_model->getSelect("sum(credit) as credit,exchange_rate,base_currency,account_currency", "invoice_details", array(
+                        "invoiceid" => $invoice_id
+                    ));
                     if ($invoice_total_query->num_rows() > 0) {
                         $invoice_total_query = $invoice_total_query->result_array();
                         $total_debit = $invoice_total_query[0]['credit'];
@@ -1235,49 +935,21 @@ class Invoices extends MX_Controller
         if (! empty($response_arr)) {
 
             $amount = $response_arr['amount'];
-            $description = $response_arr['item_name'];
             $invoice_id = $response_arr['item_number'];
             $date = date('Y-m-d H:i:s');
-            $invoice_info = "SELECT  * from view_invoices where  id='$invoice_id' ORDER BY generate_date ASC";
-            $invoice_info = $this->db->query($invoice_info);
-            if ($invoice_info->num_rows() > 0) {
-                $invoice_info = $invoice_info->result_array();
-                $debit = $invoice_info[0]['debit'];
-            }
-
-            $query = "select  sum(credit) as credit from invoice_details where invoiceid = " . $invoice_id . " Group By invoiceid";
-            $invoice_total_query = $this->db->query($query);
-            if ($invoice_total_query->num_rows() > 0) {
-                $invoice_total_query = $invoice_total_query->result_array();
-                $total_debit = $invoice_total_query[0]['credit'];
-            }
+            $payment_summary = $this->invoices_model->get_invoice_payment_summary($invoice_id);
+            $debit = $payment_summary['debit'];
+            $total_debit = $payment_summary['credit_total'];
             $credit_total = $total_debit + $amount;
             if ($debit >= $credit_total) {
-                $this->db->where('id', $invoice_id);
-                $this->db->update("invoices", array(
-                    "notes" => $response_arr['item_name']
-                ));
-                if ($debit == $credit_total) {
-
-                    $this->db->where("id", $invoice_id);
-                    $data = array(
-                        'status' => '0'
-                    );
-                    $this->db->update("invoices", $data);
-                } else {
-                    $this->db->where("id", $invoice_id);
-                    $data = array(
-                        'status' => '2'
-                    );
-                    $this->db->update("invoices", $data);
-                }
+                $status = ($debit == $credit_total) ? '0' : '2';
+                $this->invoices_model->update_invoice_admin_payment_status($invoice_id, $response_arr['item_name'], $status);
 
                 if ($amount > $debit) {
                     $this->session->set_flashdata('flux_notification', gettext('Invoice payment amount should be higher then the invoice amount.'));
                     redirect(base_url() . 'invoices/invoice_summary/' . $invoice_id);
                 }
 
-                $debit_amount = "0.00";
                 $account_balance = 0.00;
                 $account_data = $this->db_model->getSelect('*', 'accounts', array(
                     "id" => $response_arr['custom']
@@ -1294,15 +966,14 @@ class Invoices extends MX_Controller
                     'payment_method' => "Mannual",
                     'actual_amount' => $amount,
                     "payment_fee" => 0,
-                    "user_currency" => isset($invoice_total_query[0]['account_currency']) ? $invoice_total_query[0]['account_currency'] : 0,
-                    "currency_rate" => isset($invoice_total_query[0]['exchange_rate']) ? $invoice_total_query[0]['exchange_rate'] : 0,
+                    "user_currency" => 0,
+                    "currency_rate" => 0,
                     "customer_ip" => $this->getRealIpAddr(),
                     "transaction_details" => json_encode($response_arr),
                     "transaction_id" => crc32(uniqid()),
                     "date" => gmdate('Y-m-d H:i:s')
                 );
-                $this->db->insert("payment_transaction", $paymnet_insert_array);
-                $payment_last_id = $this->db->insert_id();
+                $payment_last_id = $this->invoices_model->create_payment_transaction($paymnet_insert_array);
                 $invoice_insert_array = array(
                     "accountid" => $response_arr["custom"],
                     "reseller_id" => ($account_data['reseller_id'] > 0) ? $account_data['reseller_id'] : 0,
@@ -1312,19 +983,18 @@ class Invoices extends MX_Controller
                     "payment_id" => $payment_last_id,
                     "product_category" => 0,
                     "is_tax" => 0,
-                    "base_currency" => isset($invoice_total_query[0]['base_currency']) ? $invoice_total_query[0]['base_currency'] : 0,
-                    "exchange_rate" => isset($invoice_total_query[0]['exchange_rate']) ? $invoice_total_query[0]['exchange_rate'] : 0,
-                    "account_currency" => isset($invoice_total_query[0]['account_currency']) ? $invoice_total_query[0]['account_currency'] : 0,
+                    "base_currency" => 0,
+                    "exchange_rate" => 0,
+                    "account_currency" => 0,
                     "description" => "Invoice payment for unpaid",
                     "debit" => "0.00",
                     "credit" => $amount,
-                    // "item_type" => "INVPAY",
                     "created_date" => $date,
                     'before_balance' => $account_balance,
                     'after_balance' => $account_balance + $amount,
                     'quantity' => 1
                 );
-                $this->db->insert("invoice_details", $invoice_insert_array);
+                $this->invoices_model->create_invoice_detail($invoice_insert_array);
             } else {
 
                 $this->session->set_flashdata('flux_notification', gettext('Invoice payment amount should be higher then the invoice amount.'));
@@ -1335,12 +1005,6 @@ class Invoices extends MX_Controller
             $this->accounts_model->update_balance($amount, $response_arr["custom"], "debit");
             $this->session->set_flashdata('flux_errormsg', gettext('Invoice payment done successfully!'));
         }
-        $account_data = $this->db_model->getSelect("*", "accounts", array(
-            "id" => $response_arr["custom"]
-        ));
-        $account_data = $account_data->result_array();
-        $account_data = $account_data[0];
-        $account_data['accountid'] = $account_data['id'];
         redirect(base_url() . 'invoices/invoice_list/');
     }
 
@@ -1360,8 +1024,7 @@ class Invoices extends MX_Controller
     // {
     //     $ids = $this->input->post("selected_ids", true);
     //     $where = "id IN ($ids)";
-    //     $this->db->where($where);
-    //     echo $this->db->delete("invoices");
+    //     legacy delete kept commented out
     // }
 
     function invoice_conf()
@@ -1606,8 +1269,7 @@ class Invoices extends MX_Controller
 
     function invoice_conf_remove($id)
     {
-        $this->db->where('id', $id);
-        $this->db->delete("invoice_conf");
+        $this->invoices_model->delete_invoice_conf($id);
         redirect(base_url() . 'invoices/invoice_conf_list/');
     }
 
@@ -1621,24 +1283,15 @@ class Invoices extends MX_Controller
     {
         if (! empty($_POST['id']) && isset($_POST['id'])) {
             $id = $_POST['id'];
-            $logo_data = $this->db_model->getSelect("logo,favicon", "invoice_conf", array(
-                "id" => $_POST['id']
-            ));
-            $logo_data = (array) $logo_data->first_row();
+            $logo_data = $this->invoices_model->get_invoice_conf_media($id);
             if ($this->input->post('logo') == 'logo') {
                 $msg = "Logo";
-                $file_name = $logo_data['logo'];
-                $this->db->where('id', $id);
-                $this->db->update("invoice_conf", array(
-                    'logo' => ''
-                ));
+                $file_name = isset($logo_data['logo']) ? $logo_data['logo'] : '';
+                $this->invoices_model->clear_invoice_conf_media($id, 'logo');
             } else {
                 $msg = "Favicon";
-                $file_name = $logo_data['favicon'];
-                $this->db->where('id', $id);
-                $this->db->update("invoice_conf", array(
-                    'favicon' => ''
-                ));
+                $file_name = isset($logo_data['favicon']) ? $logo_data['favicon'] : '';
+                $this->invoices_model->clear_invoice_conf_media($id, 'favicon');
             }
             $path_user = FCPATH . 'upload/';
             if (file_exists($path_user . $file_name)) {
@@ -1738,27 +1391,10 @@ class Invoices extends MX_Controller
                     }
                 }
                 $invoice_total = '';
-                $accountinfo = $this->session->userdata('accountinfo');
-                $id = $accountinfo['id'];
-                $query = "select sum(credit) as grand_total from view_invoices where confirm=1 and accountid=$accountid";
-
-                $ext_query = $this->db->query($query);
-                if ($ext_query->num_rows() > 0) {
-                    $result_total = $ext_query->result_array();
-
-                    $grandtotal = $result_total[0]['grand_total'];
-                    $grand_total = $this->common->currency_decimal($grandtotal);
-                }
-
-                $invoice_query = "select sum(debit) as grand_credit from view_invoices where accountid=$accountid";
-                $credit_query = $this->db->query($invoice_query);
-                if ($credit_query->num_rows() > 0) {
-                    $credit_total = $credit_query->result_array();
-
-                    $grand_credit_total = $credit_total[0]['grand_credit'];
-                    $grandcredit = $grand_total - $grand_credit_total;
-                    $grand_credit = $this->common->currency_decimal($grandcredit) . ' ' . $currency_id;
-                }
+                $aggregates = $this->invoices_model->get_view_invoice_aggregates($accountid);
+                $grand_total = $this->common->currency_decimal($aggregates['credit_total']);
+                $grandcredit = $aggregates['credit_total'] - $aggregates['debit_total'];
+                $grand_credit = $this->common->currency_decimal($grandcredit) . ' ' . $currency_id;
 
                 $download = "<a href=" . $url . $value['id'] . " class='btn btn-royelblue btn-sm'  title='Download Invoice' ><i class='fa fa-cloud-download fa-fw'></i></a>&nbsp";
                 $download3 = "<a  href=" . '/invoices/invoice_download_cdrs/' . $value['id'] . '/00_' . $value['number'] . " class='btn btn-royelblue btn-sm'  title='Download CDR' ><i class='fa fa-clipboard fa-fw'></i></a>&nbsp";
@@ -1845,24 +1481,10 @@ class Invoices extends MX_Controller
                 $invoice_total_query = $invoice_total_query->result_array();
                 $created_date = $invoice_total_query[0]['created_date'];
             }
-            $accountinfo = $this->session->userdata('accountinfo');
-            $query = "select sum(amount) as grand_total from invoices where  confirm=1 and accountid=$accountid";
-
-            $ext_query = $this->db->query($query);
-            if ($ext_query->num_rows() > 0) {
-                $result_total = $ext_query->result_array();
-                $grandtotal = $result_total[0]['grand_total'];
-                $grand_total = $this->common->currency_decimal($grandtotal) . ' ' . $currency_id;
-            }
-
-            $invoice_query = "select sum(credit) as grand_credit from invoice_details where accountid=$accountid";
-            $credit_query = $this->db->query($invoice_query);
-            if ($credit_query->num_rows() > 0) {
-                $credit_total = $credit_query->result_array();
-                $grand_credit_total = $credit_total[0]['grand_credit'];
-                $grandcredit = $grand_total - $grand_credit_total;
-                $grand_credit = $this->common->currency_decimal($grandcredit) . ' ' . $currency_id;
-            }
+            $aggregates = $this->invoices_model->get_customer_invoice_aggregates($accountid);
+            $grand_total = $this->common->currency_decimal($aggregates['invoice_total']) . ' ' . $currency_id;
+            $grandcredit = $aggregates['invoice_total'] - $aggregates['credit_total'];
+            $grand_credit = $this->common->currency_decimal($grandcredit) . ' ' . $currency_id;
             $download = '<a href="' . base_url() . '/user/user_invoice_download/' . $value['id'] . '/00' . $value['invoice_prefix'] . $value['invoiceid'] . '" class="btn btn-royelblue btn-sm"  title="Download Invoice" ><i class="fa fa-cloud-download fa-fw"></i></a>&nbsp';
             if ($outstanding > 0) {
                 // $payment = " <a style='padding: 0 8px;' href='" . base_url() . "user/user_invoice_payment/" . $value["id"] . "' class='btn btn-warning'  title='Payment'>".gettext("Unpaid")."</a>";
@@ -1908,22 +1530,12 @@ class Invoices extends MX_Controller
         echo json_encode($json_data);
     }
 
-    function invoice_logo_delete($accountid)
-    {
-        $invoiceconf = $this->db_model->getSelect("*", "invoice_conf", array(
-            "id" => $accountid
-        ));
-        $result = $invoiceconf->result_array();
-        $logo = $result[0]['logo'];
-        $post_arr = array(
-            'logo' => ''
-        );
-        $where_arr = array(
-            'logo' => $logo
-        );
-        $this->db->where($where_arr);
-        $this->db->update('invoice_conf', $post_arr);
-    }
+
+function invoice_logo_delete($accountid)
+{
+    $this->invoices_model->clear_invoice_logo($accountid);
+}
+
 
     function invoice_list_view_invoice($invoiceid = false)
     {
@@ -2060,9 +1672,6 @@ class Invoices extends MX_Controller
                             'notes' => $data['notes']
                         );
 
-                        $this->db->insert("invoices", $invoice_data);
-                        $invoiceid = $this->db->insert_id();
-
                         $insert_arr = array(
                             "accountid" => $accountdata['id'],
                             "description" => '',
@@ -2083,7 +1692,7 @@ class Invoices extends MX_Controller
                             'debit' => 0.00,
                             'credit' => 0.00
                         );
-                        $this->db->insert("invoice_details", $insert_arr);
+                        $invoiceid = $this->invoices_model->create_invoice_screen_entry($invoice_data, $insert_arr);
                         $this->session->set_flashdata('flux_errormsg', gettext('Invoice generation completed .'));
                         redirect(base_url() . "invoices/invoice_manually_edit/" . $invoiceid);
                     }
@@ -2353,92 +1962,94 @@ class Invoices extends MX_Controller
         return $a_out;
     }
 
-    function insert_invoice_total_data($invoiceid, $sub_total, $sort_order)
-    {
-        $invoice_total_arr = array(
-            "invoiceid" => $invoiceid,
-            "sort_order" => $sort_order,
-            "value" => $sub_total,
-            "title" => "Sub Total",
-            "text" => "Sub Total",
-            "class" => "1"
-        );
-        $this->db->insert("invoices_total", $invoice_total_arr);
-        return $sort_order ++;
-    }
 
-    function apply_invoice_taxes($invoiceid, $accountid, $sort_order)
-    {
-        $tax_priority = "";
-        $where = array(
-            "accountid" => $accountid
-        );
-        $accounttax_query = $this->db_model->getSelectWithOrder("*", "taxes_to_accounts", $where, "ASC", "taxes_priority");
-        if ($accounttax_query->num_rows() > 0) {
-            $accounttax_query = $accounttax_query->result_array();
-            foreach ($accounttax_query as $tax_key => $tax_value) {
-                $taxes_info = $this->db->get_where('taxes', array(
-                    'id' => $tax_value['taxes_id']
-                ));
-                if ($taxes_info->num_rows() > 0) {
-                    $tax_value = $taxes_info->result_array();
-                    $tax_value = $tax_value[0];
-                    if ($tax_value["taxes_priority"] == "") {
-                        $tax_priority = $tax_value["taxes_priority"];
-                    } else if ($tax_value["taxes_priority"] > $tax_priority) {
-                        $query = $this->db_model->getSelect("SUM(value) as total", "invoices_total", array(
-                            "invoiceid" => $invoiceid
-                        ));
-                        $query = $query->result_array();
-                        $sub_total = $query["0"]["total"];
-                    }
-                    $tax_total = (($sub_total * ($tax_value['taxes_rate'] / 100)) + $tax_value['taxes_amount']);
-                    $tax_array = array(
-                        "invoiceid" => $invoiceid,
-                        "title" => "TAX",
-                        "text" => $tax_value['taxes_description'],
-                        "value" => $tax_total,
-                        "class" => "2",
-                        "sort_order" => $sort_order
-                    );
-                    $this->db->insert("invoices_total", $tax_array);
-                    $sort_order ++;
+function insert_invoice_total_data($invoiceid, $sub_total, $sort_order)
+{
+    $invoice_total_arr = array(
+        "invoiceid" => $invoiceid,
+        "sort_order" => $sort_order,
+        "value" => $sub_total,
+        "title" => "Sub Total",
+        "text" => "Sub Total",
+        "class" => "1"
+    );
+    $this->invoices_model->insert_invoice_total_row($invoice_total_arr);
+    return $sort_order ++;
+}
+
+
+
+function apply_invoice_taxes($invoiceid, $accountid, $sort_order)
+{
+    $tax_priority = "";
+    $where = array(
+        "accountid" => $accountid
+    );
+    $accounttax_query = $this->db_model->getSelectWithOrder("*", "taxes_to_accounts", $where, "ASC", "taxes_priority");
+    if ($accounttax_query->num_rows() > 0) {
+        $accounttax_query = $accounttax_query->result_array();
+        foreach ($accounttax_query as $tax_key => $tax_value) {
+            $taxes_info = $this->invoices_model->get_tax_info($tax_value['taxes_id']);
+            if ($taxes_info->num_rows() > 0) {
+                $tax_value = $taxes_info->result_array();
+                $tax_value = $tax_value[0];
+                if ($tax_value["taxes_priority"] == "") {
+                    $tax_priority = $tax_value["taxes_priority"];
+                } else if ($tax_value["taxes_priority"] > $tax_priority) {
+                    $query = $this->db_model->getSelect("SUM(value) as total", "invoices_total", array(
+                        "invoiceid" => $invoiceid
+                    ));
+                    $query = $query->result_array();
+                    $sub_total = $query["0"]["total"];
                 }
+                $tax_total = (($sub_total * ($tax_value['taxes_rate'] / 100)) + $tax_value['taxes_amount']);
+                $tax_array = array(
+                    "invoiceid" => $invoiceid,
+                    "title" => "TAX",
+                    "text" => $tax_value['taxes_description'],
+                    "value" => $tax_total,
+                    "class" => "2",
+                    "sort_order" => $sort_order
+                );
+                $this->invoices_model->insert_invoice_total_row($tax_array);
+                $sort_order ++;
             }
         }
-        return $sort_order;
     }
+    return $sort_order;
+}
 
-    function set_invoice_total($invoiceid, $sort_order)
-    {
-        $query = $this->db_model->getSelect("SUM(value) as total", "invoices_total", array(
-            "invoiceid" => $invoiceid
-        ));
-        $query = $query->result_array();
-        $sub_total = $query["0"]["total"];
 
-        $invoice_total_arr = array(
-            "invoiceid" => $invoiceid,
-            "sort_order" => $sort_order,
-            "value" => $sub_total,
-            "title" => "Total",
-            "text" => "Total",
-            "class" => "9"
-        );
-        $this->db->insert("invoices_total", $invoice_total_arr);
-        return true;
-    }
 
-    function invoice_delete_statically($inv_id)
-    {
-        $data = array(
-            'is_deleted' => 1
-        );
-        $this->db->where('id', $inv_id);
-        $this->db->update("invoices", $data);
-        $this->session->set_flashdata('flux_notification', gettext('Invoices removed successfully'));
-        redirect(base_url() . 'invoices/invoice_list/');
-    }
+function set_invoice_total($invoiceid, $sort_order)
+{
+    $query = $this->db_model->getSelect("SUM(value) as total", "invoices_total", array(
+        "invoiceid" => $invoiceid
+    ));
+    $query = $query->result_array();
+    $sub_total = $query["0"]["total"];
+
+    $invoice_total_arr = array(
+        "invoiceid" => $invoiceid,
+        "sort_order" => $sort_order,
+        "value" => $sub_total,
+        "title" => "Total",
+        "text" => "Total",
+        "class" => "9"
+    );
+    $this->invoices_model->insert_invoice_total_row($invoice_total_arr);
+    return true;
+}
+
+
+
+function invoice_delete_statically($inv_id)
+{
+    $this->invoices_model->soft_delete_invoice($inv_id);
+    $this->session->set_flashdata('flux_notification', gettext('Invoices removed successfully'));
+    redirect(base_url() . 'invoices/invoice_list/');
+}
+
 
     function invoice_delete_massege()
     {
@@ -2460,35 +2071,29 @@ class Invoices extends MX_Controller
         return $ip;
     }
 
-    function reseller_customerlist()
-    {
-        $add_array = $this->input->post();
-        $reseller_id = $add_array['reseller_id'];
-        $accountinfo = $this->session->userdata("accountinfo");
-         if(!isset($reseller_id) && $reseller_id == ''){
-            $reseller_id = $accountinfo['type'] == 1 || $accountinfo['type'] == 5 ? $accountinfo['id'] : $reseller_id;
-         }
-        $type = array('type' => 1,0);
-        $this->db->where_in('type', $type);
-        $accounts_result = $this->db->get_where('accounts', array(
-            "reseller_id" => $reseller_id,
-            "status" => 0
-        ));
-        if ($accounts_result->num_rows() > 0) {
-            $accounts_result_array = $accounts_result->result_array();
-            foreach ($accounts_result_array as $key => $value) {
-                if(isset($value['company_name']) && $value['company_name'] != ''){
-                    echo "<option value=" . $value['id'] . ">" . $value['company_name'] . "(" . $value['number'] . ")</option>";
-                }else{
-                    echo "<option value=" . $value['id'] . ">" . $value['first_name'] . " " . $value['last_name'] . "(" . $value['number'] . ")</option>";
-                }
-            }
-        } else {
-            echo '';
-        }
 
-        exit();
+function reseller_customerlist()
+{
+    $add_array = $this->input->post();
+    $reseller_id = $add_array['reseller_id'];
+    $accountinfo = $this->session->userdata("accountinfo");
+     if(!isset($reseller_id) && $reseller_id == ''){
+        $reseller_id = $accountinfo['type'] == 1 || $accountinfo['type'] == 5 ? $accountinfo['id'] : $reseller_id;
+     }
+    $accounts_result = $this->invoices_model->get_reseller_customer_accounts($reseller_id);
+    if ($accounts_result->num_rows() > 0) {
+        $accounts_result_array = $accounts_result->result_array();
+        foreach ($accounts_result_array as $key => $value) {
+            if(isset($value['company_name']) && $value['company_name'] != ''){
+                echo "<option value=" . $value['id'] . ">" . $value['company_name'] . "(" . $value['number'] . ")</option>";
+            }else{
+                echo "<option value=" . $value['id'] . ">" . $value['first_name'] . " " . $value['last_name'] . "(" . $value['number'] . ")</option>";
+            }
+        }
     }
+    exit;
+}
+
 }
 
 ?>

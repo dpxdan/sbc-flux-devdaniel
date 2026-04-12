@@ -131,6 +131,9 @@ $tooltip_data = array(
 	"customer_form_tax_id" => "Applicable taxes on invoice",
 
 	"customer_bulk_form_sweep_id" => "Billing schedule for invoice generation.",
+	
+	"customer_form_block_status" => "Defines the call blocking level for this account. 'Outbound Calls' restricts outgoing calls only. 'Total' blocks all calls and system access.",
+	
 
 	"reseller_form_reseller_id" => "Reseller are nothing but is the parent of this specific customer. if the specific account needs to create for admin then select option should be admin and if the account is going to add for any of reseller then you have to select specific reseller account so that customer profile will be added under the selected reseller.",
 

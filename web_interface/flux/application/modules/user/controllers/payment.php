@@ -32,6 +32,7 @@ class Payment extends MX_Controller
         $this->load->library('encrypt');
         $this->load->library('FLUX_Sms');
         $this->load->helper('form');
+        $this->load->model('user_model');
     }
 
     function index()
@@ -53,16 +54,10 @@ class Payment extends MX_Controller
 
         $data["from_currency"] = $this->common->get_field_name('currency', 'currency', $account_data["currency_id"]);
         $data["to_currency"] = Common_model::$global_config['system_config']['base_currency'];
-        $this->db->where(array(
-            "amount" => "0",
-            "actual_amount" => "0",
-            "user_currency" => "",
-            "accountid" => $data["accountid"]
-        ));
-        $this->db->delete("payment_transaction");
+        $this->user_model->reset_empty_payment_transactions($data["accountid"]);
         $this->load->helper('string');
         $data['item_number'] = random_string('alnum', 80);
-        $this->db->insert("payment_transaction", array(
+        $this->user_model->create_payment_transaction(array(
             "accountid" => $data["accountid"],
             "payment_method" => "Paypal",
             "transaction_details" => $data['item_number'],

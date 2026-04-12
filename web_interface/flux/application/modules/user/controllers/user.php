@@ -41,11 +41,7 @@ class User extends MX_Controller
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . 'login/login');
         $accountinfo = $this->session->userdata('accountinfo');
-        $account_arr = (array) $this->db->get_where("accounts", array(
-            "id" => $accountinfo['id'],
-            "deleted" => "0",
-            "status" => "0"
-        ))->first_row();
+        $account_arr = $this->user_model->is_active_account($accountinfo['id']);
         if (empty($account_arr)) {
             $this->session->sess_destroy();
             $this->load->helper('cookie');
@@ -75,27 +71,7 @@ class User extends MX_Controller
         if ($didsdata->num_rows > 0) {
             $data['didsdata'] = $didsdata->result_array();
         }
-        
-                if ($account_info['reseller_id'] > 0) {
-            $where = "products.product_category IN (1,2)";
-            $this->db->where($where);
-            $productdata = $this->db_model->getJionQuery('products', 'products.id,products.name,products.product_category,products.buy_cost,products.commission,reseller_products.setup_fee,reseller_products.price,reseller_products.billing_type,reseller_products.billing_days,reseller_products.free_minutes,products.status,products.last_modified_date,reseller_products.product_id', array(
-                'reseller_products.status' => 0,
-                'products.can_purchase' => 0,
-                'products.is_deleted' => 0,
-                'reseller_products.account_id' => $account_info['reseller_id']
-            ), 'reseller_products', 'products.id=reseller_products.product_id', 'inner', '10', '', 'desc', 'products.id');
-        } 
-        else {
-            $where = "products.product_category IN (1,2)";
-            $this->db->where($where);
-            $productdata = $this->db_model->select("*", "products", array(
-                'status' => 0,
-                'can_purchase' => 0,
-                'is_deleted' => 0,
-                'reseller_id' => 0
-            ), "id", "desc", "10", "");
-        }
+        $productdata = $this->user_model->get_dashboard_products($account_info, 10);
         if ($productdata->num_rows > 0) {
             $data['productdata'] = $productdata->result_array();
         }
@@ -137,9 +113,7 @@ class User extends MX_Controller
     {
         $accountinfo = $this->session->userdata('accountinfo');
         $json_data = array();
-        $this->db->where('pricelist_id', $accountinfo['pricelist_id']);
-        $this->db->select('*');
-        $result = $this->db->get('packages', 10);
+        $result = $this->user_model->get_dashboard_packages($accountinfo['pricelist_id'], 10);
         $i = 1;
         if ($result->num_rows() > 0) {
             $json_data[0]['package_name'] = gettext('Package Name');
@@ -162,11 +136,7 @@ class User extends MX_Controller
         $currency = $this->common->get_field_name('currency', 'currency', array(
             "id" => $accountinfo['currency_id']
         ));
-        $this->db->where('accountid', $accountinfo['id']);
-        $this->db->where('confirm', 1);
-        $this->db->select('*');
-        $this->db->order_by('generate_date', 'desc');
-        $result = $this->db->get('invoices', 10);
+        $result = $this->user_model->get_dashboard_recent_invoices($accountinfo['id'], 10);
         $json_data = array();
         $gmtoffset = $this->common->get_timezone_offset();
         if ($result->num_rows() > 0) {
@@ -211,29 +181,14 @@ class User extends MX_Controller
     function user_dashboard_subscription_data()
     {
         $accountinfo = $this->session->userdata('accountinfo');
-        $this->db->where('accountid', $accountinfo['id']);
-        $this->db->select('*');
-        $this->db->order_by('assign_date', 'desc');
-        $result = $this->db->get('charge_to_account', 10);
+        $subscription_data = $this->user_model->get_dashboard_recent_subscriptions($accountinfo['id'], 10);
+        $result = $subscription_data['subscriptions'];
         $json_data = array();
 
         $gmtoffset = $this->common->get_timezone_offset();
         if ($result->num_rows() > 0) {
             $result = $result->result_array();
-            $charge_str = null;
-            $charges_arr = array();
-            foreach ($result as $charges_data) {
-                $charge_str .= $charges_data['charge_id'] . ",";
-            }
-            $charge_str = rtrim($charge_str, ",");
-            $where = "id IN ($charge_str)";
-            $this->db->where($where);
-            $this->db->select('id,description,sweep_id');
-            $charge_result = $this->db->get('charges');
-            foreach ($charge_result->result_array() as $data) {
-                $charges_arr[$data['id']]['description'] = $data['description'];
-                $charges_arr[$data['id']]['sweep_id'] = $data['sweep_id'];
-            }
+            $charges_arr = $subscription_data['charges'];
             $json_data[0]['charge_id'] = 'Charge Name';
             $json_data[0]['assign_date'] = 'Assign Date';
             $json_data[0]['sweep_id'] = 'Billing Cycle';
@@ -277,10 +232,7 @@ class User extends MX_Controller
                 $this->accounts->accounts_model->edit_account($add_array, $add_array['id']);
                 $accountinfo = $this->session->userdata('accountinfo');
                 if ($add_array['id'] == $accountinfo['id']) {
-                    $this->session->set_userdata('accountinfo', (array) $this->db->get_where('accounts', array(
-                        'id' => $add_array['id']
-                    ))
-                    ->first_row());
+                    $this->session->set_userdata('accountinfo', $this->user_model->refresh_session_account($add_array['id']));
                 }
                 $this->session->set_flashdata('flux_errormsg', ucfirst($entity_name).' '. gettext('updated successfully!'));
 
@@ -309,9 +261,7 @@ class User extends MX_Controller
         $this->permission->customer_web_record_permission($edit_id, 'dids', 'user/user_didlist/');
         $data['page_title'] = gettext('Edit DIDs');
         $account_data = $this->session->userdata("accountinfo");
-        $this->db->where('id', $edit_id);
-        $this->db->select('id,call_type,extensions,number');
-        $did_info = (array) $this->db->get('dids')->first_row();
+        $did_info = $this->user_model->get_did_info($edit_id, 'id,call_type,extensions,number');
         $did_info['free_didlist'] = $did_info['id'];
         $data['form'] = $this->form->build_form($this->user_form->build_user_did_form(), $did_info);
         $this->load->view('view_user_did_edit', $data);
@@ -395,15 +345,7 @@ class User extends MX_Controller
                         "extensions" => $add_array['extensions'],
                         "last_modified_date" => gmdate("Y-m-d H:i:s")
                     );
-                    $this->db->update("dids", $update_arr, array(
-                        "id" => $did_id
-                    ));
-                    if ($accountinfo['reseller_id'] > 0) {
-
-                        $this->db->update('reseller_pricing', $update_arr, array(
-                            'note' => $did_arr['number']
-                        ));
-                    }
+                    $this->user_model->update_user_did($did_id, $update_arr, $did_arr['number'], $accountinfo['reseller_id']);
                     echo json_encode(array(
                         "SUCCESS" => $did_arr['number'].' '.gettext('DID Updated Successfully!')
                     ));
@@ -413,12 +355,10 @@ class User extends MX_Controller
             }
             if ($action == "delete") {
                 $this->permission->customer_web_record_permission($did_id, 'dids', 'user/user_didlist/');
-                $this->db->update("dids", array(
+                $this->user_model->update_user_did($did_id, array(
                     "accountid" => 0,
                     "assign_date" => "0000-00-00 00:00:00",
                     'charge_upto' => "0000-00-00 00:00:00"
-                ), array(
-                    "id" => $did_id
                 ));
                 $this->session->set_flashdata('flux_notification', gettext('DID Removed Successfully.'));
                 redirect(base_url() . "user/user_didlist/");
@@ -633,7 +573,7 @@ class User extends MX_Controller
         $acc_data = $this->session->userdata("accountinfo");
         $reseller_id = $acc_data['reseller_id'];
 
-        $drp_data = $this->db->query("SELECT id,CONCAT(number,'(',amount,')') as details,number FROM refill_coupon WHERE status = '0' and reseller_id='" . $reseller_id . "'");
+        $drp_data = $this->user_model->get_refill_coupon_options($reseller_id);
         $reseller_data = array();
         $data['refill_coupon_list'] = form_dropdown_all('refill_coupon_list', $reseller_data, '');
         $this->load->view('view_refill_coupon_list', $data);
@@ -656,10 +596,7 @@ function user_refill_coupon_number($refill_coupon_no)
     $accountinfo = $this->session->userdata('accountinfo');
     $reseller_id = $accountinfo['reseller_id'];
     $customer_id = $accountinfo['id'];
-    $this->db->where('reseller_id', $reseller_id);
-    $this->db->where('number', $refill_coupon_no);
-    $this->db->select('*');
-    $refill_coupon_result = $this->db->get('refill_coupon');
+    $refill_coupon_result = $this->user_model->get_refill_coupon($reseller_id, $refill_coupon_no);
     if ($refill_coupon_result->num_rows() > 0) {
         $refill_coupon_result = $refill_coupon_result->result_array();
         $refill_coupon_result = $refill_coupon_result[0];
@@ -721,13 +658,7 @@ function user_refill_coupon_action($refill_coupon_no)
         ));
         $new_balance = ($accountinfo["posttoexternal"] == 1) ? ($balance - $result['amount']) : ($balance + $result['amount']);
 
-        $this->db->where('number', $refill_coupon_no);
-        $refill_coupon_data = array(
-            'status' => 2,
-            "account_id" => $customer_id,
-            'firstused' => $date
-        );
-        $this->db->update('refill_coupon', $refill_coupon_data);
+        $this->user_model->mark_refill_coupon_used($refill_coupon_no, $customer_id, $date);
 
         $payment_info = array(
             "price" => $result['amount'],
@@ -740,10 +671,7 @@ function user_refill_coupon_action($refill_coupon_no)
             "charge_type" => "Voucher"
         );
 
-        $where = array(
-            'id' => $accountinfo['currency_id']
-        );
-        $currency_info = (array) $this->db->get_where("currency", $where)->result_array()[0];
+        $currency_info = $this->user_model->get_currency_info($accountinfo['currency_id']);
         $this->payment->add_payments_transcation($payment_info, $accountinfo, $currency_info);
         $this->session->set_flashdata('flux_errormsg', gettext('Refill Coupon amount is added successfully to your account'));
     }
@@ -866,9 +794,7 @@ function user_invoice_config()
         $this->session->set_flashdata('flux_errormsg', gettext('Invoice config updated successfully!'));
         redirect(base_url() . 'user/user_invoice_config/');
     } else {
-        $data["account_data"] = (array) $this->db->get_where('invoice_conf', array(
-            "accountid" => $accountinfo['id']
-        ))->first_row();
+        $data["account_data"] = $this->user_model->get_invoice_conf_by_account($accountinfo['id']);
         if (isset($data["account_data"]['logo'])) {
             $data["account_data"]['file'] = $accountinfo['id'] . "_" . $data["account_data"]['logo'];
         }
@@ -878,19 +804,7 @@ function user_invoice_config()
 
 function user_invoice_logo_delete($accountid)
 {
-    $invoiceconf = $this->db_model->getSelect("*", "invoice_conf", array(
-        "accountid" => $accountid
-    ));
-    $result = $invoiceconf->result_array();
-    $logo = $result[0]['logo'];
-    $post_arr = array(
-        'logo' => ''
-    );
-    $where_arr = array(
-        'logo' => $logo
-    );
-    $this->db->where($where_arr);
-    $this->db->update('invoice_conf', $post_arr);
+    $this->user_model->clear_invoice_logo_by_account($accountid);
 }
 
 function user_myprofile()
@@ -910,11 +824,7 @@ function user_myprofile()
                 unset($add_array['number']);
                 unset($add_array['country_id']);
                 $this->user_model->edit_account($add_array, $add_array['id']);
-                $result = $this->db->get_where('accounts', array(
-                    'id' => $add_array['id']
-                ));
-                $result = $result->result_array();
-                $this->session->set_userdata('accountinfo', $result[0]);
+                $this->session->set_userdata('accountinfo', $this->user_model->refresh_session_account($add_array['id']));
                 $this->session->set_flashdata('flux_errormsg', gettext('Your Profile Updated Successfully!'));
                 redirect(base_url() . 'user/user_myprofile/');
             } else {
@@ -948,32 +858,7 @@ function user_change_password()
             $data['validation_errors'] = validation_errors();
         } else {
             $password_encode = $this->common->encode($add_array['new_password']);
-            $data = array(
-                'password' => $password_encode
-            );
-            $this->db->where('id', $add_array['id']);
-            $this->db->update('accounts', $data);
-
-            $this->db->where('accountid', $accountinfo['id']);
-            $this->db->where('username', $accountinfo['number']);
-            $sip_info = (array) $this->db->get_where("sip_devices")->first_row();
-            if (! empty($sip_info)) {
-                $did_params = (array) (json_decode($sip_info['dir_params']));
-                $sipdevice_array = array(
-                    'dir_params' => json_encode(array(
-                        "password" => $add_array['new_password'],
-                        'vm-enabled' => "true",
-                        "vm-password" => $did_params['vm-password'],
-                        "vm-mailto" => $did_params['vm-mailto'],
-                        "vm-attach-file" => "true",
-                        "vm-keep-local-after-email" => "true",
-                        "vm-email-all-messages" => "true"
-                    ))
-                );
-                $this->db->where('accountid', $accountinfo['id']);
-                $this->db->where('username', $accountinfo['number']);
-                $this->db->update('sip_devices', $sipdevice_array);
-            }
+            $this->user_model->update_account_password_and_device($accountinfo, $add_array['id'], $password_encode, $add_array['new_password']);
             $this->session->set_flashdata('flux_errormsg', gettext('Password Updated Successfully!'));
             redirect(base_url() . 'user/user_change_password/');
         }
@@ -1070,9 +955,7 @@ function user_invoices_list_json()
     $invoices_result = $invoices_query->result_array();
     $ountstanding_value = 0;
     $total_amount = 0;
-    $this->db->where('accountid', $accountinfo['id']);
-    $this->db->select('*');
-    $invoice_details_result = $this->db->get('invoice_details');
+    $invoice_details_result = $this->user_model->get_invoice_details_summary($accountinfo['id']);
     $total_credit = (array) $invoice_details_result->first_row();
     foreach ($invoices_result as $key => $value) {
 
@@ -1231,101 +1114,23 @@ function user_purchase_did()
     $account_data = $this->session->userdata("accountinfo");
     $drp_list = array();
     $country_id = $_POST['country_id'];
-    
-    if (isset($_POST['provience']) && $_POST['provience'] != "") {
-        $provience = $_POST['provience'];
-    }
-    if (isset($_POST['city']) && $_POST['city'] != "") {
-        $city = $_POST['city'];
-    }
 
-    if (isset($country_id) && $country_id != "") {
-        $state_list = array();
-        $state_list_array = array();
-        $this->db->where('province NOT LIKE', '');
-        $state_list = $this->db_model->getSelect("distinct(province)", "dids", array(
-            'country_id' => $country_id
-        ));
-        if ($state_list->num_rows() > 0) {
-            $state_list_array = $state_list->result_array();
-            foreach ($state_list_array as $key => $val) {
-                foreach ($val as $key1 => $val1) {
-                        // $data['state_list'][] = "<option value=" . $val1 . ">" . $val1 . "</option>";
-                    $data['state_list'][] = '<option value="'. $val1 .'"> '. $val1 .' </option>';
-                }
-            }
+    $provience = (isset($_POST['provience']) && $_POST['provience'] != "") ? $_POST['provience'] : '';
+    $city = (isset($_POST['city']) && $_POST['city'] != "") ? $_POST['city'] : '';
+
+    $purchase_data = $this->user_model->get_purchase_did_data($country_id, $provience, $city, $account_data);
+    if (!empty($purchase_data['state_list'])) {
+        foreach ($purchase_data['state_list'] as $val1) {
+            $data['state_list'][] = '<option value="'. $val1 .'"> '. $val1 .' </option>';
         }
-
-        if(!isset($_POST['provience'])){
-            $this->db->where('city NOT LIKE', '');
-            $city_list = $this->db_model->getSelect("city", "dids", array(
-                'country_id' => $country_id
-            ));
-            if ($city_list->num_rows() > 0) {
-                $city_list_array = $city_list->result_array();                    
-                foreach ($city_list_array as $key => $val) {
-                    foreach ($val as $key1 => $val1) {
-                                // print_r($val1); 
-                                // $data['city_list'][] = "<option value=" . $val1 . ">" . $val1 . "</option>";
-                        $data['city_list'][] = '<option value="'. $val1 .'"> '. $val1 .' </option>';
-                    }
-                }
-            }
+    }
+    if (!empty($purchase_data['city_list'])) {
+        foreach ($purchase_data['city_list'] as $val1) {
+            $data['city_list'][] = '<option value="'. $val1 .'"> '. $val1 .' </option>';
         }
     }
 
-    if (isset($provience) && $provience != "") {
-        $city_list = array();
-        $city_list_array = array();
-        $this->db->where('city NOT LIKE', '');
-        $city_list = $this->db_model->getSelect("distinct(city)", "dids", array(
-            'province' => $provience,
-            'country_id' => $country_id
-        ));
-        if ($city_list->num_rows() > 0) {
-            $city_list_array = $city_list->result_array();
-            foreach ($city_list_array as $key => $val) {
-                foreach ($val as $key1 => $val1) {
-                    $data['city_list'][] = "<option value=" . $val1 . ">" . $val1 . "</option>";
-                }
-            }
-        }
-    }
-
-    if ($account_data['reseller_id'] > 0) {
-        $this->db->select('dids.id, dids.number, reseller_products.setup_fee, reseller_products.price');
-        $this->db->where('dids.accountid', 0);
-        $this->db->where('dids.parent_id', $account_data['reseller_id']);
-        $this->db->where('dids.country_id', $country_id);
-        if (isset($provience) && $provience != "") {
-            $this->db->where('dids.province', $provience);
-        }
-        if (isset($city) && $city != "") {
-            $this->db->where('dids.city', $city);
-        }
-        $this->db->where('dids.status', 0);
-        $this->db->from('dids');
-        $this->db->join('reseller_products', 'dids.product_id = reseller_products.product_id');
-        $dids_array = (array) $this->db->get()->result_array();
-    } else {
-        $this->db->select('dids.id, dids.number,products.setup_fee,products.price');
-        $this->db->where('dids.accountid', '0');
-        $this->db->where('dids.parent_id', $account_data['reseller_id']);
-        $this->db->where('dids.country_id', $country_id);
-        if (isset($provience) && $provience != "") {
-            $this->db->where('dids.province', $provience);
-        }
-        if (isset($city) && $city != "") {
-            $this->db->where('dids.city', $city);
-        }
-        $this->db->where('dids.status', 0);
-        $this->db->from('dids');
-        $this->db->join('products', 'dids.product_id = products.id');
-        $dids_array = (array) $this->db->get()->result_array();
-
-    }
-
-    $drp_list = array();
+    $dids_array = $purchase_data['did_rows'];
     if (! empty($dids_array)) {
         foreach ($dids_array as $drp_value) {
             if (! empty($drp_value['price']) && $drp_value['price'] != 0) {
@@ -1355,7 +1160,7 @@ function user_list_release($id)
     $where = array(
         'id' => $id
     );
-    $did_info = (array) $this->db->get_where("dids", $where)->result_array()[0];
+    $did_info = $this->user_model->get_did_info($id);
     $this->load->module('did/did');
     $this->did_model->did_number_release($did_info, $accountinfo, 'release');
     $did_info['product_name'] = $did_info['number'];
@@ -1548,7 +1353,7 @@ function user_ipmap_action($action = 'delete', $id = false)
             unset($add_array['action']);
             $add_array['context'] = 'default';
             $add_array['accountid'] = $accountinfo['id'];
-            $ip_flag = $this->db->insert("ip_map", $add_array);
+            $ip_flag = $this->user_model->add_ip_map($add_array);
             if ($ip_flag) {
                 $this->load->library('freeswitch_lib');
                 $this->load->module('freeswitch/freeswitch');
@@ -1561,9 +1366,7 @@ function user_ipmap_action($action = 'delete', $id = false)
     }
     if ($action == 'delete') {
         $this->permission->customer_web_record_permission($id, 'ip_map', 'user/user_ipmap/');
-        $this->db->delete('ip_map', array(
-            'id' => $id
-        ));
+        $this->user_model->delete_ip_map($id);
         $this->session->set_flashdata('flux_notification', gettext('IP Removed Sucessfully.'));
     }
     redirect(base_url() . "user/user_ipmap/");
@@ -1665,11 +1468,8 @@ function user_sipdevices_save()
             exit();
         } else {
             unset($add_array['fs_username']);
-            $this->db->select('username');
-            $fs_username = (array) $this->db->get_where("sip_devices", array(
-                "id" => $add_array['id']
-            ))->first_row();
-            $add_array['fs_username'] = $fs_username['username'];
+            $fs_username = $this->user_model->get_sip_device_username($add_array['id']);
+            $add_array['fs_username'] = isset($fs_username['username']) ? $fs_username['username'] : '';
             $this->user_model->user_sipdevice_edit($add_array, $add_array['id']);
             echo json_encode(array(
                 "SUCCESS" => gettext("SIP Device Updated Successfully!")
@@ -1695,9 +1495,7 @@ function user_sipdevices_save()
 function user_sipdevices_delete($id)
 {
     $this->permission->customer_web_record_permission($id, 'sip_devices', 'user/user_sipdevices/');
-    $this->db->delete('sip_devices', array(
-        'id' => $id
-    ));
+    $this->user_model->delete_sip_device($id);
     $this->session->set_flashdata('flux_notification', gettext('SIP Device Removed Sucessfully!'));
     redirect(base_url() . "user/user_sipdevices/");
 }
@@ -1705,8 +1503,7 @@ function user_sipdevices_delete($id)
 function user_sipdevices_delete_multiple()
 {
     $ids = $this->input->post("selected_ids", true);
-    $where = "id IN ($ids)";
-    $this->db->delete("sip_devices", $where);
+    $this->user_model->delete_sip_devices_by_ids($ids);
     echo TRUE;
 }
 
@@ -1722,13 +1519,10 @@ function user_animap_list_json()
 {
     $account_data = $this->session->userdata("accountinfo");
     $json_data = array();
-    $where = array(
-        "accountid" => $account_data['id']
-    );
-    $count_all = $this->db_model->countQuery("*", "ani_map", $where);
+    $count_all = $this->user_model->count_user_animap($account_data['id']);
     $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
     $json_data = $paging_data["json_paging"];
-    $query = $this->db_model->select("*", "ani_map", $where, "id", "ASC", $paging_data["paging"]["page_no"], $paging_data["paging"]["start"]);
+    $query = $this->user_model->get_user_animap_list($account_data['id'], $paging_data["paging"]["page_no"], $paging_data["paging"]["start"]);
     $grid_fields = json_decode($this->user_form->build_user_animap());
     $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
     echo json_encode($json_data);
@@ -1739,22 +1533,11 @@ function user_animap_action($action = "", $aniid = "")
     $accountinfo = $this->session->userdata("accountinfo");
     if ($aniid == '' && $_POST['number'] != '') {
 
-        $this->db->where('number', $_POST['number']);
-        $this->db->select('count(id) as count');
-        $cnt_result = $this->db->get('ani_map');
-        $cnt_result = $cnt_result->first_row();
-        if ($cnt_result->count == 0) {
+        $cnt_count = $this->user_model->count_animap_number($_POST['number']);
+        if ($cnt_count == 0) {
             if ($_POST['number'] != "") {
 
-                $insert_arr = array(
-                    "number" => $_POST['number'],
-                    "accountid" => $accountinfo['id'],
-                    "context" => "default",
-                    "reseller_id" => $accountinfo['reseller_id'],
-                    "creation_date" => gmdate("Y-m-d H:i:s"),
-                    "last_modified_date" => gmdate("Y-m-d H:i:s")
-                );
-                $this->db->insert("ani_map", $insert_arr);
+                $this->user_model->insert_animap($accountinfo, $_POST['number']);
                 $this->session->set_flashdata('flux_errormsg', gettext('Caller ID Added Sucessfully!'));
             } else {
                 $this->session->set_flashdata('flux_notification', gettext('Please Enter Caller ID value.'));
@@ -1976,12 +1759,9 @@ function user_fund_transfer()
     $accountinfo = $this->session->userdata('accountinfo');
     if ($accountinfo['posttoexternal'] != '1') {
         $data['page_title'] = gettext('Send Credit');
-        $account = (array) $this->db->get_where('accounts', array(
-            "id" => $accountinfo['id']
-        ))->first_row();
-        $currency = (array) $this->db->get_where('currency', array(
-            "id" => $account['currency_id']
-        ))->first_row();
+        $transfer_context = $this->user_model->get_fund_transfer_context($accountinfo['id']);
+        $account = $transfer_context['account'];
+        $currency = $transfer_context['currency'];
         $data['form'] = $this->form->build_form($this->user_form->build_user_fund_transfer_form($account['number'], $currency['currency'], $accountinfo['id']), '');
         $this->load->view('view_user_fund_transfer', $data);
     } else {
@@ -1998,12 +1778,9 @@ function user_fund_transfer_save()
         $data['page_title'] = gettext('Send Credit');
         $post_array = $this->input->post();
         $accountinfo = $this->session->userdata('accountinfo');
-        $account = (array) $this->db->get_where('accounts', array(
-            "id" => $accountinfo['id']
-        ))->first_row();
-        $currency = (array) $this->db->get_where('currency', array(
-            "id" => $account['currency_id']
-        ))->first_row();
+        $transfer_context = $this->user_model->get_fund_transfer_context($accountinfo['id']);
+        $account = $transfer_context['account'];
+        $currency = $transfer_context['currency'];
         $data['form'] = $this->form->build_form($this->user_form->build_user_fund_transfer_form($account['number'], $currency['currency'], $accountinfo['id']), $post_array);
         if ($this->form_validation->run() == FALSE) {
             $data['validation_errors'] = validation_errors();
@@ -2027,11 +1804,7 @@ function user_fund_transfer_save()
                         'deleted' => 0
                     ));
 
-                    $toaccountinfo = (array) $this->db->get_where('accounts', array(
-                        'number' => $post_array['toaccountid'],
-                        'status' => 0,
-                        'deleted' => 0
-                    ), 1)->first_row();
+                    $toaccountinfo = $this->user_model->find_transfer_target_account($post_array['toaccountid']);
                 } else {
                     $acc_balance = $this->common->get_field_name('balance', 'accounts', array(
                         'id' => $account_info['id'],
@@ -2046,11 +1819,7 @@ function user_fund_transfer_save()
                         'status' => 0,
                         'deleted' => 0
                     ));
-                    $toaccountinfo = (array) $this->db->get_where('accounts', array(
-                        'number' => $post_array['toaccountid'],
-                        'status' => 0,
-                        'deleted' => 0
-                    ), 1)->first_row();
+                    $toaccountinfo = $this->user_model->find_transfer_target_account($post_array['toaccountid']);
                 }
                 if (! empty($toaccountinfo)) {
                     if ($toaccountinfo['posttoexternal'] == 1) {
@@ -2066,9 +1835,7 @@ function user_fund_transfer_save()
                             }
 
                             $post_array['credit'] = number_format($this->common_model->add_calculate_currency($post_array['credit'], '', '', false, false), 4);
-                            $minimum_fund = (array) $this->db->get_where('system', array(
-                                "name" => "minimum_fund_transfer"
-                            ), 1)->first_row();
+                            $minimum_fund = $this->user_model->get_system_config_row('minimum_fund_transfer');
                             $minimum_fund['value'] = number_format($this->common_model->add_calculate_currency($minimum_fund['value'], '', '', false, false), 4);
 
                             if ($post_array['toaccountid'] == $account_info['number']) {
@@ -2130,21 +1897,13 @@ function user_fund_transfer_save()
                                         "accountid" => $account['id']
                                     );
                                 }
-                                $from_account_info = (array) $this->db->get_where('accounts', array(
-                                    "id" => $from['id']
-                                ))->first_row();
+                                $from_account_info = $this->user_model->refresh_session_account($from['id']);
 
-                                $from_currency_info = (array) $this->db->get_where('currency', array(
-                                    "id" => $from_account_info['currency_id']
-                                ))->first_row();
+                                $from_currency_info = $this->user_model->get_currency_info($from_account_info['currency_id']);
 
-                                $to_account_info = (array) $this->db->get_where('accounts', array(
-                                    "id" => $to['id']
-                                ))->first_row();
+                                $to_account_info = $this->user_model->refresh_session_account($to['id']);
 
-                                $to_currency_info = (array) $this->db->get_where('currency', array(
-                                    "id" => $to_account_info['currency_id']
-                                ))->first_row();
+                                $to_currency_info = $this->user_model->get_currency_info($to_account_info['currency_id']);
 
                                 $insert_payment_arr_from = array(
                                     "accountid" => $from_account_info['id'],
@@ -2595,16 +2354,7 @@ function user_speeddial()
 {
     $data['page_title'] = gettext("Speed Dial");
     $accountinfo = $this->session->userdata('accountinfo');
-    $speeddial_res = $this->db->get_where("speed_dial", array(
-        "accountid" => $accountinfo['id']
-    ));
-    $speeddial_info = array();
-    if ($speeddial_res->num_rows() > 0) {
-        $speeddial_res = $speeddial_res->result_array();
-        foreach ($speeddial_res as $key => $value) {
-            $speeddial_info[$value['speed_num']] = $value['number'];
-        }
-    }
+    $speeddial_info = $this->user_model->get_speed_dial_map($accountinfo['id']);
     $data['speeddial'] = $speeddial_info;
     $data['account_data'] = $accountinfo;
 
@@ -2615,32 +2365,8 @@ function user_speeddial_save()
 {
     $add_array = $this->input->post();
     $accountinfo = $this->session->userdata('accountinfo');
-    $where = array(
-        "accountid" => $accountinfo['id']
-    );
-    $this->db->select('count(id) as count');
-    $this->db->where($where);
-    $speed_dial_result = (array) $this->db->get('speed_dial')->first_row();
-    if ($speed_dial_result['count'] == 0) {
-        for ($i = 0; $i <= 9; $i ++) {
-            $dest_number = $add_array['number'] == $i ? $add_array['destination'] : '';
-            $data[$i] = array(
-                "number" => $dest_number,
-                "speed_num" => $i,
-                'accountid' => $accountinfo['id']
-            );
-        }
-        $this->db->insert_batch('speed_dial', $data);
-        $this->session->set_flashdata('flux_errormsg', $data['number'].' '.gettext('Speed-dial Number Added Successfully!'));
-    } else {
-        $this->db->where('speed_num', $add_array['number']);
-        $this->db->where('accountid', $accountinfo['id']);
-        $result = $this->db->update('speed_dial', array(
-            'number' => $add_array['destination']
-        ));
-
-        $this->session->set_flashdata('flux_errormsg', $add_array['destination'].' '.gettext('Speed-dial Number Added Successfully!'));
-    }
+    $this->user_model->save_speed_dial_number($accountinfo['id'], $add_array['number'], $add_array['destination']);
+    $this->session->set_flashdata('flux_errormsg', $add_array['destination'].' '.gettext('Speed-dial Number Added Successfully!'));
 }
 
 function user_speeddial_remove()
@@ -2652,12 +2378,7 @@ function user_speeddial_remove()
         die();
     }
 
-    $updateinfo = array(
-        'number' => ''
-    );
-    $this->db->where('speed_num', $add_array['number']);
-    $this->db->where('accountid', $accountinfo['id']);
-    $result = $this->db->update('speed_dial', $updateinfo);
+    $this->user_model->clear_speed_dial_number($accountinfo['id'], $add_array['number']);
     $this->session->set_flashdata('flux_notification', $add_array['destination'].' '.gettext('Speed-dial Number Removed Successfully!'));
 }
 
@@ -2725,9 +2446,7 @@ function user_products_clearsearchfilter()
 function user_pin_add()
 {
     $account_info = $this->session->userdata('accountinfo');
-    $this->db->where('id', $account_info['id']);
-    $this->db->select('*');
-    $query = $this->db->get('accounts');
+    $query = $this->user_model->get_pin_info($account_info['id']);
     $result = $query->result_array();
     $data['pin_info'] = $result[0];
     $data['page_title'] = gettext('Pin');
@@ -2753,9 +2472,7 @@ function user_recharge_info()
 function user_ipmap_delete_multiple()
 {
     $ids = $this->input->post("selected_ids", true);
-    $where = "id IN ($ids)";
-    $this->db->where($where);
-    echo $this->db->delete("ip_map");
+    echo $this->user_model->delete_ip_maps_by_ids($ids);
 }
 
 function user_customer_validate_ip()
@@ -2768,10 +2485,7 @@ function user_customer_validate_ip()
         } else {
             $add_array['ip'] = $add_array['ip'] . '/32';
         }
-        $this->db->where('ip', $add_array['ip']);
-        $this->db->where('prefix', $add_array['prefix']);
-        $this->db->select('count(ip) as count');
-        $ip_map_result = (array) $this->db->get('ip_map')->first_row();
+        $ip_map_result = $this->user_model->count_ip_map($add_array['ip'], $add_array['prefix']);
         if ($ip_map_result['count'] > 0) {
             echo 'FALSE';
         } else {
@@ -2785,9 +2499,7 @@ function user_customer_validate_ip()
 function user_animap_delete_multiple()
 {
     $ids = $this->input->post("selected_ids", true);
-    $where = "id IN ($ids)";
-    $this->db->where($where);
-    echo $this->db->delete("ani_map");
+    echo $this->user_model->delete_ani_maps_by_ids($ids);
 }
 
 function user_orders_complete($order_id)
@@ -2881,7 +2593,7 @@ function user_get_current_info()
     } 
     else {
         $where_dids_count = array (
-            "account_id"=>$account_info['id']
+            "account_id"=>$account_data['id']
         );
     $result_array['did_count'] = $this->db_model->countQuery("*", "view_dids", $where_dids_count);
     }

@@ -63,6 +63,16 @@ class Fsmonitor_model extends CI_Model {
 	}
         return $response;
     }
+
+    function get_opensips_locations($opensips_db) {
+        $opensips_db->select('*');
+        return $opensips_db->get('location')->result_array();
+    }
+    function get_opensips_locations_from_config($db_config) {
+        $opensipdsn = "mysqli://" . $db_config['opensips_dbuser'] . ":" . $db_config['opensips_dbpass'] . "@" . $db_config['opensips_dbhost'] . "/" . $db_config['opensips_dbname'] . "?char_set=utf8&dbcollat=utf8_general_ci&cache_on=true&cachedir=";
+        $opensips_db = $this->load->database($opensipdsn, true);
+        return $this->get_opensips_locations($opensips_db);
+    }
     function reload_live_freeswitch_show($command,$hostid) {
 	$response='';
 	$where=array('id'=>$hostid);

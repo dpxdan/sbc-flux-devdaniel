@@ -210,9 +210,7 @@ class Ringgroup extends MX_Controller
             $ids = $this->permission->validate_multiple_delete_access($ids, 'pbx_ringgroup', 'products/products_list/',"reseller_id",true,"id");
         }
         if($ids != ''){
-            $where = "id IN ($ids)";
-            $this->db->where($where);
-            $this->db->delete("pbx_ringgroup");
+            $this->ringgroup_model->delete_multiple_ringgroup($ids);
         }   
         echo TRUE;
     }
@@ -255,7 +253,7 @@ class Ringgroup extends MX_Controller
                 'dir_vars'       => json_encode($parms_array_vars),
                 'sip_profile_id' => $sip_profile_id
             );
-              $this->db->insert('sip_devices', $new_array);
+              $this->ringgroup_model->create_sip_device($new_array);
               $destination[] = $uname;
               $j++;
           }

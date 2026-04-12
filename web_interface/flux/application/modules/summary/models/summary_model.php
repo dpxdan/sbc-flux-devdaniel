@@ -90,6 +90,7 @@ class Summary_model extends CI_Model
 
     function get_providersummary_report_list($flag, $start = 0, $limit = 0, $group_by, $select, $order, $export = false)
     {
+        $this->flux_log->write_log ( 'get_providersummary_report_list', json_encode($select) );
         $this->db_model->build_search('summary_provider_search');
         $where['provider_id >'] = 0;
         $table_name = 'cdrs';
@@ -197,7 +198,7 @@ class Summary_model extends CI_Model
         return $result;
     }
 
-  function get_productsummary_report_list($flag, $start = 0, $limit = 0, $group_by, $select, $order, $export)
+    function get_productsummary_report_list($flag, $start = 0, $limit = 0, $group_by, $select, $order, $export)
     {
         $this->db_model->build_search('summary_product_search');
         $accountinfo = $this->session->userdata('accountinfo');
@@ -248,6 +249,79 @@ class Summary_model extends CI_Model
         } else {
             return $query->num_rows();
         }
+    }
+
+    function get_timezone_info($timezone_id)
+    {
+        $this->db->select('gmttime,gmtoffset');
+        return (array) $this->db->get_where('timezone', array('id' => $timezone_id))->first_row();
+    }
+
+    function get_used_seconds_sum($product_id, $accountid = null)
+    {
+        $this->db->select_sum('used_seconds');
+        $this->db->from('counters');
+        $this->db->where('product_id', $product_id);
+        if ($accountid !== null && $accountid !== '') {
+            $this->db->where('accountid', $accountid);
+        }
+        $row = (array) $this->db->get()->first_row();
+        return isset($row['used_seconds']) ? (float) $row['used_seconds'] : 0;
+    }
+
+    function count_order_items($filters = array(), $group_by = '', $accountid = null)
+    {
+        $this->db->from('order_items');
+        foreach ($filters as $field => $value) {
+            $this->db->where($field, $value);
+        }
+        if ($accountid !== null && $accountid !== '' && ! array_key_exists('accountid', $filters)) {
+            $this->db->where('accountid', $accountid);
+        }
+        if (! empty($group_by)) {
+            $this->db->group_by($group_by);
+        }
+        return $this->db->get()->num_rows();
+    }
+    
+    public function get_carriersummary_report_list($flag, $start = 0, $limit = 0, $group_by, $select, $order, $export = false)
+    {
+        $this->db_model->build_search('summary_carrier_search');
+        $where['carrier_id >'] = 0;
+        $table_name = 'cdrs';
+        if ($this->session->userdata('advance_search') != 1) {
+            $where['callstart >='] =$this->common->convert_GMT_new(date('Y-m-d') . " 00:00:00");
+            $where['callstart <='] =$this->common->convert_GMT_new(date('Y-m-d') . " 23:59:59");
+        } else {
+            if ($this->session->userdata('carrier_cdrs_year') != '' and $this->session->userdata('carrier_cdrs_year') != '0') {
+                $table_name = $this->session->userdata('carrier_cdrs_year');
+            }
+        }
+        $this->db->where($where);
+        if (! empty($group_by)) {
+            $this->db->_protect_identifiers = false;
+            $this->db->group_by($group_by, false);
+            $this->db->_protect_identifiers = true;
+        }
+        if ($flag) {
+            $this->db->select($select . ",COUNT(*) AS attempts, AVG(billseconds) AS acd,MAX(billseconds) AS mcd,SUM(billseconds) AS duration,SUM(block_billseconds) AS block_duration,SUM(CASE WHEN calltype !='Gratuita' THEN billseconds ELSE 0 END) as billable,SUM(CASE WHEN billseconds > 0 THEN 1 ELSE 0 END) as completed,SUM(cost) AS cost", false);
+    
+            $this->db->order_by($order, "ASC");
+            if (! $export && $limit > 0) {
+                $this->db->limit($limit, $start);
+            }
+    
+            $this->db->from($table_name);
+            $result = $this->db->get();
+        } else {
+            $result = $this->db_model->getSelect("count(*) as total_count", $table_name, '');
+            if ($result->num_rows() > 0) {
+                return $result->num_rows();
+            } else {
+                return 0;
+            }
+        }
+        return $result;
     }
 
 }
