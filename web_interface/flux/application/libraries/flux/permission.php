@@ -68,11 +68,21 @@ class Permission {
 				}
 			$permissioninfo = $this->CI->session->userdata('permissioninfo');
                         $module_url_explode=explode("/",$menu_value["module_url"]);
-                        $main_module=$module_url_explode[0];
-                        $sub_main_module=$module_url_explode[1];
+                    $main_module         = isset($module_url_explode[0]) ? $module_url_explode[0] : '';
+                    $sub_main_module     = isset($module_url_explode[1]) ? $module_url_explode[1] : '';
 			$sub_url_explode=explode('_',$sub_main_module);
                         $logintype = $this->CI->session->userdata('logintype');
-                        if((isset($permissioninfo[$main_module][$sub_main_module]['list']) && $permissioninfo[$main_module][$sub_main_module]['list'] == 0 or $permissioninfo['login_type'] == '-1' or $permissioninfo['login_type'] == '0' or $permissioninfo['login_type'] == '99') or ($permissioninfo['login_type'] == '1' and $sub_main_module='resellersrates_list') or (isset($permissioninfo[$main_module][$sub_main_module]['list']) && $permissioninfo[$main_module][$sub_main_module]['list'] == 0 and $permissioninfo['login_type'] == '2')){
+                    
+                    $login_type          = isset($permissioninfo['login_type']) ? $permissioninfo['login_type'] : '';
+                    $has_list_permission = isset($permissioninfo[$main_module][$sub_main_module]['list'])
+                                           && $permissioninfo[$main_module][$sub_main_module]['list'] == 0;
+                    
+                    if (
+                        ($has_list_permission)
+                        || in_array($login_type, array('-1', '0', '99'))
+                        || ($login_type == '1'  && $sub_main_module == 'resellersrates_list')
+                        || ($login_type == '2'  && $has_list_permission)
+                    ) {
                                 $permited_modules[] = trim($sub_url_explode[0]);
                         }
                 	}

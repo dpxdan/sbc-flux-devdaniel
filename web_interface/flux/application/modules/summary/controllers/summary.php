@@ -35,7 +35,6 @@ class Summary extends MX_Controller
         $this->load->library("summary_form");
         $this->load->model('summary_model');
         $this->load->library ('flux_log');
-        //$this->flux_log->write_log ( 'permission_list', json_encode($data) );
         $this->load->library('FLUX_Sms');
  
         if ($this->session->userdata('user_login') == FALSE)
@@ -48,7 +47,7 @@ class Summary extends MX_Controller
         $data['search_flag'] = true;
         $session_info = $this->session->userdata('customersummary_reports_search');
         $accountinfo = $this->session->userdata('accountinfo');
-        $reseller_id = $accountinfo['type'] == 1 ? $accountinfo['id'] : 0;
+        $reseller_id = $accountinfo['type'] == 1 ? $accountinfo['id'] : 1;
         $accountlist = $this->db_model->build_dropdown_deleted('id,IF(`deleted`=1,IF( company_name = "",concat( first_name, " ", last_name, " ", "(", number, ")^" ), concat( company_name, " ", "(", number, ")^" )), IF( company_name = "",concat( first_name, " ", last_name, " ", "(", number, ")" ), concat( company_name, " ", "(", number, ")" ))) as number', 'accounts', 'where_arr', array(
             'reseller_id' => $reseller_id,
             "type" => "GLOBAL"
@@ -83,942 +82,6 @@ class Summary extends MX_Controller
         
         $this->session->set_userdata('customersummary_reports_export', $search_arr);
         echo json_encode($json_data);
-    }
- 
-    function summary_column_arr_old($entity)
-    {
-        $new_column_arr = array();
-        $total_width = '322';
-        $column_name = 'accountid';
-        if ($this->session->userdata('advance_search') == '1') {
-            $search_array = $this->session->userdata($entity . 'summary_reports_search');
-    
-     if (isset($search_array['groupby_1']) && isset($search_array['groupby_2']) &&  $search_array['groupby_1'] == $search_array['groupby_2']) {
-        unset($search_array['groupby_2']);
-     }
-    
-            if (isset($search_array['time']) && ! empty($search_array['time'])) {
-                $entity_order = $entity == 'product' ? 'billing_date' : 'callstart';
-                $new_column_arr[] = array(
-                    ucfirst(strtolower($search_array['time'])),
-                    "58",
-                    $search_array['time'] . "(" . $entity_order . ")",
-                    "",
-                    "",
-                    ""
-                );
-            }
-            if (isset($search_array['groupby_1']) && ! empty($search_array['groupby_1'])) {
-                $first_column_groupby = $search_array['groupby_1'];
-    
-                if ($first_column_groupby == 'accountid' || $first_column_groupby == 'order_items.accountid') {
-                    $new_column_arr[] = array(
-                        gettext("Account"),
-                        "100",
-                        'accountid',
-                        "first_name,last_name,number",
-                        "accounts",
-                        "build_concat_string"
-                    );
-                } elseif ($first_column_groupby == 'sip_user') {
-                    $new_column_arr[] = array(
-                        gettext("SIP User"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($first_column_groupby == 'call_direction') {
-                    $new_column_arr[] = array(
-                        gettext("Direction"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($first_column_groupby == 'calltype') {
-                    $new_column_arr[] = array(
-                        gettext("Call Type"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($first_column_groupby == 'pattern') {
-                    $new_column_arr[] = array(
-                        gettext("Code"),
-                        "45",
-                        "pattern",
-                        "pattern",
-                        "",
-                        "get_only_numeric_val"
-                    );
-                    $new_column_arr[] = array(
-                        gettext("Destination"),
-                        "59",
-                        "notes",
-                        "",
-                        "",
-                        ""
-                    );
-                    } elseif ($first_column_groupby == 'trunk_id') {
-                    $new_column_arr[] = array(
-                        gettext("Trunk"),
-                        "45",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                    } elseif ($first_column_groupby == 'carrier_id') {
-                    $new_column_arr[] = array(
-                        gettext("Carrier"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                    } elseif ($first_column_groupby == 'package_id') {
-                    $new_column_arr[] = array(
-                        gettext("Package"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($first_column_groupby == 'order_items.product_id' || $first_column_groupby == 'product_id') {
-                    $new_column_arr[] = array(
-                        gettext("Products"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($first_column_groupby == 'order_items.product_category' || $first_column_groupby == 'product_category') {
-                    $new_column_arr[] = array(
-                        gettext("Category"),
-                        "105",
-                        'product_category',
-                        "name",
-                        "category",
-                        "get_field_name"
-                    );
-                }
-            }
-            if (isset($search_array['groupby_2']) && ! empty($search_array['groupby_2'])) {
-                $third_column_groupby = $search_array['groupby_2'];
-                if ($third_column_groupby == 'accountid' || $third_column_groupby == 'order_items.accountid') {
-                    $new_column_arr[] = array(
-                        gettext("Account"),
-                        "100",
-                        'accountid',
-                        "first_name,last_name,number",
-                        "accounts",
-                        "build_concat_string"
-                    );
-                } elseif ($third_column_groupby == 'sip_user') {
-                    $new_column_arr[] = array(
-                        gettext("SIP User"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'call_direction') {
-                    $new_column_arr[] = array(
-                        gettext("Direction"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'calltype') {
-                    $new_column_arr[] = array(
-                        gettext("Call Type"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'pattern') {
-                    $new_column_arr[] = array(
-                        gettext("Code"),
-                        "45",
-                        "pattern",
-                        "pattern",
-                        "",
-                        "get_only_numeric_val"
-                    );
-                    $new_column_arr[] = array(
-                        gettext("Destination"),
-                        "59",
-                        "notes",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'trunk_id') {
-                    $new_column_arr[] = array(
-                        gettext("Trunk"),
-                        "45",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'carrier_id') {
-                    $new_column_arr[] = array(
-                        gettext("Carrier"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'package_id') {
-                    $new_column_arr[] = array(
-                        gettext("Package"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($third_column_groupby == 'order_items.product_id' || $third_column_groupby == 'product_id') {
-                    $new_column_arr[] = array(
-                        gettext("Products"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($third_column_groupby == 'order_items.product_category' || $third_column_groupby == 'product_category') {
-                    $new_column_arr[] = array(
-                        gettext("Category"),
-                        "105",
-                        'product_category',
-                        "name",
-                        "category",
-                        "get_field_name"
-                    );
-                }
-            }
-            if (isset($search_array['groupby_3']) && ! empty($search_array['groupby_3'])) {
-                $fifth_column_groupby = $search_array['groupby_3'];
-                if ($fifth_column_groupby == 'accountid' || $fifth_column_groupby == 'order_items.accountid') {
-                    $new_column_arr[] = array(
-                        gettext("Account"),
-                        "105",
-                        'accountid',
-                        "first_name,last_name,number",
-                        "accounts",
-                        "build_concat_string"
-                    );
-                } elseif ($fifth_column_groupby == 'sip_user') {
-                    $new_column_arr[] = array(
-                        gettext("SIP User"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'call_direction') {
-                    $new_column_arr[] = array(
-                        gettext("Direction"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'calltype') {
-                    $new_column_arr[] = array(
-                        gettext("Call Type"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'pattern') {
-                    $new_column_arr[] = array(
-                        gettext("Code"),
-                        "45",
-                        "pattern",
-                        "pattern",
-                        "",
-                        "get_only_numeric_val"
-                    );
-                    $new_column_arr[] = array(
-                        gettext("Destination"),
-                        "59",
-                        "notes",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'trunk_id') {
-                    $new_column_arr[] = array(
-                        gettext("Trunk"),
-                        "45",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'carrier_id') {
-                    $new_column_arr[] = array(
-                        gettext("Carrier"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'package_id') {
-                    $new_column_arr[] = array(
-                        gettext("Package"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($fifth_column_groupby == 'order_items.product_id' || $fifth_column_groupby == 'product_id') {
-                    $new_column_arr[] = array(
-                        gettext("Products"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($fifth_column_groupby == 'order_items.product_category' || $fifth_column_groupby == 'product_category') {
-                    $new_column_arr[] = array(
-                        gettext("Category"),
-                        "105",
-                        'product_category',
-                        "name",
-                        "category",
-                        "get_field_name"
-                    );
-                }
-            }
-            if (empty($new_column_arr)) {
-                $new_column_arr[] = array(
-                    gettext("Account"),
-                    '322',
-                    'accountid',
-                    "first_name,last_name,number",
-                    "accounts",
-                    "build_concat_string"
-                );
-            }
-        } else {
-            $new_column_arr[] = array(
-                gettext("Account"),
-                '322',
-                'accountid',
-                "first_name,last_name,number",
-                "accounts",
-                "build_concat_string"
-            );
-        }
-    
-        return $new_column_arr;
-    }
-    
-    function summary_column_arr_old2($entity)
-    {
-        $new_column_arr = array();
-        $total_width = '322';
-        $column_name = 'accountid';
-        if ($this->session->userdata('advance_search') == '1') {
-            $search_array = $this->session->userdata($entity . 'summary_reports_search');
- 
-     if (isset($search_array['groupby_1']) && isset($search_array['groupby_2']) &&  $search_array['groupby_1'] == $search_array['groupby_2']) {
-        unset($search_array['groupby_2']);
-     }
- 
-            if (isset($search_array['time']) && ! empty($search_array['time'])) {
-                $entity_order = $entity == 'product' ? 'billing_date' : 'callstart';
-                $new_column_arr[] = array(
-                    ucfirst(strtolower($search_array['time'])),
-                    "58",
-                    $search_array['time'] . "(" . $entity_order . ")",
-                    "",
-                    "",
-                    ""
-                );
-            }
-            if (isset($search_array['groupby_1']) && ! empty($search_array['groupby_1'])) {
-                $first_column_groupby = $search_array['groupby_1'];
- 
-                if ($first_column_groupby == 'accountid' || $first_column_groupby == 'order_items.accountid') {
-                    $new_column_arr[] = array(
-                        gettext("Account"),
-                        "100",
-                        'accountid',
-                        "first_name,last_name,number",
-                        "accounts",
-                        "build_concat_string"
-                    );
-                } elseif ($first_column_groupby == 'sip_user') {
-                    $new_column_arr[] = array(
-                        gettext("SIP User"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($first_column_groupby == 'call_direction') {
-                    $new_column_arr[] = array(
-                        gettext("Direction"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($first_column_groupby == 'calltype') {
-                    $new_column_arr[] = array(
-                        gettext("Call Type"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($first_column_groupby == 'pattern') {
-                    $new_column_arr[] = array(
-                        gettext("Code"),
-                        "45",
-                        "pattern",
-                        "pattern",
-                        "",
-                        "get_only_numeric_val"
-                    );
-                    $new_column_arr[] = array(
-                        gettext("Destination"),
-                        "59",
-                        "notes",
-                        "",
-                        "",
-                        ""
-                    );
-                    } elseif ($first_column_groupby == 'trunk_id') {
-                    $new_column_arr[] = array(
-                        gettext("Trunk"),
-                        "45",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                    } elseif ($first_column_groupby == 'carrier_id') {
-                    $new_column_arr[] = array(
-                        gettext("Carrier"),
-                        "105",
-                        "carrier_id",
-                        "carrier_name",
-                        "carrier_routing",
-                        "get_field_name"
-                    );
-                    } elseif ($first_column_groupby == 'package_id') {
-                    $new_column_arr[] = array(
-                        gettext("Package"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($first_column_groupby == 'order_items.product_id' || $first_column_groupby == 'product_id') {
-                    $new_column_arr[] = array(
-                        gettext("Products"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($first_column_groupby == 'order_items.product_category' || $first_column_groupby == 'product_category') {
-                    $new_column_arr[] = array(
-                        gettext("Category"),
-                        "105",
-                        'product_category',
-                        "name",
-                        "category",
-                        "get_field_name"
-                    );
-                }
-            }
-            if (isset($search_array['groupby_2']) && ! empty($search_array['groupby_2'])) {
-                $third_column_groupby = $search_array['groupby_2'];
-                if ($third_column_groupby == 'accountid' || $third_column_groupby == 'order_items.accountid') {
-                    $new_column_arr[] = array(
-                        gettext("Account"),
-                        "100",
-                        'accountid',
-                        "first_name,last_name,number",
-                        "accounts",
-                        "build_concat_string"
-                    );
-                } elseif ($third_column_groupby == 'sip_user') {
-                    $new_column_arr[] = array(
-                        gettext("SIP User"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'call_direction') {
-                    $new_column_arr[] = array(
-                        gettext("Direction"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'calltype') {
-                    $new_column_arr[] = array(
-                        gettext("Call Type"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'pattern') {
-                    $new_column_arr[] = array(
-                        gettext("Code"),
-                        "45",
-                        "pattern",
-                        "pattern",
-                        "",
-                        "get_only_numeric_val"
-                    );
-                    $new_column_arr[] = array(
-                        gettext("Destination"),
-                        "59",
-                        "notes",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'trunk_id') {
-                    $new_column_arr[] = array(
-                        gettext("Trunk"),
-                        "45",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($third_column_groupby == 'carrier_id') {
-                    $new_column_arr[] = array(
-                        gettext("Carrier"),
-                        "105",
-                        "carrier_id",
-                        "carrier_name",
-                        "carrier_routing",
-                        "get_field_name"
-                    );
-                } elseif ($third_column_groupby == 'package_id') {
-                    $new_column_arr[] = array(
-                        gettext("Package"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($third_column_groupby == 'order_items.product_id' || $third_column_groupby == 'product_id') {
-                    $new_column_arr[] = array(
-                        gettext("Products"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($third_column_groupby == 'order_items.product_category' || $third_column_groupby == 'product_category') {
-                    $new_column_arr[] = array(
-                        gettext("Category"),
-                        "105",
-                        'product_category',
-                        "name",
-                        "category",
-                        "get_field_name"
-                    );
-                }
-            }
-            if (isset($search_array['groupby_3']) && ! empty($search_array['groupby_3'])) {
-                $fifth_column_groupby = $search_array['groupby_3'];
-                if ($fifth_column_groupby == 'accountid' || $fifth_column_groupby == 'order_items.accountid') {
-                    $new_column_arr[] = array(
-                        gettext("Account"),
-                        "105",
-                        'accountid',
-                        "first_name,last_name,number",
-                        "accounts",
-                        "build_concat_string"
-                    );
-                } elseif ($fifth_column_groupby == 'sip_user') {
-                    $new_column_arr[] = array(
-                        gettext("SIP User"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'call_direction') {
-                    $new_column_arr[] = array(
-                        gettext("Direction"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'calltype') {
-                    $new_column_arr[] = array(
-                        gettext("Call Type"),
-                        "105",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'pattern') {
-                    $new_column_arr[] = array(
-                        gettext("Code"),
-                        "45",
-                        "pattern",
-                        "pattern",
-                        "",
-                        "get_only_numeric_val"
-                    );
-                    $new_column_arr[] = array(
-                        gettext("Destination"),
-                        "59",
-                        "notes",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'trunk_id') {
-                    $new_column_arr[] = array(
-                        gettext("Trunk"),
-                        "45",
-                        "",
-                        "",
-                        "",
-                        ""
-                    );
-                } elseif ($fifth_column_groupby == 'carrier_id') {
-                    $new_column_arr[] = array(
-                        gettext("Carrier"),
-                        "105",
-                        "carrier_id",
-                        "carrier_name",
-                        "carrier_routing",
-                        "get_field_name"
-                    );
-                } elseif ($fifth_column_groupby == 'package_id') {
-                    $new_column_arr[] = array(
-                        gettext("Package"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($fifth_column_groupby == 'order_items.product_id' || $fifth_column_groupby == 'product_id') {
-                    $new_column_arr[] = array(
-                        gettext("Products"),
-                        "105",
-                        'product_id',
-                        "name",
-                        "products",
-                        "get_field_name"
-                    );
-                } elseif ($fifth_column_groupby == 'order_items.product_category' || $fifth_column_groupby == 'product_category') {
-                    $new_column_arr[] = array(
-                        gettext("Category"),
-                        "105",
-                        'product_category',
-                        "name",
-                        "category",
-                        "get_field_name"
-                    );
-                }
-            }
-            if (empty($new_column_arr)) {
-                $new_column_arr[] = array(
-                    gettext("Account"),
-                    '322',
-                    'accountid',
-                    "first_name,last_name,number",
-                    "accounts",
-                    "build_concat_string"
-                );
-            }
-        } 
-        else {
-            $new_column_arr[] = array(
-                gettext("Account"),
-                '322',
-                'accountid',
-                "first_name,last_name,number",
-                "accounts",
-                "build_concat_string"
-            );
-        }
- 
-        return $new_column_arr;
-    }
- 
-    function summary_report_grid_old($search_arr, $query, $entity, $purpose)
-    {
-        $export_arr = array();
-        $db_field_name = $entity == 'provider' ? 'provider_id' : 'accountid';
-        $show_seconds = (! empty($search_arr['search_in'])) ? $search_arr['search_in'] : 'minutes';
-        $currency_info = $this->common->get_currency_info();
-        foreach ($query->result_array() as $row1) {
-            if ($row1[$db_field_name] != null){
-                $atmpt = $row1['attempts'];
-                $cmplt = ($row1['completed'] != 0) ? $row1['completed'] : 0;
-                $acd = ($row1['completed'] > 0) ? round($row1['duration'] / $row1['completed']) : 0;
-                $mcd = $row1['mcd'];
-                if ($show_seconds == 'minutes') {
-                    $avgsec = $acd > 0 ? sprintf('%02d', $acd / 60) . ":" . sprintf('%02d', ($acd % 60)) : "00:00";
-                    $maxsec = $mcd > 0 ? sprintf('%02d', $mcd / 60) . ":" . sprintf('%02d', ($mcd % 60)) : "00:00";
-                    $duration = ($row1['duration'] > 0) ? sprintf('%02d', $row1['duration'] / 60) . ":" . sprintf('%02d', ($row1['duration'] % 60)) : "00:00";
-                    $block_duration = ($row1['block_duration'] > 0) ? sprintf('%02d', $row1['block_duration'] / 60) . ":" . sprintf('%02d', ($row1['block_duration'] % 60)) : "00:00";
-                    $billsec = ($row1['billable'] > 0) ? sprintf('%02d', $row1['billable'] / 60) . ":" . sprintf('%02d', ($row1['billable'] % 60)) : "00:00";
-                } else {
-                    $duration = sprintf('%02d', $row1['duration']);
-                    $block_duration = sprintf('%02d', $row1['block_duration']);
-                    $avgsec = $acd;
-                    $maxsec = $mcd;
-                    $billsec = sprintf('%02d', $row1['billable']);
-                }
-                if ($entity != 'provider') {
-                    $profit = $this->common->calculate_currency_manually($currency_info, $row1['debit'] - $row1['cost'], false);
-                    $debit = $this->common->calculate_currency_manually($currency_info, $row1['debit'], false);
-                }
-                $cost = $this->common->calculate_currency_manually($currency_info, $row1['cost'], false);
-                $asr = ($atmpt > 0) ? (round(($cmplt / $atmpt) * 100, 2)) : '0.00';
-                $new_arr = array();
-     
-                if ($this->session->userdata('advance_search') == 1) {
-                    if (! empty($search_arr['groupby_time'])) {
-                        $time = $row1[$search_arr['groupby_time']];
-     
-                        if ($search_arr['groupby_time'] == "HOUR" || $search_arr['groupby_time'] == "DAY") {
-                            $time = sprintf('%02d', $time);
-                        }
-                        if ($search_arr['groupby_time'] == "MONTH") {
-                            $dateObj = DateTime::createFromFormat('!m', $time);
-                            $time = $dateObj->format('F');
-                        }
-                        $new_arr[] = $time;
-                    }
-                    if ($search_arr['groupby_1'] == $db_field_name) {
-                            $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-                    } elseif ($search_arr['groupby_1'] == 'pattern') {
-                        $new_arr[] = filter_var($row1['pattern'], FILTER_SANITIZE_NUMBER_INT);
-                        $new_arr[] = $row1['notes'];
-                    } elseif ($search_arr['groupby_1'] == 'trunk_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
-                    } elseif ($search_arr['groupby_1'] == 'carrier_id') {
-                        $new_arr[] = $this->common->get_field_name('carrier_name', 'carrier_routing', $row1['carrier_id']);
-                    } elseif ($search_arr['groupby_1'] == 'package_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
-                    } elseif ($search_arr['groupby_1'] == 'sip_user') {
-                        $new_arr[] = $row1['sip_user'];
-                    } elseif ($search_arr['groupby_1'] == 'call_direction') {
-                        $new_arr[] = $row1['call_direction'];
-                    } elseif ($search_arr['groupby_1'] == 'calltype') {
-                        $new_arr[] = $row1['calltype'];
-                    } elseif ($search_arr['groupby_1'] == 'product_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
-                    } elseif ($search_arr['groupby_1'] == "product_category") {
-                        $new_arr[] = $this->common->get_field_name('name', 'category', $row1['product_category']);
-                    }
-                    if ($search_arr['groupby_2'] == $db_field_name) {
-                            $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-                    } elseif ($search_arr['groupby_2'] == 'pattern') {
-                        $new_arr[] = filter_var($row1['pattern'], FILTER_SANITIZE_NUMBER_INT);
-                        $new_arr[] = $row1['notes'];
-                    } elseif ($search_arr['groupby_2'] == 'trunk_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
-                    } elseif ($search_arr['groupby_2'] == 'carrier_id') {
-                        $new_arr[] = $this->common->get_field_name('carrier_name', 'carrier_routing', $row1['carrier_id']);
-                    } elseif ($search_arr['groupby_2'] == 'package_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
-                    } elseif ($search_arr['groupby_2'] == 'sip_user') {
-                        $new_arr[] = $row1['sip_user'];
-                    } elseif ($search_arr['groupby_2'] == 'call_direction') {
-                        $new_arr[] = $row1['call_direction'];
-                    } elseif ($search_arr['groupby_2'] == 'calltype') {
-                        $new_arr[] = $row1['calltype'];
-                    } elseif ($search_arr['groupby_2'] == 'product_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
-                    } elseif ($search_arr['groupby_2'] == "product_category") {
-                        $new_arr[] = $this->common->get_field_name('name', 'category', $row1['product_category']);
-                    }
-     
-                    if ($search_arr['groupby_3'] == $db_field_name) {
-                            $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-                    } elseif ($search_arr['groupby_3'] == 'pattern') {
-                        $new_arr[] = filter_var($row1['pattern'], FILTER_SANITIZE_NUMBER_INT);
-                        $new_arr[] = $row1['notes'];
-                    } elseif ($search_arr['groupby_3'] == 'trunk_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
-                    } elseif ($search_arr['groupby_3'] == 'carrier_id') {
-                        $new_arr[] = $this->common->get_field_name('carrier_name', 'carrier_routing', $row1['carrier_id']);
-                    } elseif ($search_arr['groupby_3'] == 'package_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
-                    } elseif ($search_arr['groupby_3'] == 'sip_user') {
-                        $new_arr[] = $row1['sip_user'];
-                    } elseif ($search_arr['groupby_3'] == 'call_direction') {
-                        $new_arr[] = $row1['call_direction'];
-                    } elseif ($search_arr['groupby_3'] == 'calltype') {
-                        $new_arr[] = $row1['calltype'];
-                    } elseif ($search_arr['groupby_3'] == 'product_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
-                    } elseif ($search_arr['groupby_3'] == "product_category") {
-                        $new_arr[] = $this->common->get_field_name('name', 'category', $row1['product_category']);
-                    }
-     
-                    if (empty($new_arr)) {
-                            $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-                    }
-                } else {
-                        $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1[$db_field_name]);
-                }
-                if ($entity != 'provider') {
-                    $custom_array = array(
-                        $atmpt,
-                        $cmplt,
-                        $duration,
-                        $block_duration,
-                        round($asr, 2),
-                        $avgsec,
-                        $maxsec,
-                        $billsec,
-                        $debit,
-                        $cost,
-                        $profit
-                    );
-                } else {
-                    $custom_array = array(
-                        $atmpt,
-                        $cmplt,
-                        $duration,
-                        $block_duration,
-                        round($asr, 2),
-                        $avgsec,
-                        $maxsec,
-                        $billsec,
-                        $cost
-                    );
-                }
-
-                $final_array = array_merge($new_arr, $custom_array);
-                $json_data[] = array(
-                    'cell' => $final_array
-                );
-                $export_arr[] = $final_array;
-            }
-
-            if ($row1[$db_field_name] == null){
-                $total_info = $row1;
-            }
-        }
-        $function_name = 'get_' . $entity . 'summary_report_list';
-        if (!$total_info){
-            $total_info = $this->summary_model->$function_name(true, '', '', '', $search_arr['select_str'], $search_arr['order_str'], true);
-            $total_info = $total_info->result_array();
-            $total_info = $total_info[0];
-        }
-        $total_asr = ($total_info['attempts'] > 0) ? round(($total_info['completed'] / $total_info['attempts']) * 100, 2) : 0;
-        $total_acd = ($total_info['completed'] > 0) ? round($total_info['duration'] / $total_info['completed']) : 0;
-        if ($show_seconds == 'minutes') {
-            $total_info['duration'] = $total_info['duration'] > 0 ? sprintf('%02d', $total_info['duration'] / 60) . ":" . sprintf('%02d', ($total_info['duration'] % 60)) : "00:00";
-            $total_info['block_duration'] = $total_info['block_duration'] > 0 ? sprintf('%02d', $total_info['block_duration'] / 60) . ":" . sprintf('%02d', ($total_info['block_duration'] % 60)) : "00:00";
-            $total_info['billable'] = $total_info['billable'] > 0 ? sprintf('%02d', $total_info['billable'] / 60) . ":" . sprintf('%02d', ($total_info['billable'] % 60)) : "00:00";
-            $total_acd = $total_acd > 0 ? sprintf('%02d', $total_acd / 60) . ":" . sprintf('%02d', ($total_acd % 60)) : "00:00";
-            $total_info['mcd'] = $total_info['mcd'] > 0 ? sprintf('%02d', $total_info['mcd'] / 60) . ":" . sprintf('%02d', ($total_info['mcd'] % 60)) : "00:00";
-        }
-        if ($entity != 'provider') {
-            $total_profit = $this->common->calculate_currency_manually($currency_info, $total_info['debit'] - $total_info['cost'], false);
-            $total_debit = $this->common->calculate_currency_manually($currency_info, $total_info['debit'], false);
-        }
-        $total_cost = $this->common->calculate_currency_manually($currency_info, $total_info['cost'], false);
-        if ($entity != 'provider') {
-            $last_array = array(
-                "<b>" . $total_info['attempts'] . "</b>",
-                "<b>" . $total_info['completed'] . "</b>",
-                "<b>" . $total_info['duration'] . "</b>",
-                "<b>" . $total_info['block_duration'] . "</b>",
-                "<b>" . $total_asr . "</b>",
-                "<b>" . $total_acd . "</b>",
-                "<b>" . $total_info['mcd'] . "</b>",
-                "<b>" . $total_info['billable'] . "</b>",
-                "<b>" . $total_debit . "</b>",
-                "<b>" . $total_cost . "</b>",
-                "<b>" . $total_profit . "</b>"
-            );
-        } else {
-            $last_array = array(
-                "<b>" . $total_info['attempts'] . "</b>",
-                "<b>" . $total_info['completed'] . "</b>",
-                "<b>" . $total_info['duration'] . "</b>",
-                "<b>" . $total_info['block_duration'] . "</b>",
-                "<b>" . $total_asr . "</b>",
-                "<b>" . $total_acd . "</b>",
-                "<b>" . $total_info['mcd'] . "</b>",
-                "<b>" . $total_info['billable'] . "</b>",
-                "<b>" . $total_cost . "</b>"
-            );
-        }
-        if ($purpose == 'export') {
-            $search_arr['custom_total_array'][0] = gettext('Grand Total');
-        }
-        $new_export_array = array();
-        foreach ($last_array as $key => $value) {
-            $value = str_replace("<b>", "", $value);
-            $value = str_replace("</b>", '', $value);
-            if ($key == 7 || $key == 8 || $key == 9) {
-                $value = sprintf("%." . $currency_info['decimalpoints'] . "f", floatval($value));
-            }
-            $new_export_array[$key] = $value;
-        }
-        $total_array = array_merge($search_arr['custom_total_array'], $last_array);
-        $custom_export_arr = array_merge($search_arr['custom_total_array'], $new_export_array);
-        $export_arr[] = $custom_export_arr;
-        $json_data[] = array(
-            'cell' => $total_array
-        );
-        return $purpose == 'grid' ? $json_data : $export_arr;
     }
  
     function customer_export_csv()
@@ -1081,190 +144,6 @@ class Summary extends MX_Controller
         $this->session->set_userdata('customersummary_reports_export', "");
         $this->session->unset_userdata('customer_cdrs_year');
         redirect(base_url() . 'summary/customer/');
-    }
- 
-    function summary_search_info_old($entity)
-    {
-        $accountinfo = $this->session->userdata('accountinfo');
-        $this->db->select('gmttime,gmtoffset');
-        $timezone_info = (array) $this->db->get_where('timezone', array(
-            "id" => $accountinfo['timezone_id']
-        ))->first_row();
-        if (! empty($timezone_info['gmttime']) && $timezone_info['gmtoffset'] != 0) {
-            $user_timezone = $timezone_info['gmttime'];
-        } else {
-            $user_timezone = "GMT+00:00";
-        }
-        $user_timezone_arr = explode("GMT", $user_timezone);
-        $user_timezone_gmttime = $user_timezone_arr[1];
-        $group_by_str = null;
-        $select_str = null;
-        $group_by_time = null;
-        $group_by_1 = null;
-        $group_by_2 = null;
-        $group_by_3 = null;
-        $order_str = null;
-        $custom_total_array = array();
-        $custom_search = array();
-        $export_select_str = null;
-        $new_arr['search_in'] = 'minutes';
-        $i = 0;
- 
-        $db_field_name =( $entity == 'provider') ? 'provider_id' :(($entity == 'product')?"product_id": 'accountid');
- 
-        if ($this->session->userdata('advance_search') == 1) {
-            $custom_search = $this->session->userdata($entity . 'summary_reports_search');
-            if (isset($custom_search['time']) && ! empty($custom_search['time'])) {
-                if ($entity != "product") {
-                    $group_by_str .= $custom_search['time'] . "(convert_tz(callstart,'+00:00','$user_timezone_gmttime')),";
-                    $select_str .= $custom_search['time'] . "(convert_tz(callstart,'+00:00','$user_timezone_gmttime')) as " . $order_str .= $custom_search['time'] . ",";
-                } else {
-                    $group_by_str .= $custom_search['time'] . "(convert_tz(order_items.billing_date,'+00:00','$user_timezone_gmttime')),";
-                    $select_str .= $custom_search['time'] . "(convert_tz(order_items.billing_date,'+00:00','$user_timezone_gmttime')) as " . $order_str .= $custom_search['time'] . ",";
-                }
-                $group_by_time = $custom_search['time'];
-                $export_select_str .= $custom_search['time'] . ",";
-                $custom_total_array[$i] = null;
-                $i ++;
-            }
- 
-            if (isset($custom_search['groupby_1']) && ! empty($custom_search['groupby_1'])) {
-                $custom_group_by = $entity == 'product' ? "order_items." . $custom_search['groupby_1'] : $custom_search['groupby_1'];
-                $select_str .= $custom_group_by . ",";
-                $group_by_str .= $custom_group_by . ",";
-                $order_str .= $custom_group_by . ",";
-                $group_by_1 = $custom_group_by;
-                if ($custom_search['groupby_1'] == $db_field_name) {
-                    $export_select_str .= 'Account,';
-                } elseif ($custom_search['groupby_1'] == 'trunk_id') {
-                    $export_select_str .= 'Trunk,';
-                } elseif ($custom_search['groupby_1'] == 'pattern') {
-                    $select_str .= 'notes,';
-                    $order_str .= 'notes,';
-                    $export_select_str .= "Code,Destination,";
-                    $custom_total_array[$i] = null;
-                    $i ++;
-                } elseif ($custom_search['groupby_1'] == 'package_id') {
-                    $export_select_str .= 'Package,';
-                } elseif ($custom_search['groupby_1'] == 'sip_user') {
-                    $export_select_str .= 'SIP User,';
-                } elseif ($custom_search['groupby_1'] == 'product_id') {
-                    $export_select_str .= 'Product,';
-                } elseif ($custom_search['groupby_1'] == 'call_direction') {
-                    $export_select_str .= 'Direction,';
-                } elseif ($custom_search['groupby_1'] == 'product_category') {
-                    $export_select_str .= 'Category,';
-                }
-                $custom_total_array[$i] = null;
-                $i ++;
-            }
- 
-            if (isset($custom_search['groupby_2']) && ! empty($custom_search['groupby_2'])) {
-                $custom_group_by = $entity == 'product' ? "order_items." . $custom_search['groupby_2'] : $custom_search['groupby_2'];
-                $group_by_str .= $custom_group_by . ",";
-                $select_str .= $custom_group_by . ",";
-                $order_str .= $custom_group_by . ",";
-                $group_by_2 = $custom_group_by;
-                if ($custom_search['groupby_2'] == $db_field_name) {
-                    $export_select_str .= 'Account,';
-                } elseif ($custom_search['groupby_2'] == 'trunk_id') {
-                    $export_select_str .= 'Trunk,';
-                } elseif ($custom_search['groupby_2'] == 'pattern') {
-                    $select_str .= 'notes,';
-                    $order_str .= 'notes,';
-                    $export_select_str .= "Code,Destination,";
-                    $custom_total_array[$i] = null;
-                    $i ++;
-                } elseif ($custom_search['groupby_2'] == 'sip_user') {
-                    $export_select_str .= 'SIP User,';
-                } elseif ($custom_search['groupby_2'] == 'call_direction') {
-                    $export_select_str .= 'Direction,';
-                } elseif ($custom_search['groupby_2'] == 'package_id') {
-                    $export_select_str .= 'Package,';
-                } elseif ($custom_search['groupby_2'] == 'product_id') {
-                    $export_select_str .= 'Product,';
-                } elseif ($custom_search['groupby_2'] == 'product_category') {
-                    $export_select_str .= 'Category,';
-                }
-                $custom_total_array[$i] = null;
-                $i ++;
-            }
- 
-            if (isset($custom_search['groupby_3']) && ! empty($custom_search['groupby_3'])) {
-                $custom_group_by = $entity == 'product' ? "order_items." . $custom_search['groupby_3'] : $custom_search['groupby_3'];
-                $group_by_str .= $custom_group_by . ",";
-                $select_str .= $custom_group_by . ",";
-                $order_str .= $custom_group_by . ",";
-                $group_by_3 = $custom_group_by;
-                if ($custom_search['groupby_3'] == 'accountid' || $custom_search['groupby_3'] == 'provider_id') {
-                    $export_select_str .= 'Account,';
-                } elseif ($custom_search['groupby_3'] == 'trunk_id') {
-                    $export_select_str .= 'Trunk,';
-                } elseif ($custom_search['groupby_3'] == 'pattern') {
-                    $select_str .= 'notes,';
-                    $order_str .= 'notes,';
-                    $export_select_str .= "Code,Destination,";
-                    $custom_total_array[$i] = null;
-                    $i ++;
-                } elseif ($custom_search['groupby_3'] == 'sip_user') {
-                    $export_select_str .= 'SIP User,';
-                } elseif ($custom_search['groupby_3'] == 'call_direction') {
-                    $export_select_str .= 'Direction,';
-                } elseif ($custom_search['groupby_3'] == 'package_id') {
-                    $export_select_str .= 'Package,';
-                } elseif ($custom_search['groupby_2'] == 'product_id') {
-                    $export_select_str .= 'Product,';
-                } elseif ($custom_search['groupby_2'] == 'product_category') {
-                    $export_select_str .= 'Category,';
-                }
-                $custom_total_array[$i] = null;
-                $i ++;
-            }
-            $new_arr['search_in'] = (isset($custom_search['search_in']) && ! empty($custom_search['search_in'])) ? $custom_search['search_in'] : 'minutes';
-            unset($custom_search['groupby_1'], $custom_search['groupby_2'], $custom_search['groupby_3'], $custom_search['search_in']);
-            $this->session->set_userdata('summary_' . $entity . '_search', $custom_search);
-        }
- 
-        if (! empty($group_by_str)) {
-            $group_by_str = rtrim($group_by_str, ",");
-            $select_str = rtrim($select_str, ",");
-            $order_str = rtrim($order_str, ",");
-            $export_select_str = rtrim($export_select_str, ",");
-        } else {
-            if ($entity != "product") {
-                $select_str = $db_field_name;
-                $order_str = $db_field_name;
-                $group_by_str = $db_field_name;
-            } else {
-                $select_str = "order_items." . $db_field_name;
-                $order_str = "order_items." . $db_field_name;
-                $group_by_str = "order_items." . $db_field_name;
-        $export_select_str = "order_items." . $db_field_name;
-            }
-            if($entity == "product"){
-        $export_select_str = "Product";
-        }else{
-             $export_select_str = "Account";
-        }
- 
-        }
-        
-        if ($group_by_str == 'accountid'){
-            $group_by_str = 'accountid WITH ROLLUP';
-        }
-
-        array_pop($custom_total_array);
-        array_unshift($custom_total_array, '<b>'.gettext('Grand Total').'</b>');
-        $new_arr['export_str'] = $export_select_str;
-        $new_arr['select_str'] = $select_str;
-        $new_arr['order_str'] = $order_str;
-        $new_arr['group_by_str'] = $group_by_str;
-        $new_arr['groupby_1'] = $group_by_1;
-        $new_arr['groupby_2'] = $group_by_2;
-        $new_arr['groupby_3'] = $group_by_3;
-        $new_arr['groupby_time'] = $group_by_time;
-        $new_arr['custom_total_array'] = $custom_total_array;
-        return $new_arr;
     }
  
     function provider()
@@ -1542,31 +421,6 @@ class Summary extends MX_Controller
         redirect(base_url() . 'summary/product/');
     }
     
-        function product_search_new()
-    {
-        $accountinfo = $this->session->userdata('accountinfo');
-//        function convert_GMT_to($select = "", $table = "", $date, $timezone_id = '') {
-        
-//        $this->convert_GMT_to('billing_date','order_items',$action['billing_date'][0], $accountinfo['timezone_id'])
-        
-        if ($this->input->post('advance_search', TRUE) == 1) {
-            $this->session->set_userdata('advance_search', $this->input->post('advance_search'));
-            $action = $this->input->post();
-            unset($_POST['action']);
-            unset($_POST['advance_search']);
-             if(!empty($action['billing_date'][0])){
-                $action['billing_date'][0]=$this->common->convert_GMT_to('billing_date','order_items',$action['billing_date'][0], $accountinfo['timezone_id']);
-            }
-            if(!empty($action['billing_date'][1])){
-                $action['billing_date'][1]=$this->common->convert_GMT_to('billing_date','order_items',$action['billing_date'][1], $accountinfo['timezone_id']);
-            }
-            $_POST['order_items.accountid'] = $_POST['order_items#accountid'];
-            unset($_POST['order_items#accountid']);
-            $this->session->set_userdata('productsummary_reports_search', $this->input->post());
-        }
-        redirect(base_url() . 'summary/product/');
-    }
-
     function product_clearsearchfilter()
     {
         $this->session->set_userdata('advance_search', 0);
@@ -1590,43 +444,24 @@ class Summary extends MX_Controller
 
             $new_arr = array();
             $free_minutes = $row1['free_minutes'];
-        $used_seconds = 0;      
+        $used_seconds_result = 0;      
          if(isset($session_info['order_items.accountid']) && $session_info['order_items.accountid'] != "" ){
             $this->db->where('accountid',$session_info['order_items.accountid']); 
         }
         if((isset($search_arr['groupby_1']) || ($search_arr['groupby_2']) || ($search_arr['groupby_2'])) && ($search_arr['groupby_1'] == 'order_items.accountid' || $search_arr['groupby_2'] == 'order_items.accountid' ) ){
-    
-            /*$used_seconds = "select sum(used_seconds) as used_seconds from counters as C inner join packages_view as P on C.product_id=P.id where P.product_id=".$row1['product_id']." and C.accountid = ".$row1['accountid']." ";
-            $used_seconds = $this->db->query($used_seconds);*/
-        $this->db->select_sum('used_seconds');
-            $this->db->from('counters');
-            $this->db->where("product_id",$row1['product_id']);
-             $this->db->where('accountid',$row1['accountid']); 
-            $used_seconds=$this->db->get();
-
-        }else{
-            /* $used_seconds = "select sum(used_seconds) as used_seconds from counters as C inner join packages_view as P on C.product_id=P.id where P.product_id=".$row1['product_id']."";
-            $used_seconds = $this->db->query($used_seconds);*/
+            $used_seconds_result = $this->summary_model->get_used_seconds_sum($row1['product_id'], $row1['accountid']);
+        }
+        else {        
          if($reseller_id > 0){
-               $this->db->select_sum('used_seconds');
-               $this->db->from('counters');
-            //    $this->db->where_not_in("accountid",$row1['accountid']);
-               $this->db->where("accountid",$row1['accountid']);               
-               $this->db->where("product_id",$row1['product_id']);
-               $used_seconds=$this->db->get();
-         }else{
-               $this->db->select_sum('used_seconds');
-               $this->db->from('counters');
-               $this->db->where("product_id",$row1['product_id']);
-               // $this->db->where("package_id",$row1['id']);
-    //               $this->db->where("type",0);
-               $used_seconds=$this->db->get();
+               $used_seconds_result = $this->summary_model->get_used_seconds_sum($row1['product_id'], $row1['accountid']);
+        }
+         else {
+               $used_seconds_result = $this->summary_model->get_used_seconds_sum($row1['product_id']);
         }
         }
 
-        if($used_seconds->num_rows > 0){
-            $used_seconds = $used_seconds->result_array()[0]['used_seconds'];
-
+        if($used_seconds_result > 0){
+            $used_seconds = $used_seconds_result;
         }
 
            if ($show_seconds == 'minutes') {
@@ -1652,7 +487,7 @@ class Summary extends MX_Controller
                     }
                     if ($search_arr['groupby_time'] == "MONTH") {
                         $dateObj = DateTime::createFromFormat('!m', $time);
-                        $time = $dateObj->format('F');
+                        $time = gettext($dateObj->format('F'));
                     }
                     $new_arr[] = $time;
                 }
@@ -1668,21 +503,7 @@ class Summary extends MX_Controller
                  if ($search_arr['groupby_2'] == "order_items.accountid") {
                      $new_arr[] = $this->common->build_concat_string("first_name,last_name,number", "accounts", $row1["accountid"]);
                  } 
-            
-           /* if ($search_arr['groupby_1'] == "order_items.accountid" || $search_arr['groupby_2'] == "order_items.accountid") {
-                if($reseller_id == '0'){
-                    $account_id = $this->db_model->getSelect('*','accounts',array("reseller_id" => $row1["accountid"]))->result_array();
-                    $account_id = $account_id[0]['id'];
-                }else{
-                    $account_id = $this->db_model->getSelect('*','accounts',array("id" => $row1["accountid"]))->result_array();
-                    $account_id = $account_id[0]['id'];
-                }
-                    $new_arr[] = $this->common->build_concat_string("first_name,last_name,number,company_name", "accounts", $account_id);
-                }
 
-            if($search_arr['groupby_2'] == "order_items.product_id"){
-                    $new_arr[] = $this->common->get_field_name('name', 'products', $row1['product_id']);
-                } */
         
              if (isset($search_arr['groupby_1']) && isset($search_arr['groupby_2']) &&  $search_arr['groupby_1'] == $search_arr['groupby_2']) {
                 unset($new_arr[1]);
@@ -1722,7 +543,6 @@ class Summary extends MX_Controller
             $total_user = $this->db_model->countQuery("*","order_items",array("product_id"=>$row1['productid'], "reseller_id" => 0),"accountid");
          }
         $custom_array = array(
-            //$product_name = $this->common->get_field_name("name","products",array("id"=>$row1['product_id'])),
             $row1['quantity'],
                 $row1['price'],
             $row1['setup_fee'],
@@ -1733,7 +553,6 @@ class Summary extends MX_Controller
             $active_user,
             $total_user,
         );
-        }else if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.accountid") || (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.accountid" )){//echo 4334; exit;
             $custom_array = array(
               
                 $free_minutes_result,
@@ -1811,7 +630,6 @@ class Summary extends MX_Controller
             $active_user,
             $total_user,
         );
-        }else if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.accountid") || (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.accountid" )){//echo 4334; exit;
             $custom_array = array(
               
             $this->db_model->countQuery("*","order_items",array("accountid"=>$row1['accountid'])),
@@ -1865,7 +683,6 @@ class Summary extends MX_Controller
         $price = 0;
     $setup_fee = 0;
         $minutes = 0;
-        //$billing_type = 0;
         $totalamt = 0;
     $active_user = 0;
     $total_user = 0;
@@ -1878,40 +695,18 @@ class Summary extends MX_Controller
                 $this->db->where('accountid',$session_info['order_items.accountid']); 
                 }
     if((isset($search_arr['groupby_1']) || ($search_arr['groupby_2']) || ($search_arr['groupby_2'])) && ($search_arr['groupby_1'] == 'order_items.accountid' || $search_arr['groupby_2'] == 'order_items.accountid' ) ){
-/*          $used_seconds = "select sum(used_seconds) as used_seconds from counters as C inner join packages_view as P on C.product_id=P.id where P.product_id=".$val['productid']." and C.accountid = ".$val['accountid']." ";
-            $used_seconds = $this->db->query($used_seconds);*/
-        $this->db->select_sum('used_seconds');
-            $this->db->from('counters');
-            $this->db->where("product_id",$val['product_id']);
-             $this->db->where('accountid',$val['accountid']); 
-            $used_seconds=$this->db->get();
-        
-
-        }else{
-            /*$used_seconds = "select sum(used_seconds) as used_seconds from counters as C inner join packages_view as P on C.product_id=P.id where P.product_id=".$val['productid']."";
-            $used_seconds = $this->db->query($used_seconds);*/
+            $used_seconds_result = $this->summary_model->get_used_seconds_sum($val['product_id'], $val['accountid']);
+        }
+        else{
          if($reseller_id > 0){
-               $this->db->select_sum('used_seconds');
-               $this->db->from('counters');
-            //    $this->db->where_not_in("accountid",$reseller_id);
-               $this->db->where("accountid",$reseller_id);            
-               $this->db->where("product_id",$row1['product_id']);
-               $used_seconds=$this->db->get();
-         }else{
-               $this->db->select_sum('used_seconds');
-               $this->db->from('counters');
-               $this->db->where("product_id",$row1['product_id']);
-               // $this->db->where("package_id",$val['id']);
-    //               $this->db->where("type",0);
-               $used_seconds=$this->db->get();
+               $used_seconds_result = $this->summary_model->get_used_seconds_sum($row1['product_id'], $reseller_id);
         }
-            /*$this->db->select_sum('used_seconds');
-            $this->db->from('counters');
-            $this->db->where("product_id",$val['product_id']);
-            $used_seconds=$this->db->get();*/
+         else{
+               $used_seconds_result = $this->summary_model->get_used_seconds_sum($row1['product_id']);
         }
-        if($used_seconds->num_rows > 0){
-            $usedsec+= $used_seconds->result_array()[0]['used_seconds'];
+        }
+        if($used_seconds_result > 0){
+            $usedsec+= $used_seconds_result;
 
         }
               if((isset($search_arr['groupby_1']) || ($search_arr['groupby_2']) || ($search_arr['groupby_2'])) && ($search_arr['groupby_1'] == 'order_items.accountid' || $search_arr['groupby_2'] == 'order_items.accountid' ) ){
@@ -1951,7 +746,6 @@ class Summary extends MX_Controller
         }
         
         } 
-//echo $active_user; exit;
     $free_min =$minutes *60;
     $avaiable_minutes += $this->common->get_total_available_minutes($free_min,$usedsec);
         if ($show_seconds == 'minutes') {
@@ -1984,7 +778,6 @@ class Summary extends MX_Controller
         if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.product_id") && (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.product_id" )){ 
             unset($search_arr['custom_total_array'][1]);
         }else{ 
-            //unset($search_arr['custom_total_array'][1]);
         }
         $last_array = array(
             
@@ -2003,7 +796,6 @@ class Summary extends MX_Controller
             if((isset($search_arr['groupby_1']) && $search_arr['groupby_1'] == "order_items.accountid") && (isset($search_arr['groupby_2']) && $search_arr['groupby_2'] == "order_items.accountid" )){ 
                 unset($search_arr['custom_total_array'][1]);
             }else{ 
-                //unset($search_arr['custom_total_array'][1]);
             }
         $last_array = array(
            
@@ -2161,30 +953,6 @@ class Summary extends MX_Controller
 		$product_category = 1;
 	}
         ob_clean();
-	/*	if($product_category == 2){
-			$fixed_header = array(
-			    'Quantity',
-			    'Price',
-			    'Setup Fee',
-			    'Total Price',
-			    'Active User',
-			    'Total User'
-
-			);
-	   	}else{
-			$fixed_header = array(
-			    'Quantity',
-			    'Price',
-			    'Setup Fee',
-			    'Free Minutes',
-			    'Used Minutes',
-			    'Available Minutes',
-			    'Total Price',
-			    'Active User',
-			    'Total User'
-
-			);
-		}*/
 	$new_search_array = array();
         $new_column_arr = $this->summary_column_arr('product');
 		$grid_field = $this->summary_form->build_product_summary($new_column_arr);
@@ -2196,20 +964,7 @@ class Summary extends MX_Controller
 				$fixed_header_new[] = $fix_val[0];
 			}
 		}
-//echo "<pre>"; print_r($fixed_header_new); exit;
-//echo "<pre>"; print_r($fixed_header);
-
-/*	if(!empty($new_column_arr) && (isset($search_arr['groupby_1']) || isset($search_arr['groupby_2']))){
-		foreach($new_column_arr as $column_value){
-			$new_search_array[] = $column_value[0];
-		}
-	}else{
-			$new_search_array[] ="Product Name";
-	}*/
-//echo "<pre>"; print_r($fixed_header_new);// exit;
-//        $header_arr[] = array_merge($new_search_array, $fixed_header_new);
         $header_arr[] = $fixed_header_new;
-//echo "<pre>"; print_r($header_arr); exit;
         if ($query->num_rows() > 0) {
             $data_arr = $this->product_summary_report_grid($search_arr, $query, 'product', 'export');
         }
@@ -2353,7 +1108,6 @@ class Summary extends MX_Controller
     $db_field_name = ($entity == 'provider') ? 'provider_id' :
                      (($entity == 'product')  ? 'product_id'  :
                      (($entity == 'carrier')  ? 'carrier_id'  : 'accountid'));
-//    $this->flux_log->write_log('summary_search_info', json_encode($entity));
     if ($this->session->userdata('advance_search') == 1) {
         $custom_search = $this->session->userdata($entity . 'summary_reports_search');
 
@@ -2379,7 +1133,6 @@ class Summary extends MX_Controller
             $group_by_1 = $custom_group_by;
 
             if ($custom_search['groupby_1'] == $db_field_name) {
-//                $this->flux_log->write_log ( 'groupby_1', json_encode($db_field_name) );
                 $export_select_str .= 'Carrier,';
             } elseif ($custom_search['groupby_1'] == 'trunk_id') {
                 $export_select_str .= 'Trunk,';
@@ -2497,7 +1250,6 @@ class Summary extends MX_Controller
             $order_str = "order_items." . $db_field_name;
             $group_by_str = "order_items." . $db_field_name;
             $export_select_str = "order_items." . $db_field_name;
-//            $this->flux_log->write_log('summary_search_info', json_encode($db_field_name));
         }
 
         if ($entity == "product") {
@@ -2527,7 +1279,6 @@ class Summary extends MX_Controller
     $new_arr['groupby_3'] = $group_by_3;
     $new_arr['groupby_time'] = $group_by_time;
     $new_arr['custom_total_array'] = $custom_total_array;
-//    $this->flux_log->write_log('summary_search_info', json_encode($new_arr));
 
     return $new_arr;
 }
@@ -2656,7 +1407,7 @@ class Summary extends MX_Controller
                         }
                         if ($search_arr['groupby_time'] == "MONTH") {
                             $dateObj = DateTime::createFromFormat('!m', $time);
-                            $time = $dateObj->format('F');
+                            $time = gettext($dateObj->format('F'));
                         }
                         $new_arr[] = $time;
                     }
@@ -2731,15 +1482,10 @@ class Summary extends MX_Controller
             }
         }
     
-        $function_name = 'get_' . $entity . 'summary_report_list';
-        $this->flux_log->write_log ( 'function_name', json_encode($function_name) );
-//        if (isset($total_info) && ! empty($total_info)) {
-//        if (! $total_info) {
+            $function_name = 'get_' . $entity . 'summary_report_list';
             $total_info = $this->summary_model->$function_name(true, '', '', '', $search_arr['select_str'], $search_arr['order_str'], true);
             $total_info = $total_info->result_array();
             $total_info = $total_info[0];
-//        }
-//        }
     
         $total_asr = ($total_info['attempts'] > 0) ? round(($total_info['completed'] / $total_info['attempts']) * 100, 2) : 0;
         $total_acd = ($total_info['completed'] > 0) ? round($total_info['duration'] / $total_info['completed']) : 0;

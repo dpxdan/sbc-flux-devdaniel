@@ -27,7 +27,6 @@ class Summary_model extends CI_Model
     function __construct()
     {
         parent::__construct();
-        $this->load->library ( 'flux_log' );
     }
 
     function get_resellersummary_report_list($flag, $start = 0, $limit = 0, $group_by, $select, $order, $export = false)
@@ -90,7 +89,6 @@ class Summary_model extends CI_Model
 
     function get_providersummary_report_list($flag, $start = 0, $limit = 0, $group_by, $select, $order, $export = false)
     {
-        $this->flux_log->write_log ( 'get_providersummary_report_list', json_encode($select) );
         $this->db_model->build_search('summary_provider_search');
         $where['provider_id >'] = 0;
         $table_name = 'cdrs';
@@ -184,7 +182,6 @@ class Summary_model extends CI_Model
             $this->db->from($table_name);
             $result = $this->db->get();
             $query = $this->db->last_query();
-            $this->flux_log->write_log ( 'get_customersummary_report_list', json_encode($query) );
         } else {
 
             $result = $this->db_model->getSelect("count(*) as total_count", $table_name, '');
@@ -213,9 +210,7 @@ class Summary_model extends CI_Model
             $this->db->group_by($group_by, false);
             $this->db->_protect_identifiers = true;
         }
-	// if($reseller_id > 0){
 		$this->db->where('orders.reseller_id',$reseller_id);  
-	// }
 
 	   if($this->session->userdata('advance_search') != 1 && isset($product_summary_search['order_items.accountid']) && $product_summary_search['order_items.accountid'] != ''){
             $this->db->where('orders.accountid',$product_summary_search['order_items.accountid']);         
@@ -243,7 +238,6 @@ class Summary_model extends CI_Model
         $this->db->from($table_name);
         $this->db->join($join_table, 'order_items.order_id = orders.id');
         $query = $this->db->get();
-	//echo $this->db->last_query(); exit;
         if ($flag) {
             return $query;
         } else {

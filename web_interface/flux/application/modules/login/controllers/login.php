@@ -151,7 +151,7 @@ class Login extends MX_Controller
 
                         $invoice_conf = $this->login_model->get_invoice_conf_for_account($result);
                         $data['user_logo'] = (! empty($invoice_conf['logo'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['logo'] : "logo.png";
-                        $data['user_header'] = (! empty($invoice_conf['website_title'])) ? $invoice_conf['website_title'] : "Flux Telecom - Unindo pessoas e negócios Solution";
+                        $data['user_header'] = (! empty($invoice_conf['website_title'])) ? $invoice_conf['website_title'] : "Flux Telecom - Unindo pessoas e negócios";
                         $data['user_footer'] = (! empty($invoice_conf['website_footer'])) ? $invoice_conf['website_footer'] : "Flux Telecom All Rights Reserved.";
                         $data['user_favicon'] = (! empty($invoice_conf['favicon'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['favicon'] : "favicon.ico";
                         $this->session->set_userdata('user_logo', $data['user_logo']);
@@ -246,7 +246,7 @@ class Login extends MX_Controller
             $invoice_conf = $this->login_model->get_invoice_conf_by_custom_domain_or_reseller($custom_domain, $_SERVER["HTTP_HOST"], $reseller_id);
 
             $data['user_logo'] = (! empty($invoice_conf['logo'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['logo'] : "logo.png";
-            $data['user_header'] = (! empty($invoice_conf['website_title'])) ? $invoice_conf['website_title'] : "Flux Telecom - Unindo pessoas e negócios Solution";
+            $data['user_header'] = (! empty($invoice_conf['website_title'])) ? $invoice_conf['website_title'] : "Flux Telecom - Unindo pessoas e negócios";
             $data['user_footer'] = (! empty($invoice_conf['website_footer'])) ? $invoice_conf['website_footer'] : "Flux Telecom All Rights Reserved.";
             $data['user_favicon'] = (! empty($invoice_conf['favicon'])) ? $invoice_conf['accountid'] . "_" . $invoice_conf['favicon'] : "favicon.ico";
 

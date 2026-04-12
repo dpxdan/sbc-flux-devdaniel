@@ -25,6 +25,7 @@ class Dashboard_model extends CI_Model {
 	function __construct() {
 		parent::__construct ();
 	}
+	
 	function get_recent_recharge() {
 		$accountinfo = $this->session->userdata ( 'accountinfo' );
 		$userlevel_logintype = $this->session->userdata ( 'userlevel_logintype' );
@@ -48,6 +49,7 @@ class Dashboard_model extends CI_Model {
 		$this->db->order_by ( 'payment_date', 'desc' );
 		return $this->db->get ( 'payments' );
 	}
+
 	function get_call_statistics($table, $parent_id, $start_date = '', $end_date = '', $group_flag = true) {
 		$this->db->select ( "sum(total_calls) as sum,
                            SUM(total_answered_call) as answered,
@@ -68,6 +70,7 @@ class Dashboard_model extends CI_Model {
 		$result = $this->db->get ( $table );
 		return $result;
 	}
+
 	function get_customer_maximum_callminutes($start_date, $end_date) {
 		$start_date = $start_date . " 00:00:00";
 		$end_date = $end_date . " 23:59:59";
@@ -98,7 +101,6 @@ class Dashboard_model extends CI_Model {
 	  
 		return $this->db->query ( $select_query );
 	}
-	
 	
 	function get_customer_maximum_countryminutes($start_date, $end_date) {
 		$start_date = $start_date . " 00:00:00";
@@ -132,10 +134,22 @@ class Dashboard_model extends CI_Model {
 		return $this->db->query ( $select_query );
 	}
 
-
 	function execute_query($query) {
 		return $this->db->query($query);
 	}
 
+	function get_low_balance_accounts($reseller_id = 0, $limit = 5)
+	{
+	    $where = "notify_flag = 0 AND deleted = 0 AND status = 0" .
+	             " AND ((posttoexternal = 0 AND balance <= notify_credit_limit)" .
+	             " OR (posttoexternal = 1 AND credit_limit - balance <= notify_credit_limit))";
+	
+	    $this->db->where_in('type', array(0, 1, 3));
+	    if ($reseller_id > 0) {
+	        $this->db->where('reseller_id', $reseller_id);
+	    }
+	    $this->db->limit($limit);
+	    return $this->db_model->select('*', 'accounts', $where, 'id', 'DESC');
+	}
 }
 ?>

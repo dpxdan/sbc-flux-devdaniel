@@ -1389,23 +1389,10 @@ function create_formatted_date($startdate, $enddate, $timezone, $timevisibly)
                                         </thead>
                                         <tbody>
                                             <?php
-                                            if ($accountinfo['type'] == '1') {
-                                                $reseller_id = $accountinfo['id'];
-                                            } else {
-                                                $reseller_id = "0";
-                                            }
+                                            $query_result = isset($low_balance_accounts) ? $low_balance_accounts : null;
 
-                                            $where = "notify_flag = '" . 0 . "' AND deleted = '" . 0 . " ' AND status = ' " . 0 . " ' AND (posttoexternal ='" . 0 . "' AND " . "balance <= notify_credit_limit" . ") OR ( posttoexternal ='" . 1 . "' AND " . "credit_limit - balance <= notify_credit_limit" . ")";
-
-                                            $entity_array = array("0", "1", "3");
-                                            $limit = 5;
-
-                                            $this->db->where_in("type", $entity_array);
-                                            $this->db->limit($limit);
-                                            $query = $this->db_model->select("*", "accounts", $where, "id", "DESC");
-
-                                            if ($query->num_rows() > 0) {
-                                                $account_data = $query->result_array();
+                                            if ($query_result->num_rows() > 0) {
+                                                $account_data = $query_result->result_array();
 
                                                 foreach ($account_data as $data_key => $accountinformation) {
                                                     echo "<tr>";
@@ -1770,9 +1757,6 @@ function create_formatted_date($startdate, $enddate, $timezone, $timevisibly)
                                                 <td scope="col"><?php if ($swap_info[0] != '') { echo $swap_info[0] . 'MB'; } ?></td>
                                                 <td scope="col"><?php if ($swap_info[1] != '') { echo $swap_info[1] . 'MB'; } ?></td>
                                                 <td scope="col"><?php if ($swap_info[2] != '') { echo $swap_info[2] . 'MB'; } ?></td>
-                                                <td scope="col"><?php if ($swap_info[3] != '') { echo $swap_info[3] . 'MB'; } ?></td>
-                                                <td scope="col"><?php if ($swap_info[4] != '') { echo $swap_info[4] . 'MB'; } ?></td>
-                                                <td scope="col"><?php if ($swap_info[5] != '') { echo $swap_info[5] . 'MB'; } ?></td>
                                             </tr>
                                         </tbody>
                                     </table>

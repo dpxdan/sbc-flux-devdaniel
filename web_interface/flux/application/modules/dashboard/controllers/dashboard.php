@@ -31,7 +31,7 @@ class dashboard extends MX_Controller {
 		$this->load->model ( 'Flux_common' );
 		$this->load->model ( 'dashboard_model' );
 		$this->load->library ( 'freeswitch_lib' );
-		$this->load->library ( 'Invoice_log' );
+		$this->load->library ( 'flux_log' );
 		$this->load->library ('FLUX_Sms');
 		$accountinfo = $this->session->userdata ( 'accountinfo' );
 		if($accountinfo['type'] == '0' || $accountinfo['type'] == '3'){
@@ -41,19 +41,19 @@ class dashboard extends MX_Controller {
 	function index() {
 
 		if ($this->session->userdata ( 'user_login' ) == FALSE)
-			redirect ( base_url () . 'login/login' );
+		redirect ( base_url () . 'login/login' );
 		$data ['page_title'] = gettext ( 'Dashboard' );
 		if ($this->session->userdata ( 'logintype' ) == 0) {
 			$this->load->view ( 'view_user_dashboard', $data );
-		} else {
+		} 
+		else {
 			$data['dashboard_flag']=true;
 			$gmtoffset = $this->common->get_timezone_offset ();
 			$accountinfo = $this->session->userdata ( 'accountinfo' );
+			$reseller_id = ($accountinfo['type'] == '1') ? $accountinfo['id'] : 0;
+			$data['low_balance_accounts'] = $this->dashboard_model->get_low_balance_accounts($reseller_id);
 			$json_data_acc = array ();
 			$json_data_acc = $this->session->all_userdata();
-//			$json = 
-			$this->invoice_log->write_log ( 'invoice_info', json_encode($json_data_acc) );
-//			$this->invoice_log->write_log ( 'info',$acc_mode);
 			$data['currency']= $this->common->get_field_name("currency","currency",array("id"=>$accountinfo['currency_id']));
 			$this->load->view ( 'view_dashboard', $data );
 		}
