@@ -126,12 +126,7 @@ body {
 
 </head>
 <body style="background: url(<?=base_url()?>assets/images/login_bg.jpg);background-size: cover;background-attachment: fixed;" onload="FocusOnInput()">
-<!--<script src="https://accounts.google.com/gsi/client" async defer></script>
-	    <div id="g_id_onload"
-	         data-client_id="515138458683-golskdpdho2f1hd52mtcg4npf3v51l9r.apps.googleusercontent.com"
-	         data-login_uri="https://dev.flux.net.br/login"
-	         data-auto_prompt="true">
-	      </div>-->
+
 	<div class="col-md-12 m-auto form_card">
 		<form role="form" id="login_form" class="card p-4 col-12 "
 			name="login_form" action="<?php echo base_url(); ?>login/login"
@@ -197,15 +192,7 @@ if (Common_model::$global_config['system_config']['enable_signup'] == 0) {
 }
 ?>
             </p>
-<!--            </br>
-            <div class="text-center w-full g_id_signin"
-                  data-type="standard"
-                  data-size="large"
-                  data-theme="filled_blue"
-                  data-text="sign_in_with"
-                  data-shape="rectangular"
-                  data-logo_alignment="left">
-               </div>-->
+
 			</div>
 
 		</form>

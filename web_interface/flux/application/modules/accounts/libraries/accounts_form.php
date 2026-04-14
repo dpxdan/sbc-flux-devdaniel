@@ -190,7 +190,6 @@ class Accounts_form extends common {
 		if (!$entity_type) {
 			$entity_type = 'customer';
 		}
-		$this->CI->flux_log->write_log('entity_type', json_encode($entity_type));
 		$params = array(
 			'name'  => 'number',
 			'value' => $uname,

@@ -138,7 +138,6 @@ class Freeswitch_model extends CI_Model
 
     function edit_freeswith($add_array, $id)
     {
-        $this->flux_log->write_log('edit_freeswith', json_encode($add_array));
         $this->db->select('accountid');
         $accountid = (array) $this->db->get_where('sip_devices', array(
             "username" => $add_array['fs_username']

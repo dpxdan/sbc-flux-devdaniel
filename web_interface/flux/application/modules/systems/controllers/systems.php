@@ -353,7 +353,6 @@ class Systems extends MX_Controller
         $count_all = $this->system_model->getupdate_list(false, "", "");
         $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
         $json_data = $paging_data["json_paging"];
-        $this->flux_log->write_log("SYSTEM_UPDATE", json_encode($json_data));
         $query = $this->system_model->getupdate_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
         $grid_fields = json_decode($this->system_form->build_update_list_for_admin());
         $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
@@ -368,9 +367,6 @@ class Systems extends MX_Controller
             }
         }
         unset($row, $cell);
-
-        // $this->flux_log->write_log("SYSTEM_UPDATE", json_encode($json_data['rows']));
-
         echo json_encode($json_data);
     }
 
@@ -381,7 +377,6 @@ class Systems extends MX_Controller
         if ($this->input->post('advance_search', TRUE) == 1) {
             $this->session->set_userdata('advance_search', $this->input->post('advance_search'));
             $action = $this->input->post();
-            $this->flux_log->write_log("UPDATE_SEARCH", json_encode($action));
             unset($action['action']);
             unset($action['advance_search']);
             $this->session->set_userdata('update_search', $action);

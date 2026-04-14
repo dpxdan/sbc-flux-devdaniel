@@ -92,7 +92,6 @@ class pricing extends MX_Controller
     function price_save()
     {
         $add_array = $this->input->post();
-        $this->flux_log->write_log ( 'price_save', json_encode($add_array) );
         $i = 1;
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($add_array as $key => $value) {

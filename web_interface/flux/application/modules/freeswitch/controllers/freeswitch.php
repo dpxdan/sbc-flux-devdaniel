@@ -313,8 +313,6 @@ class Freeswitch extends MX_Controller
         $query = $this->freeswitch_model->fs_retrieve_sip_user(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
         $permissioninfo = $this->session->userdata('permissioninfo');
         $profiles = $this->freeswitch_model->get_active_sip_profile_names();
-        // $this->flux_log->write_log("FSSIPDEVICES", json_encode($profiles));
-        // FLUXUPDATE-943 Kinjal Start
         $new_array = array();
         foreach ($profiles as $profile) {
             $profile_name = $profile['name'];
@@ -401,7 +399,6 @@ class Freeswitch extends MX_Controller
                 'cell' => $current_row
             );
         }
-        $this->flux_log->write_log("FSSIPDEVICES", json_encode($json_data['rows']));
         echo json_encode($json_data);
     }
     
@@ -666,8 +663,6 @@ class Freeswitch extends MX_Controller
                 if (isset($account)) {
                 $accountid = $this->common->get_field_name('id', 'accounts', array("number" => $account));
                 $accountcode = $this->common->get_field_name_coma_new("first_name,last_name,number", "accounts", $accountid);
-//                $accountcode = $this->common->build_concat_string('first_name,last_name,number', 'accounts', $account);
-                $this->flux_log->write_log("type_call", json_encode($accountcode));
                 }
                 
                 

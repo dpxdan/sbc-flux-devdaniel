@@ -148,16 +148,13 @@ class Form {
 		$form_contents .= form_open ( $fields_array ['forms'] [0], $fields_array ['forms'] [1] );
 		$form_name=$fields_array ['forms'] [1]['name'];
 		$current_locale = $this->CI->session->userdata('user_language');
-		// $this->CI->flux_log->write_log("BUILD_FORM", json_encode($current_locale));
 
 		if(file_exists(FCPATH."application/modules/".$this->CI->router->class."/tooltip_".$current_locale.".php")){
 			$file_name=FCPATH."application/modules/".$this->CI->router->class."/tooltip_".$current_locale.".php";
 				 include $file_name;
-				//  $this->CI->flux_log->write_log("BUILD_FORM", json_encode($file_name));
 		}elseif(file_exists(FCPATH."application/modules/".$this->CI->router->class.'/tooltip.php')){
 			$file_name=FCPATH."application/modules/".$this->CI->router->class.'/tooltip.php';
 				 include $file_name;
-				//  $this->CI->flux_log->write_log("BUILD_FORM", json_encode($file_name));
 		}
 		unset ( $fields_array ['forms'] );
 		$button_array = array ();

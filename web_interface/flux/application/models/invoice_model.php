@@ -42,7 +42,7 @@ class Invoice_model extends CI_Model
 		$this->load->library("flux/order");
 		$this->load->library("flux_log");
 		$this->load->model("common_model");
-		$this->fp = fopen("/var/log/flux/flux-invoice.log", "a+");
+		$this->fp = fopen("/var/log/flux/flux-log.json", "a+");
 		$this->CurrentDate = gmdate("Y-m-d 00:00:01");
 		$this->custom_current_date = gmdate("Y-m-d 23:59:59");
     }
@@ -132,7 +132,6 @@ class Invoice_model extends CI_Model
 			$last_invoice_ID = str_pad($last_invoice_ID, 6, '0', STR_PAD_LEFT);
 			$automatic_flag = self::$global_config['system_config']['automatic_invoice'] == 1 ? '0' : '1';
 			if ($invoiceconf['no_usage_invoice'] == 1) {
-				$this->flux_log->write_log('no_usage_invoice', json_encode($invoiceconf));
 				$InvoiceData = array(
 					"accountid" => $accountinfo['id'],
 					"prefix" => $invoiceconf['invoice_prefix'],
@@ -149,23 +148,6 @@ class Invoice_model extends CI_Model
 				);
 				$this->db->insert("invoices", $InvoiceData);
 				$invoiceid = $this->db->insert_id();
-
-				$InvoiceDataLog = array(
-					"accountid" => $accountinfo['id'],
-					"prefix" => $invoiceconf['invoice_prefix'],
-					"number" => $last_invoice_ID,
-					"reseller_id" => $accountinfo['reseller_id'],
-					"generate_date" => $this->CurrentDate,
-					"from_date" => $this->StartDate,
-					"to_date" => $this->EndDate,
-					"due_date" => $DueDate,
-					"status" => 0,
-					"function" => "create_invoice",
-					"confirm" => $automatic_flag,
-					"notes" => $accountinfo['invoice_note'],
-					"is_deleted" => 0,
-				);
-				$this->flux_log->write_log('create_invoice', json_encode($InvoiceDataLog));
 
 				$InvoiceDetailData = array(
 					"invoiceid" => $invoiceid,
@@ -184,20 +166,6 @@ class Invoice_model extends CI_Model
 					"account_currency" => "BRL",
 					"base_currency" => "BRL",
 				);
-
-				$InvoiceLogDetailData = array(
-					"invoiceid" => $invoiceid,
-					"accountid" => $accountinfo['id'],
-					"debit" => "0.00",
-					"credit" => "0.00",
-					"reseller_id" => $accountinfo['reseller_id'],
-					"created_date" => $this->CurrentDate,
-					"generate_type" => 0,
-					"function" => "create_invoice",
-					"account_currency" => "BRL",
-				);
-				$this->flux_log->write_log('create_detail_invoice', json_encode($InvoiceLogDetailData));
-
 				$update_billable_item = "update invoice_details set invoiceid = " . $invoiceid . " where accountid=" . $accountinfo['id'] . " AND created_date >='" . $this->StartDate . "' AND created_date <= '" . $this->EndDate . "'";
 				$this->db->query($update_billable_item);
 				$amount = $this->db_model->getSelect("debit,credit", "invoice_details", array(
@@ -210,21 +178,10 @@ class Invoice_model extends CI_Model
 					$InvoiceData['invoice_number'] = $invoiceconf['invoice_prefix'] . $last_invoice_ID;
 					$InvoiceData['currency_id'] = $accountinfo['currency_id'];
 					$final_array = array_merge($accountinfo, $InvoiceData);
-					$log_final_array = array_merge($accountinfo, $InvoiceData);
-					$this->flux_log->write_log('update_invoice_amount', json_encode($log_final_array));
 					$this->common->mail_to_users("new_invoice", $final_array);
 					$this->update_bill_date($accountinfo);
 
 				}
-					if (isset($InvoiceDataLog)) {
-					$this->flux_log->write_log ( 'account_insert_invoice', json_encode($InvoiceDataLog) );
-					}
-					if (isset($update_billable_item_log)) {
-					$this->flux_log->write_log ( 'update_billable_item_log', json_encode($update_billable_item_log) );
-					}
-					if (isset($log_final_array)) {
-					$this->flux_log->write_log ( 'log_final_array', json_encode($log_final_array) );
-					}
 				return $invoiceid;
 			}
 		}
@@ -287,27 +244,10 @@ class Invoice_model extends CI_Model
 					"account_currency" => $account_currency_info['currency'],
 					"invoiceid" => $invoiceid,
 				);
-				$logArr = array(
-					"accountid" => $accountinfo['id'],
-					"reseller_id" => $accountinfo['reseller_id'],
-					"order_item_id" => "0",
-					"description" => $calls['calltype'] . "-" . "$minutes:$secondsleft.",
-					"debit" => $calls['debit'],
-					"charge_type" => $calls['calltype'],
-					"created_date" => $this->EndDate,
-					"base_currency" => $base_currency,
-					"exchange_rate" => $account_currency_info['currencyrate'],
-					"account_currency" => $account_currency_info['currency'],
-					"function" => "bill_calls",
-					"invoiceid" => $invoiceid,
-				);
 				$this->db->insert("invoice_details", $tempArr);
-				$this->flux_log->write_log('invoice_details', json_encode($logArr));
 
 				$update_cdrs_arr = "update cdrs set invoiceid = " . $invoiceid . " where accountid=" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "'";
 				$this->db->query($update_cdrs_arr);
-				$update_log_cdrs_arr = "update cdrs set invoiceid = " . $invoiceid . " where accountid=" . $accountinfo['id'] . " AND callstart >='" . $this->StartDate . "' AND callstart <= '" . $this->EndDate . "'";
-				$this->flux_log->write_log('update_cdrs', json_encode($update_log_cdrs_arr));
 
 			}
 		}
@@ -356,29 +296,7 @@ class Invoice_model extends CI_Model
 						'credit' => 0,
 
 					);
-					$log_tax_insert_arr = array(
-						'accountid' => $accountinfo['id'],
-						'description' => $tax_key,
-						'created_date' => $this->EndDate,
-						'invoiceid' => $invoiceid,
-						'reseller_id' => $accountinfo['reseller_id'],
-						'is_tax' => 1,
-						'order_item_id' => 0,
-						'payment_id' => 0,
-						'before_balance' => $account_balance,
-						'product_category' => '0',
-						'charge_type' => 'TAX',
-						'after_balance' => $after_balance,
-						'function' => 'apply_taxes',
-						'base_currency' => $base_currency,
-						'exchange_rate' => $account_currency_info['currencyrate'],
-						'account_currency' => $account_currency_info['currency'],
-						'debit' => $tax,
-						'credit' => 0,
-
-					);
 					$this->db->insert("invoice_details", $tax_insert_arr);
-					$this->flux_log->write_log('tax_calculate', json_encode($log_tax_insert_arr));
 
 				}
 			}
@@ -411,9 +329,6 @@ class Invoice_model extends CI_Model
 				$parent_array = array();
 				$parent_key_arr = array();
 				$productdata = array(
-					"product_id" => $ordervalue['product_id'],
-				);
-				$productdatalog = array(
 					"product_id" => $ordervalue['product_id'],
 				);
 
@@ -569,7 +484,6 @@ class Invoice_model extends CI_Model
 								"id" => $countervalue['id'],
 								"status" => 1,
 							);
-							$this->flux_log->write_log('update_counter', json_encode($counter_update_arr));
 							}
 							}
 							else {
@@ -583,16 +497,6 @@ class Invoice_model extends CI_Model
 							);
 							$this->db->insert("counters", $counters_insert_arr);
 							$counter_id = $this->db->insert_id();
-							$counters_log_insert_arr = array(
-								"used_seconds" => 0,
-								"product_id" => $ordervalue['product_id'],
-								"accountid" => $ordervalue['accountid'],
-								"package_id" => $ordervalue['id'],
-								"counter_id" => $counter_id,
-								"type" => 1,
-								"status" => 1,
-							);
-							$this->flux_log->write_log('insert_counter', json_encode($counters_log_insert_arr));
 							}
 							}
 								$this->db->update("order_items", $update_order_arr, array(
@@ -607,30 +511,15 @@ class Invoice_model extends CI_Model
 								"order_id" => $ordervalue['id'],
 								'message' => "Produto nao encontrado para a conta.",
 							);
-							$this->flux_log->write_log('no_get_account_product_info', json_encode($no_acc_product_insert_arr));
 						}
 
 					}
 				} 
-				else {
-					$no_product_insert_arr = array(
-						"cron_date" => $this->CurrentDate,
-						"product_id" => $productdatalog,
-						'message' => "Produto nao encontrado.",
-
-					);
-					$this->flux_log->write_log('not_found_product', json_encode($no_product_insert_arr));
-				$this->flux_log->write_log('renew_product', json_encode($product_data));
+				else {					
 
 				}
 			}
-		} else {
-			$no_renew_insert_arr = array(
-				"cron_date" => $this->CurrentDate,
-				'message' => "Nenhum pedido para renovar.",
-
-			);
-			$this->flux_log->write_log('no_renew', json_encode($no_renew_insert_arr));
+		} else {			
 
 		}
 	

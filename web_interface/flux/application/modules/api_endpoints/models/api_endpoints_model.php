@@ -43,10 +43,8 @@ class api_endpoints_model extends CI_Model
         }
         if ($flag) {
             $query = $this->db_model->select("*", "api_endpoints", $where, "id", "ASC", $limit, $start);
-            $this->flux_log->write_log('getapi_endpoints_list_flag', json_encode($query));
         } else {
             $query = $this->db_model->countQuery("*", "api_endpoints", $where);
-            $this->flux_log->write_log('getapi_endpoints_list_count', json_encode($query));
         }
         return $query;
     }
@@ -87,12 +85,10 @@ class api_endpoints_model extends CI_Model
                         'creation_date' => $value['creation_date'],
                         'last_modified_date' => $value['last_modified_date']                     
                         );
-                    $this->flux_log->write_log('api_endpoints_list_flag', json_encode($query));
                 }
             }
         } else {
             $query = $this->db_model->countQuery("*", 'api_endpoints', $where);
-            $this->flux_log->write_log('api_endpoints_list_count', json_encode($query));
         }
         return $query;
     }

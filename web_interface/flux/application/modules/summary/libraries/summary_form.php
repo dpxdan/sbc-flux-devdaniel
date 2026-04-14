@@ -187,7 +187,6 @@ class Summary_form extends common
         $new_arr = array();
         if ($this->CI->session->userdata('advance_search') == '1') {        
             $search_array = $this->CI->session->userdata('providersummary_reports_search');
-            $this->CI->flux_log->write_log("advance_search", json_encode($search_array));
             if (isset($search_array['time']) && ! empty($search_array['time'])) {
                 $new_arr[] = array(
                     $search_array['time'],

@@ -121,7 +121,6 @@ class Products extends MX_Controller {
 				"product_name" => $data['product_name'],
 				"product_category" => $category,
 			);
-			$this->flux_log->write_log('products_add', json_encode($ProductDataLog));
 			$this->load->view ( 'view_product_add_'.strtolower($category), $data);
 		}else{
 			if ($this->session->userdata ( 'logintype' ) == 1 || $this->session->userdata ( 'logintype' ) == 5){

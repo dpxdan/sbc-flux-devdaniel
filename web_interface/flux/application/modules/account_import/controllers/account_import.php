@@ -150,14 +150,12 @@ class Account_import extends MX_Controller
         }
         $data['config_array'] = $this->_create_common_array();
         $data['all_domains']  = $this->account_import_model->get_all_active_domains();
-        $this->flux_log->write_log('customer_import_preview', json_encode($data));
         $this->load->view('view_import_customer_mapper', $data);
     }
 
     function customer_import_data()
     {
         $add_array = $this->input->post();
-        $this->flux_log->write_log('customer_import_data_post', json_encode($add_array));
         $tax_id = Common_model::$global_config['system_config']['tax_type'];
         $this->load->library("flux/signup_lib");
         $default_fields = (unserialize($add_array['post_array']));
@@ -332,7 +330,6 @@ class Account_import extends MX_Controller
                         }
 
                         if (! empty($row_domain_ids)) {
-                            $this->flux_log->write_log('insert_account_domains', json_encode($row_domain_ids));
                             $this->account_import_model->insert_account_domains($accountid, $row_domain_ids);
                         }
                     }

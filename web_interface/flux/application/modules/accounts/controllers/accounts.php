@@ -633,7 +633,6 @@ class Accounts extends MX_Controller {
 	}
 
 	function customer_details_json($module, $accountid) {
-	    $this->flux_log->write_log('customer_details_json', json_encode($module));
 		$entity_type = $this->common->get_field_name('type', 'accounts', array(
 				'id' => $accountid,
 			));
@@ -1483,7 +1482,6 @@ class Accounts extends MX_Controller {
 					$customer_info['balance'] = $customer_info['balance'] + $customer_info['refill_amount'];
 					$this->common->mail_to_users('account_refilled', $customer_info);
 				}
-				// $this->flux_log->write_log('charge', json_encode($customer_info));	
 				$message = $post_array['payment_type'] == 0?gettext("Recharge successfully!"):gettext("Post charge applied successfully.");
 				echo json_encode(array(
 						"SUCCESS" => gettext($message),
@@ -3051,10 +3049,8 @@ class Accounts extends MX_Controller {
 			$where_dids['where'] = $this->db->where("product_id IN (".$ids.")", NULL, false);
 
 			$dids_infos = $this->db_model->getSelect("*", "dids", '', $where_dids);
-			$this->flux_log->write_log('customer_did_delete', json_encode($dids_infos->result_array()));
 
 			foreach ($dids_infos->result_array() as $key => $did_info) {
-				$this->flux_log->write_log('customer_did_delete_product', json_encode($did_info['product_id']));
 				$this->did_model->did_number_release($did_info, $accountinfo, 'release');
 			}
 		}

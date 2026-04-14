@@ -35,148 +35,151 @@
 <?php } else { ?>
     <link rel="icon" href="<? echo base_url(); ?>assets/images/favicon.ico"/>
 <?php } ?>
-	<script>
-		var page_gettext = "<?php echo gettext('Page '); ?>";
-		var no_records_gettext = "<?php echo gettext('No Records'); ?>";
-		var records_gettext = "<?php echo gettext(' Records'); ?>";
-		var of_gettext = "<?php echo gettext(' of '); ?>";
-		var date = "<?php echo gettext($date);?>";
-	</script>
 
-    <script language="javascript" type="text/javascript">
- 	function Termination_Rates(){
- 		var flag = 'termination_rates';
-		$.ajax({
-	   		type: "POST",
-	   		url: "<?= base_url()?>login/test/",
-	   		data:{'flag':flag},
-	   		success:function(alt) {
-	   			if (flag == 'termination_rates'){
-					location.href = "<?php echo base_url();?>rates/termination_rates_list/";	   	
-	   			}	
-	   		}
-	   	});
+<?php
+	$menu_list_type=$this->session->userdata('menu_list_type');
+	$userlogintype=$this->session->userdata('userlevel_logintype');
+?>
+<script>
+var page_gettext = "<?php echo gettext('Page '); ?>";
+var no_records_gettext = "<?php echo gettext('No Records'); ?>";
+var records_gettext = "<?php echo gettext(' Records'); ?>";
+var of_gettext = "<?php echo gettext(' of '); ?>";
+var date = "<?php echo gettext($date);?>";
+</script>
 
+<script language="javascript" type="text/javascript">
+
+function Termination_Rates(){
+var flag = 'termination_rates';
+$.ajax({
+    type: "POST",
+    url: "<?= base_url()?>login/test/",
+    data:{'flag':flag},
+    success:function(alt) {
+        if (flag == 'termination_rates'){
+            location.href = "<?php echo base_url();?>rates/termination_rates_list/";	   	
+        }	
     }
-	var base_url = '<?php echo base_url(); ?>';
-	var num_default_grid_rows = '<?php echo Common_model::$global_config ["system_config"]["number_of_default_rows"]; ?>';
-	function seetext(x){
-		x.type = "text";
-	}
-	function hidepassword(x){
-		x.type = "password";
-	}
-	function processForm(id,table) {
-	  var url="<?php echo base_url(); ?>get_status/"+id; 
+});
 
-	  var status='false';
-	  if($('#switch'+id).is(':checked')){
-		status='true';
-	  } 
-	  $.ajax({
-	      type:"POST",
-	      url:url,
-	      data:{"status":status,"id":id,"table":table},
-	  });
-	}
-	
-	function processForm2(id,table) {
-	  var url="<?php echo base_url(); ?>getstatus/"+id; 
+}
 
-	  var reseller_status='false';
-	  if($('#switch'+id).is(':checked')){
-		reseller_status='true';
-	  } 
-	  $.ajax({
-	      type:"POST",
-	      url:url,
-	      data:{"reseller_status":reseller_status,"id":id,"table":table},
-	  });
-	}
-	
-	function process_email(id,table) {
-	  var url="<?php echo base_url(); ?>email_status/"+id;
-	  var status='false';
-	  if($('#switch_email'+id).is(':checked')){
-		status='true';
-	  } 
-	    $.ajax({
-	      type:"POST",
-	      url:url,
-	      data:{"is_email_enable":status,"id":id,"table":table},
-	      });
-	 }
-	 
-	 function process_sms(id,table) {
-	  var url="<?php echo base_url(); ?>sms_status/"+id;
-	  var status='false';
-	  if($('#switch_sms'+id).is(':checked')){
-		status='true';
-	  } 
-	  $.ajax({
-	      type:"POST",
-	      url:url,
-	      data:{"is_sms_enable":status,"id":id,"table":table},
-	      });
-	 }
-	 
-	 function process_alert(id,table) {
-	  var url="<?php echo base_url(); ?>alert_status/"+id;
-	  var status='false';
-	  if($('#switch_alert'+id).is(':checked')){
-		status='true';
-	  } 
-	  $.ajax({
-	      type:"POST",
-	      url:url,
-	      data:{"is_alert_enable":status,"id":id,"table":table},
-	      });
-	 }
-	 
-	
-    </script>      
-     <link href="<?= base_url() ?>assets/css/checkbox.css" rel="stylesheet"/>
-     <link href="<?= base_url() ?>assets/css/bootstrap.min.css" rel="stylesheet"/>
-     <!-- Google Font -->
-       <link href="https://fonts.googleapis.com/css?family=Montserrat:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet"> 
-     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/bootstrap-select.css"/>
-     <link href="<?= base_url() ?>assets/css/sidebar_style.css" rel="stylesheet" type="text/css"/>
-     <link href="<?php echo base_url(); ?>/assets/css/jquery.datetimepicker.min.css" rel="stylesheet" />
-     <link rel="stylesheet" media="all" type="text/css" href="<?php echo base_url(); ?>/assets/css/tabcontent.css"/>
-     <link href="<?= base_url() ?>assets/fonts/font-awesome-4.7.0/css/font-awesome.css" rel="stylesheet"/>
-     <link href="<?= base_url() ?>assets/css/global-style.css" rel="stylesheet" type="text/css"/>
-     <link href="<?php echo base_url(); ?>assets/css/facebox.css" rel="stylesheet" media="all" />	
-     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/flexigrid.css" type="text/css"/>
-     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css" rel="stylesheet">
-     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/animate.css" type="text/css"/>
-     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/style.css" type="text/css"/>
-     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/sticky_menu.css" type="text/css"/>
-     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/global-style.css" type="text/css"/>
-     <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/com-style.css" type="text/css"/>
-  
+var base_url = '<?php echo base_url(); ?>';
+var num_default_grid_rows = '<?php echo Common_model::$global_config ["system_config"]["number_of_default_rows"]; ?>';
 
+function seetext(x){
+x.type = "text";
+}
 
-     <script src="<?php echo base_url(); ?>assets/js/jquery-1.12.4.js"></script>
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/bootstrap.bundle.min.js"></script>
-	 <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/bootstrap-select.js"></script>  
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/jquery.datetimepicker.min.js"></script>
+function hidepassword(x){
+x.type = "password";
+}
 
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/modernizr.custom.js"></script>
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/fileinput.js"></script>
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/tabcontent.js"></script>
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/respond.js"></script>
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/respond.src.js"></script>
+function processForm(id,table) {
+var url="<?php echo base_url(); ?>get_status/"+id; 
+
+var status='false';
+if($('#switch'+id).is(':checked')){
+status='true';
+} 
+$.ajax({
+  type:"POST",
+  url:url,
+  data:{"status":status,"id":id,"table":table},
+});
+}
+
+function processForm2(id,table) {
+var url="<?php echo base_url(); ?>getstatus/"+id; 
+
+var reseller_status='false';
+if($('#switch'+id).is(':checked')){
+reseller_status='true';
+} 
+$.ajax({
+  type:"POST",
+  url:url,
+  data:{"reseller_status":reseller_status,"id":id,"table":table},
+});
+}
+
+function process_email(id,table) {
+var url="<?php echo base_url(); ?>email_status/"+id;
+var status='false';
+if($('#switch_email'+id).is(':checked')){
+status='true';
+} 
+$.ajax({
+  type:"POST",
+  url:url,
+  data:{"is_email_enable":status,"id":id,"table":table},
+  });
+}
+
+function process_sms(id,table) {
+var url="<?php echo base_url(); ?>sms_status/"+id;
+var status='false';
+if($('#switch_sms'+id).is(':checked')){
+status='true';
+} 
+$.ajax({
+  type:"POST",
+  url:url,
+  data:{"is_sms_enable":status,"id":id,"table":table},
+  });
+}
+
+function process_alert(id,table) {
+var url="<?php echo base_url(); ?>alert_status/"+id;
+var status='false';
+if($('#switch_alert'+id).is(':checked')){
+status='true';
+} 
+$.ajax({
+  type:"POST",
+  url:url,
+  data:{"is_alert_enable":status,"id":id,"table":table},
+  });
+}
+
+</script>
+<link href="<?= base_url() ?>assets/css/checkbox.css" rel="stylesheet"/>
+<link href="<?= base_url() ?>assets/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css?family=Montserrat:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet"> 
+<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/bootstrap-select.css"/>
+<link href="<?= base_url() ?>assets/css/sidebar_style.css" rel="stylesheet" type="text/css"/>
+<link href="<?php echo base_url(); ?>/assets/css/jquery.datetimepicker.min.css" rel="stylesheet" />
+<link rel="stylesheet" media="all" type="text/css" href="<?php echo base_url(); ?>/assets/css/tabcontent.css"/>
+<link href="<?= base_url() ?>assets/fonts/font-awesome-4.7.0/css/font-awesome.css" rel="stylesheet"/>
+<link href="<?= base_url() ?>assets/css/global-style.css" rel="stylesheet" type="text/css"/>
+<link href="<?php echo base_url(); ?>assets/css/facebox.css" rel="stylesheet" media="all" />	
+<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/flexigrid.css" type="text/css"/>
+<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css" rel="stylesheet">
+<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/animate.css" type="text/css"/>
+<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/style.css" type="text/css"/>
+<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/sticky_menu.css" type="text/css"/>
+<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/global-style.css" type="text/css"/>
+<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/com-style.css" type="text/css"/>
 
 
 
+<script src="<?php echo base_url(); ?>assets/js/jquery-1.12.4.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/bootstrap-select.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/i18n/defaults-en_US.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/i18n/defaults-pt_BR.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/jquery.datetimepicker.min.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/modernizr.custom.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/fileinput.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/tabcontent.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/respond.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/respond.src.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-browser/0.1.0/jquery.browser.js"></script>  
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/facebox.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/flexigrid.js"></script>
+<script type="text/javascript" src="<?php echo base_url(); ?>assets/js/module_js/generate_grid.js"></script>
 
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-browser/0.1.0/jquery.browser.js"></script>
-<!-- 	 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>-->
-  
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/facebox.js"></script>
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/flexigrid.js"></script>
-     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/module_js/generate_grid.js"></script>
- 
     <noscript>
       <div id="noscript-warning">
 	<?php echo gettext('FluxSBC work best with JavaScript enabled'); ?>
@@ -204,7 +207,7 @@ function PopupCenter(url, title, w, h) {
 </head>
 <body>   
 <nav class="navbar navbar-expand-lg navbar-light bg-light mainmenu px-lg-4">
- <? if ($this->session->userdata('userlevel_logintype') != '0') {
+ <? if ($this->session->userdata('userlevel_logintype') != '110') {
 			$http_host=$_SERVER["HTTP_HOST"];
 			if(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == "on"){
                 		$domain = "https://".$_SERVER["HTTP_HOST"]."/";
@@ -264,16 +267,18 @@ function PopupCenter(url, title, w, h) {
 			if(common_model::$global_config['system_config']['opensips']== 0 &&  $menu_key !='SIP Opensips'){
 				if($acc_info['type'] == 0 && $menu_key!="Configuration"){
 					echo '<li class="nav-item dropdown customer_menu text-center flex-fill"><a class="nav-link dropdown-toggle" role="button" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'.gettext($menu_key).'<span class="sr-only">(current)</span></a>';
-				}else{
-					
+				}
+				else{					
 					if(($this->session->userdata('userlevel_logintype') == '1')){
 							echo '<li class="nav-item dropdown"><a class="nav-link dropdown-toggle" role="button" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'.gettext($menu_key).'<span class="sr-only">(current)</span></a>';
-					}else{
+					}
+					else{
 						if(($this->session->userdata('userlevel_logintype') == '2')){
 							if (in_array($check_menu_key, $menu_permission_info)){
 								echo '<li class="nav-item dropdown"><a class="nav-link dropdown-toggle" role="button" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'.gettext($menu_key).'<span class="sr-only">(current)</span></a>';
 							}
-						}else{
+						}
+						else{
 							echo '<li class="nav-item dropdown"><a class="nav-link dropdown-toggle" role="button" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'.gettext($menu_key).'<span class="sr-only">(current)</span></a>';
 						}	
 					}
@@ -282,7 +287,8 @@ function PopupCenter(url, title, w, h) {
 			if(common_model::$global_config['system_config']['opensips']== 1 &&  $menu_key != 'Opensips'){
 				if($acc_info['type'] == 0 && $menu_key!="Configuration"){
 					echo '<li class="nav-item dropdown customer_menu text-center flex-fill"><a class="nav-link dropdown-toggle" role="button" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'.gettext($menu_key).'<span class="sr-only">(current)</span></a>';  
-				}else{
+				}
+				else{
 					
 					if(($this->session->userdata('userlevel_logintype') == '1')){
 							echo '<li class="nav-item dropdown"><a class="nav-link dropdown-toggle" role="button" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'.gettext($menu_key).'<span class="sr-only">(current)</span></a>';
@@ -309,7 +315,18 @@ function PopupCenter(url, title, w, h) {
 								
                             <? foreach($sub_menu_values as $sub_key => $sub_menu_lables){
 								$module_url = explode('/',$sub_menu_lables['module_url']);
-								if(!empty($module_url) && !empty($module_url[0]) && isset($permissioninfo[$module_url[0]][$module_url[1]])  || $this->session->userdata('userlevel_logintype') == '-1' || $this->session->userdata('userlevel_logintype') == '0' || $this->session->userdata('userlevel_logintype') == '3' || in_array($module_url[1], $allow_menu_url)){
+								if (
+								    (
+								        !empty($module_url) &&
+								        !empty($module_url[0]) &&
+								        isset($module_url[1]) &&
+								        isset($permissioninfo[$module_url[0]][$module_url[1]])
+								    ) ||
+								    $this->session->userdata('userlevel_logintype') == '-1' ||
+								    $this->session->userdata('userlevel_logintype') == '0'  ||
+								    $this->session->userdata('userlevel_logintype') == '3'  ||
+								    (isset($module_url[1]) && in_array($module_url[1], $allow_menu_url))
+								) {
 
 
 		
@@ -336,7 +353,8 @@ function PopupCenter(url, title, w, h) {
                             <?php 
                         }else{
 				  $check_sub_module_key =  str_replace(' ','_',strtolower($sub_menu_key));
-				  if($this->session->userdata('userlevel_logintype') == '-1' || $this->session->userdata('userlevel_logintype') == '0' || $this->session->userdata('userlevel_logintype') == '3' || in_array($check_sub_module_key, $sub_module_permission_info)){
+
+        if($this->session->userdata('userlevel_logintype') != '0' || in_array($check_sub_module_key, $sub_module_permission_info)){
 
 				if(common_model::$global_config['system_config']['opensips']==0 && $menu_key !='System Configuration'){
 				 ?>    
@@ -362,7 +380,10 @@ function PopupCenter(url, title, w, h) {
                                 <? foreach($sub_menu_values as $sub_menu_lables){ 
 									$module_url = explode('/',$sub_menu_lables['module_url']);
 
-                                    if(isset($permissioninfo[$module_url[0]][$module_url[1]]) || $this->session->userdata('userlevel_logintype') == '-1' || $this->session->userdata('userlevel_logintype') == '0' || $this->session->userdata('userlevel_logintype') == '3' || in_array($module_url[1], $allow_menu_url)){
+if(isset($permissioninfo[$module_url[0]][$module_url[1]]) || $this->session->userdata('userlevel_logintype') != '0' || in_array($module_url[1], $allow_menu_url)){
+
+
+
 					 if($sub_menu_lables['menu_label'] != 'Configuration'){
 				  if(common_model::$global_config['system_config']['opensips']==0 ){
 				  	
@@ -401,7 +422,7 @@ function PopupCenter(url, title, w, h) {
 		      	<? } else{ ?>
 		    <a class="btn dropdown-toggle" href="<?php echo base_url();?>user/user/" role="button" id="admin_menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">	
 		<? }
-				if($this->session->userdata('logintype')!=2 && $this->session->userdata('logintype')!=4 && $this->session->userdata('logintype')!=0){
+				if($this->session->userdata('logintype')!=2 && $this->session->userdata('logintype')!=4){
 					$result=(array)$this->db->get_where('accounts',array("id"=>$acc_info['id']),1)->first_row();
 					$variable =$result['posttoexternal']==1 ? 'Credit' : gettext('Bal');  
 					$amount=$result['posttoexternal']==1 ? $result['credit_limit']-$result['balance'] :$result['balance'];

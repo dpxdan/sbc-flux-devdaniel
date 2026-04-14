@@ -404,7 +404,6 @@ class common {
 		return rtrim ( $value, ',' );
 	}
 	function set_invoice_option($select = "", $table = "", $call_type = "", $edit_value = '') {
-		$this->CI->flux_log->write_log('set_invoice_option', json_encode($select));	
 		$invoice_date = false;
 		$uri_segment = $this->CI->uri->segments;
 		if (isset ( $uri_segment [3] ) && $uri_segment [3] > 0 && empty ( $edit_value )) {

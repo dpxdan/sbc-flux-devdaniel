@@ -252,7 +252,6 @@ class Accounts_model extends CI_Model {
 	}
 
 	function account_process_payment($data, $update_balance_flag = 'true') {
-		$this->flux_log->write_log('account_process_payment', json_encode($data));
 		$data['accountid'] = $data['id'];
 		$accountdata       = (array) $this->db->get_where('accounts', array(
 				"id" => $data['accountid'],
