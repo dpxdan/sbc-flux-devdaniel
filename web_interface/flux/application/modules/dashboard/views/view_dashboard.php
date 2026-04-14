@@ -18,9 +18,6 @@
     font-size: 250%;
 }
 
-.back_strip {
-}
-
 .ball-clip-rotate > div {
     display: inline-block;
     -webkit-animation: 1s ease-in-out 0s normal none infinite running spin-rotate;
@@ -148,12 +145,12 @@
         build_ddd_graph(drop_val);
         build_trunk_stats(drop_val);
     }
-
+    
     function build_recharge_graph(drop_val) {
         var period = get_selected_period();
         var year = period.year;
         var month = period.month;
-
+    
         $.ajax({
             type: 'POST',
             dataType: 'json',
@@ -170,7 +167,41 @@
             },
             success: function(response_data) {
                 $("#call-graph").hide();
-
+    
+                var weekDays = [
+                    '<?php echo gettext("Sun"); ?>',
+                    '<?php echo gettext("Mon"); ?>',
+                    '<?php echo gettext("Tue"); ?>',
+                    '<?php echo gettext("Wed"); ?>',
+                    '<?php echo gettext("Thu"); ?>',
+                    '<?php echo gettext("Fri"); ?>',
+                    '<?php echo gettext("Sat"); ?>'
+                ];
+    
+                var monthNames = [
+                    '<?php echo gettext("Jan"); ?>', '<?php echo gettext("Feb"); ?>',
+                    '<?php echo gettext("Mar"); ?>', '<?php echo gettext("Apr"); ?>',
+                    '<?php echo gettext("mai"); ?>', '<?php echo gettext("Jun"); ?>',
+                    '<?php echo gettext("Jul"); ?>', '<?php echo gettext("Aug"); ?>',
+                    '<?php echo gettext("Sep"); ?>', '<?php echo gettext("Oct"); ?>',
+                    '<?php echo gettext("Nov"); ?>', '<?php echo gettext("Dec"); ?>'
+                ];
+    
+                var xCategories = [];
+                var monthIndex = parseInt(month, 10) - 1;
+    
+                if (drop_val == 't_week') {
+                    $.each(response_data.date, function(i, day) {
+                        var dt = new Date(year, monthIndex, parseInt(day, 10));
+                        xCategories.push(weekDays[dt.getDay()] + ' ' + day);
+                    });
+                } else {
+                    var monthAbbr = monthNames[monthIndex];
+                    $.each(response_data.date, function(i, day) {
+                        xCategories.push(day + '/' + monthAbbr);
+                    });
+                }
+    
                 Highcharts.chart('call_graph_data', {
                     chart: {
                         zoomType: 'xy',
@@ -183,12 +214,11 @@
                         text: ''
                     },
                     xAxis: [{
-                        type: 'datetime',
-                        dateTimeLabelFormats: { minute: '%d %b' },
-                        startOnTick: true,
-                        endOnTick: true,
-                        showLastLabel: true,
-                        categories: response_data.date
+                        categories: xCategories,
+                        labels: {
+                            rotation: (drop_val == 't_month' && response_data.date.length > 15) ? -45 : 0,
+                            style: { fontSize: '11px' }
+                        }
                     }],
                     yAxis: [
                         {
@@ -207,25 +237,13 @@
                         borderRadius: 10,
                         borderWidth: 2,
                         formatter: function() {
-                            var today_dropdown = $("#today_dropdown").val();
-
-                            if (this.series.name == 'Total Calls') {
-                                if (today_dropdown == 't_month') {
-                                    return '<b>Total : </b>' + this.y +
-                                        '<br/><b>ACD : </b>' + response_data.acd[this.x - 1][1] +
-                                        '<br/><b>MCD : </b>' + response_data.mcd[this.x - 1][1] +
-                                        '<br/><b>ASR : </b>' + response_data.asr[this.x - 1][1];
-                                } else {
-                                    var day_str = new Date(year + "-" + month + "-" + this.x);
-                                    var day_count = day_str.getDay();
-
-                                    return '<b>Total : </b>' + this.y +
-                                        '<br/><b>ACD : </b>' + response_data.acd[day_count - 1][1] +
-                                        '<br/><b>MCD : </b>' + response_data.mcd[day_count - 1][1] +
-                                        '<br/><b>ASR : </b>' + response_data.asr[day_count - 1][1];
-                                }
+                            if (this.series.name == '<?php echo gettext("Total Calls"); ?>') {
+                                var idx = this.point.index;
+                                return '<b>Total : </b>' + this.y +
+                                    '<br/><b>ACD : </b>' + (response_data.acd[idx] ? response_data.acd[idx][1] : 0) +
+                                    '<br/><b>MCD : </b>' + (response_data.mcd[idx] ? response_data.mcd[idx][1] : 0) +
+                                    '<br/><b>ASR : </b>' + (response_data.asr[idx] ? response_data.asr[idx][1] : 0);
                             }
-
                             return this.series.name + ': <b>' + this.y + '</b>';
                         }
                     },
@@ -347,14 +365,15 @@
             dataType: 'JSON',
             data: { year: year, month: month, drop_val: drop_val },
             beforeSend: function() {
-                $("#trunk-loading").show();
+                $("#trunk-loading")
+                    .append('<div class="loading col-md-offset-6"><div class="ball-clip-rotate"><div></div></div></div>')
+                    .show();
             },
             complete: function() {
                 $("#trunk-loading").hide();
             },
             success: function(data) {
                 var tbody = $("#trunk_stats_body");
-
                 if (!data || data.length === 0) {
                     tbody.html('<tr><td colspan="4" class="text-center text-muted"><i class="fa fa-meh-o"></i> <?php echo gettext("No Records Found"); ?></td></tr>');
                     return;
@@ -411,7 +430,8 @@
                         .addClass("second")
                         .show()
                         .html('<i class="fa fa-meh-o"></i> <?php echo gettext("No Records Found"); ?>');
-                } else {
+                } 
+                else {
                     $("div.call_count_not_data").hide();
                     $("div.call_count_data").show();
 
@@ -1391,7 +1411,7 @@ function create_formatted_date($startdate, $enddate, $timezone, $timevisibly)
                                             <?php
                                             $query_result = isset($low_balance_accounts) ? $low_balance_accounts : null;
 
-                                            if ($query_result && $query_result->num_rows() > 0) {
+                                            if ($query_result->num_rows() > 0) {
                                                 $account_data = $query_result->result_array();
 
                                                 foreach ($account_data as $data_key => $accountinformation) {
@@ -1410,6 +1430,14 @@ function create_formatted_date($startdate, $enddate, $timezone, $timevisibly)
                                                     echo "</td>";
                                                     echo "</tr>";
                                                 }
+                                            }
+                                            else {
+                                            
+                                                echo "<tr>";
+                                                echo "<td colspan='4' class='text-center text-muted'>";
+                                                echo gettext("No Records Found");
+                                                echo "</td>";
+                                                echo "</tr>";
                                             }
                                             ?>
                                         </tbody>
