@@ -676,15 +676,17 @@ if (userinfo ~= nil) then
 	
 	else		
 		force_outbound_routes =0;
+		if (tonumber(userinfo['localization_id']) > 0 and or_localization and or_localization['number_originate'] ~= nil) then	
+		    or_localization['number_originate'] = or_localization['number_originate']:gsub(" ", "")			
+		    destination_number = do_number_translation(or_localization['number_originate'],destination_number)
+		    original_destination_number = destination_number
+		    number_loop_str_dest = number_loop(destination_number,'pattern')
+		end
    		 if(rate_carrier_id ~= nil and string.len(rate_carrier_id) >= 1) then
 			Logger.info("[DIALPLAN] User Rate ID : ".. user_rates['id'])
 			force_outbound_routes = user_rates['id']
 		 end
---   		if(rate_carrier_id ~= nil and rate_carrier_id ~= '' and rate_carrier_id ~= 0) then
---			Logger.info("[DIALPLAN] Force Routes User Rate ID : ".. user_rates['id'])
---			force_outbound_routes = user_rates['id']
---		 end
-		if(user_rates['check_carrier'] ~= nil and user_rates['check_carrier'] == "1") then
+		 if(user_rates['check_carrier'] ~= nil and user_rates['check_carrier'] == "1") then
 			Logger.info("[DIALPLAN] STRIPCADUP OUT")
 			a = destination_number
 			num_regex = destination_number

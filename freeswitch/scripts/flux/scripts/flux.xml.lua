@@ -29,7 +29,7 @@ function freeswitch_xml_header(xml,destination_number,accountcode,maxlength,call
 	table.insert(xml, [[<section name="dialplan" description="FLUX Dialplan">]]);
 	table.insert(xml, [[<context name="]]..params:getHeader("Caller-Context")..[[">]]);
 	table.insert(xml, [[<extension name="]]..destination_number..[[">]]); 
-	table.insert(xml, [[<condition field="destination_number" expression="]]..plus_destination_number(params:getHeader("Caller-Destination-Number"))..[[">]]);
+	table.insert(xml, [[<condition field="destination_number" expression="]]..plus_destination_number(destination_number)..[[">]]);
 	table.insert(xml, [[<action application="set" data="effective_destination_number=]]..plus_destination_number(original_destination_number)..[["/>]]);
 	Logger.debug("maxlength::::::::: "..maxlength);
 	table.insert(xml, [[<action application="set" data="bridge_pre_execute_bleg_app=sched_hangup"/>]]);
@@ -708,8 +708,8 @@ function xml_header(xml,destination_number)
 	table.insert(xml, [[<document type="freeswitch/xml">]]);
 	table.insert(xml, [[<section name="dialplan" description="FLUX Dialplan">]]);
 	table.insert(xml, [[<context name="]]..params:getHeader("Caller-Context")..[[">]]);
-	table.insert(xml, [[<extension name="]]..plus_destination_number(params:getHeader("Caller-Destination-Number"))..[[">]]); 
-	table.insert(xml, [[<condition field="destination_number" expression="]]..plus_destination_number(params:getHeader("Caller-Destination-Number"))..[[">]]);
+	table.insert(xml, [[<extension name="]]..plus_destination_number(destination_number)..[[">]]); 
+	table.insert(xml, [[<condition field="destination_number" expression="]]..plus_destination_number(destination_number)..[[">]]);
 	return xml
 end
 
