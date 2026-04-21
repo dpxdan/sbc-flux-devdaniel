@@ -611,7 +611,7 @@ class Summary extends MX_Controller
             );
         }
         if ($purpose == 'export') {
-            $search_arr['custom_total_array'][0] = "Grand Total";
+            $search_arr['custom_total_array'][0] = gettext('Grand Total');
         }
         $new_export_array = array();
         foreach ($last_array as $key => $value) {
@@ -865,7 +865,7 @@ class Summary extends MX_Controller
         }
 
         array_pop($custom_total_array);
-        array_unshift($custom_total_array, '<b>Grand Total</b>');
+        array_unshift($custom_total_array, '<b>' . gettext('Grand Total') . '</b>');
         $new_arr['export_str'] = $export_select_str;
         $new_arr['select_str'] = $select_str;
         $new_arr['order_str'] = $order_str;
