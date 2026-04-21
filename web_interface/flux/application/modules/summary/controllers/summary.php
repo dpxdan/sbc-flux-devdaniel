@@ -176,8 +176,8 @@ class Summary extends MX_Controller
                         gettext("Package"),
                         "105",
                         'product_id',
-                        "name",
-                        "products",
+                        "package_name",
+                        "packages_view",
                         "get_field_name"
                     );
                 } elseif ($first_column_groupby == 'order_items.product_id' || $first_column_groupby == 'product_id') {
@@ -269,8 +269,8 @@ class Summary extends MX_Controller
                         gettext("Package"),
                         "105",
                         'product_id',
-                        "name",
-                        "products",
+                        "package_name",
+                        "packages_view",
                         "get_field_name"
                     );
                 } elseif ($third_column_groupby == 'order_items.product_id' || $third_column_groupby == 'product_id') {
@@ -362,8 +362,8 @@ class Summary extends MX_Controller
                         gettext("Package"),
                         "105",
                         'product_id',
-                        "name",
-                        "products",
+                        "package_name",
+                        "packages_view",
                         "get_field_name"
                     );
                 } elseif ($fifth_column_groupby == 'order_items.product_id' || $fifth_column_groupby == 'product_id') {
@@ -464,7 +464,7 @@ class Summary extends MX_Controller
                     } elseif ($search_arr['groupby_1'] == 'trunk_id') {
                         $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
                     } elseif ($search_arr['groupby_1'] == 'package_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
+                        $new_arr[] = $this->common->get_field_name('package_name', 'packages_view', $row1['package_id']);
                     } elseif ($search_arr['groupby_1'] == 'sip_user') {
                         $new_arr[] = $row1['sip_user'];
                     } elseif ($search_arr['groupby_1'] == 'call_direction') {
@@ -484,7 +484,7 @@ class Summary extends MX_Controller
                     } elseif ($search_arr['groupby_2'] == 'trunk_id') {
                         $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
                     } elseif ($search_arr['groupby_2'] == 'package_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
+                        $new_arr[] = $this->common->get_field_name('package_name', 'packages_view', $row1['package_id']);
                     } elseif ($search_arr['groupby_2'] == 'sip_user') {
                         $new_arr[] = $row1['sip_user'];
                     } elseif ($search_arr['groupby_2'] == 'call_direction') {
@@ -505,7 +505,7 @@ class Summary extends MX_Controller
                     } elseif ($search_arr['groupby_3'] == 'trunk_id') {
                         $new_arr[] = $this->common->get_field_name('name', 'trunks', $row1['trunk_id']);
                     } elseif ($search_arr['groupby_3'] == 'package_id') {
-                        $new_arr[] = $this->common->get_field_name('name', 'products', $row1['package_id']);
+                        $new_arr[] = $this->common->get_field_name('package_name', 'packages_view', $row1['package_id']);
                     } elseif ($search_arr['groupby_3'] == 'sip_user') {
                         $new_arr[] = $row1['sip_user'];
                     } elseif ($search_arr['groupby_3'] == 'call_direction') {
