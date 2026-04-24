@@ -174,7 +174,7 @@ class Summary_model extends CI_Model
             $this->db->_protect_identifiers = true;
         }
         if ($flag) {
-            $this->db->select($select . ",COUNT(*) AS attempts, AVG(billseconds) AS acd,MAX(billseconds) AS mcd,SUM(billseconds) AS duration,SUM(block_billseconds) AS block_duration,SUM(CASE WHEN calltype !='Gratuita' THEN billseconds ELSE 0 END) as billable,SUM(CASE WHEN billseconds > 0 THEN 1 ELSE 0 END) as completed,SUM(debit) AS debit,SUM(cost) AS cost", false);
+            $this->db->select($select . ",COUNT(*) AS attempts, AVG(billseconds) AS acd,MAX(billseconds) AS mcd,SUM(billseconds) AS duration,SUM(block_billseconds) AS block_duration,SUM(CASE WHEN package_id = 0 THEN billseconds ELSE 0 END) as billable,SUM(CASE WHEN billseconds > 0 THEN 1 ELSE 0 END) as completed,SUM(CASE WHEN package_id > 0 THEN 0.00 ELSE debit END) as debit,SUM(cost) AS cost", false);
             $this->db->order_by($order, "ASC");
             if (! $export && $limit > 0) {
                 $this->db->limit($limit, $start);
@@ -197,7 +197,7 @@ class Summary_model extends CI_Model
         return $result;
     }
 
-  function get_productsummary_report_list($flag, $start = 0, $limit = 0, $group_by, $select, $order, $export)
+    function get_productsummary_report_list($flag, $start = 0, $limit = 0, $group_by, $select, $order, $export)
     {
         $this->db_model->build_search('summary_product_search');
         $accountinfo = $this->session->userdata('accountinfo');
