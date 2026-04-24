@@ -205,6 +205,38 @@ class did_form extends common
                 ''
             ),
             array(
+                gettext('Reverse Rate'),
+                'reverse_rate',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                '',
+                '',
+                '',
+                '',
+                'set_did_reverse_type_search',
+                '',
+                ''
+            ),
+            array(
+                gettext('SIP Profile'),
+                'sip_profile_id',
+                'SELECT',
+                '',
+                '',
+                'tOOL TIP',
+                'Please Enter account number',
+                'id',
+                'name',
+                'sip_profiles',
+                'build_dropdown',
+                'where_arr',
+                array(
+                    "status" => "0"
+                )
+            ),
+            array(
                 gettext('Destination'),
                 'INPUT',
                 array(
@@ -222,6 +254,19 @@ class did_form extends common
                 '',
                 'search_string_type',
                 ''
+            ),
+            array(
+            	'Status',
+            	'status',
+            	'SELECT',
+                '',
+            	'',
+            	'tOOL TIP',
+            	'Please Enter account number',
+            	'',
+            	'',
+            	'',
+            	'set_search_status',
             ),
             array(
                 '',
@@ -633,6 +678,28 @@ class did_form extends common
                 "",
                 "true",
                 "right"
+            ),
+            array(
+                gettext("SIP Profile"),
+                "70",
+                "sip_profile_id",
+                "name",
+                "sip_profiles",
+                "get_field_name",
+                "",
+                "true",
+                "center"
+            ),
+            array(
+                gettext("Reverse Rate"),
+                "110",
+                "reverse_rate",
+                "reverse_rate",
+                "reverse_rate",
+                "get_did_reverse_rate",
+                "",
+                "true",
+                "left"
             ),
             array(
                 gettext("Billing Type"),

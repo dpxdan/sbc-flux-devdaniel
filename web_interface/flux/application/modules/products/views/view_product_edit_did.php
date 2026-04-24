@@ -96,7 +96,7 @@
           </div>
 		<div id="did_view" class="card float-right col-md-8 py-4 mb-4">      
 		  <div class="card pb-4 px-0">
-		     <h3 class="bg-secondary text-light p-2 rounded-top"><?php echo gettext('Product Details'); ?></h3>
+		     <h3 class="bg-secondary text-light p-2 rounded-top"><?php echo gettext('DID Details'); ?></h3>
 		<div class="row px-4">
                  
                   <div class='col-md-6 form-group'>
@@ -112,7 +112,7 @@
  </span></div>	
                   </div>
 		<div class='col-md-6 form-group'>
-                      <label class="p-0 control-label"><?php echo gettext('Cost/Min ('.$currency.') ')?></label>
+                      <label class="p-0 control-label"><?php echo gettext('Cost/Min')?> <?php echo '('.$currency.')'?></label>
 			<input class="col-md-12 form-control form-control-lg m-0" value = "<?php echo $this->common->convert_to_currency ( '', '', $product_info['cost'] );?>" name="cost" size="16" type="text"/>
 			  <div class="tooltips error_div pull-left no-padding" id="cost_error_div" style="display: none;"><i class="fa fa-exclamation-triangle error_triangle"></i><span class="popup_error error  no-padding" id="cost_error">  
  </span></div>	
@@ -143,7 +143,7 @@
 		     <div class="tooltips error_div pull-left no-padding" id="price_error_div" style="display: none;"><i class="fa fa-exclamation-triangle error_triangle"></i><span class="popup_error error  no-padding" id="price_error">   </span></div>	
                   </div>
 		 <div class='col-md-6 form-group'>
-                      <label class="p-0 control-label"><?php echo gettext('Call Timeout')?> (Sec.)</label>
+                      <label class="p-0 control-label"><?php echo gettext('Call Timeout (Sec.)')?></label>
                      <input class="col-md-12 form-control form-control-lg m-0" value= "<?php echo  $product_info['leg_timeout']?>" name="leg_timeout" size="16" type="text"/>
 			<div class="tooltips error_div pull-left no-padding" id="leg_timeout_error_div" style="display: none;"><i class="fa fa-exclamation-triangle error_triangle"></i><span class="popup_error error  no-padding" id="leg_timeout_error">   </span></div>
                   </div>
@@ -193,6 +193,16 @@
 			<?php }  ?>
                       </select>
 		    </div>
+                  </div>
+		<div class='col-md-6 form-group'>
+                      <label class="p-0 control-label"><?php echo gettext('SIP Profile'); ?></label>
+                      <?php
+                          $sip_profile_arr  = array("id" => "sip_profile_id", "name" => "sip_profile_id", "class" => "col-md-12 form-control selectpicker form-control-lg");
+                          $sip_profiles_opt = array("0" => gettext("--Select--"));
+                          $sip_profiles_opt += $this->db_model->build_dropdown("id,name", "sip_profiles", "where_arr", array("status" => 0));
+                          $current_sp = isset($product_info['sip_profile_id']) ? (int)$product_info['sip_profile_id'] : 0;
+                          echo form_dropdown($sip_profile_arr, $sip_profiles_opt, $current_sp);
+                      ?>
                   </div>
  </form>
 				<?php

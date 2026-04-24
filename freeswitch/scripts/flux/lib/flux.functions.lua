@@ -111,7 +111,7 @@ function check_did(destination_number,config,callerid_number)
 		end
 	end
 	--TODO Change query for check DID avilable or not using left join.
-	local query = "SELECT A.id as id,A.number as did_number,B.id as accountid,B.number as account_code,B.pricelist_id as pricelist,A.number as did_number,A.connectcost,A.includedseconds,A.cost,A.inc,A.extensions,A.maxchannels,A.call_type,A.hg_type,A.city,A.province,A.init_inc,A.leg_timeout,A.status,A.country_id,A.call_type_vm_flag,A.reverse_rate,A.rate_group,C.`name` as price_name,A.area_code AS area_code,A.provider_id FROM "..TBL_DIDS.." AS A,"..TBL_USERS.." AS B,"..TBL_RATE_GROUP.." AS C WHERE B.status=0 AND B.deleted=0 AND B.id=A.accountid AND A.number =\"" ..destination_number .."\" LIMIT 1";
+	local query = "SELECT A.id as id,A.number as did_number,B.id as accountid,B.number as account_code,B.pricelist_id as pricelist,A.number as did_number,A.connectcost,A.includedseconds,A.cost,A.inc,A.extensions,A.maxchannels,A.call_type,A.hg_type,A.city,A.province,A.init_inc,A.leg_timeout,A.status,A.country_id,A.call_type_vm_flag,A.reverse_rate,A.rate_group,C.`name` as price_name,A.area_code AS area_code,A.provider_id,A.sip_profile_id,(SELECT name FROM sip_profiles WHERE id=A.sip_profile_id AND status=0 LIMIT 1) AS sip_profile_name FROM "..TBL_DIDS.." AS A,"..TBL_USERS.." AS B,"..TBL_RATE_GROUP.." AS C WHERE B.status=0 AND B.deleted=0 AND B.id=A.accountid AND A.number =\"" ..destination_number .."\" LIMIT 1";
 	Logger.notice("[CHECK_DID] Query :" .. query)
 	assert (dbh:query(query, function(u)
 		didinfo = u;		       
@@ -964,4 +964,17 @@ function is_valid_did(num)
         check = u
     end)
     return check ~= nil
+end
+
+function get_did_sofia_profile(didinfo)
+    
+	if didinfo == nil then
+		return "${sofia_profile_name}"
+	end
+	local name = didinfo['sip_profile_name']
+	Logger.debug("[XML] get_did_sofia_profile : "..name)
+	if name ~= nil and name ~= "" then
+		return name
+	end
+	return "${sofia_profile_name}"
 end

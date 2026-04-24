@@ -155,6 +155,15 @@
                       <label class="p-0 control-label"><?php echo gettext('Concurrent Calls')?></label>
                      <input class="col-md-12 form-control form-control-lg m-0" name="maxchannels" value="<?php echo (isset($add_array['maxchannels']))?$add_array['maxchannels']:'' ?>"  size="16" type="text"/>
                   </div>
+                  <div class='col-md-6 form-group'>
+                      <label class="p-0 control-label"><?php echo gettext('SIP Profile'); ?></label>
+                      <?php
+                          $sip_profile_arr  = array("id" => "sip_profile_id", "name" => "sip_profile_id", "class" => "col-md-12 form-control selectpicker form-control-lg");
+                          $sip_profiles_opt = array("0" => gettext("--Select--"));
+                          $sip_profiles_opt += $this->db_model->build_dropdown("id,name", "sip_profiles", "where_arr", array("status" => 0));
+                          echo form_dropdown($sip_profile_arr, $sip_profiles_opt, isset($add_array['sip_profile_id']) ? $add_array['sip_profile_id'] : '0');
+                      ?>
+                  </div>
  </form>
 				<?php
 						if (isset($validation_errors) && $validation_errors != '') { ?>

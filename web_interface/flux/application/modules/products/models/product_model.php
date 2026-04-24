@@ -186,6 +186,7 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 					"call_type"=>isset($add_array['call_type'])?$add_array['call_type']:"",
 					"leg_timeout"=>isset($add_array['leg_timeout'])?$add_array['leg_timeout']:"30",
 					"last_modified_date"=>gmdate("Y-m-d H:i:s"),
+					"sip_profile_id"=>isset($add_array['sip_profile_id'])?(int)$add_array['sip_profile_id']:"1",
 					"product_id"=>$last_id
 					
 				   );
@@ -279,7 +280,8 @@ buycost,reseller_products.price,reseller_products.billing_type,reseller_products
 					"reverse_rate"=>isset($add_array['reverse_rate'])?$add_array['reverse_rate']:"1",
 					"call_type"=>isset($destination_info['call_type'])?$destination_info['call_type']:"",
 					"rate_group"=>isset($add_array['rate_group'])?$add_array['rate_group']:"",
-					"leg_timeout"=>isset($add_array['leg_timeout'])?$add_array['leg_timeout']:"30"
+					"leg_timeout"=>isset($add_array['leg_timeout'])?$add_array['leg_timeout']:"30",
+					"sip_profile_id"=>isset($add_array['sip_profile_id'])?(int)$add_array['sip_profile_id']:"1"
 				   );
 			$this->db->where ( "number", $add_array['name'] );
 			$this->db->update ( "dids", $did_update_array );

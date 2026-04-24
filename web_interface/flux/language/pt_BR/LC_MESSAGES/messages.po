@@ -7713,3 +7713,6 @@ msgstr "Exibir gravações nos formulários"
 
 msgid "Display Recordings"
 msgstr "Exibir Gravações"
+
+msgid "DID Details"
+msgstr "Detalhes do DID"

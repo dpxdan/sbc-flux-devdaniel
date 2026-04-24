@@ -159,6 +159,7 @@ class Products extends MX_Controller {
 		if ($add_array->num_rows > 0) {
 			$product_info = ( array ) $add_array->first_row ();
 			if($product_info['product_category'] == 4){
+			    $data ['page_title'] = gettext ( 'Edit DID' );
 				$did_info = $this->db_model->getSelect ( "*", " dids", array ('number' => $product_info['name']));
 				if($did_info->num_rows > 0){
 					$did_info = ( array ) $did_info->first_row ();	
