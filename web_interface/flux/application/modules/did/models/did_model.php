@@ -253,8 +253,8 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
                 "can_resell" => isset($value['can_resell']) ? $value['can_resell'] : "0",
                 "commission" => isset($value['commission']) ? $this->common_model->add_calculate_currency($value['commission'], '', '', false, false) : "0.00",
                 "billing_type" => isset($value['billing_type']) ? $value['billing_type'] : "1",
-                "billing_days" => isset($add_array['billing_days']) ? $add_array['billing_days'] : "0",
-                "free_minutes" => isset($add_array['free_minutes']) ? $add_array['free_minutes'] : "0",
+                "billing_days" => isset($value['billing_days']) ? $value['billing_days'] : "0",
+                "free_minutes" => isset($value['free_minutes']) ? $value['free_minutes'] : "0",
                 "apply_on_rategroups" => isset($value['product_rate_group']) ? implode(",", $value['product_rate_group']) : "",
                 "destination_rategroups" => isset($value['destination_rategroups']) ? implode(",", $value['destination_rategroups']) : "",
                 "destination_countries" => isset($value['destination_countries']) ? implode(",", $value['destination_countries']) : "",
@@ -265,6 +265,7 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
                 "created_by" => "1",
                 "reseller_id" => isset($value['reseller_id']) ? $value['reseller_id'] : 0,
                 "creation_date" => gmdate("Y-m-d H:i:s"),
+                "country_id" => isset($value['country_id']) ? $value['country_id'] : 28,
                 "last_modified_date" => ''
             );
             $this->db->insert("products", $product_insert_array);
@@ -285,11 +286,12 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
                 "extensions" => $value['extensions'],
                 "includedseconds" => $value['includedseconds'],
                 "connectcost" => $value['connectcost'],
+                "leg_timeout" => isset($value['leg_timeout']) && is_numeric($value['leg_timeout']) ? (int) $value['leg_timeout'] : 30,
                 "product_id" => $last_id
             );
             $this->db->insert("dids", $did_insert_array);
             $affected_row = $this->db->insert_id();
-
+    
             if ($value['accountid'] > 0) {
                 $add_array['is_parent_billing'] = 'true';
                 $add_array['product_id'] = $last_id;
@@ -301,7 +303,8 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
         }
     }
     
-      function get_account($accountdata) {
+    function get_account($accountdata)
+    {
       $q = "SELECT * FROM accounts WHERE number = '" . $this->db->escape_str ( $accountdata ) . "' AND status = 0";
       $query = $this->db->query ( $q );
       if ($query->num_rows () > 0) {
@@ -325,7 +328,9 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
      
       return NULL;
       }
-      function get_did_by_number($number) {
+    
+    function get_did_by_number($number)
+    {
       $this->db->where ( "id", $number );
       $this->db->or_where ( "number", $number );
       $query = $this->db->get ( "dids" );
@@ -335,7 +340,8 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
       return false;
       }
      
-      function update_dids_reseller($post) {
+    function update_dids_reseller($post)
+    {
       $where = array (
       'id' => $post ['did_id']
       );
@@ -346,7 +352,9 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
       $this->db->where ( $where );
       $this->db->update ( 'dids', $update_array );
       }
-      function delete_routes($id, $number, $pricelist_id) {
+    
+    function delete_routes($id, $number, $pricelist_id)
+    {
       $number = "^" . $number . ".";
       $where = array (
       'pricelist_id' => $pricelist_id,
@@ -355,7 +363,9 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
       $this->db->where ( $where );
       $this->db->delete ( 'routes' );
       }
-      function insert_routes($post, $pricelist_id) {
+    
+    function insert_routes($post, $pricelist_id)
+    {
       $commment = "DID:" . $post ['country'] . "," . $post ['province'] . "," . $post ['city'];
       $insert_array = array (
       'pattern' => "^" . $post ['number'] . ".",
@@ -369,7 +379,9 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
       $this->db->insert ( 'routes', $insert_array );
       return true;
       }
-      function add_invoice_data($accountid, $charge_type, $description, $credit) {
+    
+    function add_invoice_data($accountid, $charge_type, $description, $credit)
+    {
       $insert_array = array (
       'accountid' => $accountid,
       'charge_type' => $charge_type,
@@ -382,7 +394,9 @@ reseller_products.price,reseller_products.billing_type,reseller_products.billing
       $this->db->insert ( 'invoice_item', $insert_array );
       return true;
       }
-      function check_unique_did($number) {
+    
+    function check_unique_did($number)
+    {
       $where = array (
       'number' => $number
       );
