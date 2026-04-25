@@ -8,7 +8,7 @@ $(document).ready(function() {
     url: "<?php echo base_url(); ?>freeswitch/livecall_report_json/",
     method: 'GET',
     dataType: 'json',
- colModel : [
+    colModel : [
 		{display: '<?php echo gettext("Action"); ?>', name: 'Action', width: 90, sortable: true, align: 'center'},
 		{display: '<?php echo gettext("Call Date"); ?>', name: 'Call Date', width: 70, sortable: true, align: 'center'},
 		{display: '<?php echo gettext("Origination"); ?>', name: 'CID Name', width: 70, sortable: true, align: 'center'},
@@ -23,7 +23,7 @@ $(document).ready(function() {
 		{display: '<?php echo gettext("Type"); ?>', name: 'Type', width: 60, sortable: true, align: 'center'},
 		{display: '<?php echo gettext("Status"); ?>', name: 'Call State', width: 80, sortable: true, align: 'center'},
         {display: '<?php echo gettext("Codecs"); ?>', name: 'Codecs', width: 200, sortable: true, align: 'center'}
-		],
+	],
 	nowrap: false,
 	showToggleBtn: true,
 	sortname: "created",
@@ -31,16 +31,14 @@ $(document).ready(function() {
 	usepager: true,
 	resizable: true,
 	useRp: true,
-	rp: 25,
 	showTableToggleBtn: true,
 	width: "auto",
 	height: "auto",
-	pagetext: 'Page',
-	outof: 'of',
-	nomsg: 'No Records',
-	procmsg: 'Processing, please wait ...',
-	pagestat: 'Displaying {from} to {to} of {total} items',
-	//preProcess: formatContactResults,
+    pagetext: '<?php echo gettext("Page"); ?>',
+    outof: '<?php echo gettext("of"); ?>',
+    nomsg: '<?php echo gettext("No Records"); ?>',
+    procmsg: '<?php echo gettext("Processing, please wait ..."); ?>',
+    pagestat: '<?php echo sprintf(_("Displaying %s to %s of %s items"), "{from}", "{to}", "{total}"); ?>',
 	onSuccess: function(data){
 	  $('a[rel*=facebox]').facebox({
 		    loadingImage : '<?php echo base_url(); ?>/images/loading.gif',

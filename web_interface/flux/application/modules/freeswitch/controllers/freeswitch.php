@@ -603,7 +603,7 @@ class Freeswitch extends MX_Controller
         $textToDelete = substr($string, $beginningPos, ($endPos + strlen($end)) - $beginningPos);
         return str_replace($textToDelete, '', $string);
     }
-
+    
     function livecall_report_json()
     {
         $command = "api show channels";
@@ -613,36 +613,43 @@ class Freeswitch extends MX_Controller
         $data_header = array();
         $k = 0;
         $data = explode("\n", $response);
-        for ($i = 0; $i < count($data) - 2; $i ++) {
-            if (trim($data[$i]) != '') {
-                if (count($data_header) == 0 || substr($data[$i], 0, 4) == "uuid") {
+        for ($i = 0; $i < count($data) - 2; $i++)
+        {
+            if (trim($data[$i]) != '')
+            {
+                if (count($data_header) == 0 || substr($data[$i], 0, 4) == "uuid")
+                {
                     $data_header = explode(",", $data[$i]);
-                } 
-                else {
+                }
+                else
+                {
                     $bridge_str = "";
                     $string = " " . $data[$i];
                     $ini = strpos($string, '[');
-                    if ($ini != 0) {
+                    if ($ini != 0)
+                    {
                         $ini += strlen('[');
                         $len = strpos($string, ']', $ini) - $ini;
                         $bridge_str = substr($string, $ini, $len);
                     }
-                    if ($bridge_str != '') {
+                    if ($bridge_str != '')
+                    {
                         $new_bridge_str = str_replace(',', '--', $bridge_str);
                         $data[$i] = str_replace($bridge_str, $new_bridge_str, $data[$i]);
                     }
                     $data_call = explode(",", $data[$i]);
-                    for ($j = 0; $j < count($data_call); $j ++) {
+                    for ($j = 0; $j < count($data_call); $j++)
+                    {
                         $calls[$k][@$data_header[$j]] = @$data_call[$j];
                         $calls_final[@$calls[$k]['uuid']] = @$calls[$k];
                     }
-                    $k ++;
+                    $k++;
                 }
             }
         }
         $json_data = array();
         $count = 0;
-
+    
         // Defined color
         $status_color = array(
             gettext('Answered') => "#28A745",
@@ -651,48 +658,45 @@ class Freeswitch extends MX_Controller
         );
         $org_color = "#D6D8D9";
         $term_color = "#3B3280";
-        foreach ($calls as $key => $value) {
-            if (isset($value['state']) && ($value['state'] == 'CS_EXCHANGE_MEDIA' || $value['state'] == 'CS_CONSUME_MEDIA')) {
+        foreach ($calls as $key => $value)
+        {
+            if (isset($value['state']) && ($value['state'] == 'CS_EXCHANGE_MEDIA' || $value['state'] == 'CS_CONSUME_MEDIA'))
+            {
                 $logdata = @$calls_final[$value['call_uuid']]['direction'];
                 $livecall_data = explode("|||", $value['presence_data']);
-                if ($livecall_data[4] == "DID"){
+                if ($livecall_data[4] == "DID")
+                {
                     $direction_call = gettext("Inbound");
                     $account = @$livecall_data[1];
                 }
-                else{
+                else
+                {
                     $direction_call = gettext("Outbound");
                     $account = @$calls_final[$value['call_uuid']]['accountcode'];
                 }
                 $org_data = explode("//", @$livecall_data[2]);
-                $term_data = explode("//", @$livecall_data[1]);
-                
-                if (isset($account)) {
-                $accountid = $this->common->get_field_name('id', 'accounts', array("number" => $account));
-                $accountcode = $this->common->get_field_name_coma_new("first_name,last_name,number", "accounts", $accountid);
-//                $accountcode = $this->common->build_concat_string('first_name,last_name,number', 'accounts', $account);
-                $this->flux_log->write_log("type_call", json_encode($accountcode));
+                $term_data = explode("//", @$livecall_data[3]);
+    
+                if (isset($account))
+                {
+                    $accountid = $this->common->get_field_name('id', 'accounts', array("number" => $account));
+                    $accountcode = $this->common->get_field_name_coma_new("first_name,last_name,number", "accounts", $accountid);
                 }
-                
-                
-                
-                
-                
-                
+    
                 $trunk = $term_data[4];
-                $trunk = explode("=",$trunk);
+                $trunk = explode("=", $trunk);
                 $gateway = $this->common->get_field_name('name', 'trunks', array("id" => $trunk[1]));
-
+    
                 $value['callstate'] = ($value['state'] == 'CS_EXCHANGE_MEDIA') ? gettext('Answered') : (($value['state'] == 'CS_CONSUME_MEDIA') ? gettext('Connecting') : gettext('Unknown'));
                 $timeDifference = strtotime(date("Y-m-d H:i:s")) - strtotime($value['created']);
                 $amount = isset($term_data[3]) ? $term_data[3] : 0;
                 $json_data['rows'][] = array(
                     'cell' => array(
-                        "<a href='" . base_url() . "freeswitch/livecall_hangup?uuid=" . $value['uuid'] . "' class='btn btn-warning'> ". gettext('Hang Up')." </button>",
+                        "<a href='" . base_url() . "freeswitch/livecall_hangup?uuid=" . $value['uuid'] . "' class='btn btn-warning'> " . gettext('Hang Up') . " </a>",
                         $value['created'],
                         $value['cid_name'] . " " . $value['cid_num'],
                         $value['ip_addr'],
-                        (isset($accountcode) && $accountcode != "")?$accountcode:' ',
-                        //$accountcode,
+                        (isset($accountcode) && $accountcode != "") ? $accountcode : ' ',
                         "<span style='color:" . $term_color . "'><b>" . @$gateway . "</b></span>",
                         "<span style='color:" . $term_color . "'><b>" . @rtrim(ltrim($term_data[1], " ^"), ".* ") . "</b></span>",
                         "<span style='color:" . $term_color . "'><b>" . @$term_data[2] . "</b></span>",
@@ -704,9 +708,10 @@ class Freeswitch extends MX_Controller
                         $value['read_codec'] . " / " . $value['write_codec']
                     )
                 );
-                $count ++;
-            } 
-            else {
+                $count++;
+            }
+            else
+            {
                 unset($calls[$i]);
             }
         }
