@@ -39,6 +39,7 @@ class DID extends MX_Controller
         $this->load->library('flux/order');
         $this->load->library('FLUX_Sms');
         $this->load->library('flux_log');
+        $this->load->config('did');
 
         if ($this->session->userdata('user_login') == FALSE)
             redirect(base_url() . '/flux/login');
@@ -748,7 +749,7 @@ class DID extends MX_Controller
 
     function did_import()
     {
-        $data['page_title'] = gettext('Import DIDs');
+        $data['page_title'] = gettext('Import DIDs Using Field Mapper');
         $this->session->set_userdata('import_did_rate_csv', "");
         $error_data = $this->session->userdata('import_did_csv_error');
         $full_path = $this->config->item('rates-file-path');
@@ -756,67 +757,122 @@ class DID extends MX_Controller
             unlink($full_path . $error_data);
             $this->session->set_userdata('import_did_csv_error', "");
         }
-        $accountinfo = $this->session->userdata('accountinfo');
-        $this->db->where('id', $accountinfo['currency_id']);
-        $this->db->select('currency');
-        $currency_info = (array) $this->db->get('currency')->first_row();
-        $data['fields'] = gettext("DID,Country,Account,Cost / Min(" . $currency_info['currency'] . "),Initial Increment,Increment,Setup Fee(" . $currency_info['currency'] . "),Monthly Fee(" . $currency_info['currency'] . "),Call Type,Destination");
-        $this->load->view('view_import_did', $data);
+        $data['provider_dropdown'] = form_dropdown('provider_id',
+            $this->db_model->build_concat_select_dropdown("id,first_name,number", " accounts", "where_arr", array(
+                "type"    => "3",
+                "status"  => "0",
+                "deleted" => "0",
+            )),
+            ''
+        );
+        $this->load->view('view_import_did_mapper', $data);
     }
 
     function did_preview_file()
     {
-        $data['page_title'] = gettext('Import DIDs');
-        $config_did_array = $this->config->item('DID-rates-field');
-        $accountinfo = $this->session->userdata('accountinfo');
-        $this->db->where('id', $accountinfo['currency_id']);
-        $this->db->select('currency');
-        $currency_info = (array) $this->db->get('currency')->first_row();
-        foreach ($config_did_array as $key => $value) {
-            $key = str_replace('CURRENCY', $currency_info['currency'], $key);
-            $did_fields_array[$key] = $value;
-        }
-        $check_header = $this->input->post('check_header', true);
         $invalid_flag = false;
+        $error = null;
+        $data['page_title'] = gettext('Import DIDs Using Field Mapper');
+        $data['mapto_fields'] = $this->config->item('DIDs-mapper-fields');
         if (isset($_FILES['didimport']['name']) && $_FILES['didimport']['name'] != "") {
-            list ($txt, $ext) = explode(".", $_FILES['didimport']['name']);
-            if ($ext == "csv" && $_FILES["didimport"]['size'] > 0) {
-                $error = $_FILES['didimport']['error'];
-                if ($error == 0) {
-                    $uploadedFile = $_FILES["didimport"]["tmp_name"];
-                    $full_path = $this->config->item('rates-file-path');
-                    $actual_file_name = "FluxSBC-DIDs-" . date("Y-m-d H:i:s") . "." . $ext;
-                    if (move_uploaded_file($uploadedFile, $full_path . $actual_file_name)) {
-                        $data['page_title'] = gettext('Import DIDs Preview');
-                        $data['csv_tmp_data'] = $this->csvreader->parse_file($full_path . $actual_file_name, $did_fields_array, $check_header);
-                        $data['provider_id'] = $_POST['provider_id'];
-                        $data['check_header'] = $check_header;
-                        $this->session->set_userdata('import_did_rate_csv', $actual_file_name);
-                    } else {
-                        $data['error'] = gettext("File Uploading Fail Please Try Again");
-                    }
-                }
+            $segments = explode(".", $_FILES['didimport']['name']);
+            if (count($segments) !== 2) {
+                $invalid_flag = true;
+                $error = gettext("File Uploading Fail Please Try Again");
             } else {
-                $data['error'] = gettext("Invalid file format : Only CSV file allows to import records(Can't import empty file)");
+                list ($txt, $ext) = $segments;
+                if ($ext == "csv" && $_FILES['didimport']['size'] > 0) {
+                    $upload_error = $_FILES['didimport']['error'];
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mime_type = finfo_file($finfo, $_FILES["didimport"]["tmp_name"]);
+                    $acceptable_mime_types = array(
+                        'application/csv',
+                        'application/x-csv',
+                        'text/csv',
+                        'text/comma-separated-values',
+                        'text/x-comma-separated-values',
+                        'text/tab-separated-values',
+                        'text/plain',
+                    );
+                    if (! in_array($mime_type, $acceptable_mime_types)) {
+                        $invalid_flag = true;
+                        $error = gettext("Invalid file format : Only CSV file allows to import records(Can't import empty file)");
+                    } else if ($upload_error == 0) {
+                        $uploadedFile = $_FILES["didimport"]["tmp_name"];
+                        $file_data = $this->common->csv_to_array($uploadedFile);
+                        if (! empty($file_data)) {
+                            $field_select = array_combine(array_keys($file_data[0]), array_keys($file_data[0]));
+                            $full_path = $this->config->item('rates-file-path');
+                            $actual_file_name = "FluxSBC-DIDs-import" . date("Y-m-d H:i:s") . "." . $ext;
+                            $actual_file_name = str_replace(' ', '-', $actual_file_name);
+                            $actual_file_name = str_replace(':', '-', $actual_file_name);
+                            if (move_uploaded_file($uploadedFile, $full_path . $actual_file_name)) {
+                                array_unshift($file_data, $field_select);
+                                $data['csv_tmp_data'] = $file_data;
+                                $data['file_data'] = $field_select;
+                                $data['page_title'] = gettext('Map CSV to DIDs');
+                                $this->session->set_userdata('import_did_rate_csv', $actual_file_name);
+                                $data['post_array'] = serialize($this->input->post());
+                                $data['mapper_array'] = $this->_create_did_mapper_array();
+                            } else {
+                                $invalid_flag = true;
+                                $error = gettext("File Uploading Fail Please Try Again");
+                            }
+                        } else {
+                            $invalid_flag = true;
+                            $error = gettext("Invalid file format : Only CSV file allows to import records(Can't import empty file)");
+                        }
+                    } else {
+                        $invalid_flag = true;
+                        $error = gettext("File Uploading Fail Please Try Again");
+                    }
+                } else {
+                    $invalid_flag = true;
+                    $error = gettext("Invalid file format : Only CSV file allows to import records(Can't import empty file)");
+                }
             }
         } else {
             $invalid_flag = true;
-        }
-        if ($invalid_flag) {
-            $data['fields'] = "DID,Country,Account,Per Minute Cost(" . $currency_info['currency'] . "),Initial Increment,Increment,Setup Fee(" . $currency_info['currency'] . "),Monthly Fee(" . $currency_info['currency'] . "),Call Type,Destination";
-            $str = '';
-            if (empty($_FILES['didimport']['name'])) {
-                $str .= '<div class="col-12">'.gettext("Please Select  File.").'</div>';
-            }
-            $data['error'] = $str;
+            $error = gettext("Please Select  File.");
         }
 
-        $this->load->view('view_import_did', $data);
+        if ($invalid_flag) {
+            $data['error'] = $error;
+            $data['provider_dropdown'] = form_dropdown('provider_id',
+                $this->db_model->build_concat_select_dropdown("id,first_name,number", " accounts", "where_arr", array(
+                    "type"    => "3",
+                    "status"  => "0",
+                    "deleted" => "0",
+                )),
+                $this->input->post('provider_id')
+            );
+        }
+        $this->load->view('view_import_did_mapper', $data);
     }
 
-    function did_import_file($provider_id, $check_header = false)
+    private function _create_did_mapper_array()
+    {
+        $custom_config_array = $this->config->item('DIDs-mapper-fields');
+        $custom_array = array();
+        foreach ($custom_config_array as $section => $fields) {
+            foreach ($fields as $label => $value) {
+                $params_arr = array(
+                    'id'    => $value,
+                    'class' => $value,
+                    'name'  => $value,
+                );
+                $custom_array[$value] = str_replace('col-md-5', 'col-md-12', form_input($params_arr));
+            }
+        }
+        return $custom_array;
+    }
+
+    function did_import_file()
     {
         ini_set('max_execution_time', 0);
+        $add_array = $this->input->post();
+        $default_fields = isset($add_array['post_array']) ? unserialize($add_array['post_array']) : array();
+        $provider_id = ! empty($default_fields['provider_id']) ? $default_fields['provider_id'] : 0;
         $new_final_arr = array();
         $invalid_array = array();
         $new_final_arr_key = $this->config->item('DID-rates-field');
@@ -824,16 +880,43 @@ class DID extends MX_Controller
         $reseller_id = $accountinfo['type'] == 1 ? $accountinfo['id'] : 0;
         $full_path = $this->config->item('rates-file-path');
         $did_file_name = $this->session->userdata('import_did_rate_csv');
-        $csv_tmp_data = $this->csvreader->parse_file($full_path . $did_file_name, $new_final_arr_key, $check_header);
+        $csv_tmp_data = $this->common->csv_to_array($full_path . $did_file_name);
         $flag = false;
         $i = 0;
         $number_arr = array();
         $reseller_array = array();
         $final_reseller_array = array();
+        $resolve = function ($key) use (&$add_array, &$csv_data_ref) {
+            $sel = isset($add_array[$key . '-select']) ? $add_array[$key . '-select'] : '';
+            if (! empty($sel) && isset($csv_data_ref[$sel]) && $csv_data_ref[$sel] !== '') {
+                return $csv_data_ref[$sel];
+            }
+            return isset($add_array[$key]) ? $add_array[$key] : '';
+        };
         foreach ($csv_tmp_data as $key => $csv_data) {
-            if (isset($csv_data['number']) && $csv_data['number'] != '' && $i != 0) {
+            $csv_data_ref = $csv_data;
+            $row = array(
+                'number'          => $resolve('number'),
+                'country_id'      => $resolve('country_id'),
+                'city'            => $resolve('city'),
+                'province'        => $resolve('province'),
+                'accountid'       => $resolve('accountid'),
+                'cost'            => $resolve('cost'),
+                'init_inc'        => $resolve('init_inc'),
+                'inc'             => $resolve('inc'),
+                'setup'           => $resolve('setup'),
+                'monthlycost'     => $resolve('monthlycost'),
+                'call_type'       => $resolve('call_type'),
+                'extensions'      => $resolve('extensions'),
+                'connectcost'     => $resolve('connectcost'),
+                'includedseconds' => $resolve('includedseconds'),
+                'leg_timeout'     => $resolve('leg_timeout'),
+                'billing_days'    => $resolve('billing_days'),
+            );
+            $csv_data = $row;
+            if (isset($csv_data['number']) && $csv_data['number'] != '') {
                 $str = null;
-                if (isset($csv_data['call_type'])) {
+                if (! empty($csv_data['call_type'])) {
                     $call_type = $this->common->get_field_name("call_type_code", "did_call_types", array(
                         "call_type" => $csv_data['call_type']
                     ));
@@ -844,7 +927,7 @@ class DID extends MX_Controller
                 $csv_data['country_id'] = isset($csv_data['country_id']) ? $csv_data['country_id'] : 0;
                 $csv_data['city'] = isset($csv_data['city']) ? $csv_data['city'] : '';
                 $csv_data['province'] = isset($csv_data['province']) ? $csv_data['province'] : '';
-                $csv_data['provider_id'] = ($provider_id > 0)?$provider_id:0;
+                $csv_data['provider_id'] = ($provider_id > 0) ? $provider_id : 0;
                 $csv_data['call_type'] = $call_type;
                 $csv_data['extensions'] = isset($csv_data['extensions']) ? $csv_data['extensions'] : '';
                 $csv_data['includedseconds'] = isset($csv_data['includedseconds']) ? $csv_data['includedseconds'] : 0;
@@ -853,6 +936,8 @@ class DID extends MX_Controller
                 $csv_data['monthlycost'] = ! empty($csv_data['monthlycost']) && is_numeric($csv_data['monthlycost']) && $csv_data['monthlycost'] > 0 ? $csv_data['monthlycost'] : 0;
                 $csv_data['connectcost'] = ! empty($csv_data['connectcost']) && is_numeric($csv_data['connectcost']) && $csv_data['connectcost'] > 0 ? $csv_data['connectcost'] : 0;
                 $csv_data['inc'] = isset($csv_data['inc']) ? $csv_data['inc'] : 0;
+                $csv_data['leg_timeout'] = ! empty($csv_data['leg_timeout']) && is_numeric($csv_data['leg_timeout']) ? (int) $csv_data['leg_timeout'] : 30;
+                $csv_data['billing_days'] = ! empty($csv_data['billing_days']) && is_numeric($csv_data['billing_days']) ? (int) $csv_data['billing_days'] : 0;
                 $str = $this->data_validate($csv_data);
                 if ($str != "") {
                     $invalid_array[$i] = $csv_data;
