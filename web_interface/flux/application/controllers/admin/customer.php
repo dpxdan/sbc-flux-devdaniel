@@ -756,8 +756,11 @@ class Customer extends Account {
 							$this->db->where ( 'product_id', $key['product_id']);
 							$this->db->where ( 'accountid', $this->postdata ['accountid']);
 							$this->db->update ( 'counters', $update_counter );
-
-							$update_order = array("is_terminated" => "1");
+							$update_order = array(
+							    "is_terminated"     => "1",
+							    "termination_date"  => date("Y-m-d H:i:s"),
+							    "termination_note"  => "Product terminated by customer_update (API)",
+							);
 							$this->db->where ( 'product_id', $key['product_id']);
 							$this->db->where ( 'accountid', $this->postdata ['accountid'] );
 							$this->db->update ( 'order_items', $update_order);
