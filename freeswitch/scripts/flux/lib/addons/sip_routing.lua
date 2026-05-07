@@ -51,7 +51,7 @@ function sip_device_fail_over(didinfo,xml,destination_number)
 			table.insert(xml, [[<action application="set" data="no_answer_destination=]]..sip_routing_arr['no_answer_destination']..[["/>]]);
 			table.insert(xml, [[<action application="set" data="not_register_flag=]]..sip_routing_arr['not_register_flag']..[["/>]]);
 			table.insert(xml, [[<action application="set" data="not_register_destination=]]..sip_routing_arr['not_register_destination']..[["/>]]);
-			table.insert(xml, [[<action application="set" data="variable_sip_to_host=]]..params:getHeader("variable_sip_to_host")..[["/>]]);
+			table.insert(xml, [[<action application="set" data="variable_sip_to_host=${user_domain}"/>]]);
 		end 
 		table.insert(xml, [[<action application="set" data="leg_timeout=]]..config['leg_timeout']..[["/>]]);
 		table.insert(xml, [[<action application="set" data="userinfo_id=]]..SipDestinationInfo['accountid']..[["/>]]);
@@ -75,14 +75,14 @@ function sip_device_routing(xml,destination_number,destinationinfo,callerid_arra
 			Logger.warning("[PBX_SIP_ROUTING] SIP Call Forwarding Enable")
 			table.insert(xml, [[<action application="set" data="sip_h_X-call-type=did"/>]]);
 			table.insert(xml, [[<action application="set" data="sip_h_X-did-call-type=LOCAL"/>]]);
-			bridge = "{sip_invite_params=user=LOCAL,sip_from_uri="..sip_routing_arr['call_forwarding_destination'].."@${domain_name}}[leg_timeout="..config['leg_timeout'].."]user/"..sip_routing_arr['call_forwarding_destination'].."@"..params:getHeader("variable_sip_to_host")..""
+			bridge = "{sip_invite_params=user=LOCAL,sip_from_uri="..sip_routing_arr['call_forwarding_destination'].."@${domain_name}}[leg_timeout="..config['leg_timeout'].."]user/"..sip_routing_arr['call_forwarding_destination'].."@${user_domain}"
 			table.insert(xml, [[<action application="bridge" data="]]..bridge..[["/>]]);
 		else
 			sip_destination_number = destination_number
 			routing_voicemail_number = destination_number
 			Logger.warning("[PBX_SIP_ROUTING] SIP Call Forwarding Disable")
 			local sip_call_string = '';
-			sip_call_string = "user/"..destination_number.."@"..params:getHeader("variable_sip_to_host")..""
+			sip_call_string = "user/"..destination_number.."@${user_domain}"
 			table.insert(xml, [[<action application="set" data="hangup_after_bridge=true"/>]]);
 			table.insert(xml, [[<action application="set" data="early_use_180=true"/>]]);
 			table.insert(xml, [[<action application="bridge" data="{sip_invite_params=user=LOCAL,ignore_early_media=true,sip_h_P-call_type='custom_forward',sip_h_P-Accountcode=]]..userinfo['id']..[[}[leg_timeout=]]..config['leg_timeout']..[[ ] ]]..sip_call_string..[["/>]]);
@@ -94,7 +94,7 @@ function sip_device_routing(xml,destination_number,destinationinfo,callerid_arra
 		table.insert(xml, [[<action application="set" data="no_answer_destination=]]..sip_routing_arr['no_answer_destination']..[["/>]]);
 		table.insert(xml, [[<action application="set" data="not_register_flag=]]..sip_routing_arr['not_register_flag']..[["/>]]);
 		table.insert(xml, [[<action application="set" data="not_register_destination=]]..sip_routing_arr['not_register_destination']..[["/>]]);
-		table.insert(xml, [[<action application="set" data="variable_sip_to_host=]]..params:getHeader("variable_sip_to_host")..[["/>]]);
+		table.insert(xml, [[<action application="set" data="variable_sip_to_host=${user_domain}"/>]]);
 		--table.insert(xml, [[<action application="set" data="variable_sip_to_port=]]..params:getHeader("variable_sip_to_port")..[["/>]]);
 		table.insert(xml, [[<action application="set" data="leg_timeout=]]..config['leg_timeout']..[["/>]]);
 		table.insert(xml, [[<action application="set" data="userinfo_id=]]..userinfo['id']..[["/>]]);
@@ -106,7 +106,7 @@ function sip_device_routing(xml,destination_number,destinationinfo,callerid_arra
 		routing_voicemail_number = destination_number
 		Logger.warning("[PBX_SIP_ROUTING] SIP Call Forwarding Disable")
 		local sip_call_string = '';
-		sip_call_string = "user/"..destination_number.."@"..params:getHeader("variable_sip_to_host")..""
+		sip_call_string = "user/"..destination_number.."@${user_domain}"
 		table.insert(xml, [[<action application="set" data="hangup_after_bridge=true"/>]]);
 		table.insert(xml, [[<action application="set" data="early_use_180=true"/>]]);
 		table.insert(xml, [[<action application="bridge" data="{sip_invite_params=user=LOCAL,ignore_early_media=true,sip_h_P-call_type='custom_forward',sip_h_P-Accountcode=]]..userinfo['id']..[[}[leg_timeout=]]..config['leg_timeout']..[[ ] ]]..sip_call_string..[["/>]]);
@@ -121,7 +121,7 @@ function freeswitch_xml_local(xml,destination_number,destinationinfo,callerid_ar
     if(tonumber(sip_routing_info['call_waiting']) == 1) then 
         table.insert(xml, [[<action application="limit" data="hash inbound ]]..destination_number..[[ ]]..sip_routing_info['call_waiting']..[[ !USER_BUSY" />]]);
     end	
-    table.insert(xml, [[<action application="export" data="presence_data=]]..livecall_data..[[||||||LOCAL|||]]..params:getHeader("variable_sip_to_host")..[["/>]])
+    table.insert(xml, [[<action application="export" data="presence_data=]]..livecall_data..[[||||||LOCAL|||$${domain_name}"/>]])
     Logger.warning("[LOCAL CALL] Recording Flag :"..sip_routing_info['is_recording'])
     if(tonumber(sip_routing_info['is_recording']) == 0) then 
         table.insert(xml, [[<action application="export" data="is_recording=1"/>]]);
@@ -170,7 +170,7 @@ function custom_inbound_0(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 	common_chan_var = "{sip_invite_params=user=LOCAL,sip_from_uri="..didinfo['extensions'].."@${domain_name}}"
 		for i = 1, #destination_str do
 			if notify then notify(xml,destination_str[i]) end
-			bridge_str = bridge_str.."[leg_timeout="..didinfo['leg_timeout'].."]user/"..destination_str[i].."@"..params:getHeader("variable_sip_to_host")..""
+			bridge_str = bridge_str.."[leg_timeout="..didinfo['leg_timeout'].."]user/"..destination_str[i].."@${user_domain}"
 			if i <= #deli_str then
 				bridge_str = bridge_str..deli_str[i]
 			end
