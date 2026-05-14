@@ -651,6 +651,11 @@ if (userinfo ~= nil) then
 		end
 		-- ********* END *********
 		Logger.info("[Dialplan] [userinfo] Actual CustomerInfo XML : " .. actual_userinfo['id'])
+		if (didinfo['bypass_media'] ~= nil and didinfo['bypass_media'] == '0') then
+		actual_userinfo['bypass_media'] = 0;
+		else
+		actual_userinfo['bypass_media'] = 1;
+		end
 		xml = freeswitch_xml_header(xml,destination_number,accountcode,maxlength,call_direction,accountname,xml_user_rates,actual_userinfo,config,xml_did_rates,nil,callerid_array,original_destination_number)
 		if callerid_lookup then didinfo['callerid_number'] = callerid_lookup(params) end
 		if(didinfo['extensions'] == '')then
