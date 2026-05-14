@@ -317,8 +317,6 @@ class Freeswitch extends MX_Controller
         $query = $this->freeswitch_model->fs_retrieve_sip_user(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
         $permissioninfo = $this->session->userdata('permissioninfo');
         $profiles = $this->db->query("SELECT name FROM sip_profiles where status = 0")->result_array();
-        // $this->flux_log->write_log("FSSIPDEVICES", json_encode($profiles));
-        // FLUXUPDATE-943 Kinjal Start
         $new_array = array();
         foreach ($profiles as $profile) {
             $profile_name = $profile['name'];
@@ -1069,10 +1067,24 @@ class Freeswitch extends MX_Controller
                 $insert_arr['last_modified_date'] = gmdate('Y-m-d H:i:s');
                 $insert = $this->db->insert("gateways", $insert_arr);
                 if ($insert) {
-                    $profile_name = $this->common->get_field_name('name', 'sip_profiles', $insert_arr['sip_profile_id']);
-                    $sip_ip = $this->common->get_field_name('sip_ip', 'sip_profiles', $insert_arr['sip_profile_id']);
-                    $cmd = "api sofia profile " . $profile_name . " rescan reloadacl reloadxml";
-                    $this->freeswitch_model->reload_freeswitch($cmd, $sip_ip);
+				$proxy_raw = isset($gateway_arr['proxy']) ? $gateway_arr['proxy'] : '';
+				
+				if (!empty($proxy_raw)) {
+					$proxy = strpos($proxy_raw, ':') !== false
+						? explode(':', $proxy_raw)[0]
+						: $proxy_raw;
+				
+					$this->db->insert("event_guard_whitelist", array(
+						'created_at'  => gmdate('Y-m-d H:i:s'),
+						'description' => $insert_arr['name'],
+						'cidr'        => $proxy,
+					));
+				}
+                    
+				$profile_name = $this->common->get_field_name('name', 'sip_profiles', $insert_arr['sip_profile_id']);
+				$sip_ip = $this->common->get_field_name('sip_ip', 'sip_profiles', $insert_arr['sip_profile_id']);
+				$cmd = "api sofia profile " . $profile_name . " rescan reloadacl reloadxml";
+				$this->freeswitch_model->reload_freeswitch($cmd, $sip_ip);
                 }
                 echo json_encode(array(
                     "SUCCESS" => ucfirst($insert_arr['name']) . gettext("Gateway Added Successfully!")
@@ -1084,189 +1096,238 @@ class Freeswitch extends MX_Controller
 
     function fsgateway_delete($gateway_id)
     {
-        $this->db->select('name,sip_profile_id');
+        $this->db->select('name, sip_profile_id, gateway_data');
         $gateway_info = (array) $this->db->get_where('gateways', array(
             'id' => $gateway_id
         ))->first_row();
-        $this->db->select('name,sip_ip');
+
+        $this->db->select('name, sip_ip');
         $profile_info = (array) $this->db->get_where('sip_profiles', array(
             'id' => $gateway_info['sip_profile_id']
         ))->first_row();
+
+        $gateway_data = json_decode($gateway_info['gateway_data'], true);
+        $proxy_raw    = isset($gateway_data['proxy']) ? $gateway_data['proxy'] : '';
+
+        if (!empty($proxy_raw)) {
+            $proxy = strpos($proxy_raw, ':') !== false
+                ? explode(':', $proxy_raw)[0]
+                : $proxy_raw;
+
+            $this->db->delete('event_guard_whitelist', array('cidr' => $proxy, 'description' => $gateway_info['name']));
+        }
+
         $cmd = "api sofia profile " . $profile_info['name'] . " killgw " . $gateway_info['name'] . " rescan reloadacl reloadxml";
         $this->db_model->delete("gateways", array(
             "id" => $gateway_id
         ));
-        $this->freeswitch_model->reload_freeswitch($cmd, $sip_ip);
+        $this->freeswitch_model->reload_freeswitch($cmd, $profile_info['sip_ip']);
         $this->session->set_flashdata('flux_notification', gettext('Gateway Removed Successfully!'));
         redirect(base_url() . 'freeswitch/fsgateway/');
     }
-
+    
     function fsgateway_delete_multiple()
     {
-        $ids = $this->input->post("selected_ids", true);
-        $where = "id IN ($ids)";
-        $this->db->where($where);
+        $ids_raw = $this->input->post("selected_ids", true);
+
+        if (is_array($ids_raw)) {
+            $ids_safe = array_map('intval', $ids_raw);
+        } else {
+            $ids_safe = array_filter(array_map(function($v) {
+                return (int) trim(str_replace("'", '', $v));
+            }, explode(',', (string) $ids_raw)));
+        }
+
+        if (empty($ids_safe)) {
+            echo json_encode(array('success' => false, 'error' => gettext('No records selected.')));
+            return;
+        }
+
+        $where = "id IN (" . implode(',', $ids_safe) . ")";
+
         $this->db->select('group_concat(sip_profile_id) as sip_profile_id');
         $this->db->from('gateways');
+        $this->db->where($where);
         $sip_profile_ids = (array) $this->db->get()->first_row();
+
         $sip_profile_where = "id IN (" . $sip_profile_ids['sip_profile_id'] . ")";
-        $this->db->select('id,name,sip_ip');
-        $this->db->where($sip_profile_where);
+        $this->db->select('id, name, sip_ip');
         $this->db->from('sip_profiles');
+        $this->db->where($sip_profile_where);
         $result_array = $this->db->get()->result_array();
+
         $sip_profile_arr = array();
-        foreach ($result_array as $key => $value) {
+        foreach ($result_array as $value) {
             $sip_profile_arr[$value['id']] = array(
-                "name" => $value['name'],
-                "sip_ip" => $value['sip_ip']
+                'name'   => $value['name'],
+                'sip_ip' => $value['sip_ip'],
             );
         }
-        $this->db->select('id,name,sip_profile_id');
-        $this->db->where($where);
+
+        $this->db->select('id, name, sip_profile_id, gateway_data');
         $this->db->from('gateways');
+        $this->db->where($where);
         $gateway_info = $this->db->get()->result_array();
-        foreach ($gateway_info as $key => $value) {
+
+        foreach ($gateway_info as $value) {
+
+            $gateway_data = json_decode($value['gateway_data'], true);
+            $proxy_raw    = isset($gateway_data['proxy']) ? $gateway_data['proxy'] : '';
+
+            if (!empty($proxy_raw)) {
+                $proxy = strpos($proxy_raw, ':') !== false
+                    ? explode(':', $proxy_raw)[0]
+                    : $proxy_raw;
+
+                $this->db->delete('event_guard_whitelist', array('cidr' => $proxy, 'description' => $value['name']));
+            }
+
             $cmd = "api sofia profile " . $sip_profile_arr[$value['sip_profile_id']]['name'] . " killgw " . $value['name'] . " rescan reloadacl reloadxml";
-            $this->freeswitch_model->reload_freeswitch($cmd, $sip_profile_arr[$value['sip_profile_id']]['sip_ip']);
+
+            $this->freeswitch_model->reload_freeswitch(
+                $cmd,
+                $sip_profile_arr[$value['sip_profile_id']]['sip_ip']
+            );
         }
+
         $this->db->where($where);
         echo $this->db->delete("gateways");
     }
     
-          function fsserver_list()
-        {
-            $data['username'] = $this->session->userdata('user_name');
-            $data['page_title'] = gettext('Flux Servers');
-            $data['search_flag'] = true;
-            $data['cur_menu_no'] = 1;
-            $this->session->set_userdata('advance_search', 0);
-            $data['grid_fields'] = $this->freeswitch_form->build_fsserver_list();
-            $data["grid_buttons"] = $this->freeswitch_form->build_fsserver_grid_buttons();
-            $data['form_search'] = $this->form->build_serach_form($this->freeswitch_form->get_search_fsserver_form());
-            $this->load->view('view_fsserver_list', $data);
-        }
-    
-        function fsserver_list_json()
-        {
-            $json_data = array();
-            $count_all = $this->freeswitch_model->get_fsserver_list(false);
-            $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
-            $json_data = $paging_data["json_paging"];
-            $query = $this->freeswitch_model->get_fsserver_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
-            $grid_fields = json_decode($this->freeswitch_form->build_fsserver_list());
-            $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
-            echo json_encode($json_data);
-        }
-    
-        function fsserver_add($type = "")
-        {
-            $data['username'] = $this->session->userdata('user_name');
-            $data['flag'] = 'create';
-            $data['page_title'] = gettext('Create Flux Server');
-            $data['form'] = $this->form->build_form($this->freeswitch_form->get_form_fsserver_fields(), '');
-            $this->load->view('view_fsserver_add_edit', $data);
-        }
-    
-        function fsserver_edit($edit_id = '')
-        {
-            $data['page_title'] = gettext('Edit Flux Server');
-            $where = array(
-                'id' => $edit_id
-            );
-            $account = $this->db_model->getSelect("*", "freeswich_servers", $where);
-            foreach ($account->result_array() as $key => $value) {
-                $edit_data = $value;
-            }
-            $data['form'] = $this->form->build_form($this->freeswitch_form->get_form_fsserver_fields(), $edit_data);
-            $this->load->view('view_fsserver_add_edit', $data);
-        }
-    
-        function fsserver_save()
-        {
-            $add_array = $this->input->post();
-    
-            $data['form'] = $this->form->build_form($this->freeswitch_form->get_form_fsserver_fields(), $add_array);
-            if ($add_array['id'] != '') {
-                $data['page_title'] = gettext('Edit Flux Server');
-                if ($this->form_validation->run() == FALSE) {
-                    $data['validation_errors'] = validation_errors();
-                    echo $data['validation_errors'];
-                    exit();
-                } else {
-                    if (isset($add_array['freeswitch_host'])) {
-                        $query = $this->common_model->check_unique_data('edit', 'freeswitch_host', $add_array['freeswitch_host'], 'freeswich_servers');
-                        $result = $query->result_array();
-                        if (count($result) > 0) {
-                            if ($result[0]['id'] != $add_array['id'] && $result[0]['freeswitch_host'] == $add_array['freeswitch_host']) {
-                                echo json_encode(array(
-                                    "freeswitch_host_error" => gettext("Host already exist in system.")
-                                ));
-                                exit();
-                            }
-                        }
-                    }
-    
-                    $this->freeswitch_model->edit_fsserver($add_array, $add_array['id']);
-                    echo json_encode(array(
-                        "SUCCESS" => gettext("Flux Server Updated Successfully!")
-                    ));
-                    exit();
-                }
-            } else {
-                $data['page_title'] = gettext('Flux Server');
-                if ($this->form_validation->run() == FALSE) {
-                    $data['validation_errors'] = validation_errors();
-                    echo $data['validation_errors'];
-                    exit();
-                } else {
-                    if (isset($add_array['freeswitch_host']) && $add_array['freeswitch_host'] != "") {
-                        $query = $this->common_model->check_unique_data('add', 'freeswitch_host', $add_array['freeswitch_host'], 'freeswich_servers');
-                        if ($query > 0) {
-                            echo json_encode(array(
-                                "freeswitch_host_error" => gettext("Host already exist in system.")
-                            ));
-                            exit();
-                        }
-                    }
-                    $this->freeswitch_model->add_fssever($add_array);
-                    echo json_encode(array(
-                        "SUCCESS" => gettext("Flux Server Added Successfully!")
-                    ));
-                    exit();
-                }
-            }
-            $this->load->view('view_callshop_details', $data);
-        }
-    
-        function fsserver_delete($id)
-        {
-            $this->freeswitch_model->fsserver_delete($id);
-            $this->session->set_flashdata('flux_notification', gettext('Flux Server Removed Successfully!'));
-            redirect(base_url() . 'freeswitch/fsserver_list/');
-            exit();
-        }
-    
-        function fsserver_list_search()
-        {
-            $ajax_search = $this->input->post('ajax_search', 0);
-    
-            if ($this->input->post('advance_search', TRUE) == 1) {
-                $this->session->set_userdata('advance_search', $this->input->post('advance_search'));
-                $action = $this->input->post();
-                unset($action['action']);
-                unset($action['advance_search']);
-                $this->session->set_userdata('fsserver_list_search', $action);
-            }
-            if (@$ajax_search != 1) {
-                redirect(base_url() . 'freeswitch/fsserver_list/');
-            }
-        }
-    
-        function fsserver_list_clearsearchfilter()
-        {
-            $this->session->set_userdata('advance_search', 0);
-            $this->session->set_userdata('account_search', "");
-        } 
+	function fsserver_list()
+	{
+		$data['username'] = $this->session->userdata('user_name');
+		$data['page_title'] = gettext('Flux Servers');
+		$data['search_flag'] = true;
+		$data['cur_menu_no'] = 1;
+		$this->session->set_userdata('advance_search', 0);
+		$data['grid_fields'] = $this->freeswitch_form->build_fsserver_list();
+		$data["grid_buttons"] = $this->freeswitch_form->build_fsserver_grid_buttons();
+		$data['form_search'] = $this->form->build_serach_form($this->freeswitch_form->get_search_fsserver_form());
+		$this->load->view('view_fsserver_list', $data);
+	}
+
+	function fsserver_list_json()
+	{
+		$json_data = array();
+		$count_all = $this->freeswitch_model->get_fsserver_list(false);
+		$paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
+		$json_data = $paging_data["json_paging"];
+		$query = $this->freeswitch_model->get_fsserver_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
+		$grid_fields = json_decode($this->freeswitch_form->build_fsserver_list());
+		$json_data['rows'] = $this->form->build_grid($query, $grid_fields);
+		echo json_encode($json_data);
+	}
+
+	function fsserver_add($type = "")
+	{
+		$data['username'] = $this->session->userdata('user_name');
+		$data['flag'] = 'create';
+		$data['page_title'] = gettext('Create Flux Server');
+		$data['form'] = $this->form->build_form($this->freeswitch_form->get_form_fsserver_fields(), '');
+		$this->load->view('view_fsserver_add_edit', $data);
+	}
+
+	function fsserver_edit($edit_id = '')
+	{
+		$data['page_title'] = gettext('Edit Flux Server');
+		$where = array(
+			'id' => $edit_id
+		);
+		$account = $this->db_model->getSelect("*", "freeswich_servers", $where);
+		foreach ($account->result_array() as $key => $value) {
+			$edit_data = $value;
+		}
+		$data['form'] = $this->form->build_form($this->freeswitch_form->get_form_fsserver_fields(), $edit_data);
+		$this->load->view('view_fsserver_add_edit', $data);
+	}
+
+	function fsserver_save()
+	{
+		$add_array = $this->input->post();
+
+		$data['form'] = $this->form->build_form($this->freeswitch_form->get_form_fsserver_fields(), $add_array);
+		if ($add_array['id'] != '') {
+			$data['page_title'] = gettext('Edit Flux Server');
+			if ($this->form_validation->run() == FALSE) {
+				$data['validation_errors'] = validation_errors();
+				echo $data['validation_errors'];
+				exit();
+			} else {
+				if (isset($add_array['freeswitch_host'])) {
+					$query = $this->common_model->check_unique_data('edit', 'freeswitch_host', $add_array['freeswitch_host'], 'freeswich_servers');
+					$result = $query->result_array();
+					if (count($result) > 0) {
+						if ($result[0]['id'] != $add_array['id'] && $result[0]['freeswitch_host'] == $add_array['freeswitch_host']) {
+							echo json_encode(array(
+								"freeswitch_host_error" => gettext("Host already exist in system.")
+							));
+							exit();
+						}
+					}
+				}
+
+				$this->freeswitch_model->edit_fsserver($add_array, $add_array['id']);
+				echo json_encode(array(
+					"SUCCESS" => gettext("Flux Server Updated Successfully!")
+				));
+				exit();
+			}
+		} else {
+			$data['page_title'] = gettext('Flux Server');
+			if ($this->form_validation->run() == FALSE) {
+				$data['validation_errors'] = validation_errors();
+				echo $data['validation_errors'];
+				exit();
+			} else {
+				if (isset($add_array['freeswitch_host']) && $add_array['freeswitch_host'] != "") {
+					$query = $this->common_model->check_unique_data('add', 'freeswitch_host', $add_array['freeswitch_host'], 'freeswich_servers');
+					if ($query > 0) {
+						echo json_encode(array(
+							"freeswitch_host_error" => gettext("Host already exist in system.")
+						));
+						exit();
+					}
+				}
+				$this->freeswitch_model->add_fssever($add_array);
+				echo json_encode(array(
+					"SUCCESS" => gettext("Flux Server Added Successfully!")
+				));
+				exit();
+			}
+		}
+		$this->load->view('view_callshop_details', $data);
+	}
+
+	function fsserver_delete($id)
+	{
+		$this->freeswitch_model->fsserver_delete($id);
+		$this->session->set_flashdata('flux_notification', gettext('Flux Server Removed Successfully!'));
+		redirect(base_url() . 'freeswitch/fsserver_list/');
+		exit();
+	}
+
+	function fsserver_list_search()
+	{
+		$ajax_search = $this->input->post('ajax_search', 0);
+
+		if ($this->input->post('advance_search', TRUE) == 1) {
+			$this->session->set_userdata('advance_search', $this->input->post('advance_search'));
+			$action = $this->input->post();
+			unset($action['action']);
+			unset($action['advance_search']);
+			$this->session->set_userdata('fsserver_list_search', $action);
+		}
+		if (@$ajax_search != 1) {
+			redirect(base_url() . 'freeswitch/fsserver_list/');
+		}
+	}
+
+	function fsserver_list_clearsearchfilter()
+	{
+		$this->session->set_userdata('advance_search', 0);
+		$this->session->set_userdata('account_search', "");
+	} 
 
     function fssipprofile()
     {
@@ -1597,8 +1658,6 @@ class Freeswitch extends MX_Controller
         $this->session->set_flashdata('flux_notification', gettext('SIP Profile Removed Successfully!'));
         redirect(base_url() . 'freeswitch/fssipprofile/');
     }
-
-   
 
     function fssipprofile_edit_validation($id, $name)
     {

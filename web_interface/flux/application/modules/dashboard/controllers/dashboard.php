@@ -31,8 +31,9 @@ class dashboard extends MX_Controller {
 		$this->load->model ( 'Flux_common' );
 		$this->load->model ( 'dashboard_model' );
 		$this->load->library ( 'freeswitch_lib' );
-		$this->load->library ( 'Invoice_log' );
+		$this->load->library ( 'flux_log' );
 		$this->load->library ('FLUX_Sms');
+		$this->load->model('event_guard/event_guard_model');
 		$accountinfo = $this->session->userdata ( 'accountinfo' );
 		if($accountinfo['type'] == '0' || $accountinfo['type'] == '3'){
 			redirect ( base_url () . 'user/user/' );
@@ -51,10 +52,10 @@ class dashboard extends MX_Controller {
 			$accountinfo = $this->session->userdata ( 'accountinfo' );
 			$json_data_acc = array ();
 			$json_data_acc = $this->session->all_userdata();
-//			$json = 
-			$this->invoice_log->write_log ( 'invoice_info', json_encode($json_data_acc) );
-//			$this->invoice_log->write_log ( 'info',$acc_mode);
 			$data['currency']= $this->common->get_field_name("currency","currency",array("id"=>$accountinfo['currency_id']));
+			if ($accountinfo['type'] == -1 || $accountinfo['type'] == 2) {
+				$data['blocked_ips'] = $this->event_guard_model->get_recent_blocked_ips(5);
+			}
 			$this->load->view ( 'view_dashboard', $data );
 		}
 	}

@@ -83,6 +83,13 @@ class IPMAP_model extends CI_Model
         if ($account_data['type'] == '0') {
             $add_array['accountid'] = $account_data['id'];
         }
+        $data_event = array(
+            'created_at' => gmdate('Y-m-d H:i:s'),            
+            'description' => $add_array['name'],
+            'cidr' => $add_array['ip']
+        );
+        $this->db->insert("event_guard_whitelist", $data_event);
+                
         $data = array(
             'created_date' => gmdate('Y-m-d H:i:s'),
             'last_modified_date' => gmdate('Y-m-d H:i:s'),

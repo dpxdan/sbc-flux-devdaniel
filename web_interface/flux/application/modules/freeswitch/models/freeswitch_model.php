@@ -347,7 +347,7 @@ class Freeswitch_model extends CI_Model
         return true;
     }
 
-     function reload_freeswitch($command, $server_host = "")
+    function reload_freeswitch($command, $server_host = "")
     {
         $response = '';
         $query = $this->db_model->getSelect("*", "freeswich_servers", "");

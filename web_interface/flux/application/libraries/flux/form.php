@@ -743,137 +743,200 @@ class Form {
 		return $json_data;
 	}
 	function build_grid($query, $grid_fields) {
-		$jsn_tmp = array ();
-		$json_data = array ();
-		if ($query->num_rows () > 0) {
-			$permissioninfo = $this->CI->session->userdata('permissioninfo');
-			$accountinfo = $this->CI->session->userdata("accountinfo");
-			$default_reseller_id = $accountinfo['type'] == 1 || $accountinfo['type'] ==5 ? $accountinfo ['id']  : ($accountinfo['type'] ==1 ? $accountinfo['reseller_id'] : 0);
-			$currnet_url=current_url();
-			$url_explode= explode('/',$currnet_url);
-			$module_name= $url_explode[3];
-			$sub_module_name= $url_explode[4];
-			$sub_module_name= str_replace("_json","",$sub_module_name);
-
-			$logintype = $this->CI->session->userdata('logintype');
-
-			$Actionkey = array_search (gettext('Action'),array_column ( $grid_fields, 0 ) );
-			// if ($Actionkey == '') {
-			// 	$Actionkey = array_search ('action',array_column ( $grid_fields, 0 ) );
-			// }
-			// if ($Actionkey == '') {
-			// 	$Actionkey = array_search ('Acción',array_column ( $grid_fields, 0 ) );
-			// }
-			// if ($Actionkey == '') {
-			// 	$Actionkey = array_search ('Ação',array_column ( $grid_fields, 0 ) );
-			// }
-			// if ($Actionkey == '') {
-			// 	$Actionkey = array_search ('действие',array_column ( $grid_fields, 0 ) );
-			// }
-			// if ($Actionkey == '') {
-			// 	$Actionkey = array_search ('Açao',array_column ( $grid_fields, 0 ) );
-			// }
-			$ActionArr = $grid_fields [$Actionkey];
-
-			$current_button_url = '';
-			if(isset($ActionArr [5]) && isset($ActionArr [5]->EDIT) && isset($ActionArr [5]->EDIT->url) && !empty($ActionArr [5]) && !empty($ActionArr [5]->EDIT) && !empty($ActionArr [5]->EDIT->url)){
-				$current_button_url = $ActionArr [5]->EDIT->url;
-			}
-			foreach ( $query->result_array () as $row ) {
-				$row_id = isset ( $row ['id'] ) ? $row ["id"] : '';
-				if ($current_button_url == "accounts/customer_edit/") {
-						$account_type = strtolower($this->CI->{$this->lib_class}->get_entity_type ( "", "", $row ["type"] ));
-						$ActionArr [5]->EDIT->url = $account_type == 'administrator' ? "accounts/admin_edit/": "accounts/".$account_type."_edit/";
-				}
-				$acctype = "";
-				if (isset ( $row ["type"] ) && ($row ["type"] == '0' || $row ["type"] == '1' || $row ["type"] == '3')) {
-
-					$acctype = (isset ( $row ["posttoexternal"] ) && $row ["posttoexternal"] != '') ? "<span class='badge badge-dark float-left ml-1 mt-1'>" . $this->CI->{$this->lib_class}->get_account_type ( "", "", $row ["posttoexternal"] ) . "</span>" : "";
-				}
-				$reseller_id = $default_reseller_id;
-				if($default_reseller_id  == 0){
-						$reseller_id = isset($row['reseller_id']) ? $row['reseller_id'] : $reseller_id;
-				}
-				foreach ( $grid_fields as $field_key => $field_arr ) {
-						
-					if ($field_arr [2] != "") {
-						if ($field_arr [3] != "") {
-							if ($field_arr [2] == "status" || $field_arr [2] == "is_email_enable" || $field_arr [2] == "is_sms_enable" || $field_arr [2] == "is_alert_enable" || $field_arr [2] == "optin") {
-								$row ['id'] = $row_id;
-								$jsn_tmp [$field_key] = call_user_func_array ( array (
-										$this->CI->{$this->lib_class},
-										$field_arr [5] 
-								), array (
-										$field_arr [3],
-										$field_arr [4],
-										$row 
-								) );
-							} else {
-								$jsn_tmp [$field_key] = call_user_func_array ( array (
-										$this->CI->{$this->lib_class},
-										$field_arr [5] 
-								), array (
-										$field_arr [3],
-										$field_arr [4],
-										$row [$field_arr [2]] 
-								) );
-							}
-							$row [$field_arr [2]] = $jsn_tmp [$field_key];
-							
-							
-						}
-						
-						if(isset($field_arr[6]) && !empty($field_arr[6]) && is_array($field_arr[6]) && $field_arr[6][0]== 'EDITABLE' && ((isset($permissioninfo[$module_name][$sub_module_name][$field_arr[6][1]]) && $permissioninfo[$module_name][$sub_module_name][$field_arr[6][1]] == 0 and $permissioninfo['login_type'] != '-1' and $permissioninfo['login_type'] != '3')  or ($permissioninfo['login_type'] == '-1' ) or ($permissioninfo['login_type'] == '3'))){
-									
-
-									$button_name = strtoupper($field_arr[6][1]);
-									if(isset($ActionArr[5]->$button_name)){
-									$current_button_html = $this->CI->{$this->lib_class}->get_action_buttons(array($button_name=>$ActionArr[5]->$button_name),$row['id']);
-									$jsn_tmp [$field_key] = str_replace($button_name, $row [$field_arr [2]],$current_button_html);					
-									}
-									
-						 
-						}else if(array_search("EDITABLE", $field_arr) && (isset($permissioninfo[$module_name][$sub_module_name]['edit']) && $permissioninfo[$module_name][$sub_module_name]['edit'] == 0 or $permissioninfo['login_type'] == '-1' or $permissioninfo['login_type'] == '3' or $permissioninfo['login_type'] == '0') ){
-									
-							$fieldstr = $this->CI->{$this->lib_class}->build_custome_edit_button ( $ActionArr [5]->EDIT, $row [$field_arr [2]], $row ["id"] );
-							$jsn_tmp [$field_key] = $acctype != '' ? $fieldstr . $acctype : $fieldstr;
-							$sub_login_arr = '';
-							if ($ActionArr [5]->EDIT->url == "accounts/customer_edit/") {
-								$sub_login_arr = "<a href='".base_url()."login/login_as_customer/".$row ['id']."' title='Login As Customer'><i class='fa fa-sign-in' aria-hidden='true'></i></a>";
-								$jsn_tmp [$field_key] = $fieldstr . $acctype . $sub_login_arr;
-							}
-
-							if ($ActionArr [5]->EDIT->url == "accounts/reseller_edit/") {
-								$sub_login_arr = "<a href='".base_url()."login/login_as_reseller/".$row ['id']."' title='Login As Reseller'><i class='fa fa-sign-in' aria-hidden='true'></i></a>";
-								$jsn_tmp [$field_key] = $fieldstr . $acctype . $sub_login_arr;
-							}
-						} else {
-							$jsn_tmp [$field_key] = $row [$field_arr [2]];
-						}
-					} else {
-						if ($field_arr [0] == gettext ( "Action" )) {
-							if(isset($field_arr[6]) && $field_arr[6] != "false"){
-								$jsn_tmp [$field_key] = $this->CI->{$this->lib_class}->get_action_buttons ( $field_arr [5], $row_id );
-							}
-						} elseif ($field_arr [0] == gettext ( "Profile Action" )) {
-							if (isset ( $field_arr [5] ) && isset ( $field_arr [5]->START ) && isset ( $field_arr [5]->STOP ) && isset ( $field_arr [5]->RELOAD ) && isset ( $field_arr [5]->RESCAN )) {
-							}
-							$jsn_tmp [$field_key] = $this->CI->{$this->lib_class}->get_action_buttons ( $field_arr [5], $row ["id"] );
-						} else {
-							$className = (isset ( $field_arr ['9'] ) && $field_arr ['9'] != '') ? $field_arr ['9'] : "chkRefNos";
-							
-							$custom_value =!empty($field_arr[3]) ? $row[$field_arr[3]] : $row['id'];
-							$jsn_tmp [$field_key] = '<input type="checkbox" name="chkAll" id=' . $row ['id'] . ' class="ace ' . $className . '" onclick="clickchkbox(' . $custom_value . ')" value=' .$custom_value. '><lable class="lbl"></lable>';
-						}
-					}
-				}
-				$json_data [] = array (
-						'cell' => $jsn_tmp 
-				);
-			}
-		}
-		return $json_data;
-	}
+	        $this->CI->flux_log->write_log('build_grid', json_encode(array(
+	            'query' => $query,
+	            'grid'  => $grid_fields,
+	        )));
+	
+	        $jsn_tmp   = array();
+	        $json_data = array();
+	
+	        if ($query->num_rows() > 0) {
+	
+	            $permissioninfo      = $this->CI->session->userdata('permissioninfo');
+	            $accountinfo         = $this->CI->session->userdata("accountinfo");
+	            $default_reseller_id = $accountinfo['type'] == 1 || $accountinfo['type'] == 5
+	                ? $accountinfo['id']
+	                : ($accountinfo['type'] == 1 ? $accountinfo['reseller_id'] : 0);
+	
+	            $currnet_url     = current_url();
+	            $url_explode     = explode('/', $currnet_url);
+	            $module_name     = $url_explode[3];
+	            $sub_module_name = $url_explode[4];
+	            $sub_module_name = str_replace("_json", "", $sub_module_name);
+	
+	            $logintype = $this->CI->session->userdata('logintype');
+	
+	            $Actionkey = array_search(gettext('Action'), array_column($grid_fields, 0));
+	            // if ($Actionkey == '') {
+	            //     $Actionkey = array_search ('action',array_column ( $grid_fields, 0 ) );
+	            // }
+	            // if ($Actionkey == '') {
+	            //     $Actionkey = array_search ('Acción',array_column ( $grid_fields, 0 ) );
+	            // }
+	            // if ($Actionkey == '') {
+	            //     $Actionkey = array_search ('Ação',array_column ( $grid_fields, 0 ) );
+	            // }
+	            // if ($Actionkey == '') {
+	            //     $Actionkey = array_search ('действие',array_column ( $grid_fields, 0 ) );
+	            // }
+	            // if ($Actionkey == '') {
+	            //     $Actionkey = array_search ('Açao',array_column ( $grid_fields, 0 ) );
+	            // }
+	            $ActionArr = $grid_fields[$Actionkey];
+	
+	            $current_button_url = '';
+	            if (isset($ActionArr[5]) && isset($ActionArr[5]->EDIT) && isset($ActionArr[5]->EDIT->url)
+	                && !empty($ActionArr[5]) && !empty($ActionArr[5]->EDIT) && !empty($ActionArr[5]->EDIT->url)) {
+	                $current_button_url = $ActionArr[5]->EDIT->url;
+	            }
+	
+	            foreach ($query->result_array() as $row) {
+	
+	                $row_id = isset($row['id']) ? $row["id"] : '';
+	
+	                if ($current_button_url == "accounts/customer_edit/") {
+	                    $account_type          = strtolower($this->CI->{$this->lib_class}->get_entity_type("", "", $row["type"]));
+	                    $ActionArr[5]->EDIT->url = $account_type == 'administrator'
+	                        ? "accounts/admin_edit/"
+	                        : "accounts/" . $account_type . "_edit/";
+	                }
+	
+	                $acctype = "";
+	                if (isset($row["type"]) && ($row["type"] == '0' || $row["type"] == '1' || $row["type"] == '3')) {
+	                    $acctype = (isset($row["posttoexternal"]) && $row["posttoexternal"] != '')
+	                        ? "<span class='badge badge-dark float-left ml-1 mt-1'>" . $this->CI->{$this->lib_class}->get_account_type("", "", $row["posttoexternal"]) . "</span>"
+	                        : "";
+	                }
+	
+	                $reseller_id = $default_reseller_id;
+	                if ($default_reseller_id == 0) {
+	                    $reseller_id = isset($row['reseller_id']) ? $row['reseller_id'] : $reseller_id;
+	                }
+	
+	                foreach ($grid_fields as $field_key => $field_arr) {
+	
+	                    if ($field_arr[2] != "") {
+	
+	                        if ($field_arr[3] != "") {
+	
+	                            if ($field_arr[2] == "status"
+	                                || $field_arr[2] == "is_email_enable"
+	                                || $field_arr[2] == "is_sms_enable"
+	                                || $field_arr[2] == "is_alert_enable"
+	                                || $field_arr[2] == "optin") {
+	
+	                                $row['id'] = $row_id;
+	                                $jsn_tmp[$field_key] = call_user_func_array(
+	                                    array($this->CI->{$this->lib_class}, $field_arr[5]),
+	                                    array($field_arr[3], $field_arr[4], $row)
+	                                );
+	
+	                            } else {
+	
+	                                $jsn_tmp[$field_key] = call_user_func_array(
+	                                    array($this->CI->{$this->lib_class}, $field_arr[5]),
+	                                    array($field_arr[3], $field_arr[4], $row[$field_arr[2]])
+	                                );
+	                            }
+	
+	                            $row[$field_arr[2]] = $jsn_tmp[$field_key];
+	                        }
+	
+	                        if (isset($field_arr[6]) && !empty($field_arr[6]) && is_array($field_arr[6])
+	                            && $field_arr[6][0] == 'EDITABLE'
+	                            && (
+	                                (isset($permissioninfo[$module_name][$sub_module_name][$field_arr[6][1]])
+	                                    && $permissioninfo[$module_name][$sub_module_name][$field_arr[6][1]] == 0
+	                                    and $permissioninfo['login_type'] != '-1'
+	                                    and $permissioninfo['login_type'] != '3')
+	                                or ($permissioninfo['login_type'] == '-1')
+	                                or ($permissioninfo['login_type'] == '3')
+	                            )) {
+	
+	                            $button_name = strtoupper($field_arr[6][1]);
+	                            if (isset($ActionArr[5]->$button_name)) {
+	                                $current_button_html = $this->CI->{$this->lib_class}->get_action_buttons(
+	                                    array($button_name => $ActionArr[5]->$button_name),
+	                                    $row['id']
+	                                );
+	                                $jsn_tmp[$field_key] = str_replace($button_name, $row[$field_arr[2]], $current_button_html);
+	                            }
+	
+	                        } else if (array_search("EDITABLE", $field_arr)
+	                            && (
+	                                isset($permissioninfo[$module_name][$sub_module_name]['edit'])
+	                                && $permissioninfo[$module_name][$sub_module_name]['edit'] == 0
+	                                or $permissioninfo['login_type'] == '-1'
+	                                or $permissioninfo['login_type'] == '3'
+	                                or $permissioninfo['login_type'] == '0'
+	                            )) {
+	
+	                            $fieldstr = $this->CI->{$this->lib_class}->build_custome_edit_button(
+	                                $ActionArr[5]->EDIT,
+	                                $row[$field_arr[2]],
+	                                $row["id"]
+	                            );
+	
+	                            $jsn_tmp[$field_key] = $acctype != '' ? $fieldstr . $acctype : $fieldstr;
+	                            $sub_login_arr       = '';
+	
+	                            if ($ActionArr[5]->EDIT->url == "accounts/customer_edit/") {
+	                                $sub_login_arr = "<a href='" . base_url() . "login/login_as_customer/" . $row['id'] . "' title='Login As Customer'><i class='fa fa-sign-in' aria-hidden='true'></i></a>";
+	                                $jsn_tmp[$field_key] = $fieldstr . $acctype . $sub_login_arr;
+	                            }
+	
+	                            if ($ActionArr[5]->EDIT->url == "accounts/reseller_edit/") {
+	                                $sub_login_arr = "<a href='" . base_url() . "login/login_as_reseller/" . $row['id'] . "' title='Login As Reseller'><i class='fa fa-sign-in' aria-hidden='true'></i></a>";
+	                                $jsn_tmp[$field_key] = $fieldstr . $acctype . $sub_login_arr;
+	                            }
+	
+	                        } else {
+	
+	                            $jsn_tmp[$field_key] = $row[$field_arr[2]];
+	                        }
+	
+	                    } else {
+	
+	                        if ($field_arr[0] == gettext("Action")) {
+	
+	                            if (isset($field_arr[6]) && $field_arr[6] != "false") {
+	                                $jsn_tmp[$field_key] = $this->CI->{$this->lib_class}->get_action_buttons($field_arr[5], $row_id);
+	                            }
+	
+	                        } elseif ($field_arr[0] == gettext("Profile Action")) {
+	
+	                            if (isset($field_arr[5])
+	                                && isset($field_arr[5]->START)
+	                                && isset($field_arr[5]->STOP)
+	                                && isset($field_arr[5]->RELOAD)
+	                                && isset($field_arr[5]->RESCAN)) {
+	                            }
+	                            $jsn_tmp[$field_key] = $this->CI->{$this->lib_class}->get_action_buttons($field_arr[5], $row["id"]);
+	
+	                        } else {
+	
+	                            $className = (isset($field_arr['9']) && $field_arr['9'] != '')
+	                                ? $field_arr['9']
+	                                : "chkRefNos";
+	
+	                            $custom_value = !empty($field_arr[3]) ? $row[$field_arr[3]] : $row['id'];
+	
+	                            $jsn_tmp[$field_key] = '<input type="checkbox" name="chkAll" id=' . $row['id']
+	                                . ' class="ace ' . $className . '" onclick="clickchkbox(' . $custom_value . ')"'
+	                                . ' value=' . $custom_value . '><lable class="lbl"></lable>';
+	                        }
+	                    }
+	                }
+	
+	                $json_data[] = array(
+	                    'cell' => $jsn_tmp
+	                );
+	            }
+	        }
+	
+	        return $json_data;
+	    }
 	function build_json_grid($query, $grid_fields) {
 		$jsn_tmp = array ();
 		$json_data = array ();

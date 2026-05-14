@@ -1492,6 +1492,12 @@ class common {
 				if (strtoupper ( $button_key ) == "ANIMAP") {
 					$ret_url .= $this->build_animap_button ( $buttons_params, $linkid );
 				}
+				if (strtoupper ( $button_key ) == "UNBLOCK") {
+					$ret_url .= $this->build_unblock_button ( $buttons_params, $linkid );
+				}
+				if (strtoupper ( $button_key ) == "BLOCK") {
+					$ret_url .= $this->build_unblock_button ( $buttons_params, $linkid );
+				}
 			}
 		}
 		}
@@ -1560,6 +1566,8 @@ class common {
 				$flag = '3';
 			if ($value == 'reseller_delete')
 				$flag = '4';
+			if ($value == 'event_guard_unblock')			
+				$flag = '5';
 		}
 		if ($flag == '1') {
 			$where = array (
@@ -1596,6 +1604,10 @@ class common {
 		if ($flag == '4') {
 			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_message(0,null,' . $linkid . ',4);">
 		<i class="fa fa-trash fa-fw"></i></a>';
+		}
+		if ($flag == '5') {
+			return '<a href="' . $link . '" class="btn btn-royelblue btn-unblock btn-sm" title="'.gettext ("Block").'" onClick="return get_alert_message(0,null,' . $linkid . ',5);">
+		<i class="fa fa-ban fa-fw"></i></a>';
 		}
 		if ($flag == '0' && $url . $linkid != 'accounts/admin_delete/1') {
 			return '<a href="' . $link . '" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_msg();"><i class="fa fa-trash fa-fw"></i></a>';
@@ -2089,7 +2101,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		
 
     }
-  function emailFunction($from, $to, $subject, $message,$alert_template="",$usermobile="",$sms_message, $company_name = "", $attachment = "", $account_id, $reseller_id,$sip_user_name='',$callkit_token='',$status_code='',$type,$emailstatus = '',$cc_email_ids = '') {
+	function emailFunction($from, $to, $subject, $message,$alert_template="",$usermobile="",$sms_message, $company_name = "", $attachment = "", $account_id, $reseller_id,$sip_user_name='',$callkit_token='',$status_code='',$type,$emailstatus = '',$cc_email_ids = '') {
 
     			    $sms_message = '';
 					$alert_template = '';
@@ -2168,11 +2180,9 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			return $this->CI->timezone->display_GMT ( $date, 1, $timezone_id );
 		}
 	}
-
 	function convert_GMT_to_noChange($select = "", $table = "", $date, $timezone_id = '') {
 		return $date;
 	}
-
 	function convert_GMT($date) { 
 		return $this->CI->timezone->convert_to_GMT ($date );
 	}
@@ -2670,7 +2680,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		}
 		return $pricelist_arr;
 	}
-		function default_signup_login_type(){
+	function default_signup_login_type(){
 		$this->CI->db->select ( "id,name" );
 		$this->CI->db->where ( "reseller_id", 0 );
 		$login_type_result = $this->CI->db->get ( "permissions" )->result_array ();
@@ -2681,8 +2691,6 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		}
 		return $login_type_dropdown;
 	}
-	
-	
 	function outbound_fax() {
 		$status_array = array (
 				'0' => gettext ( 'Enable' ),
@@ -3293,11 +3301,11 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 	function get_sipinfo_array(){
 		return array("Random"=>"Random");
 	}
-  function default_system_type() {
+	function default_system_type() {
         $option_array = array('0' => gettext('Half Year'), '1' => gettext('Year'));
         return $option_array;
     }
-  function set_year_dropdown($type = '') {
+	function set_year_dropdown($type = '') {
 	if($type != ''){
 		$type = $type."_archive";
 	}
@@ -3315,7 +3323,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
         }
         return $status_array;
     }
-  function get_did_destination($select = "", $table = "", $id){ 
+	function get_did_destination($select = "", $table = "", $id){ 
 		$name='';
 		if($this->CI->db->table_exists('pbx_ringgroup') && $this->CI->db->table_exists('tbl_conference_specification') && $this->CI->db->table_exists('tbl_ivr_specification')) {
 			$accountinfo = $this->CI->session->userdata ( 'accountinfo' );
@@ -3359,7 +3367,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$reseller_id = $accountinfo['type'] == 1 || $accountinfo['type'] ==5 ?  $accountinfo['id']: 0 ;
         	return $this->CI->db_model->build_dropdown('id,name', 'sms_pricelists',array("status"=>0,"reseller_id"=>$reseller_id));
     	}
-  function pin_generate($size = '', $field = '', $tablename = ''){
+	function pin_generate($size = '', $field = '', $tablename = ''){
 		if ($tablename != '') {
 			$accounttype_array = array ();
 			$uname = rand ( pow ( 10, $size - 1 ), pow ( 10, $size ) - 1 );
@@ -3402,7 +3410,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 			}
 				return $drp_value;
 		}
-  function get_reseller_info_company_profile(){
+	function get_reseller_info_company_profile(){
 		$accountinfo = $this->CI->session->userdata ( 'accountinfo' );
 		$logintype = $this->CI->session->userdata('logintype');
 		if($logintype == 1)
@@ -4119,7 +4127,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 		$drop_down .= '</select>';
 		return $drop_down;
   }
-  function ipsettigs_account_number_icon($select = "", $table = "", $number) {
+	function ipsettigs_account_number_icon($select = "", $table = "", $number) {
 		$return_value = '';
 		$where = array (
 				'number' => $number
@@ -4280,7 +4288,7 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
         }
         return $output;
     }
-  function get_field_name_country_camel($select, $table, $where) {
+	function get_field_name_country_camel($select, $table, $where) {
 		$timezone_name = $where;
 		if (is_array ( $where )) {
 			$where = $where;
@@ -4392,5 +4400,47 @@ $cc_email_ids = strtolower($this->CI->common->get_field_name("notification_email
 				'range' => gettext ( 'Range' )
 		);
 		return $status_array;
+	}
+	function build_unblock_button($button_params, $linkid) {
+		$link = base_url () . $button_params->url . "";
+		if ($button_params->action == 'block') {
+			return '<a href="' . $link . ''.$linkid.'" class="btn btn-royelblue btn-sm" title="'.gettext ("Block").'" onClick="return get_event_guard_msg('.$linkid.',0);"><i class="fa fa-lock fa-fw"></i></a>&nbsp;';
+		} else {
+			return '<a href="' . $link . ''.$linkid.'" class="btn btn-royelblue btn-sm" title="'.gettext ("Unblock").'" onClick="return get_event_guard_msg('.$linkid.',1);"><i class="fa fa-unlock fa-fw"></i></a>&nbsp;';
+		}
+	}
+	function set_event_guard_status($status = '') {
+			$status_array = array (
+			        '' => gettext ( '--Select--' ),
+					'tracking'  => gettext('Tracking'),
+					'blocked'   => gettext('Blocked'),
+					'pending'   => gettext('Pending'),
+					'unblocked' => gettext('Unblocked'),
+			);
+			return $status_array;
+		}
+	function set_event_guard_filter($status = '') {
+		$status_array = array (
+		        '' => gettext ( '--Select--' ),
+				'sip-auth-fail' => gettext ( 'sip-auth-fail' ),
+				'sip-auth-ip' => gettext ( 'sip-auth-ip' )
+		);
+		return $status_array;
+	}
+    function event_guard_icon($select = "", $table = "", $log_status) {
+		$return_value = '';				
+		if ($log_status == 'blocked') {
+			$return_value .= '<span class="badge badge-danger float-left mr-2 mt-1">'.gettext("Blocked").'<i class="fa fa-lock fa-fw"></i></span>&nbsp;';
+		}
+		if ($log_status == 'unblocked') {
+			$return_value .= '<span class="badge badge-primary float-left mr-2 mt-1">'.gettext("Unblocked").'<i class="fa fa-unlock fa-fw"></i></span>&nbsp;';
+		}
+		if ($log_status == 'pending') {
+			$return_value .= " <span title='".gettext("Edit")."' </span>" . '<div class="col-md-12 p-0"><span class="badge badge-primary float-left mr-2 mt-1" title="'.gettext("Provider").'">'.gettext("Pending").'</span>';
+		}
+		if ($log_status == 'tracking') {
+			$return_value .= " <span title='".gettext("Edit")."' </span>" . '<div class="col-md-12 p-0"><span class="badge badge-primary float-left mr-2 mt-1" title="'.gettext("Provider").'">'.gettext("Tracking").'</span>';
+		}
+		return $return_value;
 	}
 }

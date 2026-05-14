@@ -1084,7 +1084,58 @@ if($accountinfo['type'] == -1 || $accountinfo['type'] == 2 ){
 </div>
 <?php }?>
 
-  
+<?php
+$accountinfo = $this->session->userdata('accountinfo');
+if ($accountinfo['type'] == -1 || $accountinfo['type'] == 2):
+?>
+<div class="row">
+<div class="col-lg-12 mb-3">
+<div class="card mb-3 dashboard-block">
+  <h3 class="text-dark p-3">
+    <i class="fa fa-shield text-primary fa-fw"></i> <?php echo gettext('Event Guard - Blocked IPs'); ?>
+    <a href="<?php echo base_url(); ?>event_guard/event_guard_list/" class="float-right btn btn-secondary">
+      <?php echo gettext('View All'); ?>
+    </a>
+  </h3>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col"><?php echo gettext('IP Address'); ?></th>
+            <th scope="col"><?php echo gettext('Country'); ?></th>
+            <th scope="col"><?php echo gettext('Filter'); ?></th>
+            <th scope="col"><?php echo gettext('Date / Time'); ?></th>
+            <th scope="col"><?php echo gettext('Failures'); ?></th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php if (!empty($blocked_ips)): ?>
+          <?php foreach ($blocked_ips as $row): ?>
+          <tr>
+            <td><strong><?php echo htmlspecialchars($row['ip_address']); ?></strong></td>
+            <td><?php echo htmlspecialchars($row['country']); ?></td>
+            <td><span class="badge badge-danger"><?php echo htmlspecialchars($row['filter']); ?></span></td>
+            <td><?php echo htmlspecialchars($row['log_date']); ?></td>
+            <td><?php echo (int) $row['failures']; ?></td>
+          </tr>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <tr>
+            <td colspan="5" class="text-center text-muted">
+              <?php echo gettext('No blocked IPs found.'); ?>
+            </td>
+          </tr>
+        <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+<?php endif; ?>
+
 <div class="row">
 <div class="col-lg-6 pr-lg-2">
 <div class="card mb-3 dashboard-block">

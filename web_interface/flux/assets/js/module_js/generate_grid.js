@@ -87,6 +87,18 @@ function get_alert_msg_restore(id) {
     var answer = confirm(confirm_string);
     return answer; // answer is a boolean
 }
+
+function get_event_guard_msg(id,action) {
+    if (action == '0') {
+        var answer = confirm(gettext_custom('Block this IP address?'));
+        return answer;
+    } 
+    else {
+        var answer = confirm(gettext_custom('Unblock this IP address?'));
+        return answer;   
+    }
+}
+
 // harshs changes for fix customer side record select issue
 function clickchkbox(chkid) {
 

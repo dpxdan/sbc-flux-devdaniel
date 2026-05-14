@@ -7713,3 +7713,201 @@ msgstr "Exibir gravações nos formulários"
 
 msgid "Display Recordings"
 msgstr "Exibir Gravações"
+
+msgid "Add IP"
+msgstr "Adicionar IP"
+
+msgid "The Protocol field must contain a unique value."
+msgstr "O campo Protocolo deve conter um valor único."
+
+msgid "Fail2ban updated successfully!"
+msgstr "Fail2ban atualizado com sucesso!"
+
+msgid "IP added successfully!"
+msgstr "IP adicionado com sucesso!"
+
+msgid "IP removed successfully!"
+msgstr "IP removido com sucesso!"
+
+msgid "Blocked IPs"
+msgstr "IPs Bloqueados"
+
+msgid "Protocol"
+msgstr "Protocolo"
+
+msgid "Ports"
+msgstr "Portas"
+
+msgid "Failures"
+msgstr "Falhas"
+
+msgid "Jail"
+msgstr "Regra"
+
+msgid "Event Guard"
+msgstr "Protetor SIP"
+
+msgid "Event Guard - Blocked IPs"
+msgstr "Protetor SIP - IPs Bloqueados"
+
+msgid "Chain"
+msgstr "Regra"
+
+msgid "Hostname"
+msgstr "Hostname"
+
+msgid "UNBLOCK"
+msgstr "Desbloquear"
+
+msgid "blocked"
+msgstr "Bloqueado"
+
+msgid "pending"
+msgstr "Pendente"
+
+msgid "unblocked"
+msgstr "Desbloqueado"
+
+msgid "Event Guard - Whitelist"
+msgstr "Protetor SIP - Whitelist"
+
+msgid "CIDR / IP Address"
+msgstr "CIDR / Endereço IP"
+
+msgid "Created At"
+msgstr "Criado em"
+
+msgid "Event Guard - Add to Whitelist"
+msgstr "Protetor SIP - Adicionar à Whitelist"
+
+msgid "Event Guard - Edit Whitelist"
+msgstr "Protetor SIP - Editar Whitelist"
+
+msgid "Whitelist Entry"
+msgstr "Entrada da Whitelist"
+
+msgid "CIDR or single IP (e.g. 192.168.1.0/24)"
+msgstr "CIDR ou IP único (ex: 192.168.1.0/24)"
+
+msgid "Please enter a valid CIDR or IP address"
+msgstr "Informe um CIDR ou endereço IP válido"
+
+msgid "Optional description"
+msgstr "Descrição opcional"
+
+msgid "Optional description for this entry"
+msgstr "Descrição opcional para esta entrada"
+
+msgid "Add CIDR"
+msgstr "Adicionar CIDR"
+
+msgid "Add to Whitelist"
+msgstr "Adicionar à Whitelist"
+
+msgid "-- All --"
+msgstr "-- Todos --"
+
+msgid "Filter by status"
+msgstr "Filtrar por status"
+
+msgid "IP Added Successfully!"
+msgstr "IP adicionado com sucesso!"
+
+msgid "removed from whitelist."
+msgstr "removido da whitelist."
+
+msgid "Invalid CIDR format."
+msgstr "Formato de CIDR inválido."
+
+msgid "Invalid ID."
+msgstr "ID inválido."
+
+msgid "IP already exists in system."
+msgstr "IP já cadastrado no sistema."
+
+msgid "log_uuid required"
+msgstr "log_uuid obrigatório"
+
+msgid "Allowed IPs"
+msgstr "IPs Permitidos"
+
+msgid "Event Guard - Edit Log Entry"
+msgstr "Protetor SIP - Editar Registro"
+
+msgid "Log Entry"
+msgstr "Registro"
+
+msgid "IPv4 or IPv6 address"
+msgstr "Endereço IPv4 ou IPv6"
+
+msgid "Please enter a valid IP address"
+msgstr "Informe um endereço IP válido"
+
+msgid "iptables chain where the IP was blocked"
+msgstr "Regra do iptables onde o IP foi bloqueado"
+
+msgid "Please select a chain"
+msgstr "Selecione uma regra"
+
+msgid "Current status of this entry"
+msgstr "Status atual deste registro"
+
+msgid "Please select a status"
+msgstr "Selecione um status"
+
+msgid "SIP extension that triggered the block"
+msgstr "Ramal SIP que disparou o bloqueio"
+
+msgid "SIP User-Agent header from the blocked device"
+msgstr "Cabeçalho User-Agent SIP do dispositivo bloqueado"
+
+msgid "Record not found."
+msgstr "Registro não encontrado."
+
+msgid "Invalid IP address."
+msgstr "Endereço IP inválido."
+
+msgid "Invalid chain."
+msgstr "Regra inválida."
+
+msgid "Invalid status."
+msgstr "Status inválido."
+
+msgid "Blocked"
+msgstr "Bloqueado"
+
+msgid "Unblocked"
+msgstr "Desbloqueado"
+
+msgid "Unblock this IP address?"
+msgstr "Desbloquear este endereço IP?"
+
+msgid "Reload IP Map"
+msgstr "Recarregar Mapeamento de IP"
+
+msgid "Tracking"
+msgstr "Monitorando"
+
+msgid "Number of failed attempts"
+msgstr "Quantidade de tentativas com falha"
+
+msgid "Country detected via GeoIP"
+msgstr "País detectado via GeoIP"
+
+msgid "IP is not blocked or tracking."
+msgstr "O IP não está bloqueado nem em monitoramento."
+
+msgid "removed from block."
+msgstr "removido do bloqueio."
+
+msgid "Block"
+msgstr "Bloquear"
+
+msgid "Unblock"
+msgstr "Desbloquear"
+
+msgid "Block this IP address?"
+msgstr "Bloquear este endereço IP?"
+
+msgid "Date / Time"
+msgstr "Data / Hora"
