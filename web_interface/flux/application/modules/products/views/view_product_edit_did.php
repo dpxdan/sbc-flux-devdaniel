@@ -204,6 +204,13 @@
                           echo form_dropdown($sip_profile_arr, $sip_profiles_opt, $current_sp);
                       ?>
                   </div>
+        <div class='col-md-6 form-group'>
+                          <label class="col-md-12 p-0 control-label"><?php echo gettext('Bypass Media'); ?></label>
+                          <select  name="bypass_media" class="col-md-12 form-control selectpicker form-control-lg" data-live-search='true' datadata-live-search-style='begins'>
+                             <option value="0" <?php if($product_info['bypass_media'] == '0'){ ?> selected="selected" <?php } ?>><?php echo gettext('Enable'); ?></option>
+    			<option value="1" <?php if($product_info['bypass_media'] == '1'){ ?> selected="selected" <?php } ?>><?php echo gettext('Disabled'); ?></option>
+                          </select>
+                      </div>
  </form>
 				<?php
 						if (isset($validation_errors) && $validation_errors != '') { ?>

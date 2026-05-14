@@ -164,6 +164,19 @@
                           echo form_dropdown($sip_profile_arr, $sip_profiles_opt, isset($add_array['sip_profile_id']) ? $add_array['sip_profile_id'] : '0');
                       ?>
                   </div>
+                  <div class='col-md-6 form-group'>
+                      <label class="p-0 control-label"><?php echo gettext('Bypass Media') ?></label>
+                      <select  name="bypass_media" class="col-md-12 form-control selectpicker form-control-lg" data-live-search='true' datadata-live-search-style='begins'>
+                        <?php if(isset($add_array['bypass_media'])){ ?>
+				<option value="0" <?php if($add_array['bypass_media'] == '0'){ ?> selected="selected" <?php } ?>><?php echo gettext('Enable');?></option>
+		                <option value="1" <?php if($add_array['bypass_media'] == '1'){ ?> selected="selected" <?php } ?>><?php echo gettext('Disabled');?></option>
+
+			<?php }else { ?>
+		                <option value="0"><?php echo gettext('Enable'); ?></option>
+		                <option value="1"><?php echo gettext('Disabled'); ?></option>
+			<?php } ?>
+                      </select>
+                  </div>
  </form>
 				<?php
 						if (isset($validation_errors) && $validation_errors != '') { ?>

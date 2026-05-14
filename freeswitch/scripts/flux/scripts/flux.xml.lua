@@ -444,6 +444,9 @@ function freeswitch_xml_inbound(xml,didinfo,userinfo,config,xml_did_rates,caller
 	if(tonumber(didinfo['maxchannels']) > 0) then    
 	    table.insert(xml, [[<action application="limit" data="db ]]..destination_number..[[ did_]]..destination_number..[[ ]]..didinfo['maxchannels']..[[ !SWITCH_CONGESTION"/>]]);        
 	end
+	if(tonumber(didinfo['bypass_media']) == 0) then
+	    table.insert(xml, [[<action application="set" data="bypass_media=true"/>]]);      
+	end
 	if callerid_lookup_dialplan then callerid_lookup_dialplan(xml,didinfo) end
 	if (didinfo ~= nil and tonumber(didinfo['rn1']) ~=nil and tonumber(didinfo['rn1']) > 0) then
 	idCadup = didinfo['idCadup']
