@@ -122,7 +122,6 @@ function freeswitch_xml_header(xml,destination_number,accountcode,maxlength,call
     if (reseller_cc_limit ~= nil) then
         table.insert(xml, reseller_cc_limit);
     end   
-    
 	if(tonumber(customer_userinfo['is_recording']) == 0 and tonumber(customer_userinfo['bypass_media']) == 1) then 
 		table.insert(xml, [[<action application="export" data="is_recording=1"/>]]);
 		table.insert(xml, [[<action application="export" data="media_bug_answer_req=true"/>]]);
@@ -564,22 +563,12 @@ function custom_inbound_2(xml,didinfo,userinfo,config,xml_did_rates,callerid_arr
 	if (tonumber(userinfo['localization_id']) > 0 and or_localization and or_localization['number_originate'] ~= nil) then     
 		destination_number = do_number_translation(or_localization['number_originate'],destination_number)
 	end
-	
-	local did_sofia_profile = get_did_sofia_profile(didinfo)
-	            
-    if(did_sofia_profile and did_sofia_profile ~= "")then
-        Logger.error("[XML]  did_sofia_profile : "..did_sofia_profile)
-        table.insert(xml, [[<action application="set" data="sofia_profile_name=]]..did_sofia_profile..[["/>]]);
-        table.insert(xml, [[<action application="export" data="sofia_profile_name=]]..did_sofia_profile..[["/>]]);
-    end
-	
 	table.insert(xml, [[<action application="bridge" data="[leg_timeout=]]..didinfo['leg_timeout']..did_local_chan..[[]sofia/${sofia_profile_name}/]]..destination_number..[[@]]..didinfo['extensions']..[["/>]]);
 	return xml;
 end
 
 function custom_inbound_3(xml,didinfo,userinfo,config,xml_did_rates,callerid_array,livecall_data)
 	table.insert(xml, [[<action application="set" data="calltype=OTHER"/>]]); 
-	
 	table.insert(xml, [[<action application="bridge" data="]]..didinfo['extensions']..[["/>]]);
 
 	return xml;

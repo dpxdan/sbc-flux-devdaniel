@@ -220,23 +220,6 @@ class did_form extends common
                 ''
             ),
             array(
-                gettext('SIP Profile'),
-                'sip_profile_id',
-                'SELECT',
-                '',
-                '',
-                'tOOL TIP',
-                'Please Enter account number',
-                'id',
-                'name',
-                'sip_profiles',
-                'build_dropdown',
-                'where_arr',
-                array(
-                    "status" => "0"
-                )
-            ),
-            array(
                 gettext('Destination'),
                 'INPUT',
                 array(
@@ -678,17 +661,6 @@ class did_form extends common
                 "",
                 "true",
                 "right"
-            ),
-            array(
-                gettext("SIP Profile"),
-                "70",
-                "sip_profile_id",
-                "name",
-                "sip_profiles",
-                "get_field_name",
-                "",
-                "true",
-                "center"
             ),
             array(
                 gettext("Reverse Rate"),
