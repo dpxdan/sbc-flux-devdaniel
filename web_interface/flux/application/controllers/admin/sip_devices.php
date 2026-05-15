@@ -14,16 +14,18 @@ defined ( 'BASEPATH' ) or exit ( 'No direct script access allowed' );
  * String : password (Customer Password (password must be alphabetic, numeric and sepcial characters))
  * Integer : username (Unique account username for each customer)
  * Integer : sipdevice_id (Unique sipdevice id for each customer)
+ * String : type (Device type for create: "registration" (default) or "ip")
+ * String : destination_ip (Destination IP for type=ip DIDs, stored in dids.extensions)
  *
  * ===================================================
  * API Possible actions : create,read,update,delete,list
  * ===================================================
- * create : username,password,accountid
+ * create : registration -> username,password,accountid ; ip -> username,destination_ip,accountid
  * read : sipdevice_id,accountid
- * update : mandatory : sipdevice_id,accountid,password
- *			non-mandatory : all fields of database (exclude id)
+ * update : registration -> mandatory : sipdevice_id,accountid,password ; non-mandatory : all fields of database (exclude id)
+ *			ip -> mandatory : type=ip,sipdevice_id (sipdevice_id = dids.id) ; non-mandatory : destination_ip,ring_timeout,status
  * delete : sipdevice_id,accountid
- * list : start_limit,end_limit,accountid
+ * list : start_limit,end_limit,accountid (returns registration devices and ip DIDs, each tagged with a "type" field)
  *
  * ===================================================
  * API URL
@@ -148,6 +150,7 @@ class Sip_devices extends Account {
 				->get ('sip_devices');
 			$count = $query->num_rows();
 
+			$sipdeviceinfo = array();
 			$sipdevice_info = $query->result_array();
 			foreach ($sipdevice_info as $key => $sipdevice_value) {
 				$sipdevice_value['dir_params'] = json_decode($sipdevice_value['dir_params'],true);
@@ -163,9 +166,41 @@ class Sip_devices extends Account {
 				if($this->accountinfo['type'] == '1'){
 					unset($sipdevice_value['reseller_id']);
 				}
+				$sipdevice_value['type'] = 'registration';
 				$sipdeviceinfo[] =$sipdevice_value;
 			}
-			
+
+			// IP DIDs (call_type = 2) have no sip_devices row; fetch them from the dids table.
+			// object_where_params filters are not applied here (they target sip_devices columns).
+			if($this->accountinfo['type'] == 1){
+				$reseller_account_ids = array();
+				$reseller_accounts = $this->db->select('id')->get_where('accounts', array('reseller_id' => $this->accountinfo['id']))->result_array();
+				foreach($reseller_accounts as $reseller_account){
+					$reseller_account_ids[] = $reseller_account['id'];
+				}
+				$this->db->where_in('accountid', !empty($reseller_account_ids) ? $reseller_account_ids : array(0));
+			}
+			$this->db->where('call_type', 2);
+			$ip_did_query = $this->db->limit($no_of_records, $start)
+				->order_by('id','desc')
+				->select('*')
+				->get('dids');
+			$count += $ip_did_query->num_rows();
+			foreach($ip_did_query->result_array() as $ip_did_value){
+				$sipdeviceinfo[] = array(
+					'id'                 => $ip_did_value['id'],
+					'username'           => $ip_did_value['number'],
+					'accountid'          => $ip_did_value['accountid'],
+					'destination_ip'     => $ip_did_value['extensions'],
+					'call_type'          => $ip_did_value['call_type'],
+					'product_id'         => $ip_did_value['product_id'],
+					'leg_timeout'        => $ip_did_value['leg_timeout'],
+					'status'             => $ip_did_value['status'] == '1' ? 'Inactive' : 'Active',
+					'last_modified_date' => $this->common->convert_GMT_to('','',$ip_did_value['last_modified_date'],$this->accountinfo['timezone_id']),
+					'type'               => 'ip'
+				);
+			}
+
 			if (!empty($sipdeviceinfo)) {
 				$this->response ( array (
 					'status' => true,
@@ -185,6 +220,13 @@ class Sip_devices extends Account {
 			
 	function _sip_devices_create() {
 		$postdata = $this->postdata;
+		$type = isset($postdata['type']) && $postdata['type'] != '' ? strtolower($postdata['type']) : 'registration';
+		if(!in_array($type, array('ip','registration'))){
+			$this->response ( array (
+				'status'  => false,
+				'error'   => $this->lang->line ( 'invalid_device_type' )
+			), 400 );
+		}
 		if($this->form_validation->required($postdata['accountid'] == '')){
 			$this->response ( array (
 				'status'  => false,
@@ -263,116 +305,125 @@ class Sip_devices extends Account {
 					), 400);
 				}
 			}
-			
-			$sip_device_id_external = $this->common->get_field_name('id_sip_external','sip_devices',array('id_sip_external' => $postdata['id_sip_external']));
-			if(!empty($sip_device_id_external)){
-					$this->response ( array (
-						'status'  => false,
-						'error'   => $this->lang->line ( 'duplicate_sip_device' )
-					), 400 );
-				}
 
-			if($postdata['password'] == ''){
-				$password = $this->common->generate_password();
-
-			}else{
-				$password = $postdata['password'];
-			}
-			
-			if (!isset($postdata['caller_name']) || $postdata['caller_name'] == ""){
-				$postdata['caller_name'] = $postdata['username'];
-			}
-
-			if (!isset($postdata['caller_number']) || $postdata['caller_number'] == ""){
-				$postdata['caller_number'] = $postdata['username'];
-			}
-
-			if(isset($postdata['mailto']) && !empty($postdata['mailto']) && (!filter_var($postdata['mailto'], FILTER_VALIDATE_EMAIL))){
+			if($type == 'ip' && (!isset($postdata['destination_ip']) || $postdata['destination_ip'] == '')){
 				$this->response ( array (
 					'status' => false,
-					'error' => $this->lang->line('invalid_email_format')
+					'error'  => $this->lang->line ( 'destination_ip_required' )
 				), 400 );
 			}
-			
-			if($this->form_validation->required($postdata['sip_profile_id'] == '')){
-				$postdata['sip_profile_id'] = '1';
-			}else{
-				$this->db->select ( '*' );
-				$this->db->order_by('id', 'ASC');
-				$this->db->where('id', $this->postdata['sip_profile_id']);
-				$this->db->limit('1');
-				$sip_profile_id = ( array ) $this->db->get ( 'sip_profiles' )->first_row ();
-				if(empty($sip_profile_id) || $sip_profile_id == ''){
+
+			if($type == 'registration'){
+				$sip_device_id_external = $this->common->get_field_name('id_sip_external','sip_devices',array('id_sip_external' => $postdata['id_sip_external']));
+				if(!empty($sip_device_id_external)){
+						$this->response ( array (
+							'status'  => false,
+							'error'   => $this->lang->line ( 'duplicate_sip_device' )
+						), 400 );
+					}
+
+				if($postdata['password'] == ''){
+					$password = $this->common->generate_password();
+
+				}else{
+					$password = $postdata['password'];
+				}
+				
+				if (!isset($postdata['caller_name']) || $postdata['caller_name'] == ""){
+					$postdata['caller_name'] = $postdata['username'];
+				}
+
+				if (!isset($postdata['caller_number']) || $postdata['caller_number'] == ""){
+					$postdata['caller_number'] = $postdata['username'];
+				}
+
+				if(isset($postdata['mailto']) && !empty($postdata['mailto']) && (!filter_var($postdata['mailto'], FILTER_VALIDATE_EMAIL))){
 					$this->response ( array (
 						'status' => false,
-						'error' => $this->lang->line ( 'valid_sip_profile_id' ) 
+						'error' => $this->lang->line('invalid_email_format')
 					), 400 );
 				}
+				
+				if($this->form_validation->required($postdata['sip_profile_id'] == '')){
+					$postdata['sip_profile_id'] = '1';
+				}else{
+					$this->db->select ( '*' );
+					$this->db->order_by('id', 'ASC');
+					$this->db->where('id', $this->postdata['sip_profile_id']);
+					$this->db->limit('1');
+					$sip_profile_id = ( array ) $this->db->get ( 'sip_profiles' )->first_row ();
+					if(empty($sip_profile_id) || $sip_profile_id == ''){
+						$this->response ( array (
+							'status' => false,
+							'error' => $this->lang->line ( 'valid_sip_profile_id' ) 
+						), 400 );
+					}
+				}
+
+				if(!($postdata['voice_mail_enable'] =='false' || $postdata['voice_mail_enable'] == 'true')){
+					$postdata['voice_mail_enable'] = 'false';
+				}
+				if(!($postdata['attach_file'] =='false' || $postdata['attach_file'] == 'true')){
+					$postdata['attach_file'] = 'false';
+				}
+				if(!($postdata['local_after_email'] =='false' || $postdata['local_after_email'] == 'true')){
+					$postdata['local_after_email'] = 'false';
+				}
+				if(!($postdata['send_all_message'] =='false' || $postdata['send_all_message'] == 'true')){
+					$postdata['send_all_message'] = 'false';
+				}
+				$digits = 5;
+				$random_password = rand(pow(10, $digits - 1), pow(10, $digits) - 1);
+				$sipdevice_array = array (
+					'username' => $postdata['username'],
+					'sip_profile_id' => $postdata ['sip_profile_id'],
+					"reseller_id" => $this->accountinfo['type'] == '1' ? $postdata['id'] : $postdata ['reseller_id'],
+					'accountid' => $postdata['accountid'],
+					'dir_params' => json_encode(array(
+						"password"=>  $password ,
+						'vm-enabled' => $postdata['voice_mail_enable'] ,
+						"vm-password"=> $random_password,
+						"vm-mailto"=> $postdata['mailto'],
+						"vm-attach-file"=>$postdata['attach_file'],
+						"vm-keep-local-after-email"=> $postdata['local_after_email'],
+						"vm-email-all-messages"=>$postdata['send_all_message']
+					)),
+					"dir_vars"=>json_encode(array(
+						'effective_caller_id_name' => $postdata['caller_name'],
+						'effective_caller_id_number' => $postdata['caller_number'],
+					)),
+					'codec' => $postdata['codec'],
+					'status' => isset($postdata ['status']) ? $postdata ['status'] : '0',
+					'creation_date'=>gmdate('Y-m-d H:i:s'),
+					'last_modified_date'=>gmdate('Y-m-d H:i:s'),
+					'codec' => 'PCMU,PCMA',
+					'call_waiting' => '0',
+					'id_sip_external' => $postdata['id_sip_external'] ? $postdata['id_sip_external'] : '0'
+				);
+				$this->db->insert("sip_devices",$sipdevice_array);
+				$last_id = $this->db->insert_id ();
+				$final_array = $this->accountinfo;
+				$final_array['sip_user_name'] = $sipdevice_array['number'];
+				$final_array['password'] = $password;
+				$final_array['id'] = $postdata['accountid'];
+				$final_array['status_code'] = 306;
+				$this->common->mail_to_users('create_sip_device',$final_array);	
+				$sipdevice_array['sipdevice_id'] = (string)$last_id;
+				unset($sipdevice_array['id']);
+				$sipdevice_array['dir_params'] = json_decode($sipdevice_array['dir_params'],true);
+				$decoded_pass =  $this->common->decode($sipdevice_array['dir_params']['password']);
+				//$sipdevice_array['dir_params']['password'] = $this->common->encrypt($decoded_pass);
+				$sipdevice_array['dir_params'] = json_encode($sipdevice_array['dir_params']);
+				$sipdevice_array['creation_date'] = $this->common->convert_GMT_to('','',$sipdevice_array['creation_date'],$this->accountinfo['timezone_id']);
+				$sipdevice_array['last_modified_date'] = $this->common->convert_GMT_to('','',$sipdevice_array['last_modified_date'],$this->accountinfo['timezone_id']);
+				// END
 			}
 
-			if(!($postdata['voice_mail_enable'] =='false' || $postdata['voice_mail_enable'] == 'true')){
-				$postdata['voice_mail_enable'] = 'false';
-			}
-			if(!($postdata['attach_file'] =='false' || $postdata['attach_file'] == 'true')){
-				$postdata['attach_file'] = 'false';
-			}
-			if(!($postdata['local_after_email'] =='false' || $postdata['local_after_email'] == 'true')){
-				$postdata['local_after_email'] = 'false';
-			}
-			if(!($postdata['send_all_message'] =='false' || $postdata['send_all_message'] == 'true')){
-				$postdata['send_all_message'] = 'false';
-			}
-			$digits = 5;
-			$random_password = rand(pow(10, $digits - 1), pow(10, $digits) - 1);
-			$sipdevice_array = array (
-				'username' => $postdata['username'],
-				'sip_profile_id' => $postdata ['sip_profile_id'],
-				"reseller_id" => $this->accountinfo['type'] == '1' ? $postdata['id'] : $postdata ['reseller_id'],
-				'accountid' => $postdata['accountid'],
-				'dir_params' => json_encode(array(
-					"password"=>  $password ,
-					'vm-enabled' => $postdata['voice_mail_enable'] ,
-					"vm-password"=> $random_password,
-					"vm-mailto"=> $postdata['mailto'],
-					"vm-attach-file"=>$postdata['attach_file'],
-					"vm-keep-local-after-email"=> $postdata['local_after_email'],
-					"vm-email-all-messages"=>$postdata['send_all_message']
-				)),
-				"dir_vars"=>json_encode(array(
-					'effective_caller_id_name' => $postdata['caller_name'],
-					'effective_caller_id_number' => $postdata['caller_number'],
-				)),
-				'codec' => $postdata['codec'],
-				'status' => isset($postdata ['status']) ? $postdata ['status'] : '0',
-				'creation_date'=>gmdate('Y-m-d H:i:s'),
-				'last_modified_date'=>gmdate('Y-m-d H:i:s'),
-				'codec' => 'PCMU,PCMA',
-				'call_waiting' => '0',
-				'id_sip_external' => $postdata['id_sip_external'] ? $postdata['id_sip_external'] : '0'
-			);
-			$this->db->insert("sip_devices",$sipdevice_array);
-			$last_id = $this->db->insert_id ();
-			$final_array = $this->accountinfo;
-			$final_array['sip_user_name'] = $sipdevice_array['number'];
-			$final_array['password'] = $password;
-			$final_array['id'] = $postdata['accountid'];
-			$final_array['status_code'] = 306;
-			$this->common->mail_to_users('create_sip_device',$final_array);	
-			$sipdevice_array['sipdevice_id'] = (string)$last_id;
-			unset($sipdevice_array['id']);
-			$sipdevice_array['dir_params'] = json_decode($sipdevice_array['dir_params'],true);
-			$decoded_pass =  $this->common->decode($sipdevice_array['dir_params']['password']);
-			//$sipdevice_array['dir_params']['password'] = $this->common->encrypt($decoded_pass);
-			$sipdevice_array['dir_params'] = json_encode($sipdevice_array['dir_params']);
-			$sipdevice_array['creation_date'] = $this->common->convert_GMT_to('','',$sipdevice_array['creation_date'],$this->accountinfo['timezone_id']);
-			$sipdevice_array['last_modified_date'] = $this->common->convert_GMT_to('','',$sipdevice_array['last_modified_date'],$this->accountinfo['timezone_id']);
-			// END
-
-			$queryDids = $this->db->get_where('dids', array('number' => $sipdevice_array['username']));
+			$queryDids = $this->db->get_where('dids', array('number' => $postdata['username']));
 
 			if($queryDids->num_rows() == 0){
 					$insert_product_did_array = array(
-						'name' => $sipdevice_array['username'],
+						'name' => $postdata['username'],
 						'country_id' => 28,
 						'product_category' => 4,
 						'buy_cost' => 0,
@@ -401,28 +452,38 @@ class Sip_devices extends Account {
 			}
 
 			$this->db->insert("products", $insert_product_did_array);
-			$product_did_id = $this->common->get_field_name('id','products',array('name' => $sipdevice_array['username']));
+			$product_did_id = $this->common->get_field_name('id','products',array('name' => $postdata['username']));
 
 			$did_add_array = array (
-				'number' => $sipdevice_array['username'],
+				'number' => $postdata['username'],
 				'accountid' => $postdata['accountid'],
 				'status' => '0',
-				'extensions' => $sipdevice_array['username'],
+				'extensions' => $type == 'ip' ? $postdata['destination_ip'] : $postdata['username'],
+				'call_type' => $type == 'ip' ? 2 : 0,
 				'product_id' => $product_did_id,
 				'leg_timeout' => !empty($postdata['ring_timeout']) ? $postdata['ring_timeout'] : '60',
 			);
 
 			$this->db->insert("dids",$did_add_array);
+			$did_add_array['did_id'] = (string)$this->db->insert_id();
 			$account_id =  $postdata['accountid'];
 			$created_by_accountinfo = '1';
 			$productdata['product_id'] = $product_did_id;
 			$productdata['create_invoice'] = "false";
 			$confirm_oder = $this->order->confirm_order($productdata, $account_id, $created_by_accountinfo);
-			
+
+			if($type == 'ip'){
+				$this->response ( array (
+					'status'=>true,
+					'data' => $did_add_array,
+					'success' => $this->lang->line( 'did_ip_created' )
+				), 200 );
+			}
+
 			$this->response ( array (
 				'status'=>true,
 				'data' => $sipdevice_array,
-				'success' => $this->lang->line( 'sipdevice_created' ) 
+				'success' => $this->lang->line( 'sipdevice_created' )
 			), 200 );
 		}
 	}
@@ -524,6 +585,51 @@ class Sip_devices extends Account {
 
 	function _sip_devices_update(){
 		$postdata = $this->postdata;
+		$type = isset($postdata['type']) && $postdata['type'] != '' ? strtolower($postdata['type']) : 'registration';
+		if(!in_array($type, array('ip','registration'))){
+			$this->response ( array (
+				'status'  => false,
+				'error'   => $this->lang->line ( 'invalid_device_type' )
+			), 400 );
+		}
+
+		if($type == 'ip'){
+			// For type=ip, sipdevice_id is the dids.id (not a sip_devices row, which IP DIDs don't have)
+			if($this->form_validation->required($postdata['sipdevice_id'] == '')){
+				$this->response ( array (
+					'status'  => false,
+					'error'   => $this->lang->line ( 'require_sip_id' )
+				), 400 );
+			}
+			$didinfo = (array)$this->db->get_where ( 'dids', array('id' => $postdata['sipdevice_id']) )->first_row();
+			if(empty($didinfo)){
+				$this->response ( array (
+					'status'  => false,
+					'error'   => $this->lang->line ( 'sipdevice_not_found' )
+				), 400 );
+			}
+			$did_update_array = array (
+				'extensions'         => !empty($postdata['destination_ip']) ? $postdata['destination_ip'] : $didinfo['extensions'],
+				'call_type'          => 2,
+				'last_modified_date' => gmdate('Y-m-d H:i:s')
+			);
+			if(!empty($postdata['ring_timeout'])){
+				$did_update_array['leg_timeout'] = $postdata['ring_timeout'];
+			}
+			if(isset($postdata['status']) && ($postdata['status'] == '0' || $postdata['status'] == '1')){
+				$did_update_array['status'] = $postdata['status'];
+			}
+			$this->db->where ( 'id', $didinfo['id'] );
+			$this->db->update ( 'dids', $did_update_array );
+			$did_update_array['did_id'] = (string)$didinfo['id'];
+			$did_update_array['number'] = $didinfo['number'];
+			$this->response ( array (
+				'status'=>true,
+				'data' => $did_update_array,
+				'success' => $this->lang->line( 'did_ip_updated' )
+			), 200 );
+		}
+
 		if (isset($postdata['reseller_id'])) {
 			$this->response ( array (
 				'status' => false,
