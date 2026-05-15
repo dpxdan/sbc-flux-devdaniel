@@ -158,7 +158,6 @@ class Event_guard extends MX_Controller
         $ok = $this->event_guard_model->set_blocked($log_uuid);
 
         if ($ok) {
-            @exec("fs_cli -x 'sendevent CUSTOM Event-Subclass::event_guard:block' 2>/dev/null");
             $this->flux_log->write_log('event_guard', json_encode(array(
                 'action'   => 'block',
                 'log_uuid' => $log_uuid,
@@ -381,8 +380,7 @@ class Event_guard extends MX_Controller
             return;
         }
 
-        $result = $this->event_guard_model->delete_multiple_whitelist($ids);
-        echo json_encode(array('success' => (bool) $result));
+        echo $this->event_guard_model->delete_multiple_whitelist($ids);
     }
 
     // ── Helpers privados ──────────────────────────────────────────────────────
@@ -508,7 +506,6 @@ class Event_guard extends MX_Controller
         $ok = $this->event_guard_model->set_unblocked($log_uuid);
     
         if ($ok) {
-            @exec("fs_cli -x 'sendevent CUSTOM Event-Subclass::event_guard:unblock' 2>/dev/null");
             $this->flux_log->write_log('event_guard', json_encode(array(
                 'action'   => 'unblock',
                 'log_uuid' => $log_uuid,
