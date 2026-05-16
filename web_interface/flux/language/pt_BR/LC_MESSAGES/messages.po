@@ -7713,3 +7713,12 @@ msgstr "Exibir gravações nos formulários"
 
 msgid "Display Recordings"
 msgstr "Exibir Gravações"
+
+msgid "tax id not registered at revenue service"
+msgstr "CNPJ não cadastrado na Receita Federal"
+
+msgid "CNPJ/CPF"
+msgstr "CNPJ/CPF"
+
+msgid "CNPJ"
+msgstr "CNPJ"

@@ -77,6 +77,7 @@ class Accounts_form extends common {
 			$pin_number   = rand(pow(10, $numberlength-1), pow(10, $numberlength)-1);
 		}
 		$account_val        = 'accounts.number';
+		$cnpj_val           = 'accounts.tax_number';
 		$cps                = Common_model::$global_config['system_config']['cps'];
 		$concurrent_calls   = Common_model::$global_config['system_config']['maxchannels'];
 		$pricelist_id       = Common_model::$global_config['system_config']['default_signup_rategroup'];
@@ -247,6 +248,7 @@ class Accounts_form extends common {
 			$readable    = 'disabled';
 			$val         = 'accounts.email.'.$id;
 			$account_val = 'accounts.number.'.$id;
+			$cnpj_val    = 'accounts.tax_number.'.$id;
 			$taxes_array = array(
 				gettext('Taxes'),
 				"tax_id",
@@ -317,6 +319,20 @@ class Accounts_form extends common {
 				'tOOL TIP',
 				'',
 				'',
+			);
+			$tax_account = array(
+				gettext('CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
 			);
 			$password = array(
 				gettext('Password'),
@@ -480,6 +496,7 @@ class Accounts_form extends common {
 		} else {
 			$val         = 'accounts.email';
 			$account_val = 'accounts.number';
+			$cnpj_val    = 'accounts.tax_number';
 			$password    = $this->CI->common->generate_password();
 			$password    = array(
 				gettext('Password'),
@@ -497,6 +514,20 @@ class Accounts_form extends common {
 				'tOOL TIP',
 				'',
 				'<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" class="change_pass align-self-end text-success fa fa-refresh" ></i>',
+			);
+			$tax_account = array(
+				gettext('CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
 			);
 			$change_password = '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Reset Password" onmouseover="seetext(password)" onmouseout="hidepassword(password)" class="change_pass align-self-end text-success fa fa-refresh" ></i>';
 			$change_pin      = '<i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Generate Pin" class="change_pin align-self-end text-success fa fa-refresh" ></i>';
@@ -873,6 +904,7 @@ class Accounts_form extends common {
 				'',
 				'set_account_type',
 			),
+			$tax_account,
 			array(
 				gettext('Credit Limit'),
 				'INPUT',
@@ -948,18 +980,6 @@ class Accounts_form extends common {
 			),
 			$taxes_array,
 			$domains_array,
-			array(
-				gettext('Tax Number'),
-				'INPUT',
-				array(
-					'name'  => 'tax_number',
-					'size'  => '100',
-					'class' => "text field medium",
-				),
-				'',
-				'tOOL TIP',
-				'',
-			),
 			array(
 				gettext('Generate Invoice'),
 				array(
@@ -1449,6 +1469,7 @@ class Accounts_form extends common {
 		$new_password   = '';
 		$val            = 'accounts.email';
 		$account_val    = 'accounts.number';
+		$cnpj_val       = 'accounts.tax_number';
 		$taxes_arr      = "";
 		$account_number = '';
 		if (isset(common_model::$global_config['system_config']['minimum_accountlength'])) {
@@ -1693,6 +1714,7 @@ class Accounts_form extends common {
 		if ($id > 0) {
 			$val         = 'accounts.email.'.$id;
 			$account_val = 'accounts.number.'.$id;
+			$cnpj_val = 'accounts.tax_number.'.$id;
 			$readable    = 'disabled';
 			$account     = array(
 				gettext('Account'),
@@ -1786,6 +1808,20 @@ class Accounts_form extends common {
 				),
 				'multi',
 			);
+			$tax_account = array(
+				gettext('CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
+			);
 			$balnce_below = array(
 				gettext('Balance Below'),
 				'INPUT',
@@ -1850,6 +1886,34 @@ class Accounts_form extends common {
 				'',
 				'set_prorate',
 			);
+			$cnpj_account = array(
+				gettext('CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|required|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
+			);
+			$tax_account = array(
+				gettext('CNPJ'),
+				'INPUT',
+				array(
+					'name'  => 'tax_number',
+					'id'    => 'tax_number',
+					'size'  => '18',
+					'class' => "tax_number text field medium",
+				),
+				'trim|xss_clean|is_unique['.$cnpj_val.']|max_length[18]',
+				'tOOL TIP',
+				'',
+				' <i style="cursor:pointer; font-size: 17px; position:absolute; right:20px; bottom: 7px;" title="Consultar CNPJ" class="consult_tax_number align-self-end text-success fa fa-search"></i>',
+			);			
 			$password = $this->CI->common->generate_password();
 			$password = array(
 				gettext('Password'),
@@ -2178,6 +2242,7 @@ class Accounts_form extends common {
 				'',
 				'set_account_type',
 			),
+			$tax_account,
 			array(
 				gettext('Credit Limit'),
 				'INPUT',
@@ -2251,18 +2316,6 @@ class Accounts_form extends common {
 				'set_invoice_option',
 			),
 			$taxes_arr,
-			array(
-				gettext('Tax Number'),
-				'INPUT',
-				array(
-					'name'  => 'tax_number',
-					'size'  => '100',
-					'class' => "text field medium",
-				),
-				'',
-				'tOOL TIP',
-				'',
-			),
 			array(
 				gettext('Generate Invoice'),
 				array(

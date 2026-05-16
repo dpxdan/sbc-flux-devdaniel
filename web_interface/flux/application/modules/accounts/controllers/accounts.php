@@ -1781,8 +1781,7 @@ class Accounts extends MX_Controller {
 		$this->load->view('view_accounts_create', $data);
 	}
 
-	function admin_edit($edit_id = '')
-{
+	function admin_edit($edit_id = '') {
     if ((! empty($edit_id)) && (isset($edit_id))) {
         $access_edit = (array) $this->db_model->getSelect("deleted", "accounts", array(
             "id" => $edit_id
@@ -1810,8 +1809,7 @@ class Accounts extends MX_Controller {
     }
 }
 
-function admin_save($add_array = false)
-{
+    function admin_save($add_array = false) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $add_array = $this->input->post();
         $accountinfo = $this->session->userdata('accountinfo');
@@ -1866,6 +1864,7 @@ function admin_save($add_array = false)
         redirect(base_url() . 'accounts/admin_list/');
     }
 }
+
 	function subadmin_add($type = "") {
 		$this->admin_add(4);
 	}
@@ -3074,6 +3073,37 @@ function admin_save($add_array = false)
 			echo '';
 		}
 		exit();
+	}
+	
+	function customer_generate_cnpj() {
+		$doc = $this->input->post('doc', true);
+		$doc = preg_replace('/\D+/', '', (string) $doc);
+		$len = strlen($doc);
+
+		$this->output->set_content_type('application/json', 'utf-8');
+
+		$result = $this->accounts_model->consultar($doc, null);
+		if (!isset($result['ok']) || $result['ok'] !== true) {
+//			$this->output->set_status_header(502);
+			$this->flux_log->write_log('result', json_encode($result));
+
+			echo json_encode(array(
+				'ok'      => false,
+				'message' => $result['message'],
+				'error'   => isset($result['error']) ? $result['error'] : 'Falha ao consultar.',
+			));
+			$this->session->set_flashdata('flux_notification', gettext($result['message']));
+			return;
+		}
+
+		$this->flux_log->write_log('result', json_encode($result));
+		$mapped = $this->accounts_model->map_result_to_account($doc, $result['data']);
+		echo json_encode(array(
+			'ok'     => true,
+			'doc'    => $doc,
+			'mapped' => $mapped,
+			'data'   => $result['data'],
+		));
 	}
 
 }
